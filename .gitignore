@@ -1,0 +1,25 @@
+node_modules/
+dist/
+
+.DS_Store
+*.log
+
+.tmp-cloudflared-2023/
+cloudflared
+cloudflared-*.tgz
+gh-*.zip
+gh-macos-*.tar.gz
+gh-macos-*.zip
+.tmp-gh*/
+
+Vuvio.htm
+Vuvio.html
+Vuvio_files/
+
+/assets/
+references/
+refmap.png
+ChatGPT Image*.png
+c276a4b4-9ff5-42d8-bc1d-3b790ce2be9e.png
+
+*.tmp

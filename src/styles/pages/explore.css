@@ -1,0 +1,207 @@
+.explore-screen {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  background:
+    radial-gradient(120% 46% at 50% -10%, rgba(43, 217, 200, 0.1), transparent 58%),
+    linear-gradient(180deg, #050c16 0%, #07101c 44%, #050b14 100%);
+  padding-top: 46px;
+}
+
+.explore-header {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.explore-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.explore-profile {
+  position: relative;
+  width: 42px;
+  height: 42px;
+  display: grid;
+  place-items: center;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 50%;
+  background:
+    linear-gradient(140deg, rgba(43, 217, 200, 0.26), rgba(59, 130, 230, 0.18)),
+    url("/assets/VuVio_10_POV/08_wildlife_photographer.jpg") center / cover;
+  color: #fff;
+  font-size: 0;
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.34);
+}
+
+.explore-profile::after {
+  content: "";
+  position: absolute;
+  right: -1px;
+  bottom: 2px;
+  width: 11px;
+  height: 11px;
+  border: 2px solid #07101c;
+  border-radius: 50%;
+  background: var(--color-cyan);
+}
+
+.explore-globe-teaser {
+  position: relative;
+  height: 188px;
+  overflow: hidden;
+  border: 0;
+  border-radius: 0;
+  background:
+    radial-gradient(circle at 50% 42%, rgba(43, 217, 200, 0.08), transparent 45%),
+    radial-gradient(circle at 50% 116%, rgba(5, 11, 18, 0.72), transparent 40%);
+  margin: -2px -16px -4px;
+  padding: 0;
+}
+
+.explore-globe-teaser__sphere {
+  position: absolute;
+  left: 50%;
+  top: 10px;
+  width: min(104vw, 390px);
+  aspect-ratio: 1;
+  transform: translateX(-50%);
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 34% 24%, rgba(95, 179, 255, 0.42), transparent 15%),
+    radial-gradient(circle at 58% 34%, rgba(43, 217, 200, 0.18), transparent 17%),
+    radial-gradient(circle at 46% 42%, rgba(47, 92, 144, 0.38), transparent 36%),
+    radial-gradient(circle at 50% 52%, #142946 0%, #0a1728 54%, #030811 72%);
+  box-shadow:
+    inset -26px -34px 58px rgba(0, 0, 0, 0.52),
+    inset 12px 10px 32px rgba(95, 179, 255, 0.12),
+    0 0 42px rgba(43, 217, 200, 0.16);
+}
+
+.explore-globe-teaser__sphere::before {
+  content: "";
+  position: absolute;
+  inset: 2%;
+  border-radius: 50%;
+  border: 1px solid rgba(95, 179, 255, 0.28);
+  box-shadow: 0 0 20px rgba(95, 179, 255, 0.18);
+}
+
+.explore-globe-teaser__sphere i {
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--color-cyan);
+  box-shadow: 0 0 14px rgba(43, 217, 200, 0.72);
+  animation: explore-dot-breathe 2.8s ease-in-out infinite;
+}
+
+.explore-globe-teaser__sphere i:nth-child(1) {
+  left: 26%;
+  top: 42%;
+}
+
+.explore-globe-teaser__sphere i:nth-child(2) {
+  left: 47%;
+  top: 28%;
+  animation-delay: -0.7s;
+}
+
+.explore-globe-teaser__sphere i:nth-child(3) {
+  right: 27%;
+  top: 48%;
+  animation-delay: -1.2s;
+}
+
+.explore-globe-teaser__sphere i:nth-child(4) {
+  left: 38%;
+  bottom: 28%;
+  animation-delay: -1.8s;
+}
+
+.explore-globe-teaser__sphere i:nth-child(5) {
+  right: 38%;
+  bottom: 34%;
+  animation-delay: -2.2s;
+}
+
+@keyframes explore-dot-breathe {
+  0%,
+  100% {
+    opacity: 0.58;
+    transform: scale(0.9);
+  }
+
+  50% {
+    opacity: 1;
+    transform: scale(1.18);
+  }
+}
+
+.category-row {
+  display: flex;
+  gap: 10px;
+  margin-inline: -16px;
+  overflow-x: auto;
+  padding: 0 16px 2px;
+  scrollbar-width: none;
+}
+
+.category-row::-webkit-scrollbar {
+  display: none;
+}
+
+.category-row button,
+.map-filters span {
+  flex: none;
+  min-height: 40px;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  border: 1px solid rgba(255, 255, 255, 0.11);
+  border-radius: 999px;
+  background: rgba(10, 20, 32, 0.74);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.02);
+  padding: 0 17px;
+  color: rgba(242, 247, 246, 0.68);
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.category-row button.is-active,
+.map-filters span.is-active {
+  border-color: rgba(43, 217, 200, 0.88);
+  background: rgba(43, 217, 200, 0.12);
+  color: var(--color-cyan);
+  font-weight: 600;
+  box-shadow: 0 0 22px rgba(43, 217, 200, 0.12);
+}
+
+.category-row__more {
+  width: 42px;
+  justify-content: center;
+  padding: 0;
+}
+
+.live-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.upcoming-list,
+.collections-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.explore-hint {
+  margin: 2px 0 0;
+  color: rgba(242, 247, 246, 0.42);
+  text-align: center;
+  font-size: 11px;
+}

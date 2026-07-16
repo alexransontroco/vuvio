@@ -1,0 +1,144 @@
+.profile-screen {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.profile-hero {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding-top: 8px;
+}
+
+.profile-avatar {
+  width: 72px;
+  height: 72px;
+  flex: none;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, var(--color-blue), #0f2a3a);
+  color: #fff;
+  font-size: 26px;
+  font-weight: 760;
+}
+
+.profile-hero h1 {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 760;
+}
+
+.profile-hero p {
+  margin: 2px 0 0;
+  color: rgba(242, 247, 246, 0.56);
+  font-size: 13px;
+}
+
+.profile-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+
+.profile-stats article {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  border: 0.5px solid rgba(255, 255, 255, 0.08);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.045);
+  padding: 13px 4px;
+}
+
+.profile-stats strong {
+  color: var(--color-cyan);
+  font-size: 20px;
+}
+
+.profile-stats span {
+  color: rgba(242, 247, 246, 0.56);
+  text-align: center;
+  font-size: 11px;
+}
+
+.go-live-button {
+  height: 52px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  border: 0;
+  border-radius: 26px;
+  background: var(--color-cyan);
+  color: var(--color-ink);
+  font-size: 15px;
+  font-weight: 760;
+}
+
+.history-section {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.history-section h2 {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.history-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border: 0.5px solid rgba(255, 255, 255, 0.08);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.045);
+  padding: 9px 12px 9px 9px;
+  text-align: left;
+}
+
+.history-thumb {
+  width: 44px;
+  height: 44px;
+  flex: none;
+  display: block;
+  overflow: hidden;
+  border-radius: 14px;
+}
+
+.history-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center 46%;
+  transform: scale(1.38);
+  transform-origin: center;
+}
+
+.history-item span {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.history-item strong {
+  overflow: hidden;
+  color: var(--color-text);
+  font-size: 13.5px;
+  font-weight: 660;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.history-item small {
+  overflow: hidden;
+  color: rgba(242, 247, 246, 0.56);
+  font-size: 11px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
