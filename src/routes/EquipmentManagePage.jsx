@@ -13,6 +13,7 @@ import {
   removeEquipmentItem,
   updateEquipmentItem,
   getEquipmentLibrary,
+  fetchMissingEquipmentImages,
 } from '../services/equipmentService.js';
 
 const emptyForm = {
@@ -152,12 +153,26 @@ export default function EquipmentManagePage() {
   const [form, setForm] = useState(null);
   const [editingId, setEditingId] = useState(null);
   const [toast, setToast] = useState('');
+  const [imageFetching, setImageFetching] = useState(false);
   const groups = useMemo(() => groupEquipmentByCategory(items), [items]);
 
   const showToast = (message) => {
     setToast(message);
     window.setTimeout(() => setToast(''), 1600);
   };
+
+  useEffect(() => {
+    setImageFetching(true);
+    fetchMissingEquipmentImages()
+      .then((result) => {
+        if (result.updated > 0) {
+          setItems(getEquipmentLibrary());
+          showToast(`Found images for ${result.updated} equipment`);
+        }
+      })
+      .catch(() => {})
+      .finally(() => setImageFetching(false));
+  }, [showToast]);
 
   const saveForm = () => {
     if (!form?.brand.trim() || !form?.model.trim()) return;

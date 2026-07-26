@@ -220,3 +220,35 @@ export function buildEquipmentSnapshots(items, ids) {
     imageSource: item.imageSource || null,
   }));
 }
+
+export async function fetchMissingEquipmentImages() {
+  const { getGearImageSuggestions } = await import('./gearSnapshotService.js');
+  const allItems = getEquipmentLibrary();
+  const itemsNeedingImages = allItems.filter((item) => !item.imageUrl && item.brand && item.model);
+
+  if (itemsNeedingImages.length === 0) return { updated: 0, items: [] };
+
+  const updatedItems = [];
+  for (const item of itemsNeedingImages) {
+    try {
+      const result = await getGearImageSuggestions({
+        brand: item.brand,
+        model: item.model,
+        displayName: `${item.brand} ${item.model}`.trim(),
+      });
+
+      if (result.success && result.suggestions?.[0]) {
+        updateEquipmentItem(item.id, {
+          imageUrl: result.suggestions[0].url,
+          imageSource: 'auto',
+          imageStatus: 'auto-fetched',
+        });
+        updatedItems.push(item.id);
+      }
+    } catch (error) {
+      console.warn(`Failed to fetch image for ${item.brand} ${item.model}:`, error);
+    }
+  }
+
+  return { updated: updatedItems.length, items: updatedItems };
+}
