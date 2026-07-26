@@ -106,17 +106,17 @@
 /* + badge on center button */
 .bottom-nav__create-badge {
   position: absolute;
-  top: 2px;
-  right: 2px;
-  width: 15px;
-  height: 15px;
+  top: 6px;
+  right: 3px;
+  width: 18px;
+  height: 18px;
   display: grid;
   place-items: center;
   border: 1.5px solid rgba(5, 18, 28, 0.94);
   border-radius: 50%;
   background: var(--vuvio-cyan);
   color: #03212a;
-  font-size: 9px;
+  font-size: 10px;
   font-weight: 800;
   line-height: 1;
   pointer-events: none;

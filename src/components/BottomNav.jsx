@@ -475,7 +475,7 @@ export default function BottomNav({ collapsible = false, collapsed = false, onEx
           </NavLink>
         ))}
         <button type="button" className="bottom-nav__create" onClick={() => setCreateOpen(true)} aria-label={t('navigation.create')}>
-          <BrandMark size={34} style={{ marginTop: 4 }} />
+          <BrandMark size={34} style={{ marginTop: 6 }} />
           <span className="bottom-nav__create-badge" aria-hidden="true">+</span>
         </button>
         {navItems.slice(2).map(({ to, labelKey, icon: Icon }) => (

@@ -1582,7 +1582,12 @@
 }
 
 .alp-search-wrap {
+  position: sticky;
+  top: 52px;
+  z-index: 19;
   padding: 4px 16px 0;
+  background: rgba(4, 19, 31, 0.8);
+  backdrop-filter: blur(8px);
 }
 
 .alp-search {
@@ -1628,11 +1633,16 @@
 }
 
 .alp-sort-row {
+  position: sticky;
+  top: 104px;
+  z-index: 18;
   display: flex;
   gap: 6px;
   padding: 8px 16px 0;
   overflow-x: auto;
   scrollbar-width: none;
+  background: rgba(4, 19, 31, 0.8);
+  backdrop-filter: blur(8px);
 }
 
 .alp-sort-row::-webkit-scrollbar { display: none; }
@@ -1660,11 +1670,16 @@
 }
 
 .alp-categories {
+  position: sticky;
+  top: 152px;
+  z-index: 17;
   display: flex;
   gap: 6px;
   padding: 10px 16px 4px;
   overflow-x: auto;
   scrollbar-width: none;
+  background: rgba(4, 19, 31, 0.8);
+  backdrop-filter: blur(8px);
 }
 
 .alp-categories::-webkit-scrollbar { display: none; }
