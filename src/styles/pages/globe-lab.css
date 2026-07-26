@@ -2,8 +2,9 @@
   height: 100%;
   overflow: hidden;
   background:
-    radial-gradient(100% 54% at 50% 22%, rgba(43, 217, 200, 0.1), transparent 58%),
-    var(--color-bg);
+    radial-gradient(ellipse 85% 65% at 50% 28%, rgba(65, 180, 255, 0.18) 0%, rgba(43, 217, 200, 0.08) 42%, transparent 68%),
+    radial-gradient(ellipse 70% 50% at 50% 65%, rgba(147, 112, 219, 0.06) 0%, transparent 58%),
+    linear-gradient(180deg, rgba(6, 35, 60, 0.4) 0%, rgba(8, 20, 35, 0.6) 50%, rgba(10, 15, 25, 0.8) 100%);
 }
 
 .globe-lab-shell {
@@ -14,6 +15,7 @@
 
 .globe-lab-shell canvas {
   cursor: grab;
+  filter: brightness(1.24) contrast(1.12) saturate(1.32) hue-rotate(8deg);
 }
 
 .globe-lab-shell canvas:active {
@@ -27,12 +29,13 @@
   z-index: 80;
   display: flex;
   transform: translateX(-50%);
-  border: 0.5px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(102, 200, 255, 0.28);
   border-radius: 999px;
-  background: rgba(8, 17, 28, 0.72);
-  backdrop-filter: blur(16px);
+  background: rgba(8, 25, 45, 0.84);
+  backdrop-filter: blur(18px);
   padding: 3px;
   pointer-events: auto;
+  box-shadow: 0 0 20px rgba(65, 180, 255, 0.12);
 }
 
 .globe-lab-switch button {
@@ -41,16 +44,18 @@
   border: 0;
   border-radius: 999px;
   background: transparent;
-  color: rgba(242, 247, 246, 0.62);
+  color: rgba(220, 240, 255, 0.68);
   padding: 0 12px;
   font-size: 11px;
   font-weight: 650;
   pointer-events: auto;
+  transition: all 160ms ease;
 }
 
 .globe-lab-switch button.is-active {
-  background: rgba(43, 217, 200, 0.16);
-  color: var(--color-cyan);
+  background: linear-gradient(135deg, rgba(65, 180, 255, 0.24), rgba(43, 217, 200, 0.18));
+  color: rgba(140, 220, 255, 0.95);
+  box-shadow: inset 0 0 12px rgba(65, 180, 255, 0.1);
 }
 
 .globe-lab-switch,
@@ -73,16 +78,60 @@
   height: 46px;
   display: grid;
   place-items: center;
-  border: 0.5px solid rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(102, 200, 255, 0.22);
   border-radius: 50%;
-  background: rgba(8, 17, 28, 0.72);
+  background: rgba(12, 35, 60, 0.76);
   backdrop-filter: blur(16px);
-  color: var(--color-text);
+  color: rgba(150, 220, 255, 0.88);
+  transition: all 160ms ease;
+  box-shadow: 0 0 16px rgba(65, 180, 255, 0.08);
+}
+
+.globe-lab-controls button:hover {
+  background: rgba(20, 50, 80, 0.88);
+  border-color: rgba(140, 210, 255, 0.38);
+  box-shadow: 0 0 20px rgba(65, 180, 255, 0.15);
 }
 
 .globe-lab-filter {
   bottom: calc(var(--nav-height) + var(--safe-bottom) + 12px);
   z-index: 22;
+  border: 1px solid rgba(102, 200, 255, 0.22) !important;
+  background: rgba(8, 30, 50, 0.88) !important;
+  backdrop-filter: blur(18px) !important;
+  box-shadow: 0 0 24px rgba(65, 180, 255, 0.12);
+}
+
+.globe-lab-filter button {
+  color: rgba(200, 240, 255, 0.72) !important;
+  transition: all 160ms ease !important;
+}
+
+.globe-lab-filter button:hover {
+  background: rgba(65, 180, 255, 0.1) !important;
+  color: rgba(220, 250, 255, 0.92) !important;
+}
+
+.globe-lab-filter button.is-active {
+  background: linear-gradient(135deg, rgba(65, 180, 255, 0.26), rgba(43, 217, 200, 0.2)) !important;
+  color: rgba(255, 255, 255, 0.96) !important;
+  box-shadow: inset 0 0 16px rgba(65, 180, 255, 0.12), 0 0 12px rgba(65, 180, 255, 0.16) !important;
+}
+
+.globe-lab-filter button i {
+  filter: drop-shadow(0 0 4px rgba(255, 255, 255, 0.3)) !important;
+}
+
+.globe-lab-borders {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image: url('/globe/borders.svg');
+  background-size: cover;
+  background-repeat: no-repeat;
+  background-position: center;
+  opacity: 0.65;
+  mix-blend-mode: screen;
 }
 
 .globe-lab-overlay {
@@ -90,8 +139,8 @@
   inset: 0;
   pointer-events: none;
   background:
-    radial-gradient(88% 64% at 50% 42%, transparent 54%, rgba(6, 14, 23, 0.58) 100%),
-    linear-gradient(180deg, rgba(6, 14, 23, 0.1), rgba(6, 14, 23, 0.32));
+    radial-gradient(ellipse 75% 50% at 50% 38%, transparent 48%, rgba(6, 20, 40, 0.35) 100%),
+    linear-gradient(180deg, rgba(10, 40, 70, 0.08), rgba(8, 25, 45, 0.18));
 }
 
 .globe-lab-legend {
@@ -144,11 +193,14 @@
   right: 12px;
   bottom: calc(var(--nav-height) + var(--safe-bottom) + 58px);
   z-index: 24;
-  border: 0.5px solid rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(102, 200, 255, 0.24);
   border-radius: 20px;
-  background: rgba(10, 22, 35, 0.92);
-  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.48);
-  backdrop-filter: blur(20px);
+  background: linear-gradient(135deg, rgba(12, 45, 75, 0.95), rgba(15, 35, 60, 0.92));
+  box-shadow:
+    0 20px 50px rgba(0, 0, 0, 0.48),
+    0 0 24px rgba(65, 180, 255, 0.12),
+    inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  backdrop-filter: blur(24px);
   padding: 12px;
 }
 
@@ -177,9 +229,10 @@
 .globe-lab-card header img {
   width: 38px;
   height: 38px;
-  border: 0.5px solid rgba(255, 255, 255, 0.14);
+  border: 1px solid rgba(102, 200, 255, 0.24);
   border-radius: 50%;
   object-fit: cover;
+  box-shadow: 0 0 12px rgba(65, 180, 255, 0.16);
 }
 
 .globe-lab-card strong,
@@ -209,17 +262,19 @@
   gap: 6px;
   margin-top: 12px;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.055);
-  padding: 5px 9px;
-  color: rgba(242, 247, 246, 0.68);
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(102, 200, 255, 0.18);
+  padding: 6px 11px;
+  color: rgba(240, 250, 255, 0.76);
   font-size: 9.5px;
   font-weight: 720;
   letter-spacing: 0.06em;
 }
 
 .globe-lab-card__badge.is-live {
-  background: color-mix(in srgb, var(--experience-color) 20%, transparent);
-  color: rgba(242, 247, 246, 0.86);
+  background: linear-gradient(135deg, color-mix(in srgb, var(--experience-color) 24%, transparent), color-mix(in srgb, var(--experience-color) 12%, transparent));
+  border-color: color-mix(in srgb, var(--experience-color) 42%, transparent);
+  color: rgba(255, 255, 255, 0.94);
 }
 
 .globe-lab-card__badge i {
@@ -272,18 +327,26 @@
   align-items: center;
   justify-content: center;
   gap: 6px;
-  border: 0.5px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(102, 200, 255, 0.22);
   border-radius: 13px;
-  background: rgba(255, 255, 255, 0.06);
-  color: rgba(242, 247, 246, 0.82);
+  background: rgba(20, 60, 100, 0.48);
+  color: rgba(200, 240, 255, 0.88);
   font-size: 12px;
   font-weight: 650;
+  transition: all 160ms ease;
+}
+
+.globe-lab-card footer button:hover {
+  background: rgba(30, 80, 130, 0.62);
+  border-color: rgba(140, 210, 255, 0.38);
+  box-shadow: 0 0 12px rgba(65, 180, 255, 0.18);
 }
 
 .globe-lab-card footer button.is-primary {
   border: 0;
-  background: var(--color-cyan);
+  background: linear-gradient(135deg, #71f5ec 0%, var(--vuvio-cyan) 100%);
   color: var(--color-ink);
+  box-shadow: 0 6px 18px rgba(43, 217, 200, 0.28);
 }
 
 @media (min-width: 760px) {

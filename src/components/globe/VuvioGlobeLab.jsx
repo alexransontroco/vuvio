@@ -217,6 +217,7 @@ export default function VuvioGlobeLab({ streams }) {
 
   const showGlobeSwitcher = true;
 
+
   return (
     <section className="globe-lab-screen" aria-label="Prototype react-globe.gl Vuvio">
       <div className="globe-lab-shell" ref={shellRef}>
@@ -228,28 +229,29 @@ export default function VuvioGlobeLab({ streams }) {
           globeImageUrl="/globe/earth-night.jpg"
           bumpImageUrl="/globe/earth-bump.jpg"
           showAtmosphere
-          atmosphereColor="#7cc8ff"
-          atmosphereAltitude={0.15}
+          atmosphereColor="#5db8ff"
+          atmosphereAltitude={0.22}
           pointsData={livePoints}
           pointLat="lat"
           pointLng="lng"
-          pointAltitude={(live) => (live.family === 'air' ? 0.036 : live.family === 'water' ? 0.018 : 0.022)}
-          pointRadius={(live) => Math.min(0.34, 0.105 + viewersNumber(live) / 9800)}
+          pointAltitude={(live) => (live.family === 'air' ? 0.038 : live.family === 'water' ? 0.020 : 0.024)}
+          pointRadius={(live) => Math.min(0.38, 0.118 + viewersNumber(live) / 8600)}
           pointColor={(live) => live.color}
-          pointResolution={32}
-          pointsTransitionDuration={180}
+          pointResolution={36}
+          pointsTransitionDuration={200}
           pointsMerge={false}
           ringsData={livePoints}
           ringLat="lat"
           ringLng="lng"
-          ringAltitude={0.014}
-          ringColor={(live) => (time) => `${live.color}${time < 0.42 ? '88' : '22'}`}
-          ringMaxRadius={(live) => (live.family === 'air' ? 2.4 : 1.85)}
-          ringPropagationSpeed={1.45}
-          ringRepeatPeriod={1550}
+          ringAltitude={0.016}
+          ringColor={(live) => (time) => `${live.color}${time < 0.48 ? 'aa' : '28'}`}
+          ringMaxRadius={(live) => (live.family === 'air' ? 2.8 : 2.1)}
+          ringPropagationSpeed={1.65}
+          ringRepeatPeriod={1350}
           onPointClick={selectLive}
           enablePointerInteraction
         />
+        <div className="globe-lab-borders" aria-hidden="true" />
         <div className="globe-lab-overlay" aria-hidden="true" />
 
         {showGlobeSwitcher ? (

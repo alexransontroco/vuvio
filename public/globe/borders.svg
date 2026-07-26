@@ -1,0 +1,73 @@
+<svg viewBox="0 0 360 180" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid slice">
+  <defs>
+    <style>
+      .land-border { stroke: rgba(100, 180, 255, 0.3); stroke-width: 0.3; fill: none; }
+      .water-border { stroke: rgba(100, 200, 255, 0.15); stroke-width: 0.2; fill: none; }
+      .grid { stroke: rgba(80, 160, 255, 0.1); stroke-width: 0.2; fill: none; }
+    </style>
+  </defs>
+  
+  <!-- Reference grid (light) -->
+  <g class="grid">
+    <!-- Meridians -->
+    <line x1="30" y1="0" x2="30" y2="180" stroke-dasharray="2,2"/>
+    <line x1="60" y1="0" x2="60" y2="180" stroke-dasharray="2,2"/>
+    <line x1="90" y1="0" x2="90" y2="180" stroke-dasharray="2,2"/>
+    <line x1="120" y1="0" x2="120" y2="180" stroke-dasharray="2,2"/>
+    <line x1="150" y1="0" x2="150" y2="180" stroke-dasharray="2,2"/>
+    <line x1="180" y1="0" x2="180" y2="180" stroke-dasharray="2,2"/>
+    <line x1="210" y1="0" x2="210" y2="180" stroke-dasharray="2,2"/>
+    <line x1="240" y1="0" x2="240" y2="180" stroke-dasharray="2,2"/>
+    <line x1="270" y1="0" x2="270" y2="180" stroke-dasharray="2,2"/>
+    <line x1="300" y1="0" x2="300" y2="180" stroke-dasharray="2,2"/>
+    <line x1="330" y1="0" x2="330" y2="180" stroke-dasharray="2,2"/>
+    
+    <!-- Parallels -->
+    <line x1="0" y1="45" x2="360" y2="45" stroke-dasharray="2,2"/>
+    <line x1="0" y1="90" x2="360" y2="90" stroke-dasharray="2,2"/>
+    <line x1="0" y1="135" x2="360" y2="135" stroke-dasharray="2,2"/>
+  </g>
+
+  <!-- Country borders (simplified) -->
+  <g class="land-border">
+    <!-- North America -->
+    <path d="M150,50 L160,45 L165,60 L155,65 Z"/>
+    <path d="M160,45 L175,40 L180,75 L165,60 Z"/>
+    
+    <!-- Central America & Caribbean -->
+    <path d="M175,70 L185,68 L187,90 L175,92 Z"/>
+    
+    <!-- South America -->
+    <path d="M170,100 L195,95 L200,170 L165,175 Z"/>
+    
+    <!-- Europe -->
+    <path d="M25,30 L50,25 L55,65 L25,70 Z"/>
+    <path d="M50,25 L70,20 L75,75 L55,65 Z"/>
+    
+    <!-- Africa -->
+    <path d="M50,60 L90,55 L105,175 L50,180 Z"/>
+    
+    <!-- Middle East -->
+    <path d="M70,55 L105,50 L110,80 L75,85 Z"/>
+    
+    <!-- Russia & Central Asia -->
+    <path d="M70,10 L180,5 L185,70 L70,75 Z"/>
+    
+    <!-- South Asia -->
+    <path d="M90,65 L130,60 L135,95 L95,100 Z"/>
+    
+    <!-- East Asia -->
+    <path d="M140,35 L180,30 L185,80 L140,85 Z"/>
+    
+    <!-- Southeast Asia -->
+    <path d="M130,80 L160,75 L165,120 L130,125 Z"/>
+    
+    <!-- Australia & Oceania -->
+    <path d="M200,110 L230,105 L235,165 L205,170 Z"/>
+  </g>
+  
+  <!-- Water boundaries (subtle) -->
+  <g class="water-border">
+    <path d="M0,0 L360,0 L360,180 L0,180 Z"/>
+  </g>
+</svg>

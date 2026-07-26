@@ -235,3 +235,38 @@ export const SUBCATEGORY_EQUIPMENT_TYPES = {
   'Fishing':        ['Fishing Rod', 'Fishing Reel', 'Tackle Box', 'Boat', 'Life Jacket'],
   'Swimming':       ['Swimsuit', 'Swimming Goggles', 'Swimming Cap', 'Fins'],
 };
+
+// Category icons - return emoji or icon identifier
+export function getCategoryIcon(category, size = 18) {
+  const iconMap = {
+    recording: '📷',
+    audio: '🎤',
+    activity: '⚙️',
+    streaming: '📡',
+    power_accessories: '🔋',
+    bike: '🚲',
+    helmet: '🎯',
+    tires: '⭕',
+    camera: '📷',
+    microphone: '🎤',
+    gloves: '🧤',
+    backpack: '🎒',
+    shoes: '👟',
+    watch: '⌚',
+    gps: '🗺️',
+    drone: '🚁',
+    tools: '🔧',
+    other: '📦',
+  };
+
+  return iconMap[category] || iconMap.other;
+}
+
+// Default gear thumbnails for common categories
+export const DEFAULT_GEAR_ICONS = {
+  recording: '📷',
+  audio: '🎤',
+  activity: '⚙️',
+  streaming: '📡',
+  power_accessories: '🔋',
+};
