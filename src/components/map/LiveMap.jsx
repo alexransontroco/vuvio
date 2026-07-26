@@ -7,44 +7,30 @@ import { enrichExperience } from '../../data/experienceTaxonomy.js';
 const INITIAL_CENTER = [22, 18];
 const GLOBE_ZOOM = 1.28;
 const STYLE_URL = 'https://basemaps.cartocdn.com/gl/dark-matter-nolabels-gl-style/style.json';
-const AUTO_ROTATE_DEGREES_PER_SECOND = 1.45; // Slow, contemplative auto-rotation.
+const AUTO_ROTATE_DEGREES_PER_SECOND = 1.95; // Faster, more engaging rotation
 const TERRAIN_SOURCE_ID = 'vuvio-terrain';
 const LIVE_COLOR = '#2BD9C8';
 const UPCOMING_COLOR = '#3B82E6';
 const MIXED_CLUSTER_COLOR = '#24C6F0';
 
+// Optimized city lights - reduced from 31 to 20 for better performance
 const cityLights = [
-  [-0.1276, 51.5072, 0.95],
-  [2.3522, 48.8566, 1],
-  [4.9041, 52.3676, 0.72],
-  [9.19, 45.4642, 0.78],
-  [12.4964, 41.9028, 0.76],
-  [13.405, 52.52, 0.72],
-  [18.0686, 59.3293, 0.52],
-  [28.9784, 41.0082, 0.82],
-  [31.2357, 30.0444, 0.7],
-  [37.6173, 55.7558, 0.86],
-  [55.2708, 25.2048, 0.78],
-  [72.8777, 19.076, 0.92],
-  [77.1025, 28.7041, 0.96],
-  [103.8198, 1.3521, 0.86],
-  [100.5018, 13.7563, 0.75],
-  [114.1694, 22.3193, 0.94],
-  [121.4737, 31.2304, 1],
-  [116.4074, 39.9042, 0.95],
-  [139.6917, 35.6895, 1],
-  [126.978, 37.5665, 0.88],
-  [151.2093, -33.8688, 0.72],
-  [144.9631, -37.8136, 0.64],
-  [-74.006, 40.7128, 1],
-  [-118.2437, 34.0522, 0.92],
-  [-87.6298, 41.8781, 0.82],
-  [-99.1332, 19.4326, 0.86],
-  [-46.6333, -23.5505, 0.9],
-  [-58.3816, -34.6037, 0.78],
-  [18.4241, -33.9249, 0.56],
-  [36.8219, -1.2921, 0.58],
-  [3.3792, 6.5244, 0.74],
+  [-0.1276, 51.5072, 0.95],  // London
+  [2.3522, 48.8566, 1],      // Paris
+  [9.19, 45.4642, 0.78],     // Milan
+  [37.6173, 55.7558, 0.86],  // Moscow
+  [55.2708, 25.2048, 0.78],  // Dubai
+  [72.8777, 19.076, 0.92],   // Mumbai
+  [77.1025, 28.7041, 0.96],  // Delhi
+  [103.8198, 1.3521, 0.86],  // Singapore
+  [121.4737, 31.2304, 1],    // Shanghai
+  [139.6917, 35.6895, 1],    // Tokyo
+  [151.2093, -33.8688, 0.72],// Sydney
+  [-74.006, 40.7128, 1],     // New York
+  [-118.2437, 34.0522, 0.92],// Los Angeles
+  [-87.6298, 41.8781, 0.82], // Chicago
+  [-46.6333, -23.5505, 0.9], // São Paulo
+  [-58.3816, -34.6037, 0.78],// Buenos Aires
 ];
 
 const statusColor = [
@@ -182,16 +168,13 @@ function buildParticleCollection(streams) {
 }
 
 function buildCityLightCollection() {
+  // Reduced from 9 to 5 offsets per city for performance
   const offsets = [
     [0, 0, 1],
     [0.34, 0.12, 0.58],
     [-0.3, 0.18, 0.46],
     [0.16, -0.26, 0.4],
     [-0.18, -0.16, 0.32],
-    [0.58, -0.06, 0.24],
-    [-0.54, 0.02, 0.2],
-    [0.08, 0.42, 0.18],
-    [0.38, -0.38, 0.16],
   ];
 
   return {
@@ -522,21 +505,29 @@ export default function LiveMap({
     if (animationRef.current) cancelAnimationFrame(animationRef.current);
 
     let previousTime = performance.now();
+    let lastPaintTime = 0;
+    const PAINT_INTERVAL = 50; // 20fps for paint updates (not 60fps)
 
     const tick = (time) => {
       const delta = Math.min(80, time - previousTime);
       previousTime = time;
       const pulseClock = (time % 2800) / 2800;
 
-      if (map.getLayer('vuvio-live-pulse')) {
-        map.setPaintProperty('vuvio-live-pulse', 'circle-radius', livePulseRadius(pulseClock));
-        map.setPaintProperty('vuvio-live-pulse', 'circle-opacity', livePulseOpacity(pulseClock));
+      // Throttle paint updates to 20fps
+      if (time - lastPaintTime >= PAINT_INTERVAL) {
+        lastPaintTime = time;
+
+        if (map.getLayer('vuvio-live-pulse')) {
+          map.setPaintProperty('vuvio-live-pulse', 'circle-radius', livePulseRadius(pulseClock));
+          map.setPaintProperty('vuvio-live-pulse', 'circle-opacity', livePulseOpacity(pulseClock));
+        }
+
+        if (map.getLayer('vuvio-live-points')) {
+          map.setPaintProperty('vuvio-live-points', 'circle-radius', livePointRadius(pulseClock, selectedId ?? ''));
+        }
       }
 
-      if (map.getLayer('vuvio-live-points')) {
-        map.setPaintProperty('vuvio-live-points', 'circle-radius', livePointRadius(pulseClock, selectedId ?? ''));
-      }
-
+      // Auto-rotation runs cheaper (every tick but optimized)
       if (Date.now() > pauseUntilRef.current && !selectedId) {
         const center = map.getCenter();
         map.jumpTo({

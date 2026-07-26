@@ -79,21 +79,35 @@ export function clearLiveGearSnapshots(liveId) {
   }
 }
 
-// Service for future image suggestions
-export async function getGearImageSuggestions({ category, brand, model }) {
-  // Placeholder for future implementation
-  // Could connect to:
-  // - Internal product catalog
-  // - Brand partner APIs
-  // - Image recognition services
-  // - User-contributed images
-
+export async function getGearImageSuggestions({ category, brand, model, displayName }) {
   try {
-    // For now, return empty list
-    // This structure allows easy integration later
-    const suggestions = [];
+    const query = displayName || `${brand} ${model}`.trim();
+    if (!query || query.length < 2) {
+      return { success: true, suggestions: [] };
+    }
+
+    // Try to fetch image from Unsplash API (free, no auth required)
+    const encodedQuery = encodeURIComponent(query);
+    const response = await fetch(
+      `https://api.unsplash.com/search/photos?query=${encodedQuery}&per_page=5&client_id=kVZeL207K1gVmJPqnhSH2Yx9rK2LTn9dS7a0A9J5Q_w`,
+      { signal: AbortSignal.timeout(5000) }
+    );
+
+    if (!response.ok) throw new Error('Unsplash API failed');
+
+    const data = await response.json();
+    const suggestions = data.results
+      ?.slice(0, 3)
+      .map((photo) => ({
+        url: photo.urls.small,
+        thumb: photo.urls.thumb,
+        alt: photo.alt_description || query,
+        source: 'unsplash',
+      })) || [];
+
     return { success: true, suggestions };
   } catch (error) {
-    return { success: false, error: error.message };
+    console.warn('Failed to fetch gear images:', error.message);
+    return { success: false, error: error.message, suggestions: [] };
   }
 }

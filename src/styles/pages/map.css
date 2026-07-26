@@ -1,12 +1,12 @@
 .map-screen {
-  background: #060d16;
+  background: #010408;
 }
 
 .live-map {
   position: absolute;
   inset: 0;
   overflow: hidden;
-  background: #060d16;
+  background: #010408;
 }
 
 .live-map--globe::before {
@@ -33,7 +33,7 @@
 }
 
 .live-map--globe .maplibregl-canvas {
-  filter: brightness(1.08) contrast(1.16) saturate(1.12);
+  filter: brightness(1.32) contrast(1.18) saturate(1.22);
 }
 
 .live-map__vignette {

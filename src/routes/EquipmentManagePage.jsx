@@ -1,12 +1,12 @@
-import { ChevronLeft, Plus } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import { ChevronLeft, Plus, CheckCircle, Loader } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   EquipmentItemRow,
   EquipmentManageActions,
 } from '../components/equipment/EquipmentKit.jsx';
-import { GearImageUploader } from '../components/gear/index.js';
 import { EQUIPMENT_CATEGORIES, EQUIPMENT_OWNERSHIP } from '../data/equipmentModel.js';
+import { getGearImageSuggestions } from '../services/gearSnapshotService.js';
 import {
   addEquipmentItem,
   groupEquipmentByCategory,
@@ -30,6 +30,35 @@ const emptyForm = {
 };
 
 function EquipmentForm({ value, onChange, onSave, onCancel, submitLabel = 'Save equipment' }) {
+  const [imageSuggestions, setImageSuggestions] = useState([]);
+  const [imageFetching, setImageFetching] = useState(false);
+
+  useEffect(() => {
+    if (!value.brand.trim() || !value.model.trim()) {
+      setImageSuggestions([]);
+      return;
+    }
+
+    setImageFetching(true);
+    getGearImageSuggestions({
+      brand: value.brand,
+      model: value.model,
+      displayName: `${value.brand} ${value.model}`.trim(),
+    })
+      .then((result) => {
+        if (result.success && result.suggestions?.length > 0) {
+          setImageSuggestions(result.suggestions);
+          if (!value.imageUrl) {
+            onChange({ ...value, imageUrl: result.suggestions[0].url, imageSource: 'auto' });
+          }
+        } else {
+          setImageSuggestions([]);
+        }
+      })
+      .catch(() => setImageSuggestions([]))
+      .finally(() => setImageFetching(false));
+  }, [value.brand, value.model]);
+
   return (
     <section className="equipment-private-form" aria-label="Equipment form">
       <label>
@@ -52,6 +81,33 @@ function EquipmentForm({ value, onChange, onSave, onCancel, submitLabel = 'Save 
         Equipment type
         <input value={value.equipmentType} onChange={(event) => onChange({ ...value, equipmentType: event.target.value })} placeholder="Example: Action Camera" />
       </label>
+
+      {imageFetching && (
+        <div className="image-fetch-status">
+          <Loader size={16} /> Searching for product image...
+        </div>
+      )}
+
+      {imageSuggestions.length > 0 && (
+        <div className="image-suggestions">
+          <p>Product image (automatically found):</p>
+          <div className="image-suggestions-grid">
+            {imageSuggestions.map((img) => (
+              <button
+                key={img.url}
+                type="button"
+                className={value.imageUrl === img.url ? 'suggestion is-selected' : 'suggestion'}
+                onClick={() => onChange({ ...value, imageUrl: img.url, imageSource: 'auto' })}
+                title="Click to select"
+              >
+                <img src={img.thumb} alt={img.alt} />
+                {value.imageUrl === img.url && <CheckCircle size={20} />}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
       <label>
         Product link
         <input value={value.productUrl} onChange={(event) => onChange({ ...value, productUrl: event.target.value })} placeholder="https://" />
@@ -60,14 +116,6 @@ function EquipmentForm({ value, onChange, onSave, onCancel, submitLabel = 'Save 
         Affiliate link
         <input value={value.affiliateUrl} onChange={(event) => onChange({ ...value, affiliateUrl: event.target.value })} placeholder="https://" />
       </label>
-      <GearImageUploader
-        imageUrl={value.imageUrl}
-        category={value.category}
-        displayName={`${value.brand} ${value.model}`.trim() || 'Equipment'}
-        onImageChange={(imageData) => onChange({ ...value, ...imageData })}
-        onRemoveImage={() => onChange({ ...value, imageUrl: null, imageSource: null, imageStatus: null })}
-        showLabel
-      />
       <label>
         Ownership status
         <select value={value.ownership} onChange={(event) => onChange({ ...value, ownership: event.target.value })}>

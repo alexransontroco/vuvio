@@ -453,14 +453,35 @@ function ExploreEmptyState({ title, body, action, onAction }) {
   );
 }
 
-function ExploreHeader({ filterCount, onOpenFilter }) {
+function ExploreHeader({ filterCount, onOpenFilter, search, onSearchChange, hasSearch, onSearchClear, searchInputRef }) {
   const [msgUnread, setMsgUnread] = useState(() => getUnreadConversationCount());
 
   useEffect(() => subscribeToMessaging(() => setMsgUnread(getUnreadConversationCount())), []);
 
   return (
     <header className="ep-header">
-      <h1 className="ep-header__title">Explore</h1>
+      <div className="ep-search">
+        <Search size={15} strokeWidth={1.9} className="ep-search__icon" />
+        <input
+          ref={searchInputRef}
+          type="search"
+          className="ep-search__input"
+          placeholder="Search activities, jobs, places or gear"
+          value={search}
+          onChange={onSearchChange}
+          aria-label="Search live streams"
+        />
+        {hasSearch ? (
+          <button
+            type="button"
+            className="ep-search__clear"
+            onClick={onSearchClear}
+            aria-label="Clear search"
+          >
+            <X size={14} strokeWidth={2} />
+          </button>
+        ) : null}
+      </div>
       <div className="ep-header__actions">
         <button type="button" className="ep-header__icon-btn" aria-label="Notifications">
           <Bell size={20} strokeWidth={1.9} />
@@ -496,7 +517,7 @@ export default function ExplorePage() {
   const searchInputRef = useRef(null);
   const chipsRef = useRef(null);
 
-  const openStream = useCallback((id) => navigate(`/home?live=${encodeURIComponent(id)}`), [navigate]);
+  const openStream = useCallback((id) => navigate(`/watch?live=${encodeURIComponent(id)}`), [navigate]);
 
   const filteredStreams = useMemo(() => {
     return streams
@@ -537,32 +558,15 @@ export default function ExplorePage() {
   return (
     <section className="screen-scroll ep-screen" aria-label="Explore">
 
-      <ExploreHeader filterCount={filterCount} onOpenFilter={() => setFiltersOpen(true)} />
-
-      <div className="ep-search-wrap">
-        <div className="ep-search">
-          <Search size={15} strokeWidth={1.9} className="ep-search__icon" />
-          <input
-            ref={searchInputRef}
-            type="search"
-            className="ep-search__input"
-            placeholder="Search activities, jobs, places or gear"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            aria-label="Search live streams"
-          />
-          {hasSearch ? (
-            <button
-              type="button"
-              className="ep-search__clear"
-              onClick={() => setSearch('')}
-              aria-label="Clear search"
-            >
-              <X size={14} strokeWidth={2} />
-            </button>
-          ) : null}
-        </div>
-      </div>
+      <ExploreHeader
+        filterCount={filterCount}
+        onOpenFilter={() => setFiltersOpen(true)}
+        search={search}
+        onSearchChange={(e) => setSearch(e.target.value)}
+        hasSearch={hasSearch}
+        onSearchClear={() => setSearch('')}
+        searchInputRef={searchInputRef}
+      />
 
       <div ref={chipsRef} className="ep-chips" role="group" aria-label="Quick filters">
         {quickFilters.map((chip) => (
