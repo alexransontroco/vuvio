@@ -318,18 +318,7 @@ export default function LiveMap({
         },
       });
 
-      map.addLayer({
-        id: 'vuvio-cluster-glow',
-        type: 'circle',
-        source: 'vuvio-lives',
-        filter: ['has', 'point_count'],
-        paint: {
-          'circle-color': clusterColor,
-          'circle-radius': ['step', ['get', 'point_count'], 30, 3, 40, 6, 52],
-          'circle-blur': 0.95,
-          'circle-opacity': 0.16,
-        },
-      });
+      // Cluster glow removed for performance
 
       map.addLayer({
         id: 'vuvio-cluster-count',
@@ -346,18 +335,7 @@ export default function LiveMap({
         },
       });
 
-      map.addLayer({
-        id: 'vuvio-live-pulse',
-        type: 'circle',
-        source: 'vuvio-lives',
-        filter: ['!', ['has', 'point_count']],
-        paint: {
-          'circle-color': categoryColor,
-          'circle-radius': livePulseRadius(0),
-          'circle-blur': 0.65,
-          'circle-opacity': livePulseOpacity(0),
-        },
-      });
+      // Live pulse removed for massive performance gain
 
       map.addLayer({
         id: 'vuvio-live-points',
@@ -369,26 +347,16 @@ export default function LiveMap({
           'circle-radius': [
             'case',
             ['==', ['get', 'id'], selectedId ?? ''],
-            9,
-            ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 5, 300, 6.5, 800, 8],
+            6,
+            5,
           ],
-          'circle-stroke-color': ['case', ['==', ['get', 'id'], selectedId ?? ''], '#F2F7F6', categoryColor],
-          'circle-stroke-width': ['case', ['==', ['get', 'id'], selectedId ?? ''], 3, 6],
-          'circle-opacity': 0.96,
+          'circle-stroke-color': ['case', ['==', ['get', 'id'], selectedId ?? ''], '#F2F7F6', 'rgba(242,247,246,0.1)'],
+          'circle-stroke-width': ['case', ['==', ['get', 'id'], selectedId ?? ''], 2, 0.5],
+          'circle-opacity': 0.9,
         },
       });
 
-      map.addLayer({
-        id: 'vuvio-live-particles',
-        type: 'circle',
-        source: 'vuvio-particles',
-        paint: {
-          'circle-color': categoryColor,
-          'circle-radius': 2.2,
-          'circle-blur': 0.25,
-          'circle-opacity': 0.62,
-        },
-      });
+      // Particles removed for performance - not essential
 
       map.on('click', 'vuvio-live-points', (event) => {
         const feature = event.features?.[0];
@@ -448,29 +416,12 @@ export default function LiveMap({
     if (animationRef.current) cancelAnimationFrame(animationRef.current);
 
     let previousTime = performance.now();
-    let lastPaintTime = 0;
-    const PAINT_INTERVAL = 50; // 20fps for paint updates (not 60fps)
 
     const tick = (time) => {
       const delta = Math.min(80, time - previousTime);
       previousTime = time;
-      const pulseClock = (time % 2800) / 2800;
 
-      // Throttle paint updates to 20fps
-      if (time - lastPaintTime >= PAINT_INTERVAL) {
-        lastPaintTime = time;
-
-        if (map.getLayer('vuvio-live-pulse')) {
-          map.setPaintProperty('vuvio-live-pulse', 'circle-radius', livePulseRadius(pulseClock));
-          map.setPaintProperty('vuvio-live-pulse', 'circle-opacity', livePulseOpacity(pulseClock));
-        }
-
-        if (map.getLayer('vuvio-live-points')) {
-          map.setPaintProperty('vuvio-live-points', 'circle-radius', livePointRadius(pulseClock, selectedId ?? ''));
-        }
-      }
-
-      // Auto-rotation runs cheaper (every tick but optimized)
+      // Only auto-rotation, no paint updates needed
       if (Date.now() > pauseUntilRef.current && !selectedId) {
         const center = map.getCenter();
         map.jumpTo({
@@ -498,14 +449,8 @@ export default function LiveMap({
   useEffect(() => {
     const map = mapRef.current;
     if (!map?.getLayer('vuvio-live-points')) return;
-    map.setPaintProperty('vuvio-live-points', 'circle-radius', ['case', ['==', ['get', 'id'], selectedId ?? ''], 9, 7]);
-    map.setPaintProperty('vuvio-live-points', 'circle-stroke-color', [
-      'case',
-      ['==', ['get', 'id'], selectedId ?? ''],
-      '#F2F7F6',
-      categoryColor,
-    ]);
-    map.setPaintProperty('vuvio-live-points', 'circle-stroke-width', ['case', ['==', ['get', 'id'], selectedId ?? ''], 3, 6]);
+    map.setPaintProperty('vuvio-live-points', 'circle-radius', ['case', ['==', ['get', 'id'], selectedId ?? ''], 6, 5]);
+    map.setPaintProperty('vuvio-live-points', 'circle-stroke-width', ['case', ['==', ['get', 'id'], selectedId ?? ''], 2, 0.5]);
   }, [selectedId]);
 
   useEffect(() => {

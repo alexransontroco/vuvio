@@ -139,6 +139,7 @@ export default function DiscoverFeedPage() {
   const screenRef = useRef(null);
   const swipeProgressRef = useRef(0);
   const isDraggingRef = useRef(false);
+  const lastClickRef = useRef({ time: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
   const [swipeDir, setSwipeDir] = useState(1);
 
@@ -208,6 +209,39 @@ export default function DiscoverFeedPage() {
 
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
+  }, [commentsOpen, feed.length]);
+
+  useEffect(() => {
+    const screenEl = screenRef.current;
+    if (!screenEl) return;
+
+    const onClick = (event) => {
+      if (shouldIgnoreSwipeTarget(event.target)) return;
+      if (event.pointerType === 'touch') return;
+
+      const now = Date.now();
+      const clickY = event.clientY;
+      const isDoubleClick = now - lastClickRef.current.time < 300;
+      const topThreshold = window.innerHeight * 0.2;
+      const bottomThreshold = window.innerHeight * 0.8;
+
+      if (isDoubleClick) {
+        const isTopArea = clickY < topThreshold;
+        const isBottomArea = clickY > bottomThreshold;
+        if (isTopArea) {
+          event.preventDefault();
+          tryGoTo(-1);
+        } else if (isBottomArea) {
+          event.preventDefault();
+          tryGoTo(1);
+        }
+      }
+
+      lastClickRef.current = { time: now, y: clickY };
+    };
+
+    screenEl.addEventListener('click', onClick, { capture: true });
+    return () => screenEl.removeEventListener('click', onClick, { capture: true });
   }, [commentsOpen, feed.length]);
 
   const shouldIgnoreSwipeTarget = (target) => Boolean(target?.closest?.(
