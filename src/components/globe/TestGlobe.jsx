@@ -125,8 +125,8 @@ function livePointRadius(clock, selectedId = '') {
   return [
     'case',
     ['==', ['get', 'id'], selectedId],
-    ['+', 3.8, ['*', wave, 0.3]],
-    ['+', ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 2.0, 300, 2.6, 800, 3.2], ['*', wave, 0.25]],
+    ['+', 4.8, ['*', wave, 0.35]],
+    ['+', ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 2.8, 300, 3.4, 800, 4.2], ['*', wave, 0.3]],
   ];
 }
 
@@ -405,7 +405,7 @@ export default function TestGlobe({ streams, mode = 'test' }) {
             'circle-color': '#F5A85B',
             'circle-radius': ['interpolate', ['linear'], ['get', 'intensity'], 0.12, 2.4, 1, 8.5],
             'circle-blur': 1,
-            'circle-opacity': ['interpolate', ['linear'], ['get', 'intensity'], 0.12, isActualMode ? 0.022 : 0.016, 1, isActualMode ? 0.095 : 0.075],
+            'circle-opacity': ['interpolate', ['linear'], ['get', 'intensity'], 0.12, isActualMode ? 0.04 : 0.032, 1, isActualMode ? 0.16 : 0.14],
           },
         });
 
@@ -417,7 +417,7 @@ export default function TestGlobe({ streams, mode = 'test' }) {
             'circle-color': '#E8B45B',
             'circle-radius': ['interpolate', ['linear'], ['get', 'intensity'], 0.12, 0.9, 1, 3.4],
             'circle-blur': 0.9,
-            'circle-opacity': ['interpolate', ['linear'], ['get', 'intensity'], 0.12, isActualMode ? 0.05 : 0.04, 1, isActualMode ? 0.20 : 0.16],
+            'circle-opacity': ['interpolate', ['linear'], ['get', 'intensity'], 0.12, isActualMode ? 0.08 : 0.07, 1, isActualMode ? 0.30 : 0.26],
           },
         });
 
@@ -434,7 +434,7 @@ export default function TestGlobe({ streams, mode = 'test' }) {
               ['interpolate', ['linear'], ['get', 'intensity'], 0.12, 0.18, 1, 0.42],
             ],
             'circle-blur': 0.2,
-            'circle-opacity': ['interpolate', ['linear'], ['get', 'intensity'], 0.12, isActualMode ? 0.12 : 0.1, 1, isActualMode ? 0.56 : 0.46],
+            'circle-opacity': ['interpolate', ['linear'], ['get', 'intensity'], 0.12, isActualMode ? 0.18 : 0.16, 1, isActualMode ? 0.72 : 0.62],
           },
         });
 
