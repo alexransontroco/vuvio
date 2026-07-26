@@ -5,6 +5,7 @@ import {
   EquipmentItemRow,
   EquipmentManageActions,
 } from '../components/equipment/EquipmentKit.jsx';
+import { GearImageUploader } from '../components/gear/index.js';
 import { EQUIPMENT_CATEGORIES, EQUIPMENT_OWNERSHIP } from '../data/equipmentModel.js';
 import {
   addEquipmentItem,
@@ -59,10 +60,14 @@ function EquipmentForm({ value, onChange, onSave, onCancel, submitLabel = 'Save 
         Affiliate link
         <input value={value.affiliateUrl} onChange={(event) => onChange({ ...value, affiliateUrl: event.target.value })} placeholder="https://" />
       </label>
-      <label>
-        Image
-        <input value={value.imageUrl} onChange={(event) => onChange({ ...value, imageUrl: event.target.value })} placeholder="Optional image URL" />
-      </label>
+      <GearImageUploader
+        imageUrl={value.imageUrl}
+        category={value.category}
+        displayName={`${value.brand} ${value.model}`.trim() || 'Equipment'}
+        onImageChange={(imageData) => onChange({ ...value, ...imageData })}
+        onRemoveImage={() => onChange({ ...value, imageUrl: null, imageSource: null, imageStatus: null })}
+        showLabel
+      />
       <label>
         Ownership status
         <select value={value.ownership} onChange={(event) => onChange({ ...value, ownership: event.target.value })}>

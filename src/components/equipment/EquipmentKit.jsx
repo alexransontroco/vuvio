@@ -61,10 +61,22 @@ export function EquipmentCategoryCard({ category, count, onClick }) {
 }
 
 export function EquipmentItemRow({ item, selectable = false, selected = false, onToggle, onOpen, actions, compact = false }) {
+  const { GearThumbnail } = require('../gear/index.js');
+
   const content = (
     <>
       <span className="equipment-item-row__icon">
-        <EquipmentIcon category={item.category} />
+        {item.imageUrl ? (
+          <GearThumbnail
+            imageUrl={item.imageUrl}
+            category={item.category}
+            displayName={equipmentLabel(item)}
+            size="sm"
+            rounded
+          />
+        ) : (
+          <EquipmentIcon category={item.category} />
+        )}
       </span>
       <span className="equipment-item-row__copy">
         <strong>{equipmentLabel(item)}</strong>
