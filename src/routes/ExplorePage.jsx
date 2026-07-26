@@ -1,427 +1,663 @@
-import { Eye, Heart, MapPin, MessageCircle, Plus, Send, SlidersHorizontal, X } from 'lucide-react';
-import { useEffect, useMemo, useRef, useState } from 'react';
-import { useTranslation } from 'react-i18next';
-import { useSearchParams } from 'react-router-dom';
-import CreatorLink from '../components/CreatorLink.jsx';
+import {
+  Bell,
+  Briefcase,
+  ChevronRight,
+  Eye,
+  Globe,
+  Hammer,
+  Home,
+  Leaf,
+  MapPin,
+  MessageCircle,
+  Mountain,
+  Music,
+  Palette,
+  Search,
+  SlidersHorizontal,
+  Smartphone,
+  Truck,
+  UtensilsCrossed,
+  X,
+  Zap,
+} from 'lucide-react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import LiveBadge from '../components/LiveBadge.jsx';
-import SegmentedControl from '../components/SegmentedControl.jsx';
-import { streams } from '../data/mockStreams.js';
+import { streams, upcomingStreams } from '../data/mockStreams.js';
+import { getUnreadConversationCount, subscribeToMessaging } from '../services/messagingService.js';
 
-const discoverModes = [
-  { labelKey: 'explore.modes.forYou', value: 'for-you' },
-  { labelKey: 'explore.modes.random', value: 'random' },
+const quickFilters = [
+  { id: 'for-you', label: 'For you' },
+  { id: 'nearby', label: 'Nearby' },
+  { id: 'jobs', label: 'Jobs' },
+  { id: 'sports', label: 'Sports' },
+  { id: 'crafts', label: 'Crafts' },
+  { id: 'city-tours', label: 'City Tours' },
+  { id: 'travel', label: 'Travel' },
+  { id: 'nature', label: 'Nature' },
+  { id: 'music', label: 'Music' },
 ];
 
-const discoverFilters = [
-  'explore.filtersList.cityTours',
-  'explore.filtersList.air',
-  'explore.filtersList.land',
-  'explore.filtersList.water',
-  'explore.filtersList.urban',
-  'explore.filtersList.live',
-  'explore.filtersList.replays',
+const categoryTiles = [
+  { id: 'jobs', label: 'Jobs', desc: 'Discover real workdays', icon: Briefcase, accent: 'var(--vuvio-cyan)' },
+  { id: 'sports', label: 'Sports', desc: 'Move, ride and explore', icon: Zap, accent: 'var(--vuvio-blue)' },
+  { id: 'crafts', label: 'Crafts', desc: 'Watch people make', icon: Hammer, accent: 'var(--vuvio-orange)' },
+  { id: 'nature', label: 'Nature', desc: 'See the world outside', icon: Leaf, accent: '#4cd97b' },
+  { id: 'food', label: 'Food & Drink', desc: 'Taste the world live', icon: UtensilsCrossed, accent: 'var(--vuvio-orange)' },
+  { id: 'transport', label: 'Transport', desc: 'On board, on the move', icon: Truck, accent: 'var(--vuvio-blue)' },
+  { id: 'travel', label: 'Travel', desc: 'Explore from anywhere', icon: Globe, accent: 'var(--vuvio-cyan)' },
+  { id: 'city-tours', label: 'City Tours', desc: 'Walk the world live', icon: MapPin, accent: 'var(--vuvio-cyan)' },
+  { id: 'music', label: 'Music', desc: 'Live sound from the world', icon: Music, accent: 'var(--vuvio-orange)' },
 ];
-const swipeHintStorageKey = 'vuvio-discover-swipe-hint-seen';
-const swipeThreshold = 48;
-const wheelThreshold = 80;
-const swipeLockMs = 520;
-const devOnlyVideo = (src) => (import.meta.env.DEV ? src : null);
-const highResolutionDiscoverMedia = {
-  air: {
-    src: devOnlyVideo('/assets/videos/20667540-uhd_2160_3840_60fps.mp4'),
-    poster: '/assets/videos/20667540-uhd_2160_3840_60fps-cover.jpg',
-  },
-  sky: {
-    src: devOnlyVideo('/assets/videos/20667540-uhd_2160_3840_60fps.mp4'),
-    poster: '/assets/videos/20667540-uhd_2160_3840_60fps-cover.jpg',
-  },
-  earth: {
-    src: devOnlyVideo('/assets/videos/16232606_2160_3840_30fps.mp4'),
-    poster: '/assets/videos/16232606_2160_3840_30fps-cover.jpg',
-  },
-  nature: {
-    src: devOnlyVideo('/assets/videos/16232606_2160_3840_30fps.mp4'),
-    poster: '/assets/videos/16232606_2160_3840_30fps-cover.jpg',
-  },
-  sport: {
-    src: devOnlyVideo('/assets/videos/16232606_2160_3840_30fps.mp4'),
-    poster: '/assets/videos/16232606_2160_3840_30fps-cover.jpg',
-  },
-  travel: {
-    src: devOnlyVideo('/assets/videos/16232606_2160_3840_30fps.mp4'),
-    poster: '/assets/videos/16232606_2160_3840_30fps-cover.jpg',
-  },
-  water: {
-    src: devOnlyVideo('/assets/videos/16352747_1080_1920_30fps.mp4'),
-    poster: '/assets/videos/16352747_1080_1920_30fps-cover.jpg',
-  },
-  fallback: {
-    src: devOnlyVideo('/assets/videos/8678453-hd_1080_1920_30fps.mp4'),
-    poster: '/assets/videos/8678453-hd_1080_1920_30fps-cover.jpg',
-  },
+
+const chipCategories = {
+  jobs: ['City', 'Craft', 'Cuisine'],
+  sports: ['Sport', 'Nature', 'Sky', 'Water'],
+  crafts: ['Craft', 'Cuisine'],
+  'city-tours': ['City Tours'],
+  travel: ['Travel', 'City Tours'],
+  nature: ['Nature', 'Water'],
+  music: [],
 };
+
+const envFilters = [
+  { id: 'air', label: 'Air', family: 'air' },
+  { id: 'earth', label: 'Land', family: 'earth' },
+  { id: 'water', label: 'Water', family: 'water' },
+];
+
+const themeOptions = [
+  { id: 'food', label: 'Food', icon: UtensilsCrossed },
+  { id: 'adventure', label: 'Adventure', icon: Mountain },
+  { id: 'transport', label: 'Transport', icon: Truck },
+  { id: 'nature', label: 'Nature', icon: Leaf },
+  { id: 'art', label: 'Art', icon: Palette },
+  { id: 'music', label: 'Music', icon: Music },
+  { id: 'daily', label: 'Daily life', icon: Home },
+  { id: 'tech', label: 'Technology', icon: Smartphone },
+];
+
+const activityChips = [
+  'Fishing', 'Surfing', 'Cycling', 'Hiking', 'Skiing',
+  'Cooking', 'Architecture', 'Medicine', 'Pottery', 'Photography',
+  'Tour Guide', 'Farming', 'Carpentry', 'Welding', 'Sailing',
+];
+
+const equipmentOptions = ['GoPro', 'Drone', 'Bicycle', 'Smartphone', 'Boat', 'Motorbike'];
+
+const locationOptions = [
+  { id: 'nearby', label: 'Nearby' },
+  { id: 'city', label: 'City' },
+  { id: 'country', label: 'Country' },
+  { id: 'worldwide', label: 'Worldwide' },
+];
+
+const fallbackImage = '/icons/icon-512.png';
 
 function viewerCount(value) {
   return Number.parseInt(String(value ?? '').replace(/\D/g, ''), 10) || 0;
 }
 
-function formatViewers(value, language = 'en') {
+function formatViewers(value) {
   const count = viewerCount(value);
-  if (count >= 1000) return `${(count / 1000).toLocaleString(language, { maximumFractionDigits: 1 })} k`;
-  return count.toLocaleString(language);
+  if (count >= 1000) return `${(count / 1000).toFixed(1)}k`;
+  return String(count);
 }
 
-function discoverMediaFor(stream) {
-  if (stream?.playbackUrl || stream?.videoUrl || stream?.mediaUrl) {
-    return {
-      src: stream.playbackUrl ?? stream.videoUrl ?? stream.mediaUrl,
-      poster: stream.thumbnailUrl ?? stream.image ?? null,
-    };
-  }
-
-  if (stream?.video) {
-    return { src: devOnlyVideo(stream.video), poster: stream.image ?? null };
-  }
-
-  if (stream?.image) {
-    return { src: null, poster: stream.image };
-  }
-
-  const environment = stream?.environment ?? stream?.family;
-  const fallbackMedia = highResolutionDiscoverMedia[environment]
-    ?? highResolutionDiscoverMedia[String(stream?.category ?? '').toLowerCase()]
-    ?? highResolutionDiscoverMedia.fallback;
-
-  return {
-    ...fallbackMedia,
-    poster: fallbackMedia.poster ?? stream?.thumbnailUrl ?? stream?.image ?? null,
-  };
+function matchesSearch(stream, query) {
+  if (!query) return true;
+  const q = query.toLowerCase().trim();
+  return [
+    stream.name, stream.role, stream.note, stream.city,
+    stream.country, stream.category, stream.subcategory, stream.place,
+  ].some((field) => String(field ?? '').toLowerCase().includes(q));
 }
 
-function weightedDiscoverStreams(mode) {
-  if (mode === 'random') {
-    return [...streams]
-      .map((stream, index) => ({ stream, score: ((index * 37) % 11) + viewerCount(stream.viewerLabel) / 1000 }))
-      .sort((a, b) => b.score - a.score)
-      .map((item) => item.stream);
-  }
-
-  return [...streams].sort((a, b) => viewerCount(b.viewerLabel) - viewerCount(a.viewerLabel));
+function matchesChip(stream, chip) {
+  if (!chip || chip === 'for-you' || chip === 'nearby') return true;
+  const cats = chipCategories[chip];
+  if (!cats) return true;
+  if (cats.length === 0) return false;
+  return cats.includes(stream.category);
 }
 
-export default function ExplorePage() {
-  const { t, i18n } = useTranslation();
-  const [searchParams] = useSearchParams();
-  const requestedLiveId = searchParams.get('live');
-  const [mode, setMode] = useState('for-you');
-  const [index, setIndex] = useState(0);
-  const [liked, setLiked] = useState({});
-  const [following, setFollowing] = useState({});
-  const [followStatus, setFollowStatus] = useState({});
-  const [filtersOpen, setFiltersOpen] = useState(false);
-  const [commentsOpen, setCommentsOpen] = useState(false);
-  const [swipeAnimation, setSwipeAnimation] = useState('');
-  const [seenHint, setSeenHint] = useState(() => {
-    try {
-      return window.localStorage.getItem(swipeHintStorageKey) === 'true';
-    } catch {
-      return false;
-    }
-  });
-  const pointerStart = useRef(null);
-  const touchStart = useRef(null);
-  const wheelDelta = useRef(0);
-  const swipeLock = useRef(0);
-  const swipeAnimationTimer = useRef(null);
-  const screenRef = useRef(null);
+function matchesFilters(stream, filters) {
+  if (filters.env?.length && !filters.env.includes(stream.family)) return false;
+  return true;
+}
 
-  const feed = useMemo(() => weightedDiscoverStreams(mode), [mode]);
-  const current = feed[index] ?? feed[0] ?? null;
+function countActiveFilters(filters) {
+  return Object.values(filters).reduce((sum, arr) => {
+    if (Array.isArray(arr)) return sum + arr.length;
+    if (arr && arr !== 'both') return sum + 1;
+    return sum;
+  }, 0);
+}
 
-  useEffect(() => {
-    if (!requestedLiveId || !feed.length) return;
-    const requestedIndex = feed.findIndex((stream) => stream.id === requestedLiveId);
-    if (requestedIndex >= 0) setIndex(requestedIndex);
-  }, [feed, requestedLiveId]);
+function LiveNowCard({ stream, onOpen }) {
+  const title = stream.note ?? stream.role ?? stream.name;
+  const location = [stream.city, stream.country].filter(Boolean).join(', ');
 
-  const goTo = (direction) => {
-    if (!feed.length) return;
-    dismissHint();
-    setCommentsOpen(false);
-    setIndex((currentIndex) => {
-      const next = currentIndex + direction;
-      if (next < 0) return feed.length - 1;
-      if (next >= feed.length) return 0;
-      return next;
+  return (
+    <article className="ep-live-card" onClick={() => onOpen(stream.id)} role="button" tabIndex={0}>
+      <div className="ep-live-card__media">
+        <img
+          src={stream.image ?? fallbackImage}
+          alt={title}
+          loading="lazy"
+          onError={(e) => { e.currentTarget.src = fallbackImage; }}
+        />
+        <div className="ep-live-card__top">
+          <LiveBadge compact pulse />
+          <span className="ep-live-card__viewers">
+            <Eye size={10} strokeWidth={1.8} />
+            {formatViewers(stream.viewerLabel)}
+          </span>
+        </div>
+        <div className="ep-live-card__overlay">
+          <p className="ep-live-card__title">{title}</p>
+          {location ? (
+            <span className="ep-live-card__location">
+              <MapPin size={10} strokeWidth={1.8} />
+              {location}
+            </span>
+          ) : null}
+        </div>
+      </div>
+    </article>
+  );
+}
+
+function NearbyCard({ stream, onOpen }) {
+  const title = stream.note ?? stream.role ?? stream.name;
+  const location = stream.city ?? stream.place ?? '';
+
+  return (
+    <article className="ep-nearby-card" onClick={() => onOpen(stream.id)} role="button" tabIndex={0}>
+      <div className="ep-nearby-card__media">
+        <img
+          src={stream.image ?? fallbackImage}
+          alt={title}
+          loading="lazy"
+          onError={(e) => { e.currentTarget.src = fallbackImage; }}
+        />
+        <LiveBadge compact />
+      </div>
+      <div className="ep-nearby-card__info">
+        <p className="ep-nearby-card__title">{title}</p>
+        <span className="ep-nearby-card__meta">
+          <MapPin size={10} strokeWidth={1.8} />
+          {location}
+        </span>
+        <span className="ep-nearby-card__viewers">
+          <Eye size={10} strokeWidth={1.8} />
+          {formatViewers(stream.viewerLabel)}
+        </span>
+        {stream.category ? <span className="ep-nearby-card__tag">{stream.category}</span> : null}
+      </div>
+    </article>
+  );
+}
+
+function UpcomingCard({ item }) {
+  const [hasReminder, setHasReminder] = useState(false);
+  const date = item.day === 'TODAY' ? `Today · ${item.time}` : `Tomorrow · ${item.time}`;
+
+  return (
+    <article className="ep-upcoming-card">
+      <div className="ep-upcoming-card__media">
+        <img
+          src={item.image ?? fallbackImage}
+          alt={item.title}
+          loading="lazy"
+          onError={(e) => { e.currentTarget.src = fallbackImage; }}
+        />
+        <span className="ep-upcoming-card__badge">Upcoming</span>
+      </div>
+      <div className="ep-upcoming-card__info">
+        <p className="ep-upcoming-card__title">{item.title}</p>
+        <span className="ep-upcoming-card__time">{date}</span>
+        {item.locationLabel ? (
+          <span className="ep-upcoming-card__loc">
+            <MapPin size={10} strokeWidth={1.8} />
+            {item.locationLabel}
+          </span>
+        ) : null}
+        <button
+          type="button"
+          className={hasReminder ? 'ep-upcoming-card__notify is-set' : 'ep-upcoming-card__notify'}
+          onClick={(e) => { e.stopPropagation(); setHasReminder((v) => !v); }}
+          aria-label={hasReminder ? 'Reminder set' : 'Set reminder'}
+        >
+          {hasReminder ? 'Reminder on' : 'Remind me'}
+        </button>
+      </div>
+    </article>
+  );
+}
+
+function CategoryTile({ tile, onSelect }) {
+  const Icon = tile.icon;
+  return (
+    <button
+      type="button"
+      className="ep-category-tile"
+      style={{ '--tile-accent': tile.accent }}
+      onClick={() => onSelect(tile.id)}
+      aria-label={tile.label}
+    >
+      <span className="ep-category-tile__icon">
+        <Icon size={19} strokeWidth={1.6} />
+      </span>
+      <strong>{tile.label}</strong>
+      <span>{tile.desc}</span>
+    </button>
+  );
+}
+
+function ExploreSection({ title, onSeeAll, children }) {
+  return (
+    <section className="ep-section">
+      <header className="ep-section__header">
+        <h2>{title}</h2>
+        {onSeeAll ? (
+          <button type="button" className="ep-section__see-all" onClick={onSeeAll}>
+            See all
+            <ChevronRight size={14} strokeWidth={2.1} />
+          </button>
+        ) : null}
+      </header>
+      {children}
+    </section>
+  );
+}
+
+function FilterSheet({ onClose, filters, onApply, resultCount }) {
+  const [local, setLocal] = useState({ status: 'both', ...filters });
+  const [activitySearch, setActivitySearch] = useState('');
+
+  const toggle = (group, value) => {
+    setLocal((prev) => {
+      const current = prev[group] ?? [];
+      return {
+        ...prev,
+        [group]: current.includes(value) ? current.filter((v) => v !== value) : [...current, value],
+      };
     });
   };
 
-  const tryGoTo = (direction) => {
-    const now = Date.now();
-    if (commentsOpen || now < swipeLock.current) return;
-    swipeLock.current = now + swipeLockMs;
-    window.clearTimeout(swipeAnimationTimer.current);
-    setSwipeAnimation(direction > 0 ? 'next' : 'prev');
-    swipeAnimationTimer.current = window.setTimeout(() => setSwipeAnimation(''), 360);
-    goTo(direction);
+  const setRadio = (group, value) => {
+    setLocal((prev) => ({ ...prev, [group]: value }));
   };
 
-  const dismissHint = () => {
-    setSeenHint(true);
-    try {
-      window.localStorage.setItem(swipeHintStorageKey, 'true');
-    } catch {
-      // localStorage can be unavailable in private contexts.
-    }
-  };
-
-  useEffect(() => {
-    if (seenHint) return undefined;
-    const timer = window.setTimeout(dismissHint, 3000);
-    return () => window.clearTimeout(timer);
-  }, [seenHint]);
-
-  useEffect(() => {
-    return () => window.clearTimeout(swipeAnimationTimer.current);
-  }, []);
-
-  useEffect(() => {
-    const onKeyDown = (event) => {
-      if (commentsOpen) return;
-      if (event.key === 'ArrowDown' || event.key === 'PageDown' || event.key === ' ') {
-        event.preventDefault();
-        tryGoTo(1);
-      }
-      if (event.key === 'ArrowUp' || event.key === 'PageUp') {
-        event.preventDefault();
-        tryGoTo(-1);
-      }
-    };
-
-    window.addEventListener('keydown', onKeyDown);
-    return () => window.removeEventListener('keydown', onKeyDown);
-  }, [commentsOpen, feed.length]);
-
-  const shouldIgnoreSwipeTarget = (target) => Boolean(target?.closest?.(
-    '.discover-topbar, .discover-filter-row, .discover-bottom-bar, .discover-creator-row, .discover-comments, a, input, textarea, select'
-  ));
-
-  const onPointerDown = (event) => {
-    if (event.pointerType === 'touch') return;
-    if (shouldIgnoreSwipeTarget(event.target)) return;
-    pointerStart.current = { x: event.clientX, y: event.clientY, pointerId: event.pointerId };
-  };
-
-  const onPointerUp = (event) => {
-    if (event.pointerType === 'touch') return;
-    if (!pointerStart.current) return;
-    const deltaY = event.clientY - pointerStart.current.y;
-    const deltaX = event.clientX - pointerStart.current.x;
-    pointerStart.current = null;
-    if (Math.abs(deltaY) < swipeThreshold || Math.abs(deltaY) < Math.abs(deltaX) * 1.2) return;
-    tryGoTo(deltaY < 0 ? 1 : -1);
-  };
-
-  const onPointerCancel = () => {
-    pointerStart.current = null;
-  };
-
-  const onTouchStart = (event) => {
-    if (shouldIgnoreSwipeTarget(event.target)) return;
-    const touch = event.touches[0];
-    if (!touch) return;
-    touchStart.current = { x: touch.clientX, y: touch.clientY };
-  };
-
-  const onTouchEnd = (event) => {
-    if (!touchStart.current) return;
-    const touch = event.changedTouches[0];
-    if (!touch) return;
-    const deltaY = touch.clientY - touchStart.current.y;
-    const deltaX = touch.clientX - touchStart.current.x;
-    touchStart.current = null;
-    if (Math.abs(deltaY) < swipeThreshold || Math.abs(deltaY) < Math.abs(deltaX) * 1.2) return;
-    tryGoTo(deltaY < 0 ? 1 : -1);
-  };
-
-  const onWheel = (event) => {
-    if (shouldIgnoreSwipeTarget(event.target)) return;
-    if (commentsOpen || Math.abs(event.deltaY) < 4) return;
-    wheelDelta.current += event.deltaY;
-    if (Math.abs(wheelDelta.current) < wheelThreshold) return;
-    tryGoTo(wheelDelta.current > 0 ? 1 : -1);
-    wheelDelta.current = 0;
-  };
-
-  if (!current) {
-    return (
-      <section className="screen discover-screen discover-screen--empty">
-        <p>{t('explore.empty')}</p>
-      </section>
-    );
-  }
-
-  const title = current.note ?? current.role ?? t('explore.liveTitleFallback');
-  const creator = { ...current, status: 'live' };
-  const isFollowing = Boolean(following[current.name]);
-  const isFollowLoading = followStatus[current.name] === 'loading';
-  const isLiked = Boolean(liked[current.id]);
-  const media = discoverMediaFor(current);
-  const locationLabel = [current.city, current.country].filter(Boolean).join(', ');
-  const likeCount = formatViewers(Math.round(viewerCount(current.viewerLabel) * 3.1 + 420), i18n.language);
-
-  const toggleFollow = () => {
-    setFollowStatus((state) => ({ ...state, [current.name]: 'loading' }));
-    window.setTimeout(() => {
-      setFollowing((state) => ({ ...state, [current.name]: !state[current.name] }));
-      setFollowStatus((state) => ({ ...state, [current.name]: 'idle' }));
-    }, 220);
-  };
+  const filteredActivities = activitySearch.trim()
+    ? activityChips.filter((a) => a.toLowerCase().includes(activitySearch.toLowerCase()))
+    : activityChips;
 
   return (
-    <section
-      ref={screenRef}
-      className={`screen discover-screen${swipeAnimation ? ` is-swipe-${swipeAnimation}` : ''}`}
-      aria-label={t('explore.aria')}
-      tabIndex={0}
-      onPointerDown={onPointerDown}
-      onPointerUp={onPointerUp}
-      onPointerCancel={onPointerCancel}
-      onTouchStart={onTouchStart}
-      onTouchEnd={onTouchEnd}
-      onWheel={onWheel}
-    >
-      {media.src ? (
-        <video
-          key={media.src}
-          className="discover-media"
-          poster={media.poster}
-          autoPlay
-          muted
-          loop
-          playsInline
-          preload="metadata"
-          aria-label={t('explore.preview', { title })}
-        >
-          <source src={media.src} type="video/mp4" />
-        </video>
-      ) : (
-        <img
-          key={media.poster}
-          className="discover-media"
-          src={media.poster}
-          alt={title}
-          loading="eager"
-          decoding="async"
-        />
-      )}
-      <span className="discover-shade" />
-
-      <header className="discover-topbar">
-        <SegmentedControl items={discoverModes.map((item) => ({ ...item, label: t(item.labelKey) }))} value={mode} onChange={(next) => {
-          setMode(next);
-          setIndex(0);
-        }} className="discover-mode-control" />
-        <button type="button" onClick={() => setFiltersOpen((value) => !value)} aria-label={t('explore.filters')}>
-          <SlidersHorizontal size={18} strokeWidth={1.9} />
-        </button>
-      </header>
-
-      {filtersOpen ? (
-        <div className="discover-filter-row" role="group" aria-label={t('explore.filterGroup')}>
-          {discoverFilters.map((filter) => (
-            <button key={filter} type="button">{t(filter)}</button>
-          ))}
-        </div>
-      ) : null}
-
-      <div className="discover-top-meta">
-        <div className="discover-top-meta__left">
-          <LiveBadge compact />
-          <span className="discover-viewer-count">
-            <Eye size={11} strokeWidth={1.8} />
-            {formatViewers(current.viewerLabel, i18n.language)}
-          </span>
-        </div>
-        {locationLabel ? (
-          <span className="discover-location">
-            <MapPin size={12} strokeWidth={1.8} />
-            <span>{locationLabel}</span>
-          </span>
-        ) : null}
-      </div>
-
-      {current.isCityTour && current.currentLocation ? (
-        <div key={`pin-${current.id}`} className="discover-city-pin">
-          <MapPin size={11} strokeWidth={1.8} />
-          Currently {current.currentLocation}
-        </div>
-      ) : null}
-
-      <div className="discover-copy" key={current.id}>
-        <div className="discover-creator-row">
-          <CreatorLink creator={creator} stopPropagation />
-        </div>
-        <button type="button" className="discover-title" aria-label={title}>
-          {title}
-        </button>
-      </div>
-
-      <div className="discover-bottom-bar">
-        <button
-          type="button"
-          className={`discover-bar-btn${isLiked ? ' is-active' : ''}`}
-          onClick={() => setLiked((state) => ({ ...state, [current.id]: !state[current.id] }))}
-          aria-label={isLiked ? t('explore.favoriteRemove') : t('explore.favoriteAdd')}
-        >
-          <Heart size={21} strokeWidth={1.75} fill={isLiked ? 'currentColor' : 'none'} />
-          <span>{likeCount}</span>
-        </button>
-        <button type="button" className="discover-bar-btn" onClick={() => setCommentsOpen(true)} aria-label={t('explore.openComments')}>
-          <MessageCircle size={21} strokeWidth={1.75} />
-          <span>{current.chat?.length ?? 0}</span>
-        </button>
-        <button type="button" className="discover-bar-btn" aria-label={t('explore.sharePov')}>
-          <Send size={20} strokeWidth={1.75} />
-        </button>
-        <button
-          type="button"
-          className={`discover-bar-btn discover-bar-btn--plus${isFollowing ? ' is-following' : ''}`}
-          disabled={isFollowLoading}
-          onClick={toggleFollow}
-          aria-label={isFollowing ? t('common.following') : t('common.follow')}
-        >
-          <Plus size={22} strokeWidth={2.2} />
-        </button>
-      </div>
-
-      {!seenHint ? <p className="discover-swipe-hint">{t('explore.swipeHint')}</p> : null}
-
-      {commentsOpen ? (
-        <section className="discover-comments" role="dialog" aria-modal="true" aria-label={t('explore.commentsFor', { title })}>
+    <div className="ep-filter-sheet" role="dialog" aria-modal="true" aria-label="Filter live streams">
+      <button type="button" className="ep-filter-sheet__backdrop" onClick={onClose} aria-label="Close" />
+      <div className="ep-filter-sheet__panel">
+        <span className="ep-filter-sheet__handle" aria-hidden="true" />
+        <div className="ep-filter-sheet__titlerow">
+          <strong>Filter</strong>
           <button
             type="button"
-            className="discover-comments__backdrop"
-            onClick={() => setCommentsOpen(false)}
-            aria-label={t('explore.closeComments')}
-          />
-          <div className="discover-comments__panel">
-            <header>
-              <strong>{t('common.comments')}</strong>
-              <button type="button" onClick={() => setCommentsOpen(false)} aria-label={t('common.close')}>
-                <X size={18} strokeWidth={1.9} />
-              </button>
-            </header>
-            <div className="discover-comments__list">
-              {(current.chat?.length ? current.chat : [{ who: 'Vuvio', text: t('explore.noComments') }]).map((message, messageIndex) => (
-                <p key={`${message.who}-${messageIndex}`}>
-                  <strong>{message.who}</strong>
-                  {message.text}
-                </p>
+            className="ep-filter-sheet__reset"
+            onClick={() => setLocal({ status: 'both' })}
+          >
+            Reset
+          </button>
+        </div>
+
+        <div className="ep-filter-sheet__groups">
+
+          <div className="ep-filter-group">
+            <p>Status</p>
+            <div className="ep-filter-chips">
+              {['Live now', 'Upcoming', 'Both'].map((opt) => {
+                const val = opt === 'Live now' ? 'live' : opt === 'Upcoming' ? 'upcoming' : 'both';
+                return (
+                  <button
+                    key={val}
+                    type="button"
+                    className={(local.status ?? 'both') === val ? 'ep-filter-chip is-active' : 'ep-filter-chip'}
+                    onClick={() => setRadio('status', val)}
+                  >
+                    {opt}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          <div className="ep-filter-group">
+            <p>Theme</p>
+            <div className="ep-filter-theme-grid">
+              {themeOptions.map((opt) => {
+                const Icon = opt.icon;
+                const active = local.theme?.includes(opt.id);
+                return (
+                  <button
+                    key={opt.id}
+                    type="button"
+                    className={active ? 'ep-theme-tile is-active' : 'ep-theme-tile'}
+                    onClick={() => toggle('theme', opt.id)}
+                  >
+                    <span className="ep-theme-tile__icon">
+                      <Icon size={18} strokeWidth={1.6} />
+                    </span>
+                    <span>{opt.label}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          <div className="ep-filter-group">
+            <p>Activity or job</p>
+            <div className="ep-filter-search">
+              <Search size={13} strokeWidth={1.9} />
+              <input
+                type="search"
+                placeholder="Search activities..."
+                value={activitySearch}
+                onChange={(e) => setActivitySearch(e.target.value)}
+              />
+            </div>
+            <div className="ep-filter-chips ep-filter-chips--wrap" style={{ marginTop: '8px' }}>
+              {filteredActivities.map((act) => (
+                <button
+                  key={act}
+                  type="button"
+                  className={local.activity?.includes(act) ? 'ep-filter-chip is-active' : 'ep-filter-chip'}
+                  onClick={() => toggle('activity', act)}
+                >
+                  {act}
+                </button>
               ))}
             </div>
           </div>
-        </section>
+
+          <div className="ep-filter-group">
+            <p>Environment</p>
+            <div className="ep-filter-chips">
+              {envFilters.map((opt) => (
+                <button
+                  key={opt.id}
+                  type="button"
+                  className={local.env?.includes(opt.family) ? 'ep-filter-chip is-active' : 'ep-filter-chip'}
+                  onClick={() => toggle('env', opt.family)}
+                >
+                  {opt.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="ep-filter-group">
+            <p>Equipment</p>
+            <div className="ep-filter-chips ep-filter-chips--wrap">
+              {equipmentOptions.map((opt) => (
+                <button
+                  key={opt}
+                  type="button"
+                  className={local.equipment?.includes(opt) ? 'ep-filter-chip is-active' : 'ep-filter-chip'}
+                  onClick={() => toggle('equipment', opt)}
+                >
+                  {opt}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="ep-filter-group">
+            <p>Location</p>
+            <div className="ep-filter-chips">
+              {locationOptions.map((opt) => (
+                <button
+                  key={opt.id}
+                  type="button"
+                  className={local.location === opt.id ? 'ep-filter-chip is-active' : 'ep-filter-chip'}
+                  onClick={() => setRadio('location', local.location === opt.id ? null : opt.id)}
+                >
+                  {opt.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+        </div>
+
+        <button
+          type="button"
+          className="ep-filter-sheet__apply"
+          onClick={() => { onApply(local); onClose(); }}
+        >
+          Show {resultCount} perspective{resultCount !== 1 ? 's' : ''}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function ExploreEmptyState({ title, body, action, onAction }) {
+  return (
+    <div className="ep-empty">
+      <strong>{title}</strong>
+      {body ? <p>{body}</p> : null}
+      {action ? (
+        <button type="button" onClick={onAction}>{action}</button>
+      ) : null}
+    </div>
+  );
+}
+
+function ExploreHeader({ filterCount, onOpenFilter }) {
+  const [msgUnread, setMsgUnread] = useState(() => getUnreadConversationCount());
+
+  useEffect(() => subscribeToMessaging(() => setMsgUnread(getUnreadConversationCount())), []);
+
+  return (
+    <header className="ep-header">
+      <h1 className="ep-header__title">Explore</h1>
+      <div className="ep-header__actions">
+        <button type="button" className="ep-header__icon-btn" aria-label="Notifications">
+          <Bell size={20} strokeWidth={1.9} />
+        </button>
+        <Link to="/messages" className="ep-header__icon-btn ep-header__icon-btn--msg" aria-label="Messages">
+          <MessageCircle size={20} strokeWidth={1.9} />
+          {msgUnread > 0 ? (
+            <span className="ep-header__badge" aria-label={`${msgUnread} unread`}>
+              {msgUnread > 9 ? '9+' : msgUnread}
+            </span>
+          ) : null}
+        </Link>
+        <button
+          type="button"
+          className={filterCount ? 'ep-header__filter-btn has-active' : 'ep-header__filter-btn'}
+          onClick={onOpenFilter}
+          aria-label="Open filters"
+        >
+          <SlidersHorizontal size={17} strokeWidth={1.9} />
+          {filterCount ? <span className="ep-header__filter-dot" aria-hidden="true" /> : null}
+        </button>
+      </div>
+    </header>
+  );
+}
+
+export default function ExplorePage() {
+  const navigate = useNavigate();
+  const [search, setSearch] = useState('');
+  const [activeChip, setActiveChip] = useState('for-you');
+  const [filtersOpen, setFiltersOpen] = useState(false);
+  const [activeFilters, setActiveFilters] = useState({});
+  const searchInputRef = useRef(null);
+  const chipsRef = useRef(null);
+
+  const openStream = useCallback((id) => navigate(`/home?live=${encodeURIComponent(id)}`), [navigate]);
+
+  const filteredStreams = useMemo(() => {
+    return streams
+      .filter((s) => matchesSearch(s, search))
+      .filter((s) => matchesChip(s, activeChip))
+      .filter((s) => matchesFilters(s, activeFilters));
+  }, [search, activeChip, activeFilters]);
+
+  const liveNowStreams = useMemo(
+    () => [...filteredStreams].sort((a, b) => viewerCount(b.viewerLabel) - viewerCount(a.viewerLabel)).slice(0, 10),
+    [filteredStreams],
+  );
+
+  const nearbyStreams = useMemo(
+    () => [...filteredStreams].sort((a, b) => viewerCount(b.viewerLabel) - viewerCount(a.viewerLabel)).slice(0, 6),
+    [filteredStreams],
+  );
+
+  const upcomingItems = useMemo(() => upcomingStreams.slice(0, 6), []);
+  const hasSearch = search.trim().length > 0;
+  const filterCount = countActiveFilters(activeFilters);
+
+  const selectChip = (id) => {
+    setActiveChip(id);
+    chipsRef.current?.querySelector(`[data-chip="${id}"]`)?.scrollIntoView({ block: 'nearest', inline: 'center', behavior: 'smooth' });
+  };
+
+  const selectCategory = (id) => {
+    selectChip(id);
+    searchInputRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
+
+  useEffect(() => {
+    const chip = chipsRef.current?.querySelector('[data-chip="for-you"]');
+    chip?.scrollIntoView({ block: 'nearest', inline: 'start', behavior: 'instant' });
+  }, []);
+
+  return (
+    <section className="screen-scroll ep-screen" aria-label="Explore">
+
+      <ExploreHeader filterCount={filterCount} onOpenFilter={() => setFiltersOpen(true)} />
+
+      <div className="ep-search-wrap">
+        <div className="ep-search">
+          <Search size={15} strokeWidth={1.9} className="ep-search__icon" />
+          <input
+            ref={searchInputRef}
+            type="search"
+            className="ep-search__input"
+            placeholder="Search activities, jobs, places or gear"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            aria-label="Search live streams"
+          />
+          {hasSearch ? (
+            <button
+              type="button"
+              className="ep-search__clear"
+              onClick={() => setSearch('')}
+              aria-label="Clear search"
+            >
+              <X size={14} strokeWidth={2} />
+            </button>
+          ) : null}
+        </div>
+      </div>
+
+      <div ref={chipsRef} className="ep-chips" role="group" aria-label="Quick filters">
+        {quickFilters.map((chip) => (
+          <button
+            key={chip.id}
+            type="button"
+            data-chip={chip.id}
+            className={activeChip === chip.id ? 'ep-chip is-active' : 'ep-chip'}
+            onClick={() => selectChip(chip.id)}
+            aria-pressed={activeChip === chip.id}
+          >
+            {chip.label}
+          </button>
+        ))}
+      </div>
+
+      {hasSearch ? (
+        <div className="ep-search-results">
+          {filteredStreams.length ? (
+            <>
+              <p className="ep-results-count">{filteredStreams.length} perspectives</p>
+              <div className="ep-results-grid">
+                {filteredStreams.map((stream) => (
+                  <LiveNowCard key={stream.id} stream={stream} onOpen={openStream} />
+                ))}
+              </div>
+            </>
+          ) : (
+            <ExploreEmptyState
+              title="No live perspectives found"
+              body="Try another activity, place or filter."
+              action="Reset search"
+              onAction={() => setSearch('')}
+            />
+          )}
+        </div>
+      ) : (
+        <>
+          <ExploreSection title="Live now" onSeeAll={() => navigate('/explore/live')}>
+            {liveNowStreams.length ? (
+              <div className="ep-live-row">
+                {liveNowStreams.map((stream) => (
+                  <LiveNowCard key={stream.id} stream={stream} onOpen={openStream} />
+                ))}
+              </div>
+            ) : (
+              <ExploreEmptyState
+                title="No live streams right now"
+                body="Explore upcoming perspectives or try another category."
+              />
+            )}
+          </ExploreSection>
+
+          <ExploreSection title="Live nearby" onSeeAll={() => navigate('/explore/live')}>
+            {nearbyStreams.length ? (
+              <div className="ep-nearby-row">
+                {nearbyStreams.map((stream) => (
+                  <NearbyCard key={stream.id} stream={stream} onOpen={openStream} />
+                ))}
+              </div>
+            ) : (
+              <ExploreEmptyState
+                title="Nothing live nearby yet"
+                body="Try expanding your location or browse worldwide."
+              />
+            )}
+          </ExploreSection>
+
+          {upcomingItems.length ? (
+            <ExploreSection title="Upcoming">
+              <div className="ep-upcoming-row">
+                {upcomingItems.map((item) => (
+                  <UpcomingCard key={item.id} item={item} />
+                ))}
+              </div>
+            </ExploreSection>
+          ) : null}
+
+          <ExploreSection title="Browse by category">
+            <div className="ep-category-grid">
+              {categoryTiles.map((tile) => (
+                <CategoryTile key={tile.id} tile={tile} onSelect={selectCategory} />
+              ))}
+            </div>
+          </ExploreSection>
+        </>
+      )}
+
+      {filtersOpen ? (
+        <FilterSheet
+          onClose={() => setFiltersOpen(false)}
+          filters={activeFilters}
+          onApply={setActiveFilters}
+          resultCount={filteredStreams.length}
+        />
       ) : null}
     </section>
   );

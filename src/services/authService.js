@@ -64,12 +64,21 @@ export function validateUsername(raw) {
 /* ─── Firestore user document ─────────────────────────────────── */
 
 export async function createUserProfileIfMissing(firebaseUser, extra = {}) {
-  const ref = doc(db, 'users', firebaseUser.uid);
+  const uid = firebaseUser.uid;
+  console.count('[authService] createUserProfileIfMissing called');
+  console.time('[authService] check if profile exists');
+
+  const ref = doc(db, 'users', uid);
   const snap = await getDoc(ref);
+  console.timeEnd('[authService] check if profile exists');
+
   if (snap.exists()) {
+    console.log('[authService] profile exists, updating lastLoginAt');
     await updateDoc(ref, { lastLoginAt: serverTimestamp() });
     return snap.data();
   }
+
+  console.log('[authService] profile missing, creating new');
 
   const displayName = extra.displayName || firebaseUser.displayName || '';
   const profile = {
@@ -100,12 +109,22 @@ export async function createUserProfileIfMissing(firebaseUser, extra = {}) {
     lastLoginAt:        serverTimestamp(),
   };
 
-  await setDoc(ref, profile);
+  try {
+    console.time('[authService] setDoc creating profile');
+    await setDoc(ref, profile);
+    console.timeEnd('[authService] setDoc creating profile');
+    console.log('[authService] profile created successfully');
+  } catch (err) {
+    console.error('[authService] setDoc failed:', err.code, err.message);
+    throw err;
+  }
   return profile;
 }
 
 export async function getUserProfile(uid) {
+  console.time(`[authService] getDoc users/${uid.slice(0, 8)}`);
   const snap = await getDoc(doc(db, 'users', uid));
+  console.timeEnd(`[authService] getDoc users/${uid.slice(0, 8)}`);
   return snap.exists() ? { id: snap.id, ...snap.data() } : null;
 }
 

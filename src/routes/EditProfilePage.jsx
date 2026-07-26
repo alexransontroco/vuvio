@@ -1,7 +1,8 @@
 import { Camera, ChevronLeft, X } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { getOwnCreatorProfile, readImageFile, saveOwnCreatorProfile } from '../services/profileService.js';
+import { readImageFile, saveOwnCreatorProfile } from '../services/profileService.js';
+import { useAuth } from '../context/AuthContext.jsx';
 
 const languageOptions = ['French', 'English', 'Spanish', 'Italian', 'German', 'Portuguese', 'Arabic', 'Japanese', 'Other'];
 const categoryOptions = ['Craft', 'Cooking', 'Agriculture', 'Sport', 'Transport', 'Music', 'Nature', 'Science', 'Education', 'Construction', 'Creation', 'Other'];
@@ -59,8 +60,8 @@ function ProfileImagesEditor({ form, onImageChange, onError }) {
 
   return (
     <section className="edit-image-editor" aria-label="Profile images">
-      <div className="edit-image-editor__cover">
-        <img src={form.coverUrl || '/assets/bread.jpg'} alt="Cover preview" />
+      <div className="edit-image-editor__cover" style={!form.coverUrl ? { background: 'linear-gradient(135deg, #0f1419 0%, #1a2332 100%)' } : undefined}>
+        {form.coverUrl ? <img src={form.coverUrl} alt="Cover preview" /> : null}
         <button type="button" onClick={() => coverInputRef.current?.click()}>
           <Camera size={15} strokeWidth={1.9} />
           Edit cover
@@ -171,14 +172,40 @@ function isValidInstagram(value) {
 }
 
 export default function EditProfilePage() {
+  console.count('[EditProfilePage] render');
   const navigate = useNavigate();
-  const initialProfile = useMemo(() => buildForm(getOwnCreatorProfile()), []);
-  const initialSnapshot = useMemo(() => JSON.stringify(initialProfile), [initialProfile]);
-  const [form, setForm] = useState(initialProfile);
+  const { user, userProfile, profileLoading } = useAuth();
+
+  console.log('[EditProfilePage] state:', {
+    profileLoading,
+    profileLoaded: !!userProfile,
+    userUid: user?.uid.slice(0, 8),
+  });
+
+  const [form, setForm] = useState(() => buildForm({}));
+  const [initialSnapshot, setInitialSnapshot] = useState('');
+  const [hasInitialized, setHasInitialized] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const [toast, setToast] = useState('');
   const [imageError, setImageError] = useState('');
   const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    if (!profileLoading && userProfile && !hasInitialized && user?.uid === userProfile.uid) {
+      console.log('[EditProfilePage] initializing form from profile');
+      const built = buildForm(userProfile);
+      setForm(built);
+      setInitialSnapshot(JSON.stringify(built));
+      setHasInitialized(true);
+    }
+  }, [profileLoading, userProfile, hasInitialized, user?.uid]);
+
+  useEffect(() => {
+    console.log('[EditProfilePage] UID changed, resetting form');
+    setHasInitialized(false);
+    setForm(buildForm({}));
+    setInitialSnapshot('');
+  }, [user?.uid]);
 
   const update = (field, value) => {
     setForm((current) => ({ ...current, [field]: value }));
@@ -233,6 +260,17 @@ export default function EditProfilePage() {
     setToast('Profile updated');
     window.setTimeout(() => navigate('/profile'), 450);
   };
+
+  if (profileLoading) {
+    return (
+      <section className="screen-scroll edit-profile-screen" aria-label="Edit my profile">
+        <EditProfileHeader canSave={false} saving={true} onBack={() => navigate('/profile')} onSave={() => {}} />
+        <div style={{ padding: '16px', textAlign: 'center', color: 'rgba(255,255,255,0.5)' }}>
+          Loading profile…
+        </div>
+      </section>
+    );
+  }
 
   return (
     <section className="screen-scroll edit-profile-screen" aria-label="Edit my profile">

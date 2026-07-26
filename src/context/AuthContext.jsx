@@ -2,6 +2,7 @@ import { onAuthStateChanged } from 'firebase/auth';
 import { createContext, useCallback, useContext, useEffect, useState } from 'react';
 import { auth } from '../firebase.js';
 import {
+  createUserProfileIfMissing,
   getUserProfile,
   parseAuthError,
   sendPasswordReset,
@@ -15,32 +16,68 @@ import {
 const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {
-  const [user,        setUser]        = useState(null);
-  const [userProfile, setUserProfile] = useState(null);
-  const [loading,     setLoading]     = useState(true);
+  const [user,            setUser]            = useState(null);
+  const [userProfile,     setUserProfile]     = useState(null);
+  const [authLoading,     setAuthLoading]     = useState(true);
+  const [profileLoading,  setProfileLoading]  = useState(false);
+  const [currentUid,      setCurrentUid]      = useState(null);
 
   const loadProfile = useCallback(async (firebaseUser) => {
-    if (!firebaseUser) { setUserProfile(null); return; }
-    try {
-      const profile = await getUserProfile(firebaseUser.uid);
-      setUserProfile(profile);
-    } catch {
+    if (!firebaseUser) {
       setUserProfile(null);
+      setCurrentUid(null);
+      setProfileLoading(false);
+      return;
+    }
+
+    const uid = firebaseUser.uid;
+    console.count('[Auth] loadProfile called');
+    console.time('[Auth] profile Firestore read');
+    setProfileLoading(true);
+    setCurrentUid(uid);
+
+    try {
+      let profile = await getUserProfile(uid);
+      console.timeEnd('[Auth] profile Firestore read');
+
+      if (!profile) {
+        console.log('[Auth] profile missing, creating via AuthContext');
+        await createUserProfileIfMissing(firebaseUser);
+        profile = await getUserProfile(uid);
+      }
+
+      console.log('[Auth] profile loaded for', uid.slice(0, 8), profile ? 'exists' : 'null');
+      setUserProfile(profile);
+    } catch (err) {
+      console.timeEnd('[Auth] profile Firestore read');
+      console.error('[Auth] profile load error:', err.code || err.message);
+      setUserProfile(null);
+    } finally {
+      setProfileLoading(false);
     }
   }, []);
 
   useEffect(() => {
+    console.count('[Auth] onAuthStateChanged setup');
+    let startTime = performance.now();
+
     let unsubscribe = () => {};
     try {
       unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+        console.count('[Auth] onAuthStateChanged callback');
+        console.log('[Auth] auth state changed:', firebaseUser ? firebaseUser.uid.slice(0, 8) : 'null');
         setUser(firebaseUser);
         await loadProfile(firebaseUser);
-        setLoading(false);
-      }, () => {
-        setLoading(false);
+        setAuthLoading(false);
+        const elapsed = performance.now() - startTime;
+        console.log(`[Auth] restore session: ${elapsed.toFixed(2)}ms`);
+      }, (err) => {
+        console.error('[Auth] onAuthStateChanged error:', err);
+        setAuthLoading(false);
       });
-    } catch {
-      setLoading(false);
+    } catch (err) {
+      console.error('[Auth] onAuthStateChanged setup error:', err);
+      setAuthLoading(false);
     }
     return unsubscribe;
   }, [loadProfile]);
@@ -104,7 +141,8 @@ export function AuthProvider({ children }) {
   const value = {
     user,
     userProfile,
-    loading,
+    authLoading,
+    profileLoading,
     isAuthenticated: Boolean(user),
     signUp,
     signIn,

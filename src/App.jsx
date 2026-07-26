@@ -6,8 +6,9 @@ import ProtectedRoute, { PublicOnlyRoute } from './components/ProtectedRoute.jsx
 
 const ConversationPage    = lazy(() => import('./routes/ConversationPage.jsx'));
 const HomePage            = lazy(() => import('./routes/HomePage.jsx'));
-const HomeDiscoverFeed    = lazy(() => import('./routes/HomePage.jsx').then((m) => ({ default: m.HomeDiscoverFeed })));
 const ExplorePage         = lazy(() => import('./routes/ExplorePage.jsx'));
+const AllLivesPage        = lazy(() => import('./routes/AllLivesPage.jsx'));
+const DiscoverFeedPage    = lazy(() => import('./routes/DiscoverFeedPage.jsx'));
 const EditProfilePage     = lazy(() => import('./routes/EditProfilePage.jsx'));
 const EquipmentManagePage = lazy(() => import('./routes/EquipmentManagePage.jsx'));
 const ForgotPasswordPage  = lazy(() => import('./routes/ForgotPasswordPage.jsx'));
@@ -103,8 +104,9 @@ export default function App() {
         <Route path="/discover" element={<Navigate to="/home" replace />} />
 
         {/* Public */}
-        <Route path="/home"    element={<Lazy component={HomePage} />} />
-        <Route path="/explore"  element={<Lazy component={HomeDiscoverFeed} />} />
+        <Route path="/home"         element={<Lazy component={HomePage} />} />
+        <Route path="/explore"      element={<Lazy component={ExplorePage} />} />
+        <Route path="/explore/live" element={<Lazy component={AllLivesPage} />} />
         <Route path="/globe"      element={<Suspense fallback={<RouteFallback />}><GlobeTestPage mode="actual" /></Suspense>} />
         <Route path="/map"        element={<Suspense fallback={<RouteFallback />}><GlobeTestPage mode="actual" /></Suspense>} />
         <Route path="/globe-lab"  element={<Lazy component={GlobeLabPage} />} />

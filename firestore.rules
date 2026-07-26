@@ -5,8 +5,8 @@ service cloud.firestore {
 
     // ── User profiles ──────────────────────────────
     match /users/{uid} {
-      // Anyone can read public profile data
-      allow read: if true;
+      // Authenticated users can read all profiles
+      allow read: if request.auth != null;
 
       // Only the owner can create their own document
       allow create: if request.auth != null

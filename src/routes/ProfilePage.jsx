@@ -25,11 +25,11 @@ import {
 import { EQUIPMENT_CATEGORIES, demoLiveEquipmentIds } from '../data/equipmentModel.js';
 import {
   getCreatorProfile,
-  getOwnCreatorProfile,
   readImageFile,
   saveOwnCreatorProfile,
 } from '../services/profileService.js';
 import { isFollowingCreator, setFollowingCreator } from '../services/followService.js';
+import { useAuth } from '../context/AuthContext.jsx';
 import {
   getEquipmentLibrary,
   getEquipmentSelection,
@@ -71,11 +71,11 @@ function ProfileState({ title, children }) {
 
 function ProfileCover({ profile, isOwnProfile, onShare, onEditCover }) {
   const navigate = useNavigate();
-  const coverUrl = profile.coverUrl || '/assets/bread.jpg';
+  const hasCover = Boolean(profile.coverUrl);
 
   return (
-    <header className="creator-cover">
-      <img src={coverUrl} alt="Creator profile cover" />
+    <header className="creator-cover" style={!hasCover ? { background: 'linear-gradient(135deg, #0f1419 0%, #1a2332 100%)' } : undefined}>
+      {hasCover ? <img src={profile.coverUrl} alt="Creator profile cover" /> : null}
       <div className="creator-cover__shade" />
       <div className="creator-cover__topbar">
         <button type="button" className="creator-icon-button" onClick={() => (isOwnProfile ? navigate('/discover') : navigate(-1))} aria-label="Back">
@@ -241,7 +241,7 @@ function ProfileStats({ profile }) {
 }
 
 function FeaturedLiveCard({ profile, isOwnProfile, notified, onJoin, onNotify, onManage }) {
-  const featured = profile.currentLive ?? profile.upcomingLives[0] ?? null;
+  const featured = profile.currentLive ?? (profile.upcomingLives?.[0]) ?? null;
 
   if (!featured) {
     if (!isOwnProfile) return null;
@@ -308,7 +308,7 @@ function ProfileTabs({ activeTab, onChange }) {
 }
 
 function FavoritesTab({ lives, onOpenLive }) {
-  if (!lives.length) {
+  if (!lives?.length) {
     return (
       <div className="profile-empty-state">
         <p>No saved favorite yet.</p>
@@ -383,7 +383,7 @@ function RecentLiveCard({ live, isOwnProfile, menuOpen, onOpen, onMenu }) {
 }
 
 function RecentLivesTab({ lives, isOwnProfile, openMenuId, onOpenLive, onMenu }) {
-  if (!lives.length) {
+  if (!lives?.length) {
     return (
       <div className="profile-empty-state">
         <p>No replay published yet.</p>
@@ -413,7 +413,7 @@ function LivesTab({ profile, isOwnProfile, notified, onJoin, onNotify, onManage 
     return (
       <div className="profile-empty-state">
         <p>{profile.displayName} is not live right now.</p>
-        {!isOwnProfile && profile.upcomingLives.length ? (
+        {!isOwnProfile && profile.upcomingLives?.length ? (
           <button type="button" onClick={onNotify}>
             Enable notifications
           </button>
@@ -464,7 +464,7 @@ function UpcomingLiveCard({ live, isOwnProfile, notified, onNotify, onManage }) 
 }
 
 function UpcomingLivesTab({ lives, isOwnProfile, notifiedIds, onNotify, onManage }) {
-  if (!lives.length) {
+  if (!lives?.length) {
     return (
       <div className="profile-empty-state">
         <p>{isOwnProfile ? 'No scheduled live.' : 'No upcoming live.'}</p>
@@ -499,13 +499,13 @@ function AboutTab({ profile }) {
         <span>Location</span>
         <strong>{profile.city}, {profile.country}</strong>
       </article>
-      {profile.languages.length ? (
+      {profile.languages?.length ? (
         <article>
           <span>Spoken languages</span>
           <strong>{profile.languages.join(' · ')}</strong>
         </article>
       ) : null}
-      {profile.categories.length ? (
+      {profile.categories?.length ? (
         <article>
           <span>Categories</span>
           <strong>{profile.categories.join(' · ')}</strong>
@@ -538,7 +538,7 @@ function EquipmentTab({ equipment, liveEquipment, isOwnProfile, onManage, onView
   const groups = groupEquipmentByCategory(publicEquipment);
   const selectedGroup = groups.find((group) => group.id === activeCategoryId);
 
-  if (!publicEquipment.length) {
+  if (!publicEquipment?.length) {
     return (
       <section className="equipment-tab">
         <div className="profile-empty-state">
@@ -638,11 +638,19 @@ function OwnProfileShortcuts() {
 }
 
 export default function ProfilePage() {
+  console.count('[ProfilePage] render');
   const navigate = useNavigate();
   const { creatorId } = useParams();
   const [searchParams] = useSearchParams();
+  const { user, userProfile, profileLoading } = useAuth();
   const toastTimer = useRef(null);
   const [state, setState] = useState({ loading: true, currentUser: null, viewedProfile: null });
+
+  console.log('[ProfilePage] viewing:', creatorId ? `creator ${creatorId}` : 'own profile', {
+    userLoaded: !!user,
+    profileLoaded: !!userProfile,
+    profileLoading,
+  });
   const [isFollowing, setIsFollowing] = useState(false);
   const [followStatus, setFollowStatus] = useState('idle');
   const [notificationsEnabled, setNotificationsEnabled] = useState(false);
@@ -655,13 +663,32 @@ export default function ProfilePage() {
 
   useEffect(() => {
     window.scrollTo({ top: 0, left: 0 });
-    const currentUser = getOwnCreatorProfile();
-    const viewedProfile = getCreatorProfile(creatorId);
-    setState({ loading: false, currentUser, viewedProfile });
-    setIsFollowing(Boolean(viewedProfile?.isFollowing || isFollowingCreator(viewedProfile?.id)));
-    setFollowStatus('idle');
-    setNotificationsEnabled(Boolean(viewedProfile?.notificationsEnabled));
-  }, [creatorId]);
+
+    // For own profile: use cached userProfile from AuthContext
+    if (!creatorId && user && userProfile) {
+      const viewedProfile = userProfile;
+      setState({ loading: false, currentUser: viewedProfile, viewedProfile });
+      setIsFollowing(Boolean(viewedProfile?.isFollowing || isFollowingCreator(viewedProfile?.id)));
+      setFollowStatus('idle');
+      setNotificationsEnabled(Boolean(viewedProfile?.notificationsEnabled));
+      return;
+    }
+
+    // For own profile while loading: show skeleton
+    if (!creatorId && profileLoading) {
+      setState({ loading: true, currentUser: null, viewedProfile: null });
+      return;
+    }
+
+    // For other creators' profiles
+    if (creatorId) {
+      const viewedProfile = getCreatorProfile(creatorId);
+      setState({ loading: false, currentUser: userProfile || null, viewedProfile });
+      setIsFollowing(Boolean(viewedProfile?.isFollowing || isFollowingCreator(viewedProfile?.id)));
+      setFollowStatus('idle');
+      setNotificationsEnabled(Boolean(viewedProfile?.notificationsEnabled));
+    }
+  }, [creatorId, user, userProfile, profileLoading]);
 
   useEffect(() => {
     if (searchParams.get('tab') === 'equipment') setActiveTab('equipment');
@@ -677,8 +704,9 @@ export default function ProfilePage() {
 
   const isOwnProfile = useMemo(() => {
     if (!state.currentUser || !state.viewedProfile) return false;
-    return state.currentUser.id === state.viewedProfile.id;
-  }, [state.currentUser, state.viewedProfile]);
+    if (user && state.viewedProfile.id === user.uid) return true;
+    return !creatorId || state.currentUser.id === state.viewedProfile.id;
+  }, [state.currentUser, state.viewedProfile, user, creatorId]);
 
   const notifyLive = (id) => {
     if (!id) return;
@@ -842,7 +870,7 @@ export default function ProfilePage() {
           onRemove={() => {
             setImageSheet((current) => ({
               ...current,
-              previewUrl: current.type === 'avatar' ? '/icons/icon-192.png' : '/assets/bread.jpg',
+              previewUrl: current.type === 'avatar' ? '/icons/icon-192.png' : null,
               error: '',
             }));
           }}

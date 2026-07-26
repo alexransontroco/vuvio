@@ -13,7 +13,14 @@ export default function ReplyDrawer({ open, conversation, onClose }) {
 
   return (
     <div className="live-recap-overlay" role="presentation" onMouseDown={onClose}>
-      <aside className="reply-drawer" role="dialog" aria-modal="true" aria-label="Reply to viewers" onMouseDown={(event) => event.stopPropagation()}>
+      <aside
+        className="reply-drawer"
+        role="dialog"
+        aria-modal="true"
+        aria-label="Reply to viewers"
+        onMouseDown={(e) => e.stopPropagation()}
+      >
+        <div className="reply-drawer__handle" aria-hidden="true" />
         <header>
           <div>
             <span className="live-recap-avatar live-recap-avatar--photo">{conversation.avatars[0]}</span>
@@ -22,7 +29,7 @@ export default function ReplyDrawer({ open, conversation, onClose }) {
               <h2>{conversation.label}</h2>
             </div>
           </div>
-          <button type="button" onClick={onClose} aria-label="Close reply drawer"><X size={20} /></button>
+          <button type="button" onClick={onClose} aria-label="Close"><X size={18} /></button>
         </header>
         <div className="reply-drawer__question">
           <time>{conversation.timestamp}</time>
@@ -33,13 +40,18 @@ export default function ReplyDrawer({ open, conversation, onClose }) {
           <span>Your reply</span>
           <textarea
             value={message}
-            onChange={(event) => setMessage(event.target.value)}
-            placeholder="Write one answer for the grouped discussion..."
-            rows={6}
+            onChange={(e) => setMessage(e.target.value)}
+            placeholder="Write one reply for everyone…"
+            rows={5}
           />
         </label>
-        <button type="button" className="reply-drawer__send" onClick={handleSend} disabled={!message.trim()}>
-          <Send size={17} />
+        <button
+          type="button"
+          className="reply-drawer__send"
+          onClick={handleSend}
+          disabled={!message.trim()}
+        >
+          <Send size={16} />
           Send reply
         </button>
       </aside>

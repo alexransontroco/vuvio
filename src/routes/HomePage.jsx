@@ -1160,8 +1160,9 @@ function CreatorLiveSession({ live }) {
 
   const endLive = () => {
     setConfirmEnd(false);
-    setPhase('ended');
-    window.setTimeout(() => setPhase('summary'), 900);
+    setPhase('ending');
+    window.setTimeout(() => setPhase('processing'), 1100);
+    window.setTimeout(() => navigate(`/live/${live.id}/recap`), 2900);
   };
 
   const stats = {
@@ -1173,64 +1174,27 @@ function CreatorLiveSession({ live }) {
     followers: Math.max(followers, 3),
   };
 
-  if (phase === 'ended') {
+  if (phase === 'ending') {
     return (
-      <section className="screen creator-live-ended">
-        <span className="creator-live-ended__mark"><Check size={42} strokeWidth={1.7} /></span>
-        <strong>Live ended</strong>
-        <p>Thanks for sharing your POV with the world.</p>
-      </section>
-    );
-  }
-
-  if (phase === 'summary') {
-    return (
-      <section className="screen creator-live-summary">
-        <div className="creator-live-summary__header">
-          <span><Star size={18} fill="currentColor" strokeWidth={1.7} /></span>
-          <h1>Nice live.</h1>
-          <p>{stats.duration}</p>
-        </div>
-        <div className="creator-live-summary__card">
-          <p><Eye size={18} strokeWidth={1.8} /><strong>{stats.viewers}</strong><span>Viewers</span></p>
-          <p><UsersRound size={18} strokeWidth={1.8} /><strong>{stats.peak}</strong><span>Peak viewers</span></p>
-          <p><Star size={18} fill="currentColor" strokeWidth={1.8} /><strong>{stats.stars}</strong><span>Stars</span></p>
-          <p><MessageCircle size={18} strokeWidth={1.8} /><strong>{stats.comments}</strong><span>Comments</span></p>
-          <p><UserPlus size={18} strokeWidth={1.8} /><strong>{stats.followers}</strong><span>New followers</span></p>
-        </div>
-        <div className="creator-live-summary__actions">
-          <button type="button" className="create-live-launch" onClick={() => setPhase('replay')}><Play size={16} fill="currentColor" />Watch Replay</button>
-          <button type="button"><Share2 size={16} strokeWidth={1.8} />Share</button>
-          <button type="button" onClick={() => navigate('/home')}>Done</button>
+      <section className="screen creator-live-ending">
+        <CreatorCameraSurface live={live} className="creator-live-ending__bg" />
+        <div className="creator-live-ending__overlay">
+          <span className="creator-live-ending__mark"><Check size={36} strokeWidth={1.7} /></span>
+          <strong>Live ended</strong>
         </div>
       </section>
     );
   }
 
-  if (phase === 'replay') {
+  if (phase === 'processing') {
     return (
-      <section className="screen creator-replay">
-        <header>
-          <button type="button" onClick={() => setPhase('summary')} aria-label="Back"><ChevronLeft size={20} strokeWidth={1.9} /></button>
-          <strong>Your live replay</strong>
-        </header>
-        <CreatorCameraSurface live={live} className="creator-replay__preview">
-          <button type="button" className="creator-replay__play" aria-label="Play replay"><Play size={28} fill="currentColor" strokeWidth={1.6} /></button>
-          <span>{stats.duration}</span>
-        </CreatorCameraSurface>
-        <div className="creator-replay__stats">
-          <p><strong>{stats.viewers}</strong><span>Viewers</span></p>
-          <p><strong>{stats.stars}</strong><span>Stars</span></p>
-          <p><strong>{stats.comments}</strong><span>Comments</span></p>
-          <p><strong>+{stats.followers}</strong><span>Followers</span></p>
+      <section className="screen creator-live-processing">
+        <CreatorCameraSurface live={live} className="creator-live-processing__bg" />
+        <div className="creator-live-processing__overlay">
+          <span className="creator-live-processing__spinner" aria-hidden="true" />
+          <strong>Preparing your recap…</strong>
+          <p>Collecting messages, highlights and audience activity.</p>
         </div>
-        <div className="creator-replay__list">
-          <button type="button"><MessageCircle size={17} strokeWidth={1.8} />Comments <span>{stats.comments}</span></button>
-          <button type="button"><Star size={17} strokeWidth={1.8} />Stars <span>{stats.stars}</span></button>
-          <button type="button"><Share2 size={17} strokeWidth={1.8} />Share Replay</button>
-          <button type="button" className="is-danger"><Trash2 size={17} strokeWidth={1.8} />Delete Replay</button>
-        </div>
-        <button type="button" className="create-live-launch" onClick={() => navigate('/home')}>Done</button>
       </section>
     );
   }
@@ -1285,13 +1249,13 @@ function CreatorLiveSession({ live }) {
         <button type="button" className="is-end" onClick={() => setConfirmEnd(true)}><Square size={16} fill="currentColor" strokeWidth={1.6} /><span>End Live</span></button>
       </div>
       {confirmEnd ? (
-        <div className="creator-end-sheet" role="dialog" aria-modal="true" aria-label="End Live?">
-          <button type="button" className="creator-end-sheet__backdrop" onClick={() => setConfirmEnd(false)} aria-label="Continue Live" />
+        <div className="creator-end-sheet" role="dialog" aria-modal="true" aria-label="End this live?">
+          <button type="button" className="creator-end-sheet__backdrop" onClick={() => setConfirmEnd(false)} aria-label="Cancel" />
           <section>
             <span><Flag size={22} strokeWidth={1.7} /></span>
-            <h2>End Live?</h2>
-            <p>Your live will stop immediately.</p>
-            <button type="button" onClick={() => setConfirmEnd(false)}>Continue Live</button>
+            <h2>End this live?</h2>
+            <p>Your stream will stop for everyone. You'll be able to review messages and highlights right after.</p>
+            <button type="button" onClick={() => setConfirmEnd(false)}>Cancel</button>
             <button type="button" className="is-danger" onClick={endLive}>End Live</button>
           </section>
         </div>

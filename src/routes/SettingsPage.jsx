@@ -20,6 +20,7 @@ import {
 import { useNavigate } from 'react-router-dom';
 import { getMessagePreferences, updateMessagePreferences } from '../services/messagingService.js';
 import { useState } from 'react';
+import { useAuth } from '../context/AuthContext.jsx';
 
 const settingGroups = [
   {
@@ -71,11 +72,6 @@ function confirmAccountDeletion() {
   return window.confirm('Delete your Vuvio account? This action will need to be confirmed again once Firebase Auth is connected.');
 }
 
-function handleSignOut() {
-  if (!confirmSignOut()) return;
-  // Firebase Auth is not wired here yet. Keep the side effect isolated for the future integration.
-}
-
 function handleDeleteAccount() {
   if (!confirmAccountDeletion()) return;
   // Firebase Auth is not wired here yet. Keep destructive account deletion isolated.
@@ -83,7 +79,14 @@ function handleDeleteAccount() {
 
 export default function SettingsPage() {
   const navigate = useNavigate();
+  const { logout } = useAuth();
   const [messagePreferences, setMessagePreferences] = useState(() => getMessagePreferences());
+
+  const handleSignOut = async () => {
+    if (!confirmSignOut()) return;
+    await logout();
+    navigate('/login', { replace: true });
+  };
 
   const handleItemClick = (item) => {
     if (item.to) {

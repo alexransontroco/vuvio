@@ -163,6 +163,58 @@ export function normalizeProfileForSave(profile) {
   });
 }
 
+const EMPTY_PROFILE_BASE = {
+  username: '',
+  displayName: '',
+  name: '',
+  avatarUrl: null,
+  coverUrl: null,
+  profession: '',
+  city: '',
+  country: '',
+  bio: '',
+  languages: [],
+  categories: [],
+  websiteUrl: '',
+  instagramUrl: '',
+  youtubeUrl: '',
+  verified: false,
+  isVerified: false,
+  followersCount: 0,
+  followingCount: 0,
+  liveCount: 0,
+  totalViews: 0,
+  totalLiveHours: 0,
+  createdAt: '',
+  currentLive: null,
+  upcomingLives: [],
+  recentLives: [],
+  equipment: [],
+};
+
+export function buildProfileFromFirebaseUser(firebaseUser) {
+  const win = safeWindow();
+  let saved = {};
+  try {
+    const stored = win?.localStorage.getItem(STORAGE_KEY);
+    if (stored) {
+      const parsed = JSON.parse(stored);
+      // Only use stored data if it belongs to this Firebase user
+      if (parsed.id === firebaseUser.uid) saved = parsed;
+    }
+  } catch {}
+
+  return {
+    ...EMPTY_PROFILE_BASE,
+    ...saved,
+    id: firebaseUser.uid,
+    displayName: saved.displayName || firebaseUser.displayName || '',
+    name: saved.displayName || firebaseUser.displayName || '',
+    avatarUrl: saved.avatarUrl || firebaseUser.photoURL || null,
+    username: saved.username || '',
+  };
+}
+
 export function getOwnCreatorProfile() {
   const win = safeWindow();
   if (!win) return normalizeProfile(ownCreatorProfile);
@@ -202,8 +254,20 @@ export function resolveCreatorProfile(input = {}) {
 }
 
 export function saveOwnCreatorProfile(nextProfile) {
-  const normalized = normalizeProfileForSave({ ...getOwnCreatorProfile(), ...nextProfile, id: CURRENT_USER_ID });
   const win = safeWindow();
+  let current = {};
+  try {
+    const stored = win?.localStorage.getItem(STORAGE_KEY);
+    if (stored) current = JSON.parse(stored);
+  } catch {}
+  const merged = { ...EMPTY_PROFILE_BASE, ...current, ...nextProfile, id: nextProfile.id ?? current.id };
+  const normalized = {
+    ...merged,
+    username: String(merged.username ?? '').replace(/^@+/, '').trim(),
+    websiteUrl: normalizeOptionalUrl(merged.websiteUrl),
+    youtubeUrl: normalizeOptionalUrl(merged.youtubeUrl),
+    instagramUrl: normalizeInstagram(merged.instagramUrl),
+  };
 
   if (win) {
     win.localStorage.setItem(STORAGE_KEY, JSON.stringify(normalized));

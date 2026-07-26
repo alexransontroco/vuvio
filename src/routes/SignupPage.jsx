@@ -62,7 +62,7 @@ export default function SignupPage() {
     const result = await signUp(email.trim(), password, displayName.trim());
     setSubmitting(false);
     if (result.success) {
-      navigate('/onboarding', { replace: true, state: { returnTo } });
+      navigate('/profile', { replace: true });
     } else {
       setError(result.error);
     }
@@ -75,7 +75,7 @@ export default function SignupPage() {
     const result = await signInWithGoogle();
     setGoogleBusy(false);
     if (result.success) {
-      navigate('/onboarding', { replace: true, state: { returnTo } });
+      navigate('/profile', { replace: true });
     } else if (result.error) {
       setError(result.error);
     }
