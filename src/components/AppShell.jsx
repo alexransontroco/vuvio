@@ -4,7 +4,9 @@ import BottomNav from './BottomNav.jsx';
 
 export default function AppShell() {
   const location = useLocation();
-  const isLive = location.pathname === '/live';
+  const searchParams = new URLSearchParams(location.search);
+  const isBroadcast = location.pathname === '/home' && searchParams.get('broadcast') === '1';
+  const isLive = location.pathname.startsWith('/home/') || (location.pathname === '/home' && searchParams.has('live'));
   const [liveNavCollapsed, setLiveNavCollapsed] = useState(false);
 
   useEffect(() => {
@@ -14,13 +16,17 @@ export default function AppShell() {
   return (
     <main className={isLive ? 'app-canvas app-canvas--live' : 'app-canvas'}>
       <section className="phone-stage" aria-label="VuVio mobile application">
-        <Outlet />
-        <BottomNav
-          collapsible={isLive}
-          collapsed={isLive && liveNavCollapsed}
-          onExpand={() => setLiveNavCollapsed(false)}
-          onCollapse={() => setLiveNavCollapsed(true)}
-        />
+        <div className="route-transition" key={location.pathname}>
+          <Outlet />
+        </div>
+        {!isBroadcast ? (
+          <BottomNav
+            collapsible={isLive}
+            collapsed={isLive && liveNavCollapsed}
+            onExpand={() => setLiveNavCollapsed(false)}
+            onCollapse={() => setLiveNavCollapsed(true)}
+          />
+        ) : null}
       </section>
     </main>
   );

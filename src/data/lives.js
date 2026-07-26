@@ -1,13 +1,14 @@
+import { newPovLives } from './newPovStreams.js';
+
 export const lives = [
   {
     id: 'biking-dolomites',
     kind: 'video',
     video: '/assets/videos/biking.mp4',
-    audio: '/assets/audio/biking-dolomites.wav',
     image: '/assets/videos/biking-cover.jpg',
     streamer: 'Tomas Keller',
     job: 'Mountain biker',
-    city: 'Cortina d’Ampezzo',
+    city: "Cortina d'Ampezzo",
     country: 'Italy',
     viewers: '1,508',
     description: 'Dropping into the forest trail after the ridge.',
@@ -20,7 +21,6 @@ export const lives = [
     id: 'road-cyclist-mallorca',
     kind: 'video',
     video: '/assets/videos/16232606_2160_3840_30fps.mp4',
-    audio: '/assets/audio/road-cyclist-mallorca.wav',
     image: '/assets/videos/16232606_2160_3840_30fps-cover.jpg',
     streamer: 'Clara Vives',
     job: 'Road cyclist',
@@ -37,7 +37,6 @@ export const lives = [
     id: 'motorbike-srinagar',
     kind: 'video',
     video: '/assets/videos/20667540-uhd_2160_3840_60fps.mp4',
-    audio: '/assets/audio/motorbike-srinagar.wav',
     image: '/assets/videos/20667540-uhd_2160_3840_60fps-cover.jpg',
     streamer: 'Aarav Khan',
     job: 'Motorcycle rider',
@@ -54,7 +53,6 @@ export const lives = [
     id: 'skate-portland',
     kind: 'video',
     video: '/assets/videos/11963745-uhd_2160_3840_60fps.mp4',
-    audio: '/assets/audio/skate-portland.wav',
     image: '/assets/videos/11963745-uhd_2160_3840_60fps-cover.jpg',
     streamer: 'Maya Brooks',
     job: 'Longboarder',
@@ -71,7 +69,6 @@ export const lives = [
     id: 'buggy-marrakesh',
     kind: 'video',
     video: '/assets/videos/12130364_2160_3840_30fps.mp4',
-    audio: '/assets/audio/buggy-marrakesh.wav',
     image: '/assets/videos/12130364_2160_3840_30fps-cover.jpg',
     streamer: 'Nour El Idrissi',
     job: 'Buggy driver',
@@ -88,7 +85,6 @@ export const lives = [
     id: 'horseback-cappadocia',
     kind: 'video',
     video: '/assets/videos/12339859_2160_3840_60fps.mp4',
-    audio: '/assets/audio/horseback-cappadocia.wav',
     image: '/assets/videos/12339859_2160_3840_60fps-cover.jpg',
     streamer: 'Aylin Demir',
     job: 'Equestrian guide',
@@ -105,7 +101,6 @@ export const lives = [
     id: 'runner-prague',
     kind: 'video',
     video: '/assets/videos/15794531_1440_2560_24fps.mp4',
-    audio: '/assets/audio/runner-prague.wav',
     image: '/assets/videos/15794531_1440_2560_24fps-cover.jpg',
     streamer: 'Jonas Weber',
     job: 'Urban runner',
@@ -122,7 +117,6 @@ export const lives = [
     id: 'dog-trainer-berlin',
     kind: 'video',
     video: '/assets/videos/16317498_2160_3840_30fps.mp4',
-    audio: '/assets/audio/dog-trainer-berlin.wav',
     image: '/assets/videos/16317498_2160_3840_30fps-cover.jpg',
     streamer: 'Sofia Novak',
     job: 'Dog trainer',
@@ -139,7 +133,6 @@ export const lives = [
     id: 'sailor-split',
     kind: 'video',
     video: '/assets/videos/16352747_1080_1920_30fps.mp4',
-    audio: '/assets/audio/sailor-split.wav',
     image: '/assets/videos/16352747_1080_1920_30fps-cover.jpg',
     streamer: 'Luka Marino',
     job: 'Sailing skipper',
@@ -156,7 +149,6 @@ export const lives = [
     id: 'glacier-guide-iceland',
     kind: 'video',
     video: '/assets/videos/8678453-hd_1080_1920_30fps.mp4',
-    audio: '/assets/audio/glacier-guide-iceland.wav',
     image: '/assets/videos/8678453-hd_1080_1920_30fps-cover.jpg',
     streamer: 'Elin Arnadottir',
     job: 'Glacier guide',
@@ -172,7 +164,7 @@ export const lives = [
   {
     id: 'helicopter-alps',
     kind: 'image',
-    image: '/assets/VuVio_10_POV/01_helicopter_pilot.jpg',
+    image: '/assets/pov/01_mountain_rescue_helicopter.jpg',
     streamer: 'Lena Hartmann',
     job: 'Helicopter pilot',
     city: 'Interlaken',
@@ -187,7 +179,7 @@ export const lives = [
   {
     id: 'fisherman-lofoten',
     kind: 'image',
-    image: '/assets/VuVio_10_POV/02_fisherman.jpg',
+    image: '/assets/pov/14_fishing.jpg',
     streamer: 'Erik Solheim',
     job: 'Fisherman',
     city: 'Lofoten',
@@ -202,7 +194,7 @@ export const lives = [
   {
     id: 'chef-lyon',
     kind: 'image',
-    image: '/assets/VuVio_10_POV/03_chef.jpg',
+    image: '/assets/pov/07_baker.jpg',
     streamer: 'Malo Renard',
     job: 'Chef',
     city: 'Lyon',
@@ -217,7 +209,7 @@ export const lives = [
   {
     id: 'firefighter-lisbon',
     kind: 'image',
-    image: '/assets/VuVio_10_POV/04_firefighter.jpg',
+    image: '/assets/pov/12_firefighter.jpg',
     streamer: 'Rafa Silva',
     job: 'Firefighter',
     city: 'Lisbon',
@@ -232,7 +224,7 @@ export const lives = [
   {
     id: 'cabinetmaker-copenhagen',
     kind: 'image',
-    image: '/assets/VuVio_10_POV/05_cabinetmaker.jpg',
+    image: '/assets/pov/11_welder.jpg',
     streamer: 'Niels Vester',
     job: 'Cabinetmaker',
     city: 'Copenhagen',
@@ -247,7 +239,7 @@ export const lives = [
   {
     id: 'beekeeper-provence',
     kind: 'image',
-    image: '/assets/VuVio_10_POV/06_beekeeper.jpg',
+    image: '/assets/pov/10_jeweler.jpg',
     streamer: 'Claire Aubert',
     job: 'Beekeeper',
     city: 'Apt',
@@ -262,7 +254,7 @@ export const lives = [
   {
     id: 'surgeon-boston',
     kind: 'image',
-    image: '/assets/VuVio_10_POV/07_surgeon.jpg',
+    image: '/assets/pov/13_space_control_room.jpg',
     streamer: 'Dr. Maya Chen',
     job: 'Surgeon',
     city: 'Boston',
@@ -277,7 +269,7 @@ export const lives = [
   {
     id: 'wildlife-kenya',
     kind: 'image',
-    image: '/assets/VuVio_10_POV/08_wildlife_photographer.jpg',
+    image: '/assets/pov/14_cinematographer.jpg',
     streamer: 'Amina Okoth',
     job: 'Wildlife photographer',
     city: 'Maasai Mara',
@@ -292,7 +284,7 @@ export const lives = [
   {
     id: 'train-driver-tokyo',
     kind: 'image',
-    image: '/assets/VuVio_10_POV/09_train_driver.jpg',
+    image: '/assets/pov/16_tgv_driver.jpg',
     streamer: 'Haruto Sato',
     job: 'Train driver',
     city: 'Tokyo',
@@ -307,7 +299,7 @@ export const lives = [
   {
     id: 'pottery-oaxaca',
     kind: 'image',
-    image: '/assets/pottery.jpg',
+    image: '/assets/pov/06_potter.jpg',
     streamer: 'Elena Cruz',
     job: 'Potter',
     city: 'Oaxaca',
@@ -322,7 +314,7 @@ export const lives = [
   {
     id: 'surf-raglan',
     kind: 'image',
-    image: '/assets/surf.jpg',
+    image: '/assets/pov/01_surfer.jpg',
     streamer: 'Kai Moana',
     job: 'Surfer',
     city: 'Raglan',
@@ -334,4 +326,5 @@ export const lives = [
       { who: 'Tom', text: 'how cold is the water?' },
     ],
   },
+  ...newPovLives,
 ];

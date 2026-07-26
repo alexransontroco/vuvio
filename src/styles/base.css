@@ -13,20 +13,25 @@ body {
   min-height: 100vh;
   overflow-x: hidden;
   background:
-    radial-gradient(80% 60% at 50% 0%, rgba(59, 130, 230, 0.12), transparent 58%),
-    var(--color-bg);
+    radial-gradient(ellipse 100% 44% at 50% -2%, rgba(20, 72, 140, 0.28), transparent 58%),
+    radial-gradient(ellipse 70% 28% at 50% -6%, rgba(53, 227, 220, 0.06), transparent 50%),
+    linear-gradient(180deg, #071929 0%, #04131f 38%, var(--color-bg) 100%);
   color: var(--color-text);
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-family: var(--font-family, system-ui);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 button,
-input {
+input,
+textarea {
   font: inherit;
 }
 
 button {
   color: inherit;
   cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
 }
 
 img {
@@ -39,11 +44,98 @@ img {
   overflow-x: hidden;
 }
 
+/* ── Interactions ─────────────────────────────────── */
+
+button,
+a,
+.pov-card,
+.stream-preview-card,
+.collection-card {
+  transition:
+    transform 160ms ease,
+    opacity 160ms ease,
+    background-color 200ms ease,
+    border-color 200ms ease,
+    color 200ms ease;
+}
+
+button:active,
+a:active,
+.pov-card:active,
+.stream-preview-card:active,
+.collection-card:active {
+  transform: scale(0.975);
+}
+
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+textarea:focus-visible {
+  outline: 2px solid rgba(53, 227, 220, 0.65);
+  outline-offset: 3px;
+}
+
+/* ── Atmospheric particles ─────────────────────────── */
+
+body::before,
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+}
+
+body::before {
+  background:
+    radial-gradient(1px 1px at  8% 14%, rgba(134, 202, 224, 0.28) 0%, transparent 100%),
+    radial-gradient(1px 1px at 24% 32%, rgba(134, 202, 224, 0.18) 0%, transparent 100%),
+    radial-gradient(1px 1px at 67% 11%, rgba(134, 202, 224, 0.22) 0%, transparent 100%),
+    radial-gradient(1px 1px at 83% 28%, rgba(134, 202, 224, 0.15) 0%, transparent 100%),
+    radial-gradient(1px 1px at 47% 19%, rgba(134, 202, 224, 0.20) 0%, transparent 100%),
+    radial-gradient(1px 1px at 91% 55%, rgba(134, 202, 224, 0.14) 0%, transparent 100%),
+    radial-gradient(1px 1px at 15% 68%, rgba(134, 202, 224, 0.16) 0%, transparent 100%),
+    radial-gradient(1px 1px at 58% 44%, rgba(134, 202, 224, 0.12) 0%, transparent 100%);
+  animation: particles-drift 28s ease-in-out infinite alternate;
+}
+
+body::after {
+  background:
+    radial-gradient(1px 1px at 36% 72%, rgba(134, 202, 224, 0.18) 0%, transparent 100%),
+    radial-gradient(1px 1px at 72% 81%, rgba(134, 202, 224, 0.14) 0%, transparent 100%),
+    radial-gradient(1px 1px at 12% 47%, rgba(134, 202, 224, 0.12) 0%, transparent 100%),
+    radial-gradient(1px 1px at 89% 63%, rgba(134, 202, 224, 0.20) 0%, transparent 100%),
+    radial-gradient(1px 1px at 51% 88%, rgba(134, 202, 224, 0.16) 0%, transparent 100%);
+  animation: particles-drift 36s ease-in-out infinite alternate-reverse;
+  animation-delay: -12s;
+}
+
+@keyframes particles-drift {
+  0%   { transform: translate(0,    0);   opacity: 0.7; }
+  33%  { transform: translate(-2px, 3px); opacity: 1;   }
+  66%  { transform: translate(2px, -2px); opacity: 0.8; }
+  100% { transform: translate(-1px, 4px); opacity: 0.9; }
+}
+
+/* ── Animations ───────────────────────────────────── */
+
 @keyframes livePulse {
-  0% {
-    box-shadow: 0 0 0 0 rgba(43, 217, 200, 0.45);
-  }
-  100% {
-    box-shadow: 0 0 0 13px rgba(43, 217, 200, 0);
+  0%   { box-shadow: 0 0 0 0   rgba(53, 227, 220, 0.4); }
+  100% { box-shadow: 0 0 0 11px rgba(53, 227, 220, 0); }
+}
+
+@keyframes create-breathe {
+  0%, 100% { box-shadow: 0 0 0 1px rgba(53, 227, 220, 0.09), 0 0 14px rgba(53, 227, 220, 0.13); }
+  50%       { box-shadow: 0 0 0 1px rgba(53, 227, 220, 0.18), 0 0 28px rgba(53, 227, 220, 0.22); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
   }
 }

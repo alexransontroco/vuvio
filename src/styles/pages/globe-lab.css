@@ -1,0 +1,296 @@
+.globe-lab-screen {
+  height: 100%;
+  overflow: hidden;
+  background:
+    radial-gradient(100% 54% at 50% 22%, rgba(43, 217, 200, 0.1), transparent 58%),
+    var(--color-bg);
+}
+
+.globe-lab-shell {
+  position: relative;
+  height: 100%;
+  overflow: hidden;
+}
+
+.globe-lab-shell canvas {
+  cursor: grab;
+}
+
+.globe-lab-shell canvas:active {
+  cursor: grabbing;
+}
+
+.globe-lab-switch {
+  position: absolute;
+  top: calc(var(--safe-top, 0px) + 10px);
+  left: 50%;
+  z-index: 80;
+  display: flex;
+  transform: translateX(-50%);
+  border: 0.5px solid rgba(255, 255, 255, 0.08);
+  border-radius: 999px;
+  background: rgba(8, 17, 28, 0.72);
+  backdrop-filter: blur(16px);
+  padding: 3px;
+  pointer-events: auto;
+}
+
+.globe-lab-switch button {
+  min-height: 28px;
+  min-width: 58px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: rgba(242, 247, 246, 0.62);
+  padding: 0 12px;
+  font-size: 11px;
+  font-weight: 650;
+  pointer-events: auto;
+}
+
+.globe-lab-switch button.is-active {
+  background: rgba(43, 217, 200, 0.16);
+  color: var(--color-cyan);
+}
+
+.globe-lab-switch,
+.globe-lab-switch * {
+  touch-action: manipulation;
+}
+
+.globe-lab-controls {
+  position: absolute;
+  left: 16px;
+  bottom: calc(var(--nav-height) + var(--safe-bottom) + 72px);
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.globe-lab-controls button {
+  width: 46px;
+  height: 46px;
+  display: grid;
+  place-items: center;
+  border: 0.5px solid rgba(255, 255, 255, 0.12);
+  border-radius: 50%;
+  background: rgba(8, 17, 28, 0.72);
+  backdrop-filter: blur(16px);
+  color: var(--color-text);
+}
+
+.globe-lab-filter {
+  bottom: calc(var(--nav-height) + var(--safe-bottom) + 12px);
+  z-index: 22;
+}
+
+.globe-lab-overlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(88% 64% at 50% 42%, transparent 54%, rgba(6, 14, 23, 0.58) 100%),
+    linear-gradient(180deg, rgba(6, 14, 23, 0.1), rgba(6, 14, 23, 0.32));
+}
+
+.globe-lab-legend {
+  display: none;
+  position: absolute;
+  left: 14px;
+  bottom: calc(var(--nav-height) + var(--safe-bottom) + 14px);
+  z-index: 3;
+  display: inline-flex;
+  gap: 9px;
+  border: 0.5px solid rgba(255, 255, 255, 0.1);
+  border-radius: 999px;
+  background: rgba(8, 17, 28, 0.58);
+  backdrop-filter: blur(16px);
+  padding: 7px 10px;
+  color: rgba(242, 247, 246, 0.68);
+  font-size: 10.5px;
+  font-weight: 620;
+}
+
+.globe-lab-legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.globe-lab-legend i {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: currentColor;
+  box-shadow: 0 0 12px currentColor;
+}
+
+.globe-lab-legend .is-air {
+  color: #7cc8ff;
+}
+
+.globe-lab-legend .is-water {
+  color: var(--color-cyan);
+}
+
+.globe-lab-legend .is-ground {
+  color: #e8b45b;
+}
+
+.globe-lab-card {
+  position: absolute;
+  left: 12px;
+  right: 12px;
+  bottom: calc(var(--nav-height) + var(--safe-bottom) + 58px);
+  z-index: 24;
+  border: 0.5px solid rgba(255, 255, 255, 0.12);
+  border-radius: 20px;
+  background: rgba(10, 22, 35, 0.92);
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.48);
+  backdrop-filter: blur(20px);
+  padding: 12px;
+}
+
+.globe-lab-card__close {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 28px;
+  height: 28px;
+  display: grid;
+  place-items: center;
+  border: 0.5px solid rgba(255, 255, 255, 0.1);
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.045);
+  color: rgba(242, 247, 246, 0.78);
+}
+
+.globe-lab-card header {
+  display: grid;
+  grid-template-columns: 38px minmax(0, 1fr);
+  gap: 9px;
+  align-items: center;
+  padding-right: 34px;
+}
+
+.globe-lab-card header img {
+  width: 38px;
+  height: 38px;
+  border: 0.5px solid rgba(255, 255, 255, 0.14);
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.globe-lab-card strong,
+.globe-lab-card small {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.globe-lab-card strong {
+  color: rgba(255, 255, 255, 0.92);
+  font-size: 13px;
+  font-weight: 650;
+}
+
+.globe-lab-card small,
+.globe-lab-card p {
+  color: rgba(242, 247, 246, 0.52);
+  font-size: 11px;
+}
+
+.globe-lab-card__badge {
+  width: fit-content;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 12px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.055);
+  padding: 5px 9px;
+  color: rgba(242, 247, 246, 0.68);
+  font-size: 9.5px;
+  font-weight: 720;
+  letter-spacing: 0.06em;
+}
+
+.globe-lab-card__badge.is-live {
+  background: color-mix(in srgb, var(--experience-color) 20%, transparent);
+  color: rgba(242, 247, 246, 0.86);
+}
+
+.globe-lab-card__badge i {
+  width: 7px;
+  height: 7px;
+  display: inline-block;
+  background: var(--experience-color);
+  box-shadow: 0 0 12px color-mix(in srgb, var(--experience-color) 48%, transparent);
+}
+
+.globe-lab-card__badge i.is-diamond {
+  border-radius: 2px;
+  transform: rotate(45deg);
+}
+
+.globe-lab-card__badge i.is-circle {
+  border-radius: 50%;
+}
+
+.globe-lab-card__badge i.is-drop {
+  border-radius: 50% 50% 50% 8%;
+  transform: rotate(45deg);
+}
+
+.globe-lab-card h2 {
+  margin: 9px 0 0;
+  color: rgba(255, 255, 255, 0.94);
+  font-size: 15px;
+  font-weight: 650;
+  line-height: 1.16;
+}
+
+.globe-lab-card p {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin: 6px 0 0;
+}
+
+.globe-lab-card footer {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.globe-lab-card footer button {
+  min-height: 36px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  border: 0.5px solid rgba(255, 255, 255, 0.1);
+  border-radius: 13px;
+  background: rgba(255, 255, 255, 0.06);
+  color: rgba(242, 247, 246, 0.82);
+  font-size: 12px;
+  font-weight: 650;
+}
+
+.globe-lab-card footer button.is-primary {
+  border: 0;
+  background: var(--color-cyan);
+  color: var(--color-ink);
+}
+
+@media (min-width: 760px) {
+  .globe-lab-card {
+    left: auto;
+    right: 18px;
+    bottom: 92px;
+    width: 270px;
+  }
+}

@@ -1,4 +1,4 @@
-const MASTER_GAIN = 0.86;
+const MASTER_GAIN = 0.38;
 
 let audioContext;
 let noiseBuffer;
@@ -138,15 +138,17 @@ function buildProfile(context, destination, profile) {
   }
 
   if (profile === 'bike') {
-    stops.push(addNoiseLayer(context, destination, { gain: 0.07, frequency: 1500, q: 0.8 }));
-    stops.push(addNoiseLayer(context, destination, { gain: 0.04, frequency: 260, q: 1.2 }));
-    stops.push(addRepeatingPulse(context, destination, { interval: 230, gain: 0.035, frequency: 210, duration: 0.035 }));
+    const tireTone = addOscillator(context, destination, { type: 'sine', frequency: 82, gain: 0.018 });
+    stops.push(tireTone.stop);
+    stops.push(addNoiseLayer(context, destination, { gain: 0.018, frequency: 1150, q: 0.55 }));
+    stops.push(addNoiseLayer(context, destination, { gain: 0.014, frequency: 230, q: 1.1 }));
+    stops.push(addRepeatingPulse(context, destination, { interval: 310, gain: 0.012, frequency: 340, duration: 0.022 }));
     return stops;
   }
 
   if (profile === 'wheels') {
-    stops.push(addNoiseLayer(context, destination, { gain: 0.075, frequency: 720, q: 2.2 }));
-    stops.push(addRepeatingPulse(context, destination, { interval: 130, gain: 0.03, frequency: 260, duration: 0.026 }));
+    stops.push(addNoiseLayer(context, destination, { gain: 0.03, frequency: 620, q: 1.8 }));
+    stops.push(addRepeatingPulse(context, destination, { interval: 160, gain: 0.014, frequency: 260, duration: 0.022 }));
     return stops;
   }
 

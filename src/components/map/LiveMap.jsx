@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import maplibregl from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import { LocateFixed } from 'lucide-react';
+import { enrichExperience } from '../../data/experienceTaxonomy.js';
 
 const INITIAL_CENTER = [22, 18];
 const GLOBE_ZOOM = 1.28;
@@ -53,6 +54,8 @@ const statusColor = [
   LIVE_COLOR,
 ];
 
+const categoryColor = ['coalesce', ['get', 'familyColor'], statusColor];
+
 const clusterColor = [
   'case',
   ['all', ['>', ['get', 'upcomingCount'], 0], ['>', ['get', 'liveCount'], 0]],
@@ -64,7 +67,7 @@ const clusterColor = [
 
 function viewersNumber(stream) {
   if (!stream.viewers) return 0;
-  return Number.parseInt(stream.viewers.replace(/\D/g, ''), 10) || 0;
+  return Number.parseInt(String(stream.viewers).replace(/\D/g, ''), 10) || 0;
 }
 
 function pulseSeed(id) {
@@ -85,6 +88,8 @@ function toFeature(stream) {
       viewers: stream.viewers ?? '',
       viewersNumber: viewersNumber(stream),
       pulseSeed: pulseSeed(stream.id),
+      family: stream.family,
+      familyColor: stream.familyColor,
     },
     geometry: {
       type: 'Point',
@@ -160,6 +165,8 @@ function buildParticleCollection(streams) {
       properties: {
         id: `${stream.id}-particle-${index}`,
         status: stream.status,
+        family: stream.family,
+        familyColor: stream.familyColor,
       },
       geometry: {
         type: 'Point',
@@ -208,18 +215,29 @@ function buildCityLightCollection() {
 
 function focusStream(map, coordinates) {
   if (!coordinates) return;
+  map.stop();
   map.setProjection({ type: 'globe' });
-  map.easeTo({ center: coordinates, zoom: 1.35, duration: 520, essential: true });
-  window.setTimeout(() => {
-    map.easeTo({ center: coordinates, zoom: 3.2, duration: 680, essential: true });
-  }, 460);
-  window.setTimeout(() => {
-    map.setProjection({ type: 'globe' });
-    map.easeTo({ center: coordinates, zoom: 5.05, duration: 820, essential: true });
-  }, 1060);
+  map.easeTo({
+    center: coordinates,
+    zoom: 5.15,
+    bearing: 0,
+    pitch: 0,
+    duration: 1350,
+    easing: (t) => 1 - Math.pow(1 - t, 3),
+    essential: true,
+  });
 }
 
-export default function LiveMap({ streams, activeStatuses = ['live'], selectedId, onSelect, resetSignal = 0 }) {
+export default function LiveMap({
+  streams,
+  activeStatuses = ['live'],
+  activeFamily = 'all',
+  activeSubcategory = 'all',
+  selectedId,
+  focusId,
+  onSelect,
+  resetSignal = 0,
+}) {
   const containerRef = useRef(null);
   const rootRef = useRef(null);
   const mapRef = useRef(null);
@@ -228,8 +246,12 @@ export default function LiveMap({ streams, activeStatuses = ['live'], selectedId
   const burstTimeoutRef = useRef(null);
 
   const visibleStreams = useMemo(() => {
-    return streams.filter((stream) => activeStatuses.includes(stream.status));
-  }, [streams, activeStatuses]);
+    return streams
+      .map(enrichExperience)
+      .filter((stream) => activeStatuses.includes(stream.status))
+      .filter((stream) => activeFamily === 'all' || stream.family === activeFamily)
+      .filter((stream) => activeSubcategory === 'all' || stream.subcategory === activeSubcategory);
+  }, [activeFamily, activeStatuses, activeSubcategory, streams]);
 
   useEffect(() => {
     if (!containerRef.current || mapRef.current) return undefined;
@@ -404,7 +426,7 @@ export default function LiveMap({ streams, activeStatuses = ['live'], selectedId
         source: 'vuvio-lives',
         filter: ['!', ['has', 'point_count']],
         paint: {
-          'circle-color': statusColor,
+          'circle-color': categoryColor,
           'circle-radius': livePulseRadius(0),
           'circle-blur': 0.65,
           'circle-opacity': livePulseOpacity(0),
@@ -417,14 +439,14 @@ export default function LiveMap({ streams, activeStatuses = ['live'], selectedId
         source: 'vuvio-lives',
         filter: ['!', ['has', 'point_count']],
         paint: {
-          'circle-color': statusColor,
+          'circle-color': categoryColor,
           'circle-radius': [
             'case',
             ['==', ['get', 'id'], selectedId ?? ''],
             9,
             ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 5, 300, 6.5, 800, 8],
           ],
-          'circle-stroke-color': ['case', ['==', ['get', 'id'], selectedId ?? ''], '#F2F7F6', 'rgba(43,217,200,0.38)'],
+          'circle-stroke-color': ['case', ['==', ['get', 'id'], selectedId ?? ''], '#F2F7F6', categoryColor],
           'circle-stroke-width': ['case', ['==', ['get', 'id'], selectedId ?? ''], 3, 6],
           'circle-opacity': 0.96,
         },
@@ -435,7 +457,7 @@ export default function LiveMap({ streams, activeStatuses = ['live'], selectedId
         type: 'circle',
         source: 'vuvio-particles',
         paint: {
-          'circle-color': statusColor,
+          'circle-color': categoryColor,
           'circle-radius': 2.2,
           'circle-blur': 0.25,
           'circle-opacity': 0.62,
@@ -477,7 +499,7 @@ export default function LiveMap({ streams, activeStatuses = ['live'], selectedId
         map.getCanvas().style.cursor = '';
       });
 
-      const selectedStream = visibleStreams.find((stream) => stream.id === selectedId);
+      const selectedStream = visibleStreams.find((stream) => stream.id === (focusId ?? selectedId));
       if (selectedStream) {
         pauseUntilRef.current = Date.now() + 6000;
         focusStream(map, selectedStream.coordinates);
@@ -547,7 +569,7 @@ export default function LiveMap({ streams, activeStatuses = ['live'], selectedId
       'case',
       ['==', ['get', 'id'], selectedId ?? ''],
       '#F2F7F6',
-      'rgba(43,217,200,0.38)',
+      categoryColor,
     ]);
     map.setPaintProperty('vuvio-live-points', 'circle-stroke-width', ['case', ['==', ['get', 'id'], selectedId ?? ''], 3, 6]);
   }, [selectedId]);
@@ -561,6 +583,16 @@ export default function LiveMap({ streams, activeStatuses = ['live'], selectedId
     pauseUntilRef.current = Date.now() + 6000;
     focusStream(map, selectedStream.coordinates);
   }, [selectedId, visibleStreams]);
+
+  useEffect(() => {
+    if (!focusId) return;
+    const map = mapRef.current;
+    if (!map?.loaded()) return;
+    const focusedStream = visibleStreams.find((stream) => stream.id === focusId);
+    if (!focusedStream) return;
+    pauseUntilRef.current = Date.now() + 7000;
+    focusStream(map, focusedStream.coordinates);
+  }, [focusId, visibleStreams]);
 
   const recenter = () => {
     mapRef.current?.setProjection({ type: 'globe' });
@@ -584,8 +616,8 @@ export default function LiveMap({ streams, activeStatuses = ['live'], selectedId
     <div ref={rootRef} className="live-map live-map--globe">
       <div ref={containerRef} className="live-map__canvas" />
       <div className="live-map__vignette" />
-      <div className="live-map__controls" aria-label="Contrôles carte">
-        <button type="button" onClick={recenter} aria-label="Recentrer">
+      <div className="live-map__controls" aria-label="Map controls">
+        <button type="button" onClick={recenter} aria-label="Recenter">
           <LocateFixed size={19} />
         </button>
       </div>

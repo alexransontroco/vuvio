@@ -1,5 +1,5 @@
-import { currentUser } from '../data/mockUser.js';
+import { getOwnCreatorProfile } from './profileService.js';
 
 export function getCurrentUser() {
-  return Promise.resolve(currentUser);
+  return Promise.resolve(getOwnCreatorProfile());
 }

@@ -4,6 +4,12 @@ dist/
 .DS_Store
 *.log
 
+.env
+.env.local
+.env.*.local
+
+.claude/
+
 .tmp-cloudflared-2023/
 cloudflared
 cloudflared-*.tgz
@@ -21,5 +27,11 @@ references/
 refmap.png
 ChatGPT Image*.png
 c276a4b4-9ff5-42d8-bc1d-3b790ce2be9e.png
+
+DaVinci_Resolve*.dmg
+DaVinci_Resolve*.zip
+davinci-resolve*.dmg
+vuvio-icons-pack/
+vuvio-icons-pack.zip
 
 *.tmp

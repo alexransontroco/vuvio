@@ -1,4 +1,4 @@
-const CACHE_NAME = 'vuvio-static-v15';
+const CACHE_NAME = 'vuvio-static-v19';
 const APP_SHELL = [
   '/',
   '/index.html',
@@ -11,7 +11,7 @@ const APP_SHELL = [
 
 async function cacheAppShell() {
   const cache = await caches.open(CACHE_NAME);
-  await cache.addAll(APP_SHELL);
+  await Promise.allSettled(APP_SHELL.map((path) => cache.add(path)));
 
   const response = await fetch('/', { cache: 'no-store' });
   if (!response.ok) return;
@@ -24,7 +24,7 @@ async function cacheAppShell() {
     .map((match) => match[1])
     .filter((path) => path.startsWith('/assets/'));
 
-  await cache.addAll(assetPaths);
+  await Promise.allSettled(assetPaths.map((path) => cache.add(path)));
 }
 
 self.addEventListener('install', (event) => {

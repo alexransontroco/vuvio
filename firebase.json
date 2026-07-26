@@ -1,0 +1,29 @@
+{
+  "firestore": {
+    "rules": "firestore.rules"
+  },
+  "storage": {
+    "rules": "storage.rules"
+  },
+  "hosting": {
+    "public": "dist",
+    "ignore": [
+      "firebase.json",
+      "**/.*",
+      "**/node_modules/**",
+      "assets/audio/**",
+      "**/*.mp4",
+      "**/*.mov",
+      "**/*.webm",
+      "**/*.wav",
+      "**/*.mp3",
+      "**/*.m4a"
+    ],
+    "rewrites": [
+      {
+        "source": "**",
+        "destination": "/index.html"
+      }
+    ]
+  }
+}

@@ -1,28 +1,32 @@
 {
   "name": "Vuvio",
   "short_name": "Vuvio",
-  "start_url": "/explore",
+  "description": "Immersive POV lives around the world.",
+  "start_url": "/",
   "scope": "/",
   "display": "standalone",
-  "background_color": "#060E17",
-  "theme_color": "#060E17",
+  "display_override": ["standalone", "fullscreen", "minimal-ui", "browser"],
+  "background_color": "#050816",
+  "theme_color": "#050816",
   "orientation": "portrait",
   "icons": [
     {
       "src": "/icons/icon-192.png",
       "sizes": "192x192",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any"
     },
     {
       "src": "/icons/icon-512.png",
       "sizes": "512x512",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any"
     },
     {
       "src": "/icons/icon-512-maskable.png",
       "sizes": "512x512",
       "type": "image/png",
-      "purpose": "maskable"
+      "purpose": "any maskable"
     }
   ]
 }

@@ -1,4 +1,5 @@
 import LiveBadge from './LiveBadge.jsx';
+import CreatorLink from './CreatorLink.jsx';
 
 export default function StreamPreviewCard({ stream, onWatch }) {
   return (
@@ -12,6 +13,7 @@ export default function StreamPreviewCard({ stream, onWatch }) {
         <span>
           {stream.role} - {stream.place} - {stream.viewerLabel} watching
         </span>
+        <CreatorLink creator={stream} compact />
       </div>
       <button type="button" onClick={onWatch}>
         Watch

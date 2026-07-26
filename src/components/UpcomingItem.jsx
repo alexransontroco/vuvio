@@ -15,7 +15,7 @@ export default function UpcomingItem({ item, active, onToggle }) {
       <button
         type="button"
         className={active ? 'notify-button is-active' : 'notify-button'}
-        aria-label={active ? 'Notification active' : 'Activer la notification'}
+        aria-label={active ? 'Notification active' : 'Enable notification'}
         onClick={onToggle}
       >
         <Bell size={17} strokeWidth={1.8} />

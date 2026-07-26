@@ -100,20 +100,20 @@ function povSample(profile, time, state) {
 
   switch (profile) {
     case 'downhill mountain bike': {
-      const wind = (mid * 0.24 + high * 0.09) * wobble(time, 0.19, 0.28);
-      const tire = sine(time, 96 + low * 16) * 0.08 + sine(time, 191 + mid * 18) * 0.025;
-      const gravel = pulse(time, 0.145, 0.055) * high * 0.24;
+      const wind = (mid * 0.055 + high * 0.016) * wobble(time, 0.16, 0.12);
+      const tire = low * 0.055 + sine(time, 72 + low * 4) * 0.024;
+      const gravel = pulse(time, 0.24, 0.05) * high * 0.032;
       const brakeEvents = eventsFor(profile, 5.2, 2.1, 2.8);
-      const brakes = eventTexture(time, brakeEvents, 0.055, 1260, 0.14);
-      const freehub = pulse(time, 0.085, 0.018) * sine(time, 860) * 0.025;
+      const brakes = eventTexture(time, brakeEvents, 0.045, 720, 0.018);
+      const freehub = pulse(time, 0.18, 0.018) * sine(time, 540) * 0.007;
       return wind + tire + gravel + brakes + freehub;
     }
 
     case 'smooth road cycling climb': {
-      const wind = (mid * 0.3 + high * 0.045) * wobble(time, 0.13, 0.18);
-      const asphalt = sine(time, 118 + low * 8) * 0.045;
-      const chain = pulse(time, 0.24, 0.028) * (0.055 + high * 0.035);
-      const breath = Math.max(0, sine(time, 0.74)) * mid * 0.08;
+      const wind = (mid * 0.048 + high * 0.012) * wobble(time, 0.12, 0.08);
+      const asphalt = low * 0.046 + sine(time, 82 + low * 3) * 0.018;
+      const chain = pulse(time, 0.33, 0.038) * (0.011 + Math.abs(high) * 0.004);
+      const breath = Math.max(0, sine(time, 0.64)) * mid * 0.012;
       return wind + asphalt + chain + breath;
     }
 
@@ -213,8 +213,8 @@ function writeWav(profile) {
     const time = i / sampleRate;
     const center = softClip(povSample(profile, time, state)) * fade(i);
     const pan = profilePan(profile, time);
-    const left = center * Math.sqrt((1 - pan) / 2) * 1.42;
-    const right = center * Math.sqrt((1 + pan) / 2) * 1.42;
+    const left = center * Math.sqrt((1 - pan) / 2) * 0.62;
+    const right = center * Math.sqrt((1 + pan) / 2) * 0.62;
 
     pcm[i * 2] = Math.max(-32767, Math.min(32767, Math.round(left * 32767)));
     pcm[i * 2 + 1] = Math.max(-32767, Math.min(32767, Math.round(right * 32767)));

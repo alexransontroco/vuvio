@@ -1,0 +1,451 @@
+.test-globe-screen {
+  background: #060d16;
+}
+
+.test-old-globe {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  background: #060d16;
+}
+
+.test-old-globe::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  z-index: 1;
+  width: min(132vw, 760px);
+  aspect-ratio: 1;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  background:
+    radial-gradient(circle, transparent 52%, rgba(43, 217, 200, 0.035) 58%, rgba(43, 217, 200, 0.12) 62%, rgba(95, 179, 255, 0.08) 65%, transparent 72%),
+    radial-gradient(circle at 50% 45%, transparent 56%, rgba(43, 217, 200, 0.09) 66%, transparent 78%);
+  filter: blur(1.8px);
+  opacity: 0.78;
+  pointer-events: none;
+}
+
+.test-old-globe__canvas {
+  position: absolute;
+  inset: 0;
+}
+
+.test-old-globe .maplibregl-canvas {
+  filter: brightness(1.17) contrast(1.08) saturate(1.14);
+}
+
+.test-old-globe__vignette {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  background:
+    radial-gradient(70% 54% at 50% 49%, rgba(43, 217, 200, 0.045), transparent 50%),
+    radial-gradient(120% 70% at 50% 45%, transparent 68%, rgba(6, 13, 22, 0.55) 100%);
+}
+
+.test-old-globe__controls {
+  position: absolute;
+  left: 16px;
+  bottom: calc(var(--nav-height) + var(--safe-bottom) + 72px);
+  z-index: 15;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.test-old-globe__controls button {
+  width: 46px;
+  height: 46px;
+  display: grid;
+  place-items: center;
+  border: 0.5px solid rgba(255, 255, 255, 0.12);
+  border-radius: 50%;
+  background: rgba(8, 17, 28, 0.72);
+  backdrop-filter: blur(16px);
+  color: var(--color-text);
+}
+
+.test-old-globe__error {
+  position: absolute;
+  top: 54px;
+  left: 12px;
+  right: 12px;
+  z-index: 18;
+  border: 0.5px solid rgba(255, 110, 110, 0.34);
+  border-radius: 14px;
+  background: rgba(45, 8, 12, 0.78);
+  color: #ffd8d8;
+  padding: 10px 12px;
+  font-size: 11.5px;
+  line-height: 1.35;
+  backdrop-filter: blur(16px);
+}
+
+.test-globe-switch {
+  top: 10px;
+}
+
+.test-globe-switch button {
+  min-width: 58px;
+}
+
+.test-globe-filter {
+  bottom: calc(var(--nav-height) + var(--safe-bottom) + 12px);
+}
+
+.test-globe-card {
+  position: absolute;
+  left: 12px;
+  right: 12px;
+  bottom: calc(var(--nav-height) + var(--safe-bottom) + 66px);
+  z-index: 18;
+  display: grid;
+  grid-template-columns: 86px minmax(0, 1fr);
+  gap: 10px;
+  border: 0.5px solid var(--vuvio-border-strong);
+  border-radius: 20px;
+  background: rgba(6, 22, 36, 0.96);
+  box-shadow:
+    0 0 0 1px rgba(53, 227, 220, 0.06),
+    0 20px 52px rgba(0, 0, 0, 0.54);
+  backdrop-filter: blur(22px);
+  -webkit-backdrop-filter: blur(22px);
+  padding: 10px;
+  animation: map-sheet-rise 260ms cubic-bezier(0.2, 0.82, 0.22, 1) both;
+}
+
+.test-globe-card__close {
+  position: absolute;
+  top: 9px;
+  right: 9px;
+  z-index: 2;
+  width: 28px;
+  height: 28px;
+  display: grid;
+  place-items: center;
+  border: 0.5px solid var(--vuvio-border);
+  border-radius: 50%;
+  background: rgba(6, 22, 36, 0.72);
+  color: rgba(242, 247, 246, 0.78);
+}
+
+.test-globe-card img {
+  width: 86px;
+  height: 116px;
+  border-radius: 14px;
+  object-fit: cover;
+  object-position: center 45%;
+}
+
+.test-globe-card__body {
+  min-width: 0;
+  padding-right: 28px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.test-globe-card__info {
+  min-width: 0;
+}
+
+.test-globe-card__tag {
+  width: fit-content;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.06);
+  color: rgba(242, 247, 246, 0.76);
+  padding: 4px 8px;
+  font-size: 10px;
+  font-weight: 680;
+}
+
+.test-globe-card__tag i {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--experience-color);
+  box-shadow: 0 0 10px color-mix(in srgb, var(--experience-color) 48%, transparent);
+}
+
+.test-globe-card h2 {
+  margin: 7px 0 0;
+  color: #fff;
+  font-size: 14px;
+  font-weight: 640;
+  line-height: 1.12;
+}
+
+.test-globe-card p {
+  display: block;
+  margin: 4px 0 0;
+  color: rgba(242, 247, 246, 0.54);
+  font-size: 11px;
+  line-height: 1.24;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.test-globe-card strong {
+  display: block;
+  margin: 3px 0 0;
+  color: var(--vuvio-cyan);
+  font-size: 10.5px;
+  font-weight: 680;
+}
+
+/* Action row */
+.test-globe-card__actions {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.test-globe-card__watch {
+  flex: 1;
+  min-height: 34px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  border: 0;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #71f5ec 0%, var(--vuvio-cyan) 100%);
+  color: #03212a;
+  font-size: 12px;
+  font-weight: 700;
+  box-shadow: 0 6px 18px rgba(53, 227, 220, 0.22);
+  transition: box-shadow 160ms ease, transform 160ms ease;
+}
+
+.test-globe-card__watch:active {
+  transform: scale(0.96);
+}
+
+.test-globe-card__profile {
+  flex: 1;
+  min-height: 34px;
+  border: 0.5px solid var(--vuvio-border-strong);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.06);
+  color: rgba(242, 247, 246, 0.84);
+  font-size: 12px;
+  font-weight: 580;
+}
+
+.test-globe-card__notify {
+  flex: none;
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  border: 0.5px solid var(--vuvio-border);
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.05);
+  color: rgba(242, 247, 246, 0.72);
+  transition: border-color 160ms ease, color 160ms ease, background 160ms ease;
+}
+
+.test-globe-card__notify:hover,
+.test-globe-card__notify.is-active {
+  border-color: rgba(53, 227, 220, 0.44);
+  background: rgba(53, 227, 220, 0.12);
+  color: var(--vuvio-cyan);
+}
+
+@media (min-width: 760px) {
+  .test-globe-card {
+    left: auto;
+    right: 18px;
+    bottom: 92px;
+    width: 320px;
+  }
+}
+
+/* ── Actual globe — visual overrides ──────────────── */
+
+.test-globe-screen--actual {
+  background:
+    radial-gradient(ellipse 70% 52% at 50% 38%, rgba(28, 90, 145, 0.32) 0%, rgba(10, 36, 68, 0.18) 48%, transparent 72%),
+    linear-gradient(180deg, #0c1e30 0%, #081828 55%, #0a1f32 100%);
+}
+
+.test-globe-screen--actual .test-old-globe {
+  background: #0a1e30;
+  top: -22px;
+}
+
+.test-globe-screen--actual .test-old-globe::before {
+  background:
+    radial-gradient(circle, transparent 50%, rgba(42, 175, 235, 0.07) 57%, rgba(42, 175, 235, 0.22) 62%, rgba(95, 179, 255, 0.12) 65%, transparent 72%),
+    radial-gradient(circle at 50% 45%, transparent 54%, rgba(42, 175, 235, 0.14) 66%, transparent 78%);
+  opacity: 0.96;
+}
+
+.test-globe-screen--actual .test-old-globe .maplibregl-canvas {
+  filter: brightness(1.32) contrast(1.06) saturate(1.22);
+}
+
+.test-globe-screen--actual .test-old-globe__vignette {
+  background:
+    radial-gradient(68% 52% at 50% 49%, rgba(42, 175, 235, 0.07), transparent 50%),
+    radial-gradient(120% 70% at 50% 45%, transparent 66%, rgba(6, 13, 22, 0.48) 100%);
+}
+
+/* Segmented control */
+.test-globe-screen--actual .test-globe-switch {
+  top: 14px;
+  height: 38px;
+  background: rgba(7, 26, 43, 0.84);
+  border: 1px solid rgba(105, 161, 195, 0.22);
+  box-shadow: 0 2px 14px rgba(0, 0, 0, 0.28);
+}
+
+.test-globe-screen--actual .test-globe-switch button {
+  min-width: 64px;
+  height: 30px;
+  font-size: 12px;
+  color: rgba(160, 198, 222, 0.72);
+}
+
+.test-globe-screen--actual .test-globe-switch button.is-active {
+  background: rgba(42, 175, 235, 0.18);
+  color: rgba(140, 218, 255, 0.95);
+  box-shadow: 0 0 10px rgba(42, 175, 235, 0.14);
+}
+
+/* Zoom controls */
+.test-globe-screen--actual .test-old-globe__controls {
+  bottom: calc(var(--nav-height) + var(--safe-bottom) + 88px);
+  gap: 7px;
+}
+
+.test-globe-screen--actual .test-old-globe__controls button {
+  width: 44px;
+  height: 44px;
+  border: 1px solid rgba(118, 158, 191, 0.3);
+  background: rgba(8, 29, 47, 0.82);
+  backdrop-filter: blur(12px);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.05),
+    0 5px 14px rgba(0, 0, 0, 0.22);
+  color: rgba(180, 220, 245, 0.88);
+}
+
+/* Filter bar — full redesign */
+.test-globe-screen--actual .test-globe-filter {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  width: min(362px, calc(100% - 24px));
+  border-radius: 22px;
+  padding: 3px;
+  gap: 0;
+  background: rgba(7, 26, 43, 0.88);
+  border: 1px solid rgba(120, 156, 184, 0.24);
+  backdrop-filter: blur(14px);
+  overflow: hidden;
+}
+
+.test-globe-screen--actual .test-globe-filter button {
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  padding: 9px 4px;
+  border-radius: 0;
+  border-left: 1px solid rgba(117, 149, 176, 0.12);
+  transform: none;
+  transition: background 200ms ease;
+  color: rgba(206, 220, 233, 0.78);
+}
+
+.test-globe-screen--actual .test-globe-filter button:first-child {
+  border-left: none;
+}
+
+.test-globe-screen--actual .test-globe-filter button.is-active {
+  background: linear-gradient(180deg, rgba(11, 105, 125, 0.78), rgba(8, 57, 77, 0.72));
+  border: 1px solid rgba(38, 229, 220, 0.8);
+  border-radius: 18px;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.06),
+    0 0 14px rgba(36, 223, 214, 0.12);
+  transform: none;
+  color: rgba(255, 255, 255, 0.94);
+}
+
+.test-globe-screen--actual .test-globe-filter button.is-active small {
+  color: rgba(140, 232, 224, 0.82);
+}
+
+.test-globe-screen--actual .test-globe-filter .map-filter-icon {
+  width: 16px;
+  height: 16px;
+  filter: none;
+}
+
+.test-globe-screen--actual .test-globe-filter .map-filter-all {
+  width: 16px;
+  height: 16px;
+  display: grid;
+  place-items: center;
+  color: inherit;
+  opacity: 0.9;
+}
+
+/* Label — hidden by default, shown only in actual mode */
+.map-filter-label {
+  display: none;
+}
+
+.test-globe-screen--actual .map-filter-label {
+  display: block;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: inherit;
+  line-height: 1;
+}
+
+.test-globe-screen--actual .test-globe-filter small {
+  font-size: 10.5px;
+  font-weight: 500;
+  color: rgba(170, 193, 212, 0.72);
+}
+
+.test-globe-screen--actual .test-globe-filter button.is-active .map-filter-label {
+  color: rgba(255, 255, 255, 0.94);
+}
+
+/* ── Double-V pulse marker ─────────────────────────── */
+
+.vuvio-dv-pulse {
+  pointer-events: none;
+  display: block;
+}
+
+.vuvio-dv-pulse svg {
+  display: block;
+  color: var(--dv-color, #2BD9C8);
+  filter:
+    drop-shadow(0 0 5px var(--dv-color, #2BD9C8))
+    drop-shadow(0 0 2px var(--dv-color, #2BD9C8));
+  opacity: 0;
+  animation: vuvio-dv 2.4s ease-in-out infinite;
+  animation-delay: var(--dv-delay, 0s);
+  transform-origin: center;
+}
+
+@keyframes vuvio-dv {
+  0%   { opacity: 0;    transform: scale(0.88); }
+  14%  { opacity: 0.52; }
+  48%  { opacity: 0.26; transform: scale(1.08); }
+  80%  { opacity: 0;    transform: scale(1.12); }
+  100% { opacity: 0;    transform: scale(1.12); }
+}
