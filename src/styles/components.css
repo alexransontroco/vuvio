@@ -103,11 +103,12 @@
   gap: 0;
 }
 
-/* + badge on center button */
+/* + badge on center button - replaces dot in logo */
 .bottom-nav__create-badge {
   position: absolute;
-  top: 6px;
-  right: 3px;
+  top: 4px;
+  left: 50%;
+  transform: translateX(-50%);
   width: 18px;
   height: 18px;
   display: grid;

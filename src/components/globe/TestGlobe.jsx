@@ -84,7 +84,8 @@ function pulseSeed(id) {
   return hash / 1000;
 }
 
-function livePulseWave(clock) {
+// Subtle breathing animation for live markers
+function breathingWave(clock) {
   return [
     'let',
     'phase',
@@ -98,42 +99,46 @@ function livePulseWave(clock) {
   ];
 }
 
-function livePulseRadius(clock) {
-  const wave = livePulseWave(clock);
+// Subtle glow layer for marker — very restrained
+function markerGlowRadius(clock) {
+  const wave = breathingWave(clock);
   return [
     '+',
-    ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 5.8, 300, 7.1, 800, 8.8],
-    ['*', wave, ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 1.9, 300, 2.4, 800, 3]],
+    ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 9, 300, 11, 800, 13],
+    ['*', wave, ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 0.6, 300, 0.8, 800, 1]],
   ];
 }
 
-function livePulseOpacity(clock) {
-  const wave = livePulseWave(clock);
+// Soft glow opacity — very subtle breathing
+function markerGlowOpacity(clock) {
+  const wave = breathingWave(clock);
   return [
     '+',
-    ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 0.030, 300, 0.042, 800, 0.055],
-    ['*', wave, ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 0.13, 300, 0.15, 800, 0.19]],
+    ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 0.08, 300, 0.10, 800, 0.12],
+    ['*', wave, ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 0.04, 300, 0.05, 800, 0.06]],
   ];
 }
 
+// Small luminous core for live markers
 function livePointRadius(clock, selectedId = '') {
-  const wave = livePulseWave(clock);
+  const wave = breathingWave(clock);
   return [
     'case',
     ['==', ['get', 'id'], selectedId],
-    ['+', 5.2, ['*', wave, 0.6]],
-    ['+', ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 3.0, 300, 3.9, 800, 4.8], ['*', wave, 0.55]],
+    ['+', 4.2, ['*', wave, 0.4]],
+    ['+', ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 2.4, 300, 3.0, 800, 3.6], ['*', wave, 0.35]],
   ];
 }
 
+// Thin elegant ring for selected marker — one refined ring only
 function liveRingRadius(clock, selectedId = '', hoveredId = '') {
-  const wave = livePulseWave(clock);
+  const wave = breathingWave(clock);
   return [
     'case',
     ['==', ['get', 'id'], selectedId],
-    ['+', 9.2, ['*', wave, 2]],
+    ['+', 8.4, ['*', wave, 0.8]],
     ['==', ['get', 'id'], hoveredId],
-    ['+', 7.6, ['*', wave, 1.3]],
+    ['+', 6.8, ['*', wave, 0.5]],
     0,
   ];
 }
@@ -482,21 +487,21 @@ export default function TestGlobe({ streams, mode = 'test' }) {
           },
         });
 
-        if (isActualMode) {
-          map.addLayer({
-            id: 'vuvio-test-live-pulse',
-            type: 'circle',
-            source: 'vuvio-test-lives',
-            filter: ['!', ['has', 'point_count']],
-            paint: {
-              'circle-color': categoryColor,
-              'circle-radius': livePulseRadius(0),
-              'circle-blur': 0.65,
-              'circle-opacity': livePulseOpacity(0),
-            },
-          });
-        }
+        // Soft outer glow layer for live markers
+        map.addLayer({
+          id: 'vuvio-test-live-glow',
+          type: 'circle',
+          source: 'vuvio-test-lives',
+          filter: ['!', ['has', 'point_count']],
+          paint: {
+            'circle-color': categoryColor,
+            'circle-radius': markerGlowRadius(0),
+            'circle-blur': 0.88,
+            'circle-opacity': markerGlowOpacity(0),
+          },
+        });
 
+        // Luminous core for live markers
         map.addLayer({
           id: 'vuvio-test-live-points',
           type: 'circle',
@@ -505,12 +510,13 @@ export default function TestGlobe({ streams, mode = 'test' }) {
           paint: {
             'circle-color': categoryColor,
             'circle-radius': livePointRadius(0, selectedId ?? ''),
-            'circle-stroke-color': ['case', ['==', ['get', 'id'], selectedId ?? ''], '#F2F7F6', 'rgba(242,247,246,0.24)'],
-            'circle-stroke-width': ['case', ['==', ['get', 'id'], selectedId ?? ''], 1.4, 0.45],
-            'circle-opacity': 0.96,
+            'circle-stroke-color': ['case', ['==', ['get', 'id'], selectedId ?? ''], '#F2F7F6', 'rgba(242,247,246,0.15)'],
+            'circle-stroke-width': ['case', ['==', ['get', 'id'], selectedId ?? ''], 1.0, 0.3],
+            'circle-opacity': ['case', ['==', ['get', 'id'], selectedId ?? ''], 1.0, 0.94],
           },
         });
 
+        // Thin elegant ring for selected markers
         map.addLayer({
           id: 'vuvio-test-live-selection-ring',
           type: 'circle',
@@ -520,7 +526,7 @@ export default function TestGlobe({ streams, mode = 'test' }) {
             'circle-color': 'rgba(43,217,200,0)',
             'circle-radius': liveRingRadius(0, selectedId ?? '', hoveredId),
             'circle-stroke-color': SELECTED_RING_COLOR,
-            'circle-stroke-width': 1.15,
+            'circle-stroke-width': 0.9,
             'circle-stroke-opacity': liveRingOpacity(selectedId ?? '', hoveredId),
             'circle-opacity': 0,
           },
@@ -688,20 +694,20 @@ export default function TestGlobe({ streams, mode = 'test' }) {
         map.jumpTo({ center: [center.lng + (ROTATE_DEGREES_PER_SECOND * delta) / 1000, center.lat] });
       }
 
-      // Pulse paint updates throttled to 30fps
+      // Breathing animation updates throttled to 30fps
       if (time - lastPaintTime >= PAINT_INTERVAL) {
         lastPaintTime = time;
-        const pulseClock = (time % 1650) / 1650;
+        const breathingClock = (time % 2800) / 2800; // 2.8s breathing cycle
 
-        if (map.getLayer('vuvio-test-live-pulse')) {
-          map.setPaintProperty('vuvio-test-live-pulse', 'circle-radius', livePulseRadius(pulseClock));
-          map.setPaintProperty('vuvio-test-live-pulse', 'circle-opacity', livePulseOpacity(pulseClock));
+        if (map.getLayer('vuvio-test-live-glow')) {
+          map.setPaintProperty('vuvio-test-live-glow', 'circle-radius', markerGlowRadius(breathingClock));
+          map.setPaintProperty('vuvio-test-live-glow', 'circle-opacity', markerGlowOpacity(breathingClock));
         }
         if (map.getLayer('vuvio-test-live-points')) {
-          map.setPaintProperty('vuvio-test-live-points', 'circle-radius', livePointRadius(pulseClock, selectedId ?? ''));
+          map.setPaintProperty('vuvio-test-live-points', 'circle-radius', livePointRadius(breathingClock, selectedId ?? ''));
         }
         if (map.getLayer('vuvio-test-live-selection-ring')) {
-          map.setPaintProperty('vuvio-test-live-selection-ring', 'circle-radius', liveRingRadius(pulseClock, selectedId ?? '', hoveredId));
+          map.setPaintProperty('vuvio-test-live-selection-ring', 'circle-radius', liveRingRadius(breathingClock, selectedId ?? '', hoveredId));
           map.setPaintProperty('vuvio-test-live-selection-ring', 'circle-stroke-opacity', liveRingOpacity(selectedId ?? '', hoveredId));
         }
       }
