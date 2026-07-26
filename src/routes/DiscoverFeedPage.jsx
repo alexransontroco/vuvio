@@ -2,6 +2,7 @@ import { Eye, Heart, MapPin, MessageCircle, Plus, Send, SlidersHorizontal, X } f
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useSearchParams } from 'react-router-dom';
+import BrandMark from '../components/BrandMark.jsx';
 import CreatorLink from '../components/CreatorLink.jsx';
 import LiveBadge from '../components/LiveBadge.jsx';
 import SegmentedControl from '../components/SegmentedControl.jsx';
@@ -281,9 +282,9 @@ export default function DiscoverFeedPage() {
     const deltaY = event.clientY - pointerStart.current.y;
     const deltaX = event.clientX - pointerStart.current.x;
     pointerStart.current = null;
-    resetDrag();
-    if (Math.abs(deltaY) < swipeThreshold || Math.abs(deltaY) < Math.abs(deltaX) * 1.2) return;
+    if (Math.abs(deltaY) < swipeThreshold || Math.abs(deltaY) < Math.abs(deltaX) * 1.2) { resetDrag(); return; }
     tryGoTo(deltaY < 0 ? 1 : -1);
+    window.setTimeout(resetDrag, 360);
   };
 
   const onPointerCancel = () => {
@@ -321,9 +322,9 @@ export default function DiscoverFeedPage() {
     const deltaY = touch.clientY - touchStart.current.y;
     const deltaX = touch.clientX - touchStart.current.x;
     touchStart.current = null;
-    resetDrag();
-    if (Math.abs(deltaY) < swipeThreshold || Math.abs(deltaY) < Math.abs(deltaX) * 1.2) return;
+    if (Math.abs(deltaY) < swipeThreshold || Math.abs(deltaY) < Math.abs(deltaX) * 1.2) { resetDrag(); return; }
     tryGoTo(deltaY < 0 ? 1 : -1);
+    window.setTimeout(resetDrag, 360);
   };
 
   const onWheel = (event) => {
@@ -415,6 +416,10 @@ export default function DiscoverFeedPage() {
             {swipeDir > 0 ? 'Next' : 'Back'} · {travelCity}
           </div>
         ) : null}
+      </div>
+
+      <div className="discover-brand-logo" aria-hidden="true">
+        <BrandMark size={20} showName />
       </div>
 
       <header className="discover-topbar">

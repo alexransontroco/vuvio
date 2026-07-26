@@ -47,6 +47,7 @@ const newPovExploreStreams = newPovStreams.map((stream, index) => ({
   viewers: Number.parseInt(stream.viewers.replace(/\D/g, ''), 10) || 0,
   viewerLabel: stream.viewers,
   duration: `${8 + (index % 7) * 4} min`,
+  coordinates: stream.coordinates,
   note: stream.experienceTitle,
   map: {
     top: `${Math.max(18, Math.min(82, 50 - stream.coordinates[1] * 0.42))}%`,

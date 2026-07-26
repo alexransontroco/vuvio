@@ -383,7 +383,7 @@ export default function TestGlobe({ streams, mode = 'test' }) {
         map.addSource('vuvio-test-lives', {
           type: 'geojson',
           data: buildCollection(liveStreams),
-          cluster: isActualMode,
+          cluster: false,
           clusterMaxZoom: 5,
           clusterMinPoints: 3,
           clusterRadius: 52,
