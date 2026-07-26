@@ -99,57 +99,58 @@ function breathingWave(clock) {
   ];
 }
 
-// Subtle glow layer for marker — very restrained
+// Subtle glow layer for marker — very restrained and lightweight
 function markerGlowRadius(clock) {
   const wave = breathingWave(clock);
   return [
     '+',
-    ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 9, 300, 11, 800, 13],
-    ['*', wave, ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 0.6, 300, 0.8, 800, 1]],
+    ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 7, 300, 9, 800, 11],
+    ['*', wave, ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 0.4, 300, 0.5, 800, 0.7]],
   ];
 }
 
-// Soft glow opacity — very subtle breathing
+// Soft glow opacity — very subtle and almost imperceptible breathing
 function markerGlowOpacity(clock) {
   const wave = breathingWave(clock);
   return [
     '+',
-    ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 0.08, 300, 0.10, 800, 0.12],
-    ['*', wave, ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 0.04, 300, 0.05, 800, 0.06]],
+    ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 0.04, 300, 0.05, 800, 0.06],
+    ['*', wave, ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 0.02, 300, 0.025, 800, 0.03]],
   ];
 }
 
-// Small luminous core for live markers
+// Small luminous core for live markers — refined and minimal
 function livePointRadius(clock, selectedId = '') {
   const wave = breathingWave(clock);
   return [
     'case',
     ['==', ['get', 'id'], selectedId],
-    ['+', 4.2, ['*', wave, 0.4]],
-    ['+', ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 2.4, 300, 3.0, 800, 3.6], ['*', wave, 0.35]],
+    ['+', 3.8, ['*', wave, 0.3]],
+    ['+', ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 2.0, 300, 2.6, 800, 3.2], ['*', wave, 0.25]],
   ];
 }
 
-// Thin elegant ring for selected marker — one refined ring only
+// Thin elegant ring for selected marker — one refined subtle ring only
 function liveRingRadius(clock, selectedId = '', hoveredId = '') {
   const wave = breathingWave(clock);
   return [
     'case',
     ['==', ['get', 'id'], selectedId],
-    ['+', 8.4, ['*', wave, 0.8]],
+    ['+', 7.6, ['*', wave, 0.6]],
     ['==', ['get', 'id'], hoveredId],
-    ['+', 6.8, ['*', wave, 0.5]],
+    ['+', 6.2, ['*', wave, 0.4]],
     0,
   ];
 }
 
+// Subtle ring opacity — refined and restrained
 function liveRingOpacity(selectedId = '', hoveredId = '') {
   return [
     'case',
     ['==', ['get', 'id'], selectedId],
-    0.82,
+    0.54,
     ['==', ['get', 'id'], hoveredId],
-    0.52,
+    0.32,
     0,
   ];
 }
@@ -437,23 +438,7 @@ export default function TestGlobe({ streams, mode = 'test' }) {
           },
         });
 
-        map.addLayer({
-          id: 'vuvio-test-clusters',
-          type: 'circle',
-          source: 'vuvio-test-lives',
-          filter: ['has', 'point_count'],
-          paint: {
-            'circle-color': clusterColor,
-            'circle-opacity': 0.14,
-            'circle-stroke-color': clusterColor,
-            'circle-stroke-opacity': 0.62,
-            'circle-stroke-width': 1,
-            'circle-radius': isActualMode
-              ? ['step', ['get', 'point_count'], 13, 3, 15, 6, 17]
-              : ['step', ['get', 'point_count'], 10, 3, 12, 6, 14],
-          },
-        });
-
+        // Elegant cluster marker — very subtle and lightweight
         map.addLayer({
           id: 'vuvio-test-cluster-glow',
           type: 'circle',
@@ -462,10 +447,27 @@ export default function TestGlobe({ streams, mode = 'test' }) {
           paint: {
             'circle-color': clusterColor,
             'circle-radius': isActualMode
-              ? ['step', ['get', 'point_count'], 18, 3, 22, 6, 26]
-              : ['step', ['get', 'point_count'], 15, 3, 19, 6, 23],
-            'circle-blur': 0.95,
+              ? ['step', ['get', 'point_count'], 14, 3, 17, 6, 20]
+              : ['step', ['get', 'point_count'], 11, 3, 14, 6, 17],
+            'circle-blur': 0.92,
             'circle-opacity': 0.08,
+          },
+        });
+
+        map.addLayer({
+          id: 'vuvio-test-clusters',
+          type: 'circle',
+          source: 'vuvio-test-lives',
+          filter: ['has', 'point_count'],
+          paint: {
+            'circle-color': clusterColor,
+            'circle-opacity': 0.12,
+            'circle-stroke-color': clusterColor,
+            'circle-stroke-opacity': 0.38,
+            'circle-stroke-width': 0.6,
+            'circle-radius': isActualMode
+              ? ['step', ['get', 'point_count'], 11, 3, 13, 6, 15]
+              : ['step', ['get', 'point_count'], 9, 3, 11, 6, 13],
           },
         });
 
@@ -476,14 +478,14 @@ export default function TestGlobe({ streams, mode = 'test' }) {
           filter: ['has', 'point_count'],
           layout: {
             'text-field': ['get', 'point_count_abbreviated'],
-            'text-size': 10,
-            'text-font': ['Open Sans Bold'],
+            'text-size': 9,
+            'text-font': ['Open Sans Regular'],
             'text-allow-overlap': true,
           },
           paint: {
-            'text-color': '#F2F7F6',
-            'text-halo-color': 'rgba(6, 13, 22, 0.72)',
-            'text-halo-width': 0.8,
+            'text-color': 'rgba(242, 247, 246, 0.84)',
+            'text-halo-color': 'rgba(6, 13, 22, 0.62)',
+            'text-halo-width': 0.6,
           },
         });
 
@@ -510,13 +512,13 @@ export default function TestGlobe({ streams, mode = 'test' }) {
           paint: {
             'circle-color': categoryColor,
             'circle-radius': livePointRadius(0, selectedId ?? ''),
-            'circle-stroke-color': ['case', ['==', ['get', 'id'], selectedId ?? ''], '#F2F7F6', 'rgba(242,247,246,0.15)'],
-            'circle-stroke-width': ['case', ['==', ['get', 'id'], selectedId ?? ''], 1.0, 0.3],
-            'circle-opacity': ['case', ['==', ['get', 'id'], selectedId ?? ''], 1.0, 0.94],
+            'circle-stroke-color': ['case', ['==', ['get', 'id'], selectedId ?? ''], '#F2F7F6', 'rgba(242,247,246,0.08)'],
+            'circle-stroke-width': ['case', ['==', ['get', 'id'], selectedId ?? ''], 0.85, 0.2],
+            'circle-opacity': ['case', ['==', ['get', 'id'], selectedId ?? ''], 1.0, 0.92],
           },
         });
 
-        // Thin elegant ring for selected markers
+        // Thin elegant ring for selected markers — very restrained
         map.addLayer({
           id: 'vuvio-test-live-selection-ring',
           type: 'circle',
@@ -526,7 +528,7 @@ export default function TestGlobe({ streams, mode = 'test' }) {
             'circle-color': 'rgba(43,217,200,0)',
             'circle-radius': liveRingRadius(0, selectedId ?? '', hoveredId),
             'circle-stroke-color': SELECTED_RING_COLOR,
-            'circle-stroke-width': 0.9,
+            'circle-stroke-width': 0.7,
             'circle-stroke-opacity': liveRingOpacity(selectedId ?? '', hoveredId),
             'circle-opacity': 0,
           },
@@ -682,16 +684,21 @@ export default function TestGlobe({ streams, mode = 'test' }) {
     if (animationRef.current) cancelAnimationFrame(animationRef.current);
     let previousTime = performance.now();
     let lastPaintTime = 0;
+    let lastRotationTime = 0;
     const PAINT_INTERVAL = 33; // ~30fps for expensive setPaintProperty calls
+    const ROTATION_INTERVAL = 33; // ~30fps for rotation (throttle expensive jumpTo)
 
     const tick = (time) => {
       const delta = Math.min(80, time - previousTime);
       previousTime = time;
 
-      // Rotation runs every frame (cheap jumpTo)
+      // Rotation throttled to 30fps (expensive operation)
       if (Date.now() > pauseUntilRef.current && !selectedId) {
-        const center = map.getCenter();
-        map.jumpTo({ center: [center.lng + (ROTATE_DEGREES_PER_SECOND * delta) / 1000, center.lat] });
+        if (time - lastRotationTime >= ROTATION_INTERVAL) {
+          lastRotationTime = time;
+          const center = map.getCenter();
+          map.jumpTo({ center: [center.lng + (ROTATE_DEGREES_PER_SECOND * ROTATION_INTERVAL) / 1000, center.lat] });
+        }
       }
 
       // Breathing animation updates throttled to 30fps

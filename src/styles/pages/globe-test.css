@@ -423,7 +423,7 @@
   color: rgba(255, 255, 255, 0.94);
 }
 
-/* ── Refined live marker — small luminous beacon ──── */
+/* ── Refined live marker — subtle almost-invisible beacon ──── */
 
 .vuvio-dv-pulse {
   pointer-events: none;
@@ -434,18 +434,17 @@
   display: block;
   color: var(--dv-color, #2BD9C8);
   filter:
-    drop-shadow(0 0 3.2px var(--dv-color, #2BD9C8))
-    drop-shadow(0 0 1.2px var(--dv-color, #2BD9C8));
-  opacity: 0.88;
+    drop-shadow(0 0 1.4px var(--dv-color, #2BD9C8));
+  opacity: 0.24;
   animation: vuvio-marker-breathing 2.8s ease-in-out infinite;
   animation-delay: var(--dv-delay, 0s);
   transform-origin: center;
 }
 
 @keyframes vuvio-marker-breathing {
-  0%   { opacity: 0.82;  transform: scale(1); }
-  25%  { opacity: 0.95;  transform: scale(1.06); }
-  50%  { opacity: 0.88;  transform: scale(1.04); }
-  75%  { opacity: 0.92;  transform: scale(1.05); }
-  100% { opacity: 0.82;  transform: scale(1); }
+  0%   { opacity: 0.18;  transform: scale(1); }
+  25%  { opacity: 0.28;  transform: scale(1.05); }
+  50%  { opacity: 0.24;  transform: scale(1.03); }
+  75%  { opacity: 0.26;  transform: scale(1.04); }
+  100% { opacity: 0.18;  transform: scale(1); }
 }
