@@ -5,6 +5,7 @@ import { useSearchParams } from 'react-router-dom';
 import CreatorLink from '../components/CreatorLink.jsx';
 import LiveBadge from '../components/LiveBadge.jsx';
 import SegmentedControl from '../components/SegmentedControl.jsx';
+import WatchMiniGlobe from '../components/WatchMiniGlobe.jsx';
 import { streams } from '../data/mockStreams.js';
 
 const discoverModes = [
@@ -136,9 +137,16 @@ export default function DiscoverFeedPage() {
   const swipeLock = useRef(0);
   const swipeAnimationTimer = useRef(null);
   const screenRef = useRef(null);
+  const swipeProgressRef = useRef(0);
+  const isDraggingRef = useRef(false);
+  const [isDragging, setIsDragging] = useState(false);
+  const [swipeDir, setSwipeDir] = useState(1);
 
   const feed = useMemo(() => weightedDiscoverStreams(mode), [mode]);
   const current = feed[index] ?? feed[0] ?? null;
+  const nextIndex = (index + 1) % (feed.length || 1);
+  const prevIndex = (index - 1 + (feed.length || 1)) % (feed.length || 1);
+  const globeAdjacentStream = swipeDir > 0 ? feed[nextIndex] : feed[prevIndex];
 
   useEffect(() => {
     if (!requestedLiveId || !feed.length) return;
@@ -206,10 +214,31 @@ export default function DiscoverFeedPage() {
     '.discover-topbar, .discover-filter-row, .discover-bottom-bar, .discover-creator-row, .discover-comments, a, input, textarea, select'
   ));
 
+  const resetDrag = () => {
+    swipeProgressRef.current = 0;
+    isDraggingRef.current = false;
+    setIsDragging(false);
+  };
+
   const onPointerDown = (event) => {
     if (event.pointerType === 'touch') return;
     if (shouldIgnoreSwipeTarget(event.target)) return;
     pointerStart.current = { x: event.clientX, y: event.clientY, pointerId: event.pointerId };
+  };
+
+  const onPointerMove = (event) => {
+    if (event.pointerType === 'touch') return;
+    if (!pointerStart.current) return;
+    const deltaY = event.clientY - pointerStart.current.y;
+    const deltaX = event.clientX - pointerStart.current.x;
+    if (Math.abs(deltaX) > Math.abs(deltaY) * 1.5) return;
+    const progress = Math.max(-1, Math.min(1, -deltaY / (window.innerHeight * 0.38)));
+    swipeProgressRef.current = progress;
+    if (!isDraggingRef.current && Math.abs(progress) > 0.09) {
+      isDraggingRef.current = true;
+      setIsDragging(true);
+      setSwipeDir(progress > 0 ? 1 : -1);
+    }
   };
 
   const onPointerUp = (event) => {
@@ -218,12 +247,14 @@ export default function DiscoverFeedPage() {
     const deltaY = event.clientY - pointerStart.current.y;
     const deltaX = event.clientX - pointerStart.current.x;
     pointerStart.current = null;
+    resetDrag();
     if (Math.abs(deltaY) < swipeThreshold || Math.abs(deltaY) < Math.abs(deltaX) * 1.2) return;
     tryGoTo(deltaY < 0 ? 1 : -1);
   };
 
   const onPointerCancel = () => {
     pointerStart.current = null;
+    resetDrag();
   };
 
   const onTouchStart = (event) => {
@@ -233,6 +264,22 @@ export default function DiscoverFeedPage() {
     touchStart.current = { x: touch.clientX, y: touch.clientY };
   };
 
+  const onTouchMove = (event) => {
+    if (!touchStart.current || commentsOpen) return;
+    const touch = event.touches[0];
+    if (!touch) return;
+    const deltaY = touch.clientY - touchStart.current.y;
+    const deltaX = touch.clientX - touchStart.current.x;
+    if (Math.abs(deltaX) > Math.abs(deltaY) * 1.5) return;
+    const progress = Math.max(-1, Math.min(1, -deltaY / (window.innerHeight * 0.38)));
+    swipeProgressRef.current = progress;
+    if (!isDraggingRef.current && Math.abs(progress) > 0.09) {
+      isDraggingRef.current = true;
+      setIsDragging(true);
+      setSwipeDir(progress > 0 ? 1 : -1);
+    }
+  };
+
   const onTouchEnd = (event) => {
     if (!touchStart.current) return;
     const touch = event.changedTouches[0];
@@ -240,6 +287,7 @@ export default function DiscoverFeedPage() {
     const deltaY = touch.clientY - touchStart.current.y;
     const deltaX = touch.clientX - touchStart.current.x;
     touchStart.current = null;
+    resetDrag();
     if (Math.abs(deltaY) < swipeThreshold || Math.abs(deltaY) < Math.abs(deltaX) * 1.2) return;
     tryGoTo(deltaY < 0 ? 1 : -1);
   };
@@ -278,6 +326,9 @@ export default function DiscoverFeedPage() {
     }, 220);
   };
 
+  const travelCity = globeAdjacentStream?.city;
+  const showTravelLabel = isDragging && Boolean(travelCity);
+
   return (
     <section
       ref={screenRef}
@@ -285,9 +336,11 @@ export default function DiscoverFeedPage() {
       aria-label={t('explore.aria')}
       tabIndex={0}
       onPointerDown={onPointerDown}
+      onPointerMove={onPointerMove}
       onPointerUp={onPointerUp}
       onPointerCancel={onPointerCancel}
       onTouchStart={onTouchStart}
+      onTouchMove={onTouchMove}
       onTouchEnd={onTouchEnd}
       onWheel={onWheel}
     >
@@ -316,6 +369,19 @@ export default function DiscoverFeedPage() {
         />
       )}
       <span className="discover-shade" />
+
+      <div className="watch-globe-wrap" aria-hidden="true">
+        <WatchMiniGlobe
+          currentStream={current}
+          nextStream={isDragging ? globeAdjacentStream : null}
+          swipeProgressRef={swipeProgressRef}
+        />
+        {showTravelLabel ? (
+          <div className="watch-travel-label">
+            {swipeDir > 0 ? 'Next' : 'Back'} · {travelCity}
+          </div>
+        ) : null}
+      </div>
 
       <header className="discover-topbar">
         <SegmentedControl items={discoverModes.map((item) => ({ ...item, label: t(item.labelKey) }))} value={mode} onChange={(next) => {

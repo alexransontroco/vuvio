@@ -555,6 +555,25 @@ export default function ExplorePage() {
     chip?.scrollIntoView({ block: 'nearest', inline: 'start', behavior: 'instant' });
   }, []);
 
+  useEffect(() => {
+    const scrollEl = document.querySelector('.ep-screen');
+    if (!scrollEl) return;
+
+    const onKeyDown = (event) => {
+      const scrollAmount = 180;
+      if (event.key === 'ArrowDown' || event.key === 'PageDown') {
+        event.preventDefault();
+        scrollEl.scrollTop += scrollAmount;
+      } else if (event.key === 'ArrowUp' || event.key === 'PageUp') {
+        event.preventDefault();
+        scrollEl.scrollTop -= scrollAmount;
+      }
+    };
+
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, []);
+
   return (
     <section className="screen-scroll ep-screen" aria-label="Explore">
 

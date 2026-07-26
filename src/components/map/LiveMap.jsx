@@ -13,24 +13,16 @@ const LIVE_COLOR = '#2BD9C8';
 const UPCOMING_COLOR = '#3B82E6';
 const MIXED_CLUSTER_COLOR = '#24C6F0';
 
-// Optimized city lights - reduced from 31 to 20 for better performance
+// Minimal city lights - only major cities for performance
 const cityLights = [
   [-0.1276, 51.5072, 0.95],  // London
   [2.3522, 48.8566, 1],      // Paris
-  [9.19, 45.4642, 0.78],     // Milan
   [37.6173, 55.7558, 0.86],  // Moscow
-  [55.2708, 25.2048, 0.78],  // Dubai
   [72.8777, 19.076, 0.92],   // Mumbai
-  [77.1025, 28.7041, 0.96],  // Delhi
-  [103.8198, 1.3521, 0.86],  // Singapore
   [121.4737, 31.2304, 1],    // Shanghai
   [139.6917, 35.6895, 1],    // Tokyo
-  [151.2093, -33.8688, 0.72],// Sydney
   [-74.006, 40.7128, 1],     // New York
   [-118.2437, 34.0522, 0.92],// Los Angeles
-  [-87.6298, 41.8781, 0.82], // Chicago
-  [-46.6333, -23.5505, 0.9], // São Paulo
-  [-58.3816, -34.6037, 0.78],// Buenos Aires
 ];
 
 const statusColor = [
@@ -275,29 +267,8 @@ export default function LiveMap({
     });
     map.on('load', () => {
       map.setProjection({ type: 'globe' });
-
-      if (!map.getSource(TERRAIN_SOURCE_ID)) {
-        map.addSource(TERRAIN_SOURCE_ID, {
-          type: 'raster-dem',
-          url: 'https://demotiles.maplibre.org/terrain-tiles/tiles.json',
-          tileSize: 256,
-        });
-        map.setTerrain({ source: TERRAIN_SOURCE_ID, exaggeration: 1.45 });
-        map.addLayer(
-          {
-            id: 'vuvio-hillshade',
-            type: 'hillshade',
-            source: TERRAIN_SOURCE_ID,
-            paint: {
-              'hillshade-shadow-color': '#02070D',
-              'hillshade-highlight-color': '#1B4B63',
-              'hillshade-accent-color': '#0E2738',
-              'hillshade-illumination-direction': 320,
-              'hillshade-exaggeration': 0.36,
-            },
-          },
-        );
-      }
+      // Terrain disabled for performance - it's very costly on globe
+      // Re-enable if needed: map.setTerrain({ source: TERRAIN_SOURCE_ID, exaggeration: 1.45 });
 
       map.addSource('vuvio-lives', {
         type: 'geojson',
@@ -319,44 +290,16 @@ export default function LiveMap({
         data: buildCityLightCollection(),
       });
 
-      map.addLayer({
-        id: 'vuvio-city-light-aura',
-        type: 'circle',
-        source: 'vuvio-city-lights',
-        paint: {
-          'circle-color': '#F5A85B',
-          'circle-radius': ['interpolate', ['linear'], ['get', 'intensity'], 0.12, 4, 1, 16],
-          'circle-blur': 1,
-          'circle-opacity': ['interpolate', ['linear'], ['get', 'intensity'], 0.12, 0.02, 1, 0.12],
-        },
-      });
-
+      // Optimized: Single layer instead of 3 separate layers for city lights
       map.addLayer({
         id: 'vuvio-city-light-glow',
         type: 'circle',
         source: 'vuvio-city-lights',
         paint: {
-          'circle-color': '#E8B45B',
-          'circle-radius': ['interpolate', ['linear'], ['get', 'intensity'], 0.12, 1.8, 1, 7],
-          'circle-blur': 0.9,
-          'circle-opacity': ['interpolate', ['linear'], ['get', 'intensity'], 0.12, 0.05, 1, 0.22],
-        },
-      });
-
-      map.addLayer({
-        id: 'vuvio-city-light-points',
-        type: 'circle',
-        source: 'vuvio-city-lights',
-        paint: {
           'circle-color': '#FFD48A',
-          'circle-radius': [
-            'case',
-            ['==', ['get', 'core'], 1],
-            ['interpolate', ['linear'], ['get', 'intensity'], 0.12, 0.75, 1, 1.35],
-            ['interpolate', ['linear'], ['get', 'intensity'], 0.12, 0.28, 1, 0.72],
-          ],
-          'circle-blur': 0.2,
-          'circle-opacity': ['interpolate', ['linear'], ['get', 'intensity'], 0.12, 0.12, 1, 0.58],
+          'circle-radius': ['interpolate', ['linear'], ['get', 'intensity'], 0.12, 3.5, 1, 9],
+          'circle-blur': 0.8,
+          'circle-opacity': ['interpolate', ['linear'], ['get', 'intensity'], 0.12, 0.06, 1, 0.28],
         },
       });
 
