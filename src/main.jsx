@@ -18,6 +18,7 @@ import './styles/pages/support.css';
 import './styles/pages/icons.css';
 import './styles/pages/vision.css';
 import './styles/pages/auth.css';
+import './components/social/social.css';
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>

@@ -2613,3 +2613,66 @@
   from { opacity: 0; transform: translateY(6px); }
   to   { opacity: 1; transform: none; }
 }
+
+/* ── Live Presence Overlay ────────────────────────────────── */
+/* Social presence features (friends watching indicator) */
+
+.live-presence-pill {
+  position: absolute;
+  top: 76px;
+  left: 16px;
+  z-index: 25;
+  max-width: calc(100% - 32px);
+  animation: presence-pill-in 260ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes presence-pill-in {
+  from {
+    opacity: 0;
+    transform: scale(0.88) translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.live-feed.is-immersive .live-presence-pill {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.live-presence-invite-btn {
+  position: absolute;
+  bottom: calc(var(--nav-height) + var(--safe-bottom) + 16px);
+  right: 16px;
+  z-index: 24;
+  width: 48px;
+  height: 48px;
+  display: grid;
+  place-items: center;
+  border: 0.5px solid rgba(53, 227, 220, 0.24);
+  border-radius: 50%;
+  background: linear-gradient(135deg, rgba(53, 227, 220, 0.12) 0%, rgba(67, 169, 232, 0.08) 100%);
+  color: var(--vuvio-cyan);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  cursor: pointer;
+  transition: all 200ms ease;
+  box-shadow: 0 4px 16px rgba(53, 227, 220, 0.12);
+}
+
+.live-presence-invite-btn:active {
+  transform: scale(0.92);
+}
+
+.live-presence-invite-btn:hover {
+  background: linear-gradient(135deg, rgba(53, 227, 220, 0.18) 0%, rgba(67, 169, 232, 0.12) 100%);
+  box-shadow: 0 6px 20px rgba(53, 227, 220, 0.18);
+}
+
+.live-feed.is-immersive .live-presence-invite-btn {
+  opacity: 0;
+  pointer-events: none;
+}
+}

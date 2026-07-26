@@ -7,6 +7,7 @@ import CreatorLink from '../components/CreatorLink.jsx';
 import { EquipmentViewerSheet } from '../components/equipment/EquipmentKit.jsx';
 import LiveBadge from '../components/LiveBadge.jsx';
 import SegmentedControl from '../components/SegmentedControl.jsx';
+import { LivePresenceOverlay } from '../components/social/LivePresenceOverlay.jsx';
 import { lives } from '../data/lives.js';
 import { mapStreams } from '../data/mapStreams.js';
 import { streams, upcomingStreams } from '../data/mockStreams.js';
@@ -1663,6 +1664,8 @@ function LiveViewer({ liveId, creatorMode = false }) {
         <LiveBadge pulse />
         <span className="live-feed__watching">{live.viewers} watching</span>
       </div>
+
+      <LivePresenceOverlay liveId={live.id} liveTitle={live.title ?? live.note} onJoinFriend={() => {}} />
 
       <LiveLocationGlobe live={live} onOpen={() => navigate(`/globe?live=${live.id}`)} />
 

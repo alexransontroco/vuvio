@@ -21,6 +21,7 @@ import { useNavigate } from 'react-router-dom';
 import { getMessagePreferences, updateMessagePreferences } from '../services/messagingService.js';
 import { useState } from 'react';
 import { useAuth } from '../context/AuthContext.jsx';
+import { LiveActivityPrivacySettings } from '../components/social/LiveActivityPrivacySettings.jsx';
 
 const settingGroups = [
   {
@@ -195,6 +196,8 @@ export default function SettingsPage() {
             ))}
           </div>
         </section>
+
+        <LiveActivityPrivacySettings />
 
         <footer className="settings-footer">
           <strong>Vuvio</strong>

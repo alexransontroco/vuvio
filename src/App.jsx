@@ -24,9 +24,10 @@ const PrivacyPage         = lazy(() => import('./routes/PrivacyPage.jsx'));
 const ProfilePage         = lazy(() => import('./routes/ProfilePage.jsx'));
 const ReportProblemPage   = lazy(() => import('./routes/ReportProblemPage.jsx'));
 const SettingsPage        = lazy(() => import('./routes/SettingsPage.jsx'));
-const SignupPage           = lazy(() => import('./routes/SignupPage.jsx'));
+const SignupPage          = lazy(() => import('./routes/SignupPage.jsx'));
 const TermsPage           = lazy(() => import('./routes/TermsPage.jsx'));
 const VisionPage          = lazy(() => import('./routes/VisionPage.jsx'));
+const SocialDemoPage      = lazy(() => import('./routes/SocialDemoPage.jsx'));
 
 function RouteFallback() {
   const { t } = useTranslation();
@@ -115,6 +116,7 @@ export default function App() {
         <Route path="/privacy"    element={<Lazy component={PrivacyPage} />} />
         <Route path="/help"       element={<Lazy component={HelpPage} />} />
         <Route path="/icons"      element={<Lazy component={IconsPreviewPage} />} />
+        <Route path="/demo/social" element={<Lazy component={SocialDemoPage} />} />
 
         {/* Public creator profiles */}
         <Route path="/profile/:creatorId" element={<Lazy component={ProfilePage} />} />
