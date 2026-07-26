@@ -106,21 +106,22 @@
 /* + badge on center button - replaces dot in logo */
 .bottom-nav__create-badge {
   position: absolute;
-  top: 8px;
+  top: -2px;
   left: 50%;
   transform: translateX(-50%);
-  width: 18px;
-  height: 18px;
+  width: 24px;
+  height: 24px;
   display: grid;
   place-items: center;
   border: 1.5px solid rgba(5, 18, 28, 0.94);
   border-radius: 50%;
   background: var(--vuvio-cyan);
   color: #03212a;
-  font-size: 10px;
+  font-size: 12px;
   font-weight: 800;
   line-height: 1;
   pointer-events: none;
+  box-shadow: 0 2px 8px rgba(53, 227, 220, 0.3);
 }
 
 .create-sheet {

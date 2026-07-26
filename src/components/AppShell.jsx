@@ -5,8 +5,8 @@ import BottomNav from './BottomNav.jsx';
 export default function AppShell() {
   const location = useLocation();
   const searchParams = new URLSearchParams(location.search);
-  const isBroadcast = location.pathname === '/home' && searchParams.get('broadcast') === '1';
-  const isLive = location.pathname.startsWith('/home/') || (location.pathname === '/home' && searchParams.has('live'));
+  const isBroadcast = location.pathname === '/watch' && searchParams.get('broadcast') === '1';
+  const isLive = location.pathname.startsWith('/watch/') || (location.pathname === '/watch' && searchParams.has('live'));
   const [liveNavCollapsed, setLiveNavCollapsed] = useState(false);
 
   useEffect(() => {

@@ -181,7 +181,7 @@ export default function OnboardingPage() {
   const navigate  = useNavigate();
   const location  = useLocation();
   const { user, userProfile, updateProfile, refreshUserProfile } = useAuth();
-  const returnTo  = location.state?.returnTo || '/home';
+  const returnTo  = location.state?.returnTo || '/watch';
 
   const [step,         setStep]         = useState(1);
   const [displayName,  setDisplayName]  = useState(userProfile?.displayName || user?.displayName || '');

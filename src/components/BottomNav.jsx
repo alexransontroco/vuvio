@@ -22,7 +22,7 @@ import {
 } from '../services/equipmentService.js';
 
 const navItems = [
-  { to: '/home', labelKey: 'navigation.watch', icon: Tv2 },
+  { to: '/watch', labelKey: 'navigation.watch', icon: Tv2 },
   { to: '/explore', labelKey: 'navigation.explore', icon: Compass },
   { to: '/globe', labelKey: 'navigation.globe', icon: Globe2 },
   { to: '/profile', labelKey: 'navigation.profile', icon: UserRound },
@@ -195,7 +195,7 @@ export default function BottomNav({ collapsible = false, collapsed = false, onEx
     rememberLiveEquipmentSetup(draft.family, selectedIds);
     rememberLiveEquipmentSetupBySubcategory(draft.subcategory, selectedIds);
     closeCreate();
-    navigate(`/home?live=${encodeURIComponent(live.id)}&broadcast=1`);
+    navigate(`/watch?live=${encodeURIComponent(live.id)}&broadcast=1`);
   };
 
   const applyPreviousSetup = () => {

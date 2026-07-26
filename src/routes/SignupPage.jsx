@@ -29,7 +29,7 @@ export default function SignupPage() {
   const navigate  = useNavigate();
   const location  = useLocation();
   const { signUp, signInWithGoogle } = useAuth();
-  const returnTo  = location.state?.returnTo || '/home';
+  const returnTo  = location.state?.returnTo || '/watch';
 
   const [displayName, setDisplayName] = useState('');
   const [email,       setEmail]       = useState('');
@@ -86,7 +86,7 @@ export default function SignupPage() {
   return (
     <div className="auth-screen">
       <div className="auth-panel">
-        <Link to="/home" className="auth-brand" aria-label="Vuvio home">
+        <Link to="/watch" className="auth-brand" aria-label="Vuvio home">
           <BrandMark size={34} showName />
         </Link>
 

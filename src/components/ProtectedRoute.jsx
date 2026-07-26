@@ -24,7 +24,7 @@ export function PublicOnlyRoute({ children }) {
   if (authLoading) return null;
 
   if (user) {
-    return <Navigate to="/home" replace />;
+    return <Navigate to="/watch" replace />;
   }
 
   return children;

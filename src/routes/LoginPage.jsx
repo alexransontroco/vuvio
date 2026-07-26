@@ -19,7 +19,7 @@ export default function LoginPage() {
   const navigate   = useNavigate();
   const location   = useLocation();
   const { signIn, signInWithGoogle } = useAuth();
-  const returnTo   = location.state?.returnTo || '/home';
+  const returnTo   = location.state?.returnTo || '/watch';
 
   const [email,       setEmail]       = useState('');
   const [password,    setPassword]    = useState('');

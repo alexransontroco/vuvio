@@ -72,7 +72,7 @@ export default function AllLivesPage() {
   const [filtersOpen, setFiltersOpen] = useState(false);
   const searchRef = useRef(null);
 
-  const openStream = (id) => navigate(`/home?live=${encodeURIComponent(id)}`);
+  const openStream = (id) => navigate(`/watch?live=${encodeURIComponent(id)}`);
 
   const filtered = useMemo(() => {
     let result = streams.filter((s) => matchesSearch(s, search));

@@ -98,14 +98,14 @@ export default function App() {
 
       {/* ── App shell with bottom nav ── */}
       <Route element={<AppShell />}>
-        <Route index element={<Navigate to="/home" replace />} />
-        <Route path="/live" element={<Navigate to="/home" replace />} />
-        <Route path="/watch" element={<Navigate to="/home" replace />} />
-        <Route path="/home/:liveId" element={<Navigate to="/home" replace />} />
-        <Route path="/discover" element={<Navigate to="/home" replace />} />
+        <Route index element={<Navigate to="/watch" replace />} />
+        <Route path="/live" element={<Navigate to="/watch" replace />} />
+        <Route path="/home" element={<Navigate to="/watch" replace />} />
+        <Route path="/watch/:liveId" element={<Navigate to="/watch" replace />} />
+        <Route path="/discover" element={<Navigate to="/watch" replace />} />
 
         {/* Public */}
-        <Route path="/home"         element={<Lazy component={HomePage} />} />
+        <Route path="/watch"         element={<Lazy component={HomePage} />} />
         <Route path="/explore"      element={<Lazy component={ExplorePage} />} />
         <Route path="/explore/live" element={<Lazy component={AllLivesPage} />} />
         <Route path="/globe"      element={<Suspense fallback={<RouteFallback />}><GlobeTestPage mode="actual" /></Suspense>} />
@@ -179,7 +179,7 @@ export default function App() {
           }
         />
 
-        <Route path="*" element={<Navigate to="/home" replace />} />
+        <Route path="*" element={<Navigate to="/watch" replace />} />
       </Route>
     </Routes>
   );
