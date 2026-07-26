@@ -16,6 +16,7 @@ import {
   Trash2,
 } from 'lucide-react';
 import { useState } from 'react';
+import { GearThumbnail, GearItemRow } from '../gear/index.js';
 import { EQUIPMENT_CATEGORIES, EQUIPMENT_OWNERSHIP, SUBCATEGORY_EQUIPMENT_TYPES } from '../../data/equipmentModel.js';
 import { equipmentLabel, groupEquipmentByCategory } from '../../services/equipmentService.js';
 
@@ -61,8 +62,6 @@ export function EquipmentCategoryCard({ category, count, onClick }) {
 }
 
 export function EquipmentItemRow({ item, selectable = false, selected = false, onToggle, onOpen, actions, compact = false }) {
-  const { GearThumbnail } = require('../gear/index.js');
-
   const content = (
     <>
       <span className="equipment-item-row__icon">
@@ -119,9 +118,8 @@ export function EquipmentDisclosure({ items }) {
 
 export function GearInLive({ items, onViewLive, compact = false }) {
   if (!items.length) return null;
-  const { GearItemRow } = require('../gear/index.js');
   const captureItems = items.filter((item) => item.category !== 'activity');
-  const activityItems = items.filter((item) => item.category !== 'activity' && item.category !== 'recording');
+  const activityItems = items.filter((item) => item.category === 'activity');
 
   function renderItems(group) {
     return group.map((item) => (
