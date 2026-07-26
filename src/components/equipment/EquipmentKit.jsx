@@ -119,15 +119,21 @@ export function EquipmentDisclosure({ items }) {
 
 export function GearInLive({ items, onViewLive, compact = false }) {
   if (!items.length) return null;
+  const { GearItemRow } = require('../gear/index.js');
   const captureItems = items.filter((item) => item.category !== 'activity');
-  const activityItems = items.filter((item) => item.category === 'activity');
+  const activityItems = items.filter((item) => item.category !== 'activity' && item.category !== 'recording');
 
-  function renderPills(group) {
+  function renderItems(group) {
     return group.map((item) => (
-      <span key={item.id ?? item.equipmentId} className="gear-live-pill">
-        <EquipmentIcon category={item.category} size={16} />
-        {item.brand} {item.model}
-      </span>
+      <GearItemRow
+        key={item.id ?? item.equipmentId}
+        id={item.id ?? item.equipmentId}
+        imageUrl={item.imageUrl}
+        category={item.category}
+        brand={item.brand}
+        model={item.model}
+        displayName={item.displayName || `${item.brand} ${item.model}`}
+      />
     ));
   }
 
@@ -148,13 +154,13 @@ export function GearInLive({ items, onViewLive, compact = false }) {
       {captureItems.length > 0 && (
         <div className="gear-in-live__group">
           <span className="gear-in-live__group-label">Captured with</span>
-          <div className="gear-in-live__items">{renderPills(captureItems)}</div>
+          <div className="gear-in-live__items">{renderItems(captureItems)}</div>
         </div>
       )}
       {activityItems.length > 0 && (
         <div className="gear-in-live__group">
           <span className="gear-in-live__group-label">Activity equipment</span>
-          <div className="gear-in-live__items">{renderPills(activityItems)}</div>
+          <div className="gear-in-live__items">{renderItems(activityItems)}</div>
         </div>
       )}
     </section>

@@ -208,6 +208,7 @@ export function getEquipmentSelection(items, ids = demoLiveEquipmentIds) {
 export function buildEquipmentSnapshots(items, ids) {
   return getEquipmentSelection(items, ids).map((item) => ({
     equipmentId: item.id,
+    displayName: item.displayName || `${item.brand} ${item.model}`,
     brand: item.brand,
     model: item.model,
     equipmentType: item.equipmentType,
@@ -215,5 +216,7 @@ export function buildEquipmentSnapshots(items, ids) {
     ownership: item.ownership,
     affiliateUrl: item.affiliateUrl,
     productUrl: item.productUrl,
+    imageUrl: item.imageUrl || null,
+    imageSource: item.imageSource || null,
   }));
 }

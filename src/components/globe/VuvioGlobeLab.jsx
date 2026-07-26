@@ -6,6 +6,8 @@ import airIconRaw from '../../assets/icons/air/drone.svg?raw';
 import earthIconRaw from '../../assets/icons/terre/terre.svg?raw';
 import waterIconRaw from '../../assets/icons/eau/eau.svg?raw';
 import { EXPERIENCE_FILTERS, enrichExperience, getFamily, getPovType } from '../../data/experienceTaxonomy.js';
+import { worldCountries } from '../../data/worldCountries.js';
+import { borderConfig, createBorderConfig } from '../../config/borderConfig.js';
 
 const familyFilterIcons = {
   air: airIconRaw,
@@ -90,6 +92,10 @@ export default function VuvioGlobeLab({ streams }) {
   const { width, height } = useElementSize(shellRef);
   const [activeFamily, setActiveFamily] = useState('all');
   const [selectedLive, setSelectedLive] = useState(null);
+
+  // Lab border controls
+  const [borderSettings, setBorderSettings] = useState(borderConfig);
+  const [showBorderControls, setShowBorderControls] = useState(false);
 
   const livePoints = useMemo(() => {
     return streams
@@ -248,10 +254,16 @@ export default function VuvioGlobeLab({ streams }) {
           ringMaxRadius={(live) => (live.family === 'air' ? 2.8 : 2.1)}
           ringPropagationSpeed={1.65}
           ringRepeatPeriod={1350}
+          polygonsData={borderSettings.enabled ? worldCountries.features : []}
+          polygonGeoJsonGeometry="geometry"
+          polygonCapColor={() => borderSettings.fillColor}
+          polygonSideColor={() => 'rgba(0,0,0,0)'}
+          polygonStrokeColor={() => borderSettings.color}
+          polygonAltitude={borderSettings.altitude}
+          polygonsTransitionDuration={borderSettings.transitionDuration}
           onPointClick={selectLive}
           enablePointerInteraction
         />
-        <div className="globe-lab-borders" aria-hidden="true" />
         <div className="globe-lab-overlay" aria-hidden="true" />
 
         {showGlobeSwitcher ? (
@@ -267,6 +279,117 @@ export default function VuvioGlobeLab({ streams }) {
             </button>
           </div>
         ) : null}
+
+        {/* Border Lab Controls */}
+        <button
+          type="button"
+          className="globe-lab-border-toggle"
+          onClick={() => setShowBorderControls(!showBorderControls)}
+          aria-label="Toggle border controls"
+          title="Border Lab Controls"
+        >
+          ⚙️
+        </button>
+
+        {showBorderControls && (
+          <div className="globe-lab-border-controls">
+            <div className="border-control-group">
+              <label>
+                <input
+                  type="checkbox"
+                  checked={borderSettings.enabled}
+                  onChange={(e) => setBorderSettings({ ...borderSettings, enabled: e.target.checked })}
+                />
+                <span>Show Borders</span>
+              </label>
+            </div>
+
+            <div className="border-control-group">
+              <label>
+                Opacity:
+                <input
+                  type="range"
+                  min="0"
+                  max="1"
+                  step="0.05"
+                  value={parseFloat(borderSettings.color.match(/[\d.]+/g)?.[3] || 0.32)}
+                  onChange={(e) => {
+                    const opacity = parseFloat(e.target.value);
+                    const [r, g, b] = borderSettings.color.match(/\d+/g).map(Number);
+                    setBorderSettings({
+                      ...borderSettings,
+                      color: `rgba(${r}, ${g}, ${b}, ${opacity})`
+                    });
+                  }}
+                />
+              </label>
+            </div>
+
+            <div className="border-control-group">
+              <label>
+                Color:
+                <input
+                  type="color"
+                  value={`#${borderSettings.color.match(/\d+/g).slice(0, 3).map(x => parseInt(x).toString(16).padStart(2, '0')).join('')}`.toUpperCase()}
+                  onChange={(e) => {
+                    const hex = e.target.value.slice(1);
+                    const r = parseInt(hex.substr(0, 2), 16);
+                    const g = parseInt(hex.substr(2, 2), 16);
+                    const b = parseInt(hex.substr(4, 2), 16);
+                    const opacity = parseFloat(borderSettings.color.match(/[\d.]+/g)?.[3] || 0.32);
+                    setBorderSettings({
+                      ...borderSettings,
+                      color: `rgba(${r}, ${g}, ${b}, ${opacity})`
+                    });
+                  }}
+                />
+              </label>
+            </div>
+
+            <div className="border-control-group">
+              <label>
+                Altitude:
+                <input
+                  type="range"
+                  min="0"
+                  max="0.02"
+                  step="0.001"
+                  value={borderSettings.altitude}
+                  onChange={(e) =>
+                    setBorderSettings({ ...borderSettings, altitude: parseFloat(e.target.value) })
+                  }
+                />
+                <span className="value">{borderSettings.altitude.toFixed(4)}</span>
+              </label>
+            </div>
+
+            <div className="border-control-group">
+              <label>
+                <input
+                  type="checkbox"
+                  checked={borderSettings.fillColor !== 'rgba(0, 0, 0, 0)'}
+                  onChange={(e) => {
+                    setBorderSettings({
+                      ...borderSettings,
+                      fillColor: e.target.checked ? 'rgba(100, 180, 255, 0.08)' : 'rgba(0, 0, 0, 0)'
+                    });
+                  }}
+                />
+                <span>Fill Countries</span>
+              </label>
+            </div>
+
+            <div className="border-control-reset">
+              <button
+                type="button"
+                onClick={() => setBorderSettings(borderConfig)}
+                className="reset-btn"
+              >
+                Reset to Default
+              </button>
+            </div>
+          </div>
+        )}
 
         <div className="globe-lab-controls" aria-label="Globe controls">
           <button type="button" onClick={() => zoomBy(-0.36)} aria-label="Zoom in">
