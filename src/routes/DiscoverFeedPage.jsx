@@ -174,11 +174,9 @@ export default function DiscoverFeedPage() {
       const globeStreams = [...createdLives, ...mapStreams];
       const requested = globeStreams.find(s => s.id === requestedLiveId);
       if (requested) {
-        console.log('📍 Found requested live in globeStreams', { id: requestedLiveId, name: requested.name });
         // Retourner le live demandé + tous les autres
         return [requested, ...globeStreams.filter(s => s.id !== requestedLiveId), ...mockStreams];
       }
-      console.log('⚠️ Requested live NOT in globeStreams', { requestedLiveId, globeStreamsIds: globeStreams.map(s => s.id) });
     }
     // Sinon utiliser tous les flux
     return [...createdLives, ...mapStreams, ...mockStreams];
@@ -191,7 +189,6 @@ export default function DiscoverFeedPage() {
     if (requestedLiveId && !result.find(s => s.id === requestedLiveId)) {
       const requested = allAvailableStreams.find(s => s.id === requestedLiveId);
       if (requested) {
-        console.log('⚠️ Requested live not in feed, adding it');
         const formatted = formatStreamForDiscover(requested);
         return [formatted, ...result];
       }
@@ -204,12 +201,7 @@ export default function DiscoverFeedPage() {
   const effectiveIndex = useMemo(() => {
     if (!requestedLiveId || !feed.length) return index;
     const requestedIndex = feed.findIndex((stream) => stream.id === requestedLiveId);
-    if (requestedIndex >= 0) {
-      console.log('✅ Found requested live at index', requestedIndex, { id: requestedLiveId, stream: feed[requestedIndex] });
-      return requestedIndex;
-    }
-    console.log('❌ Requested live NOT found in feed', { requestedLiveId, feedIds: feed.map(s => s.id).slice(0, 5) });
-    return 0;
+    return requestedIndex >= 0 ? requestedIndex : 0;
   }, [requestedLiveId, feed, index]);
 
   const current = feed[effectiveIndex] ?? feed[0] ?? null;
