@@ -1,9 +1,11 @@
 import { collection, doc, setDoc, getDoc, onSnapshot, updateDoc, deleteDoc, serverTimestamp } from 'firebase/firestore';
-import { db } from '../firebase.js';
+import { auth, db } from '../firebase.js';
 
 let localStream = null;
 let peerConnection = null;
 let iceGatheringComplete = false;
+let cachedRtcConfig = null;
+let cachedRtcConfigExpiresAt = 0;
 
 function splitEnvList(value) {
   return String(value ?? '')
@@ -12,27 +14,31 @@ function splitEnvList(value) {
     .filter(Boolean);
 }
 
-function getIceServers() {
+function fallbackTurnServer() {
   const configuredTurnUrls = splitEnvList(import.meta.env.VITE_TURN_URLS);
   const configuredTurnUsername = import.meta.env.VITE_TURN_USERNAME;
   const configuredTurnCredential = import.meta.env.VITE_TURN_CREDENTIAL;
-  const turnServer = configuredTurnUrls.length && configuredTurnUsername && configuredTurnCredential
-    ? {
+  if (configuredTurnUrls.length && configuredTurnUsername && configuredTurnCredential) {
+    return {
       urls: configuredTurnUrls,
       username: configuredTurnUsername,
       credential: configuredTurnCredential,
-    }
-    : {
-      urls: [
-        'turn:openrelay.metered.ca:80',
-        'turn:openrelay.metered.ca:443',
-        'turn:openrelay.metered.ca:443?transport=tcp',
-        'turns:openrelay.metered.ca:443?transport=tcp',
-      ],
-      username: 'openrelayproject',
-      credential: 'openrelayproject',
     };
+  }
 
+  return {
+    urls: [
+      'turn:openrelay.metered.ca:80',
+      'turn:openrelay.metered.ca:443',
+      'turn:openrelay.metered.ca:443?transport=tcp',
+      'turns:openrelay.metered.ca:443?transport=tcp',
+    ],
+    username: 'openrelayproject',
+    credential: 'openrelayproject',
+  };
+}
+
+function buildRtcConfig(turnServer = fallbackTurnServer()) {
   return [
     { urls: 'stun:stun.l.google.com:19302' },
     { urls: 'stun:stun1.l.google.com:19302' },
@@ -40,7 +46,67 @@ function getIceServers() {
   ];
 }
 
-const RTC_CONFIG = { iceServers: getIceServers() };
+function normalizeTurnPayload(payload) {
+  if (Array.isArray(payload?.iceServers)) {
+    return {
+      iceServers: payload.iceServers,
+      ttlSeconds: Number(payload.ttlSeconds ?? payload.ttl ?? 300) || 300,
+    };
+  }
+
+  const urls = Array.isArray(payload?.urls) ? payload.urls : splitEnvList(payload?.urls);
+  if (!urls.length || !payload?.username || !payload?.credential) return null;
+
+  return {
+    iceServers: buildRtcConfig({
+      urls,
+      username: payload.username,
+      credential: payload.credential,
+    }),
+    ttlSeconds: Number(payload.ttlSeconds ?? payload.ttl ?? 300) || 300,
+  };
+}
+
+async function fetchTurnConfig() {
+  const endpoint = import.meta.env.VITE_TURN_CREDENTIALS_URL || '/api/turn-credentials';
+  const controller = new AbortController();
+  const timeout = window.setTimeout(() => controller.abort(), 1200);
+
+  try {
+    const token = await auth.currentUser?.getIdToken?.();
+    const response = await fetch(endpoint, {
+      method: 'GET',
+      headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+      signal: controller.signal,
+    });
+    if (!response.ok) return null;
+    return normalizeTurnPayload(await response.json());
+  } catch (err) {
+    if (err.name !== 'AbortError') {
+      console.warn('[webrtcService] TURN credential endpoint unavailable:', err.message);
+    }
+    return null;
+  } finally {
+    window.clearTimeout(timeout);
+  }
+}
+
+async function getRtcConfig() {
+  if (cachedRtcConfig && Date.now() < cachedRtcConfigExpiresAt) {
+    return cachedRtcConfig;
+  }
+
+  const remoteConfig = await fetchTurnConfig();
+  if (remoteConfig?.iceServers?.length) {
+    cachedRtcConfig = { iceServers: remoteConfig.iceServers };
+    cachedRtcConfigExpiresAt = Date.now() + Math.max(60, remoteConfig.ttlSeconds - 20) * 1000;
+    return cachedRtcConfig;
+  }
+
+  cachedRtcConfig = { iceServers: buildRtcConfig() };
+  cachedRtcConfigExpiresAt = Date.now() + 60 * 1000;
+  return cachedRtcConfig;
+}
 
 export async function startBroadcast(liveId, userId, existingStream = null) {
   try {
@@ -62,7 +128,7 @@ export async function startBroadcast(liveId, userId, existingStream = null) {
 
     // Create peer connection
     console.log('[webrtcService] Creating peer connection...');
-    peerConnection = new RTCPeerConnection(RTC_CONFIG);
+    peerConnection = new RTCPeerConnection(await getRtcConfig());
     console.log('[webrtcService] Peer connection created');
 
     // Add local stream tracks to peer connection
@@ -259,7 +325,7 @@ export async function watchBroadcast(liveId, onStreamReceived, watcherId = `view
     const watcherRef = doc(db, 'activeLives', liveId, 'watchers', watcherId);
 
     // Create peer connection
-    peerConnection = new RTCPeerConnection(RTC_CONFIG);
+    peerConnection = new RTCPeerConnection(await getRtcConfig());
 
     // Handle remote stream
     peerConnection.ontrack = (event) => {
