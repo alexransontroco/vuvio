@@ -46,12 +46,29 @@ export default function LoginPage() {
     if (googleBusy) return;
     setError('');
     setGoogleBusy(true);
-    const result = await signInWithGoogle();
-    setGoogleBusy(false);
-    if (result.success) {
-      navigate(returnTo, { replace: true });
-    } else if (result.error) {
-      setError(result.error);
+    try {
+      const result = await signInWithGoogle();
+      // For mobile redirect flow, result is null and redirect happens
+      if (result === null) {
+        console.log('[LoginPage] Redirect initiated, awaiting Google...');
+        return;
+      }
+      // For desktop popup flow, result is user object
+      if (result?.uid) {
+        console.log('[LoginPage] Google Sign-In successful');
+        navigate(returnTo, { replace: true });
+      }
+    } catch (err) {
+      const message = await new Promise((resolve) => {
+        // Import parseAuthError dynamically to avoid circular dependency
+        import('../services/authService.js').then((module) => {
+          resolve(module.parseAuthError(err));
+        });
+      });
+      if (message) {
+        setError(message);
+      }
+      setGoogleBusy(false);
     }
   };
 

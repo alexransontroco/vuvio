@@ -4,6 +4,7 @@ import { auth } from '../firebase.js';
 import {
   createUserProfileIfMissing,
   getUserProfile,
+  handleGoogleRedirectResult,
   parseAuthError,
   sendPasswordReset,
   signInWithEmail,
@@ -62,24 +63,51 @@ export function AuthProvider({ children }) {
     let startTime = performance.now();
 
     let unsubscribe = () => {};
-    try {
-      unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
-        console.count('[Auth] onAuthStateChanged callback');
-        console.log('[Auth] auth state changed:', firebaseUser ? firebaseUser.uid.slice(0, 8) : 'null');
-        setUser(firebaseUser);
-        await loadProfile(firebaseUser);
-        setAuthLoading(false);
-        const elapsed = performance.now() - startTime;
-        console.log(`[Auth] restore session: ${elapsed.toFixed(2)}ms`);
-      }, (err) => {
-        console.error('[Auth] onAuthStateChanged error:', err);
-        setAuthLoading(false);
-      });
-    } catch (err) {
-      console.error('[Auth] onAuthStateChanged setup error:', err);
-      setAuthLoading(false);
-    }
-    return unsubscribe;
+    let mounted = true;
+
+    const setupAuth = async () => {
+      try {
+        // Handle Google Sign-In redirect result first (mobile/PWA)
+        try {
+          console.log('[Auth] Checking for redirect result...');
+          const redirectUser = await handleGoogleRedirectResult();
+          if (redirectUser && mounted) {
+            console.log('[Auth] Redirect user found, setting up auth state listener');
+          }
+        } catch (redirectErr) {
+          console.error('[Auth] Redirect result error:', redirectErr.code, redirectErr.message);
+          if (mounted) setAuthLoading(false);
+        }
+
+        if (!mounted) return;
+
+        // Set up auth state listener
+        unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+          console.count('[Auth] onAuthStateChanged callback');
+          console.log('[Auth] auth state changed:', firebaseUser ? firebaseUser.uid.slice(0, 8) : 'null');
+          if (mounted) {
+            setUser(firebaseUser);
+            await loadProfile(firebaseUser);
+            setAuthLoading(false);
+            const elapsed = performance.now() - startTime;
+            console.log(`[Auth] restore session: ${elapsed.toFixed(2)}ms`);
+          }
+        }, (err) => {
+          console.error('[Auth] onAuthStateChanged error:', err);
+          if (mounted) setAuthLoading(false);
+        });
+      } catch (err) {
+        console.error('[Auth] setupAuth error:', err);
+        if (mounted) setAuthLoading(false);
+      }
+    };
+
+    setupAuth();
+
+    return () => {
+      mounted = false;
+      unsubscribe();
+    };
   }, [loadProfile]);
 
   const refreshUserProfile = useCallback(async () => {

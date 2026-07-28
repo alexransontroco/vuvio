@@ -1205,8 +1205,19 @@ function CreatorLiveSession({ live }) {
     window.clearTimeout(longPressTimer.current);
   };
 
-  const endLive = () => {
+  const endLive = async () => {
     setConfirmEnd(false);
+
+    // Stop broadcast and close peer connection immediately
+    try {
+      console.log('[HomePage] Ending live broadcast:', live.id);
+      await stopBroadcast(live.id);
+      closePeer();
+    } catch (err) {
+      console.error('[HomePage] Failed to stop broadcast:', err);
+    }
+
+    // Show ending animation
     setPhase('ending');
     window.setTimeout(() => setPhase('processing'), 1100);
     window.setTimeout(() => navigate(`/live/${live.id}/recap`), 2900);
@@ -2071,10 +2082,17 @@ export function HomeDiscoverFeed() {
   return <HomePage />;
 }
 
+// Export LiveViewer for use in BroadcasterPage
+export { LiveViewer };
+
 export default function HomePageRoute() {
   const [searchParams] = useSearchParams();
   const homeLives = useMemo(() => streams.map(toHomeLive).filter((stream) => stream.status === 'live'), []);
   const liveId = searchParams.get('live') ?? homeLives[0]?.id ?? '';
-  const creatorMode = searchParams.get('broadcast') === '1';
+
+  // IMPORTANT: Broadcaster should use /broadcast/:liveId route, NOT ?broadcast=1
+  // This keeps watch and broadcast completely separate
+  const creatorMode = false;
+
   return <LiveViewer liveId={liveId} creatorMode={creatorMode} />;
 }

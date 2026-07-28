@@ -1,5 +1,5 @@
 import { vuvioIcons } from '../assets/icons/index.ts';
-import referenceBoard from '../../ChatGPT Image 18 juil. 2026, 08_02_38.png';
+import referenceBoard from '../assets/reference/icons-reference-board.png';
 
 const categoryMeta = {
   air: { label: 'AIR', note: 'Approved set', className: 'is-air' },

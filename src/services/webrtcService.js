@@ -122,22 +122,33 @@ export async function startBroadcast(liveId, userId) {
 
 export async function stopBroadcast(liveId) {
   try {
+    console.log('[webrtcService] Stopping broadcast:', liveId);
+
+    // Stop all local stream tracks immediately
     if (localStream) {
-      localStream.getTracks().forEach(track => track.stop());
+      localStream.getTracks().forEach(track => {
+        console.log('[webrtcService] Stopping track:', track.kind);
+        track.stop();
+      });
       localStream = null;
     }
 
+    // Close peer connection immediately
     if (peerConnection) {
       peerConnection.close();
       peerConnection = null;
     }
 
-    // Delete the broadcast from Firestore
-    await deleteDoc(doc(db, 'activeLives', liveId));
+    // Mark the live as ended in Firestore (don't delete, so watchers know it ended)
+    await updateDoc(doc(db, 'activeLives', liveId), {
+      status: 'ended',
+      endedAt: new Date().toISOString(),
+    });
 
-    console.log('[webrtcService] Broadcast stopped');
+    console.log('[webrtcService] Broadcast marked as ended');
   } catch (err) {
     console.error('[webrtcService] Failed to stop broadcast:', err.message);
+    throw err;
   }
 }
 

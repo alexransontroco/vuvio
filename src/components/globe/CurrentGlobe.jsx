@@ -54,14 +54,14 @@ function breathingWave(clock) {
   ];
 }
 
-// Small luminous core for live markers — refined and minimal
+// Luminous core for live markers — subtle pulsing effect
 function livePointRadius(clock, selectedId = '') {
   const wave = breathingWave(clock);
   return [
     'case',
     ['==', ['get', 'id'], selectedId],
-    ['+', ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 4.2, 300, 5.0, 800, 5.9, 1500, 6.7], ['*', wave, ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 0.34, 800, 0.58, 1500, 0.76]]],
-    ['+', ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 2.45, 300, 3.25, 800, 4.4, 1500, 5.1], ['*', wave, ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 0.26, 800, 0.48, 1500, 0.62]]],
+    ['+', ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 4.2, 300, 5.0, 800, 5.9, 1500, 6.7], ['*', wave, ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 0.34, 800, 0.54, 1500, 0.70]]],
+    ['+', ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 2.45, 300, 3.25, 800, 4.4, 1500, 5.1], ['*', wave, ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 0.20, 800, 0.34, 1500, 0.44]]],
   ];
 }
 
@@ -69,8 +69,8 @@ function liveColorGlowRadius(clock) {
   const wave = breathingWave(clock);
   return [
     '+',
-    ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 6.2, 300, 8.8, 800, 13.5, 1500, 18.5],
-    ['*', wave, ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 1.0, 800, 4.4, 1500, 7.0]],
+    ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 6.0, 300, 8.5, 800, 12.5, 1500, 17.0],
+    ['*', wave, ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 1.0, 800, 3.5, 1500, 5.5]],
   ];
 }
 
@@ -78,8 +78,8 @@ function liveColorGlowOpacity(clock) {
   const wave = breathingWave(clock);
   return [
     '+',
-    ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 0.038, 300, 0.06, 800, 0.11, 1500, 0.16],
-    ['*', wave, ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 0.02, 800, 0.09, 1500, 0.14]],
+    ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 0.06, 300, 0.09, 800, 0.15, 1500, 0.20],
+    ['*', wave, ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 0.03, 800, 0.11, 1500, 0.17]],
   ];
 }
 
@@ -97,7 +97,7 @@ function liveCrowdHaloOpacity(clock) {
   return [
     '*',
     ['-', 1, wave],
-    ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 0, 500, 0, 800, 0.075, 1500, 0.14],
+    ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 0, 500, 0, 800, 0.09, 1500, 0.16],
   ];
 }
 
@@ -116,9 +116,71 @@ function liveBroadcastHaloOpacity(clock, selectedId = '') {
   return [
     'case',
     ['==', ['get', 'id'], selectedId],
-    ['*', ['-', 1, wave], ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 0.20, 800, 0.30, 1500, 0.38]],
-    ['*', ['-', 1, wave], ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 0.11, 800, 0.19, 1500, 0.26]],
+    ['*', ['-', 1, wave], ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 0.24, 800, 0.32, 1500, 0.39]],
+    ['*', ['-', 1, wave], ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 0.14, 800, 0.21, 1500, 0.29]],
   ];
+}
+
+function drawAtmosphericHalo(canvas, ctx, rotation) {
+  if (!ctx) return;
+  const w = canvas.width;
+  const h = canvas.height;
+  const cx = w / 2;
+  const cy = h / 2;
+  const baseRadius = Math.min(w, h) * 0.38;
+
+  ctx.clearRect(0, 0, w, h);
+
+  // Main diffuse arc with rotation
+  ctx.save();
+  ctx.translate(cx, cy);
+  ctx.rotate((rotation * Math.PI) / 180);
+
+  // Arc 1: Primary orbital band
+  const grad1 = ctx.createRadialGradient(0, -baseRadius * 0.12, baseRadius * 0.18, 0, -baseRadius * 0.12, baseRadius * 1.15);
+  grad1.addColorStop(0, 'rgba(80, 170, 230, 0.14)');
+  grad1.addColorStop(0.3, 'rgba(100, 180, 240, 0.11)');
+  grad1.addColorStop(0.6, 'rgba(90, 160, 220, 0.06)');
+  grad1.addColorStop(1, 'rgba(80, 140, 200, 0)');
+  ctx.fillStyle = grad1;
+  ctx.beginPath();
+  ctx.arc(0, -baseRadius * 0.12, baseRadius * 1.08, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Arc 2: Secondary subtle band
+  const grad2 = ctx.createRadialGradient(baseRadius * 0.28, baseRadius * 0.38, baseRadius * 0.14, baseRadius * 0.28, baseRadius * 0.38, baseRadius * 1.38);
+  grad2.addColorStop(0, 'rgba(100, 170, 230, 0.09)');
+  grad2.addColorStop(0.4, 'rgba(110, 180, 240, 0.05)');
+  grad2.addColorStop(1, 'rgba(100, 160, 230, 0)');
+  ctx.fillStyle = grad2;
+  ctx.beginPath();
+  ctx.arc(baseRadius * 0.28, baseRadius * 0.38, baseRadius * 1.32, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.restore();
+
+  // Asymmetric haze behind globe
+  const haze = ctx.createRadialGradient(cx, cy * 0.78, baseRadius * 0.48, cx, cy * 0.78, baseRadius * 1.6);
+  haze.addColorStop(0, 'rgba(70, 150, 200, 0.05)');
+  haze.addColorStop(0.5, 'rgba(60, 140, 180, 0.02)');
+  haze.addColorStop(1, 'rgba(60, 140, 180, 0)');
+  ctx.fillStyle = haze;
+  ctx.fillRect(0, 0, w, h);
+
+  // Fine dust particles with parallax
+  const dustCount = Math.max(8, Math.floor((w * h) / 120000));
+  ctx.globalAlpha = 0.04;
+  for (let i = 0; i < dustCount; i++) {
+    const seed = i * 13.7;
+    const x = (cx + Math.cos(rotation * 0.012 + seed) * w * 0.32) % w;
+    const y = (cy + Math.sin(rotation * 0.009 + seed) * h * 0.32) % h;
+    const size = 0.5 + Math.sin(rotation * 0.006 + seed) * 0.3;
+    ctx.fillStyle = `rgba(160, 210, 255, ${0.15 + Math.sin(seed) * 0.1})`;
+    ctx.beginPath();
+    ctx.arc(x, y, size, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  ctx.globalAlpha = 1;
 }
 
 // Thin elegant ring for selected marker — one refined subtle ring only
@@ -207,6 +269,7 @@ export default function CurrentGlobe({ streams }) {
   const [searchParams] = useSearchParams();
   const containerRef = useRef(null);
   const mapRef = useRef(null);
+  const haloCanvasRef = useRef(null);
   const pauseUntilRef = useRef(0);
   const animationRef = useRef(null);
   const dvMarkersRef = useRef({});
@@ -296,6 +359,25 @@ export default function CurrentGlobe({ streams }) {
     });
 
     mapRef.current = map;
+
+    // Setup atmospheric halo canvas
+    const haloCanvas = document.createElement('canvas');
+    haloCanvas.className = 'globe-atmospheric-halo';
+    haloCanvas.style.cssText = 'position: absolute; inset: 0; pointer-events: none; z-index: 1;';
+    containerRef.current.appendChild(haloCanvas);
+    haloCanvasRef.current = haloCanvas;
+
+    const resizeHaloCanvas = () => {
+      const rect = containerRef.current.getBoundingClientRect();
+      haloCanvas.width = rect.width * (window.devicePixelRatio || 1);
+      haloCanvas.height = rect.height * (window.devicePixelRatio || 1);
+      haloCanvas.style.width = `${rect.width}px`;
+      haloCanvas.style.height = `${rect.height}px`;
+      const ctx = haloCanvas.getContext('2d');
+      if (ctx) ctx.scale(window.devicePixelRatio || 1, window.devicePixelRatio || 1);
+    };
+    resizeHaloCanvas();
+    window.addEventListener('resize', resizeHaloCanvas);
     map.dragRotate.disable();
     map.touchZoomRotate.disableRotation();
 
@@ -491,9 +573,11 @@ export default function CurrentGlobe({ streams }) {
     return () => {
       map.getCanvas().removeEventListener('pointerdown', pause);
       map.getCanvas().removeEventListener('wheel', pause);
+      window.removeEventListener('resize', resizeHaloCanvas);
       if (animationRef.current) cancelAnimationFrame(animationRef.current);
       for (const marker of Object.values(dvMarkersRef.current)) marker.remove();
       dvMarkersRef.current = {};
+      if (haloCanvasRef.current?.parentNode) haloCanvasRef.current.parentNode.removeChild(haloCanvasRef.current);
       map.remove();
       mapRef.current = null;
     };
@@ -585,6 +669,7 @@ export default function CurrentGlobe({ streams }) {
     const initialCenter = map.getCenter();
     let lastRotationLng = initialCenter.lng;
     let lastRotationLat = initialCenter.lat;
+    let totalRotation = 0;
     const PULSE_INTERVAL = 50;
 
     const tick = (time) => {
@@ -628,9 +713,17 @@ export default function CurrentGlobe({ streams }) {
         if (elapsed >= ACTUAL_ROTATION_INTERVAL) {
           lastRotationTime = time;
           lastRotationLng += (ROTATE_DEGREES_PER_SECOND * Math.min(elapsed, 50)) / 1000;
+          totalRotation += (ROTATE_DEGREES_PER_SECOND * Math.min(elapsed, 50)) / 1000;
           perfRef.current.jumpToCalls++;
           map.jumpTo({ center: [lastRotationLng, lastRotationLat] });
         }
+      }
+
+      // Render atmospheric halo
+      const haloCanvas = haloCanvasRef.current;
+      if (haloCanvas) {
+        const ctx = haloCanvas.getContext('2d');
+        drawAtmosphericHalo(haloCanvas, ctx, totalRotation);
       }
 
       // Report perf every 3 seconds

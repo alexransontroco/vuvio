@@ -6,6 +6,7 @@ import ProtectedRoute, { PublicOnlyRoute } from './components/ProtectedRoute.jsx
 
 const ConversationPage    = lazy(() => import('./routes/ConversationPage.jsx'));
 const HomePage            = lazy(() => import('./routes/HomePage.jsx'));
+const BroadcasterPage     = lazy(() => import('./routes/BroadcasterPage.jsx'));
 const ExplorePage         = lazy(() => import('./routes/ExplorePage.jsx'));
 const AllLivesPage        = lazy(() => import('./routes/AllLivesPage.jsx'));
 const DiscoverFeedPage    = lazy(() => import('./routes/DiscoverFeedPage.jsx'));
@@ -113,6 +114,7 @@ export default function App() {
 
         {/* Public */}
         <Route path="/watch"         element={<Lazy component={HomePage} />} />
+        <Route path="/broadcast/:liveId" element={<ProtectedRoute><Lazy component={BroadcasterPage} /></ProtectedRoute>} />
         <Route path="/explore"      element={<Lazy component={ExplorePage} />} />
         <Route path="/explore/live" element={<Lazy component={AllLivesPage} />} />
         <Route path="/globe"        element={<Lazy component={CurrentGlobePage} />} />

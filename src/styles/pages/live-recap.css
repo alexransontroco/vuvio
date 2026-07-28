@@ -845,7 +845,7 @@
   height: 44px;
   background:
     linear-gradient(180deg, rgba(3, 12, 22, 0.1), rgba(3, 12, 22, 0.35)),
-    url("/profil.png") center/cover;
+    url("/assets/brand/profil.png") center/cover;
 }
 
 .live-recap-avatar-stack {

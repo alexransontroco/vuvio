@@ -12,7 +12,6 @@
       "**/.*",
       "**/node_modules/**",
       "assets/audio/**",
-      "**/*.mp4",
       "**/*.mov",
       "**/*.webm",
       "**/*.wav",

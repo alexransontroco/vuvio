@@ -4,6 +4,8 @@ import {
   sendPasswordResetEmail,
   signInWithEmailAndPassword,
   signInWithPopup,
+  signInWithRedirect,
+  getRedirectResult,
   signOut,
   updateProfile,
 } from 'firebase/auth';
@@ -17,10 +19,24 @@ import {
 } from 'firebase/firestore';
 import { auth, db } from '../firebase.js';
 
+/* ─── Platform detection ─────────────────────────────────────── */
+
+export function shouldUseRedirect() {
+  // Detect mobile/tablet and PWA mode
+  const isMobileDevice = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+  const isPWA = window.matchMedia("(display-mode: standalone)").matches;
+  return isMobileDevice || isPWA;
+}
+
 /* ─── Firebase error → readable English ──────────────────────── */
 
 export function parseAuthError(error) {
-  switch (error?.code) {
+  const code = error?.code;
+  const message = error?.message;
+
+  console.error('[authService] Firebase error:', code, message);
+
+  switch (code) {
     case 'auth/email-already-in-use':
       return 'An account already exists with this email.';
     case 'auth/invalid-email':
@@ -35,16 +51,25 @@ export function parseAuthError(error) {
       return 'Too many attempts. Please wait a moment and try again.';
     case 'auth/popup-closed-by-user':
     case 'auth/cancelled-popup-request':
+    case 'auth/user-cancelled-login':
       return '';
+    case 'auth/unauthorized-domain':
+      return 'This domain is not authorized for Google Sign-In. Contact support.';
+    case 'auth/popup-blocked':
+      return 'Pop-ups are blocked. Please enable them in your browser settings.';
+    case 'auth/operation-not-allowed':
+      return 'Google Sign-In is not enabled. Contact support.';
     case 'auth/network-request-failed':
       return 'Unable to connect. Check your internet connection and try again.';
+    case 'auth/account-exists-with-different-credential':
+      return 'An account already exists with this email. Try signing in with your password.';
     case 'auth/user-disabled':
       return 'This account has been disabled. Contact support.';
     case 'auth/invalid-api-key':
     case 'auth/api-key-not-valid':
       return 'Firebase is not configured. Set the correct API key in .env.local.';
     default:
-      console.error('[authService] Unhandled Firebase error:', error?.code, error);
+      console.error('[authService] Unhandled Firebase error code:', code);
       return 'Something went wrong. Please try again.';
   }
 }
@@ -181,9 +206,27 @@ export async function signInWithEmail(email, password) {
 export async function signInWithGoogle() {
   const provider = new GoogleAuthProvider();
   provider.setCustomParameters({ prompt: 'select_account' });
-  const credential = await signInWithPopup(auth, provider);
-  await createUserProfileIfMissing(credential.user, { provider: 'google' });
-  return credential.user;
+
+  try {
+    let userCredential;
+    if (shouldUseRedirect()) {
+      // Mobile/PWA: Use redirect flow
+      console.log('[authService] Using signInWithRedirect (mobile/PWA)');
+      await signInWithRedirect(auth, provider);
+      // Note: Control returns to the app after redirect, but the actual credential
+      // is handled by getRedirectResult in AuthContext
+      return null;
+    } else {
+      // Desktop: Use popup flow
+      console.log('[authService] Using signInWithPopup (desktop)');
+      userCredential = await signInWithPopup(auth, provider);
+      await createUserProfileIfMissing(userCredential.user, { provider: 'google' });
+      return userCredential.user;
+    }
+  } catch (err) {
+    console.error('[authService] signInWithGoogle failed:', err.code, err.message);
+    throw err;
+  }
 }
 
 export async function signOutUser() {
@@ -192,4 +235,23 @@ export async function signOutUser() {
 
 export async function sendPasswordReset(email) {
   await sendPasswordResetEmail(auth, email);
+}
+
+/* ─── Handle redirect result (for mobile sign-in) ────────────── */
+
+export async function handleGoogleRedirectResult() {
+  console.log('[authService] handleGoogleRedirectResult called');
+  try {
+    const result = await getRedirectResult(auth);
+    if (!result) {
+      console.log('[authService] No redirect result (normal on first page load)');
+      return null;
+    }
+    console.log('[authService] Redirect successful for user:', result.user.uid.slice(0, 8));
+    await createUserProfileIfMissing(result.user, { provider: 'google' });
+    return result.user;
+  } catch (err) {
+    console.error('[authService] handleGoogleRedirectResult error:', err.code, err.message);
+    throw err;
+  }
 }

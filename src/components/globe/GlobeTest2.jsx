@@ -343,8 +343,51 @@ function clusterOpacityByZoom() {
   return ['interpolate', ['linear'], ['zoom'], 1.4, 0.88, 4.8, 0.58, 5.35, 0.18];
 }
 
+function clusterOpacityFactorByZoom(factorExpression) {
+  return [
+    'interpolate',
+    ['linear'],
+    ['zoom'],
+    1.4,
+    ['*', 0.88, factorExpression],
+    4.8,
+    ['*', 0.58, factorExpression],
+    5.35,
+    ['*', 0.18, factorExpression],
+  ];
+}
+
 function pointOpacityByZoom() {
   return ['interpolate', ['linear'], ['zoom'], 2.2, 0.58, 4.7, 0.78, 6.6, 0.9];
+}
+
+function pointOpacityFactorByZoom(factorExpression) {
+  return [
+    'interpolate',
+    ['linear'],
+    ['zoom'],
+    2.2,
+    ['*', 0.58, factorExpression],
+    4.7,
+    ['*', 0.78, factorExpression],
+    6.6,
+    ['*', 0.9, factorExpression],
+  ];
+}
+
+function particleOpacityByZoom(clock) {
+  const opacity = particleOpacityExpression(clock);
+  return [
+    'interpolate',
+    ['linear'],
+    ['zoom'],
+    3.4,
+    0,
+    4.8,
+    ['*', opacity, 0.72],
+    7,
+    opacity,
+  ];
 }
 
 function selectedLiveCard(live, closeSelectedLive, navigate) {
@@ -539,7 +582,7 @@ export default function GlobeTest2({ streams }) {
             'circle-color': ['case', ['>', ['get', 'featuredCount'], 0], globeTest2Config.colors.featured, clusterColorExpression()],
             'circle-radius': clusterHaloRadiusExpression(),
             'circle-blur': 0.9,
-            'circle-opacity': ['*', clusterOpacityByZoom(), ['case', ['>', ['get', 'featuredCount'], 0], 0.12, 0.075]],
+            'circle-opacity': clusterOpacityFactorByZoom(['case', ['>', ['get', 'featuredCount'], 0], 0.12, 0.075]),
           },
         });
         map.addLayer({
@@ -553,7 +596,7 @@ export default function GlobeTest2({ streams }) {
             'circle-opacity': clusterOpacityByZoom(),
             'circle-stroke-color': ['case', ['>', ['get', 'featuredCount'], 0], globeTest2Config.colors.featured, 'rgba(226,246,255,0.58)'],
             'circle-stroke-width': ['case', ['>', ['get', 'featuredCount'], 0], 1.05, 0.72],
-            'circle-stroke-opacity': ['*', clusterOpacityByZoom(), ['case', ['>', ['get', 'featuredCount'], 0], 0.56, 0.32]],
+            'circle-stroke-opacity': clusterOpacityFactorByZoom(['case', ['>', ['get', 'featuredCount'], 0], 0.56, 0.32]),
           },
         });
         map.addLayer({
@@ -565,7 +608,7 @@ export default function GlobeTest2({ streams }) {
             'circle-color': clusterColorExpression(),
             'circle-radius': ['interpolate', ['linear'], ['get', 'point_count'], 1, 1.15, 70, 1.7, 350, 2.2, 1200, 2.8],
             'circle-blur': 0.45,
-            'circle-opacity': ['*', clusterOpacityByZoom(), 0.42],
+            'circle-opacity': clusterOpacityFactorByZoom(0.42),
           },
         });
         map.addLayer({
@@ -609,7 +652,7 @@ export default function GlobeTest2({ streams }) {
             'circle-color': ['get', 'familyColor'],
             'circle-radius': pointAuraRadiusExpression(0, ''),
             'circle-blur': 0.86,
-            'circle-opacity': ['*', pointAuraOpacityExpression(0, ''), pointOpacityByZoom()],
+            'circle-opacity': pointOpacityFactorByZoom(pointAuraOpacityExpression(0, '')),
           },
         });
         map.addLayer({
@@ -622,7 +665,7 @@ export default function GlobeTest2({ streams }) {
             'circle-color': globeTest2Config.colors.featured,
             'circle-radius': ['+', pointAuraRadiusExpression(0, ''), 2.4],
             'circle-blur': 0.92,
-            'circle-opacity': ['*', pointOpacityByZoom(), 0.055],
+            'circle-opacity': pointOpacityFactorByZoom(0.055),
           },
         });
         map.addLayer({
@@ -634,7 +677,7 @@ export default function GlobeTest2({ streams }) {
             'circle-color': ['case', ['==', ['get', 'featured'], true], globeTest2Config.colors.featured, ['get', 'familyColor']],
             'circle-radius': particleRadiusExpression(0),
             'circle-blur': 0.34,
-            'circle-opacity': ['*', particleOpacityExpression(0), ['interpolate', ['linear'], ['zoom'], 3.4, 0, 4.8, 0.72, 7, 1]],
+            'circle-opacity': particleOpacityByZoom(0),
           },
         });
         map.addLayer({
@@ -808,14 +851,14 @@ export default function GlobeTest2({ streams }) {
         try {
           if (map.getLayer('vuvio-test2-priority-aura')) {
             map.setPaintProperty('vuvio-test2-priority-aura', 'circle-radius', pointAuraRadiusExpression(clock, selectedIdRef.current));
-            map.setPaintProperty('vuvio-test2-priority-aura', 'circle-opacity', ['*', pointAuraOpacityExpression(clock, selectedIdRef.current), pointOpacityByZoom()]);
+            map.setPaintProperty('vuvio-test2-priority-aura', 'circle-opacity', pointOpacityFactorByZoom(pointAuraOpacityExpression(clock, selectedIdRef.current)));
           }
           if (map.getLayer('vuvio-test2-featured-warmth')) {
             map.setPaintProperty('vuvio-test2-featured-warmth', 'circle-radius', ['+', pointAuraRadiusExpression(clock, selectedIdRef.current), 2.4]);
           }
           if (map.getLayer('vuvio-test2-particles')) {
             map.setPaintProperty('vuvio-test2-particles', 'circle-radius', particleRadiusExpression(clock));
-            map.setPaintProperty('vuvio-test2-particles', 'circle-opacity', ['*', particleOpacityExpression(clock), ['interpolate', ['linear'], ['zoom'], 3.4, 0, 4.8, 0.72, 7, 1]]);
+            map.setPaintProperty('vuvio-test2-particles', 'circle-opacity', particleOpacityByZoom(clock));
           }
           if (map.getLayer('vuvio-test2-priority-points')) {
             map.setPaintProperty('vuvio-test2-priority-points', 'circle-radius', pointCoreRadiusExpression(clock, selectedIdRef.current, hoverIdRef.current));

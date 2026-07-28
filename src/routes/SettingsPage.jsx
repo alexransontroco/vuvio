@@ -23,12 +23,12 @@ import { useState } from 'react';
 import { useAuth } from '../context/AuthContext.jsx';
 import { LiveActivityPrivacySettings } from '../components/social/LiveActivityPrivacySettings.jsx';
 
-const settingGroups = [
+const getSettingGroups = (userEmail) => [
   {
     id: 'account',
     title: 'Account',
     items: [
-      { label: 'E-mail', value: 'alex@vuvio.app', icon: Mail },
+      { label: 'E-mail', value: userEmail, icon: Mail, readOnly: true },
       { label: 'Password', value: 'Edit', icon: Lock },
       { label: 'Public profile', value: 'Edit your profile', icon: UserRound, to: '/profile/edit' },
     ],
@@ -80,8 +80,9 @@ function handleDeleteAccount() {
 
 export default function SettingsPage() {
   const navigate = useNavigate();
-  const { logout } = useAuth();
+  const { logout, user } = useAuth();
   const [messagePreferences, setMessagePreferences] = useState(() => getMessagePreferences());
+  const userEmail = user?.email ?? '';
 
   const handleSignOut = async () => {
     if (!confirmSignOut()) return;
@@ -90,6 +91,8 @@ export default function SettingsPage() {
   };
 
   const handleItemClick = (item) => {
+    if (item.readOnly) return;
+
     if (item.to) {
       navigate(item.to);
       return;
@@ -125,7 +128,7 @@ export default function SettingsPage() {
       </header>
 
       <div className="settings-content">
-        {settingGroups.map((group) => (
+        {getSettingGroups(userEmail).map((group) => (
           <section key={group.id} className="settings-group" aria-labelledby={`settings-${group.id}`}>
             <h2 id={`settings-${group.id}`}>{group.title}</h2>
             <div className="settings-card">
@@ -139,6 +142,7 @@ export default function SettingsPage() {
                     type="button"
                     className={item.danger ? 'settings-row is-danger' : 'settings-row'}
                     onClick={() => handleItemClick(item)}
+                    disabled={item.readOnly}
                   >
                     <span className="settings-row__icon" aria-hidden="true">
                       <Icon size={17} strokeWidth={1.8} />
@@ -147,7 +151,7 @@ export default function SettingsPage() {
                       <strong>{item.label}</strong>
                       {item.value ? <small>{item.value}</small> : null}
                     </span>
-                    {opens ? (
+                    {opens && !item.readOnly ? (
                       <ChevronRight className="settings-row__chevron" size={17} strokeWidth={1.8} aria-hidden="true" />
                     ) : null}
                   </button>
