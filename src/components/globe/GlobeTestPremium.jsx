@@ -151,7 +151,8 @@ export default function GlobeTestPremium({ streams, mode = 'test' }) {
       }
     }
 
-    globe.pointOfView({ lat: 18, lng: 26, altitude: 2.05 }, 0);
+    // Initialize view - higher altitude to see full globe
+    globe.pointOfView({ lat: 18, lng: 26, altitude: 2.8 }, 0);
 
     const pauseRotation = () => {
       controls.autoRotate = false;
@@ -211,7 +212,7 @@ export default function GlobeTestPremium({ streams, mode = 'test' }) {
 
   const recenter = () => {
     setSelectedLive(null);
-    pauseAndMove({ lat: 18, lng: 26, altitude: 2.05 }, 760);
+    pauseAndMove({ lat: 18, lng: 26, altitude: 2.8 }, 760);
   };
 
   const zoomBy = (delta) => {
@@ -231,8 +232,8 @@ export default function GlobeTestPremium({ streams, mode = 'test' }) {
   };
 
   return (
-    <section className="globe-lab-screen" aria-label="Test Vuvio globe premium">
-      <div className="globe-lab-shell" ref={shellRef}>
+    <section className="screen globe-lab-screen" aria-label="Test Vuvio globe premium">
+      <div className="globe-lab-shell" ref={shellRef} style={{ width: '100%', height: '100%' }}>
         <Globe
           ref={globeRef}
           width={width}
@@ -276,13 +277,13 @@ export default function GlobeTestPremium({ streams, mode = 'test' }) {
           <button type="button" onClick={() => navigate('/globe?switch=1')} aria-pressed="false">
             Current
           </button>
-          <button type="button" className="is-active" aria-pressed="true">
+          <button type="button" onClick={() => navigate('/globe-lab?switch=1')} aria-pressed="false">
             Lab
           </button>
           <button type="button" onClick={() => navigate('/globe-cesium?switch=1')} aria-pressed="false">
             Cesium
           </button>
-          <button type="button" onClick={() => navigate('/globe-test?switch=1')} aria-pressed="false">
+          <button type="button" className="is-active" aria-pressed="true">
             Test
           </button>
         </div>

@@ -477,7 +477,16 @@ export default function BottomNav({ collapsible = false, collapsed = false, onEx
           </NavLink>
         ))}
         <button type="button" className="bottom-nav__create" onClick={() => setCreateOpen(true)} aria-label={t('navigation.create')}>
-          <BrandMark size={40} style={{ marginTop: 10 }} />
+          <svg width={40} height={40} viewBox="0 0 96 96" role="img" aria-hidden="true" style={{ flexShrink: 0, display: 'block' }}>
+            <defs>
+              <linearGradient id="create-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stopColor="#0FBFB0" />
+                <stop offset="50%" stopColor="#2BD9C8" />
+                <stop offset="100%" stopColor="#1EC8BA" />
+              </linearGradient>
+            </defs>
+            <text x="48" y="62" textAnchor="middle" fontSize="56" fontWeight="700" fill="url(#create-grad)" fontFamily="system-ui, -apple-system, sans-serif" letterSpacing="-0.02em">W</text>
+          </svg>
           <span className="bottom-nav__create-badge" aria-hidden="true">+</span>
         </button>
         {navItems.slice(2).map(({ to, labelKey, icon: Icon }) => (
