@@ -702,20 +702,12 @@ export default function TestGlobe({ streams, mode = 'test' }) {
     let lastPaintTime = 0;
     let lastRotationTime = 0;
     let lastRafTime = 0;
-    // OPTIMIZATION 4: Throttle RAF itself to 60 FPS in actual mode (was 30 FPS causing drops to 2 FPS)
-    const RAF_INTERVAL = isActualMode ? 16 : 0; // 16ms = ~60fps, 0 = no throttle in test mode
+    // OPTIMIZATION 4: No RAF throttle - let browser decide frame rate
     const PAINT_INTERVAL = 33; // ~30fps for expensive setPaintProperty calls
     const ROTATION_INTERVAL = 33; // ~30fps for rotation (throttle expensive jumpTo)
 
     const tick = (time) => {
       perfRef.current.rafCalls++;
-
-      // OPTIMIZATION 4: Throttle RAF itself in actual mode
-      if (RAF_INTERVAL > 0 && time - lastRafTime < RAF_INTERVAL) {
-        animationRef.current = requestAnimationFrame(tick);
-        return; // Skip this frame
-      }
-      lastRafTime = time;
 
       const delta = Math.min(80, time - previousTime);
       previousTime = time;
