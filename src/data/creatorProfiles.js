@@ -1,4 +1,4 @@
-export const CURRENT_USER_ID = ‘current-user’;
+export const CURRENT_USER_ID = 'current-user';
 
 export const ownCreatorProfile = {
   id: CURRENT_USER_ID,
