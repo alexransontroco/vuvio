@@ -376,6 +376,20 @@
   text-transform: capitalize;
 }
 
+.creator-stats__clickable {
+  cursor: pointer;
+  transition: all 200ms ease;
+}
+
+.creator-stats__clickable:hover {
+  opacity: 0.8;
+  color: var(--vuvio-cyan);
+}
+
+.creator-stats__clickable:hover span {
+  color: var(--vuvio-cyan);
+}
+
 .featured-live {
   position: relative;
   display: grid;

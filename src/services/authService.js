@@ -100,6 +100,7 @@ export async function createUserProfileIfMissing(firebaseUser, extra = {}) {
     followerCount:      0,
     followingCount:     0,
     liveCount:          0,
+    followedCreators:   [],
     role:               'user',
     accountStatus:      'active',
     onboardingCompleted: false,

@@ -16,6 +16,8 @@ import {
 } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
+import { getDoc, doc, collection, query, where, getDocs } from 'firebase/firestore';
+import { db } from '../firebase.js';
 import {
   EquipmentCategoryCard,
   EquipmentDisclosure,
@@ -221,17 +223,23 @@ function ProfileImageSheet({ type, previewUrl, error, onClose, onSelectFile, onR
   );
 }
 
-function ProfileStats({ profile }) {
+function ProfileStats({ profile, isOwnProfile, onViewFollowing }) {
   const stats = [
     { value: profile.liveCount, label: 'lives' },
     { value: formatCompact(profile.followersCount), label: 'followers' },
-    { value: formatCompact(profile.followingCount), label: 'following' },
+    { value: formatCompact(profile.followingCount), label: 'following', clickable: isOwnProfile },
   ];
 
   return (
     <section className="creator-stats" aria-label="Creator stats">
       {stats.map((stat) => (
-        <article key={stat.label}>
+        <article
+          key={stat.label}
+          className={stat.clickable ? 'creator-stats__clickable' : ''}
+          onClick={stat.clickable ? onViewFollowing : undefined}
+          role={stat.clickable ? 'button' : undefined}
+          tabIndex={stat.clickable ? 0 : undefined}
+        >
           <strong>{stat.value}</strong>
           <span>{stat.label}</span>
         </article>
@@ -682,13 +690,41 @@ export default function ProfilePage() {
 
     // For other creators' profiles
     if (creatorId) {
-      const viewedProfile = getCreatorProfile(creatorId);
-      setState({ loading: false, currentUser: userProfile || null, viewedProfile });
-      setIsFollowing(Boolean(viewedProfile?.isFollowing || isFollowingCreator(viewedProfile?.id)));
-      setFollowStatus('idle');
-      setNotificationsEnabled(Boolean(viewedProfile?.notificationsEnabled));
+      setState({ loading: true, currentUser: userProfile || null, viewedProfile: null });
+      loadCreatorFromFirestore(creatorId);
     }
   }, [creatorId, user, userProfile, profileLoading]);
+
+  const loadCreatorFromFirestore = async (uid) => {
+    try {
+      const docSnap = await getDoc(doc(db, 'users', uid));
+      if (docSnap.exists()) {
+        let viewedProfile = { id: uid, ...docSnap.data() };
+
+        // Load active live from activeLives collection
+        try {
+          const livesQ = query(collection(db, 'activeLives'), where('creatorUid', '==', uid));
+          const livesSnap = await getDocs(livesQ);
+          const activeLive = livesSnap.docs.map(doc => doc.data()).find(live => live.status === 'live');
+          if (activeLive) {
+            viewedProfile.currentLive = activeLive;
+          }
+        } catch (err) {
+          console.warn('[ProfilePage] Failed to load live:', err.message);
+        }
+
+        setState({ loading: false, currentUser: userProfile || null, viewedProfile });
+        setIsFollowing(Boolean(viewedProfile?.isFollowing || isFollowingCreator(viewedProfile?.id)));
+        setFollowStatus('idle');
+        setNotificationsEnabled(Boolean(viewedProfile?.notificationsEnabled));
+      } else {
+        setState({ loading: false, currentUser: userProfile || null, viewedProfile: null });
+      }
+    } catch (err) {
+      console.error('[ProfilePage] Failed to load creator:', err.message);
+      setState({ loading: false, currentUser: userProfile || null, viewedProfile: null });
+    }
+  };
 
   useEffect(() => {
     if (searchParams.get('tab') === 'equipment') setActiveTab('equipment');
@@ -807,7 +843,11 @@ export default function ProfilePage() {
           onShare={shareProfile}
         />
 
-        <ProfileStats profile={profile} />
+        <ProfileStats
+          profile={profile}
+          isOwnProfile={isOwnProfile}
+          onViewFollowing={() => isOwnProfile && navigate('/profile/following')}
+        />
 
         <FeaturedLiveCard
           profile={profile}

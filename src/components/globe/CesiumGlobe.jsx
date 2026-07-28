@@ -208,14 +208,17 @@ export default function CesiumGlobe({ streams, mode = 'cesium' }) {
         0
       );
 
+      const transparentColor = color.withAlpha(0.4);
+      const glowColor = color.withAlpha(0.2);
+
       const entity = viewer.entities.add({
         id: stream.id,
         position,
         point: {
           pixelSize: 12,
-          color: color,
-          outlineColor: Cesium.Color.WHITE,
-          outlineWidth: 2,
+          color: transparentColor,
+          outlineColor: color.withAlpha(0.8),
+          outlineWidth: 2.5,
           heightReference: Cesium.HeightReference.NONE,
         },
         properties: {
@@ -226,6 +229,15 @@ export default function CesiumGlobe({ streams, mode = 'cesium' }) {
           title: stream.experienceTitle,
           viewers: stream.viewers,
           status: stream.status,
+        },
+      });
+
+      const glowEntity = viewer.entities.add({
+        position,
+        point: {
+          pixelSize: 24,
+          color: glowColor,
+          heightReference: Cesium.HeightReference.NONE,
         },
       });
 

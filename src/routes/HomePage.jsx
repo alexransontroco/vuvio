@@ -13,6 +13,8 @@ import { mapStreams } from '../data/mapStreams.js';
 import { streams, upcomingStreams } from '../data/mockStreams.js';
 import { createLiveSoundscape } from '../services/liveSoundscape.js';
 import { getCreatedLives, getCreatedLiveStream, subscribeToCreatedLives } from '../services/createdLiveService.js';
+import { collection, onSnapshot, query, where } from 'firebase/firestore';
+import { db } from '../firebase.js';
 import { getUnreadConversationCount, subscribeToMessaging } from '../services/messagingService.js';
 import { getUpcomingReminders, saveUpcomingReminder } from '../services/upcomingReminderService.js';
 import { demoLiveEquipmentIds } from '../data/equipmentModel.js';
@@ -1287,7 +1289,20 @@ function CreatorLiveSession({ live }) {
 function LiveViewer({ liveId, creatorMode = false }) {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const [createdLives, setCreatedLives] = useState(() => getCreatedLives());
+  const [createdLives, setCreatedLives] = useState([]);
+
+  useEffect(() => {
+    getCreatedLives().then(setCreatedLives).catch(() => setCreatedLives([]));
+
+    const q = query(collection(db, 'activeLives'), where('status', '==', 'live'));
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      getCreatedLives().then(setCreatedLives).catch(() => setCreatedLives([]));
+    }, (err) => {
+      console.error('[HomePage] Firestore listener:', err.message);
+    });
+
+    return unsubscribe;
+  }, []);
   const liveFeed = useMemo(() => [...createdLives, ...lives], [createdLives]);
   const [index, setIndex] = useState(() => {
     const requestedIndex = liveFeed.findIndex((item) => item.id === liveId);

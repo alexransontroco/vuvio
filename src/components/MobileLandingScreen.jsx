@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react';
-import './landing-screen.css';
+import './mobile-landing-screen.css';
 
-export default function LandingScreen({ onComplete }) {
+export default function MobileLandingScreen({ onComplete }) {
   const videoRef = useRef(null);
 
   useEffect(() => {
@@ -14,13 +14,11 @@ export default function LandingScreen({ onComplete }) {
 
   useEffect(() => {
     if (videoRef.current) {
-      // Smooth loop + slower playback (0.8x speed)
       videoRef.current.playbackRate = 0.8;
       videoRef.current.muted = true;
       videoRef.current.autoplay = true;
       videoRef.current.loop = true;
 
-      // Ensure smooth looping
       videoRef.current.addEventListener('ended', () => {
         videoRef.current.currentTime = 0;
         videoRef.current.play();
@@ -29,10 +27,10 @@ export default function LandingScreen({ onComplete }) {
   }, []);
 
   return (
-    <div className="landing-screen">
+    <div className="mobile-landing-screen">
       <video
         ref={videoRef}
-        className="landing-video"
+        className="mobile-landing-video"
         autoPlay
         muted
         loop
@@ -40,9 +38,9 @@ export default function LandingScreen({ onComplete }) {
       >
         <source src="/assets/videos/landing-loop.mp4" type="video/mp4" />
       </video>
-      <div className="landing-overlay" />
-      <div className="landing-content">
-        <div className="landing-logo">VUV<span>IO</span></div>
+      <div className="mobile-landing-overlay" />
+      <div className="mobile-landing-content">
+        <div className="mobile-landing-logo">VUV<span>IO</span></div>
       </div>
     </div>
   );

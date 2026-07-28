@@ -1,0 +1,113 @@
+.following-page {
+  background: var(--vuvio-bg-deep);
+  color: var(--color-text);
+  min-height: 100dvh;
+  padding: 20px;
+  overflow-y: auto;
+}
+
+.following-container {
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.following-page h1 {
+  color: rgba(242, 247, 246, 0.95);
+  font-size: 28px;
+  font-weight: 700;
+  margin-bottom: 20px;
+}
+
+.following-loading,
+.following-empty {
+  text-align: center;
+  padding: 40px 20px;
+  color: rgba(242, 247, 246, 0.5);
+  font-size: 13px;
+}
+
+.following-empty small {
+  display: block;
+  margin-top: 8px;
+  color: rgba(242, 247, 246, 0.36);
+  font-size: 12px;
+}
+
+.following-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.following-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  border: 0.5px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.03);
+  cursor: pointer;
+  transition: all 200ms ease;
+}
+
+.following-item:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(53, 227, 220, 0.3);
+  transform: translateX(4px);
+}
+
+.following-avatar {
+  flex-shrink: 0;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, rgba(53, 227, 220, 0.2), rgba(6, 26, 40, 0.98));
+  border: 1px solid rgba(53, 227, 220, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--vuvio-cyan);
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.following-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.following-info strong {
+  color: rgba(242, 247, 246, 0.95);
+  font-size: 13px;
+  font-weight: 680;
+}
+
+.following-username {
+  color: var(--vuvio-cyan);
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.following-bio {
+  margin: 0;
+  color: rgba(242, 247, 246, 0.5);
+  font-size: 11px;
+  line-height: 1.3;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.following-arrow {
+  flex-shrink: 0;
+  color: rgba(242, 247, 246, 0.3);
+  font-size: 14px;
+  font-weight: 600;
+}

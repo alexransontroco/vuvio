@@ -29,6 +29,8 @@ const SignupPage          = lazy(() => import('./routes/SignupPage.jsx'));
 const TermsPage           = lazy(() => import('./routes/TermsPage.jsx'));
 const VisionPage          = lazy(() => import('./routes/VisionPage.jsx'));
 const SocialDemoPage      = lazy(() => import('./routes/SocialDemoPage.jsx'));
+const TestUsersPage       = lazy(() => import('./routes/TestUsersPage.jsx'));
+const FollowingPage       = lazy(() => import('./routes/FollowingPage.jsx'));
 const DesktopLayout       = lazy(() => import('./components/desktop/DesktopLayout.jsx'));
 
 function RouteFallback() {
@@ -121,8 +123,17 @@ export default function App() {
         <Route path="/help"       element={<Lazy component={HelpPage} />} />
         <Route path="/icons"      element={<Lazy component={IconsPreviewPage} />} />
         <Route path="/demo/social" element={<Lazy component={SocialDemoPage} />} />
+        <Route path="/test/users" element={<Lazy component={TestUsersPage} />} />
 
         {/* Public creator profiles */}
+        <Route
+          path="/profile/following"
+          element={
+            <ProtectedRoute>
+              <Lazy component={FollowingPage} />
+            </ProtectedRoute>
+          }
+        />
         <Route path="/profile/:creatorId" element={<Lazy component={ProfilePage} />} />
 
         {/* Protected */}

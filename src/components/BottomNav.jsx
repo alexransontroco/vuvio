@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import BrandMark from './BrandMark.jsx';
+import { useAuth } from '../context/AuthContext.jsx';
 import { EquipmentSelector, QuickAddEquipmentForm } from './equipment/EquipmentKit.jsx';
 import { EXPERIENCE_FAMILIES } from '../data/experienceTaxonomy.js';
 import { SUBCATEGORY_EQUIPMENT_TYPES } from '../data/equipmentModel.js';
@@ -150,6 +151,7 @@ function LivePreview({ draft, selectedFamily, equipmentLibrary, onEditGear, onLa
 
 export default function BottomNav({ collapsible = false, collapsed = false, onExpand, onCollapse }) {
   const { t } = useTranslation();
+  const { user } = useAuth();
   const [createOpen, setCreateOpen] = useState(false);
   const [createMode, setCreateMode] = useState('actions');
   const [draft, setDraft] = useState(initialLiveDraft);
@@ -190,7 +192,7 @@ export default function BottomNav({ collapsible = false, collapsed = false, onEx
       hasCameraStream: Boolean(cameraStream),
       equipment: selectedIds.map((equipmentId) => ({ equipmentId })),
       equipmentSnapshots: buildEquipmentSnapshots(equipmentLibrary, selectedIds),
-    });
+    }, user?.uid);
     registerCreatedLiveStream(live.id, cameraStream);
     rememberLiveEquipmentSetup(draft.family, selectedIds);
     rememberLiveEquipmentSetupBySubcategory(draft.subcategory, selectedIds);

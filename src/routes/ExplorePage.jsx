@@ -12,6 +12,7 @@ import {
   Mountain,
   Music,
   Palette,
+  Plus,
   Search,
   SlidersHorizontal,
   Smartphone,
@@ -19,12 +20,15 @@ import {
   UtensilsCrossed,
   X,
   Zap,
+  Check,
 } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import LiveBadge from '../components/LiveBadge.jsx';
 import { streams, upcomingStreams } from '../data/mockStreams.js';
 import { getUnreadConversationCount, subscribeToMessaging } from '../services/messagingService.js';
+import { searchCreators, followCreator, unfollowCreator } from '../services/creatorService.js';
+import { useAuth } from '../context/AuthContext.jsx';
 
 const quickFilters = [
   { id: 'for-you', label: 'For you' },
@@ -252,6 +256,43 @@ function CategoryTile({ tile, onSelect }) {
       <strong>{tile.label}</strong>
       <span>{tile.desc}</span>
     </button>
+  );
+}
+
+function CreatorCard({ creator, isFollowing, onFollow, onUnfollow, onViewProfile }) {
+  return (
+    <article className="ep-creator-card" onClick={() => onViewProfile(creator.id)}>
+      <div className="ep-creator-card__header">
+        <div className="ep-creator-card__avatar" style={{ backgroundImage: creator.photoURL ? `url(${creator.photoURL})` : 'none' }}>
+          {!creator.photoURL && creator.displayName ? creator.displayName[0].toUpperCase() : ''}
+        </div>
+      </div>
+      <div className="ep-creator-card__body">
+        <strong className="ep-creator-card__name">{creator.displayName}</strong>
+        <span className="ep-creator-card__handle">@{creator.username}</span>
+        {creator.bio ? <p className="ep-creator-card__bio">{creator.bio}</p> : null}
+      </div>
+      <button
+        type="button"
+        className={isFollowing ? 'ep-creator-card__follow is-following' : 'ep-creator-card__follow'}
+        onClick={(e) => {
+          e.stopPropagation();
+          isFollowing ? onUnfollow(creator.id) : onFollow(creator.id);
+        }}
+      >
+        {isFollowing ? (
+          <>
+            <Check size={15} strokeWidth={2} />
+            Following
+          </>
+        ) : (
+          <>
+            <Plus size={15} strokeWidth={2} />
+            Follow
+          </>
+        )}
+      </button>
+    </article>
   );
 }
 
@@ -510,14 +551,30 @@ function ExploreHeader({ filterCount, onOpenFilter, search, onSearchChange, hasS
 
 export default function ExplorePage() {
   const navigate = useNavigate();
+  const { user, userProfile } = useAuth();
   const [search, setSearch] = useState('');
   const [activeChip, setActiveChip] = useState('for-you');
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [activeFilters, setActiveFilters] = useState({});
+  const [creators, setCreators] = useState([]);
   const searchInputRef = useRef(null);
   const chipsRef = useRef(null);
 
   const openStream = useCallback((id) => navigate(`/watch?live=${encodeURIComponent(id)}`), [navigate]);
+
+  const handleFollowCreator = useCallback((creatorUid) => {
+    if (!user?.uid) return;
+    followCreator(user.uid, creatorUid);
+  }, [user?.uid]);
+
+  const handleUnfollowCreator = useCallback((creatorUid) => {
+    if (!user?.uid) return;
+    unfollowCreator(user.uid, creatorUid);
+  }, [user?.uid]);
+
+  const handleViewProfile = useCallback((creatorId) => {
+    navigate(`/profile/${creatorId}`);
+  }, [navigate]);
 
   const filteredStreams = useMemo(() => {
     return streams
@@ -554,6 +611,19 @@ export default function ExplorePage() {
     const chip = chipsRef.current?.querySelector('[data-chip="for-you"]');
     chip?.scrollIntoView({ block: 'nearest', inline: 'start', behavior: 'instant' });
   }, []);
+
+  useEffect(() => {
+    if (!search.trim().startsWith('@')) {
+      setCreators([]);
+      return;
+    }
+    const query = search.trim().slice(1);
+    if (query.length === 0) {
+      setCreators([]);
+      return;
+    }
+    searchCreators(query).then(setCreators).catch(() => setCreators([]));
+  }, [search]);
 
   useEffect(() => {
     const scrollEl = document.querySelector('.ep-screen');
@@ -604,22 +674,53 @@ export default function ExplorePage() {
 
       {hasSearch ? (
         <div className="ep-search-results">
-          {filteredStreams.length ? (
+          {search.trim().startsWith('@') ? (
             <>
-              <p className="ep-results-count">{filteredStreams.length} perspectives</p>
-              <div className="ep-results-grid">
-                {filteredStreams.map((stream) => (
-                  <LiveNowCard key={stream.id} stream={stream} onOpen={openStream} />
-                ))}
-              </div>
+              {creators.length > 0 ? (
+                <>
+                  <p className="ep-results-count">{creators.length} creator{creators.length !== 1 ? 's' : ''}</p>
+                  <div className="ep-creators-grid">
+                    {creators.map((creator) => (
+                      <CreatorCard
+                        key={creator.id}
+                        creator={creator}
+                        isFollowing={userProfile?.followedCreators?.includes(creator.id) || false}
+                        onFollow={handleFollowCreator}
+                        onUnfollow={handleUnfollowCreator}
+                        onViewProfile={handleViewProfile}
+                      />
+                    ))}
+                  </div>
+                </>
+              ) : (
+                <ExploreEmptyState
+                  title="No creators found"
+                  body="Try searching for another creator."
+                  action="Clear search"
+                  onAction={() => setSearch('')}
+                />
+              )}
             </>
           ) : (
-            <ExploreEmptyState
-              title="No live perspectives found"
-              body="Try another activity, place or filter."
-              action="Reset search"
-              onAction={() => setSearch('')}
-            />
+            <>
+              {filteredStreams.length ? (
+                <>
+                  <p className="ep-results-count">{filteredStreams.length} perspectives</p>
+                  <div className="ep-results-grid">
+                    {filteredStreams.map((stream) => (
+                      <LiveNowCard key={stream.id} stream={stream} onOpen={openStream} />
+                    ))}
+                  </div>
+                </>
+              ) : (
+                <ExploreEmptyState
+                  title="No live perspectives found"
+                  body="Try another activity, place or filter."
+                  action="Reset search"
+                  onAction={() => setSearch('')}
+                />
+              )}
+            </>
           )}
         </div>
       ) : (

@@ -1,17 +1,35 @@
 import { useEffect, useState } from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
 import BottomNav from './BottomNav.jsx';
+import MobileLandingScreen from './MobileLandingScreen.jsx';
+import NotificationToast from './NotificationToast.jsx';
+import { useAuth } from '../context/AuthContext.jsx';
+import { useFollowedCreatorNotifications } from '../hooks/useFollowedCreatorNotifications.js';
 
 export default function AppShell() {
   const location = useLocation();
+  const { userProfile } = useAuth();
+  const { notifications, dismissNotification } = useFollowedCreatorNotifications(userProfile);
   const searchParams = new URLSearchParams(location.search);
   const isBroadcast = location.pathname === '/watch' && searchParams.get('broadcast') === '1';
   const isLive = location.pathname.startsWith('/watch/') || (location.pathname === '/watch' && searchParams.has('live'));
   const [liveNavCollapsed, setLiveNavCollapsed] = useState(false);
+  const [showLanding, setShowLanding] = useState(() => {
+    return !localStorage.getItem('vuvio-landing-shown');
+  });
 
   useEffect(() => {
     setLiveNavCollapsed(false);
   }, [location.pathname]);
+
+  const handleLandingComplete = () => {
+    setShowLanding(false);
+    localStorage.setItem('vuvio-landing-shown', 'true');
+  };
+
+  if (showLanding) {
+    return <MobileLandingScreen onComplete={handleLandingComplete} />;
+  }
 
   return (
     <main className={isLive ? 'app-canvas app-canvas--live' : 'app-canvas'}>
@@ -28,6 +46,7 @@ export default function AppShell() {
           />
         ) : null}
       </section>
+      <NotificationToast notifications={notifications} onDismiss={dismissNotification} />
     </main>
   );
 }

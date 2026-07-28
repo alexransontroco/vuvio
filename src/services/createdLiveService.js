@@ -1,3 +1,6 @@
+import { collection, setDoc, deleteDoc, doc, getDocs, query, where, serverTimestamp } from 'firebase/firestore';
+import { db } from '../firebase.js';
+
 const STORAGE_KEY = 'vuvio:createdLives';
 const CREATED_LIVE_EVENT = 'vuvio:created-live';
 const activeLiveStreams = new Map();
@@ -16,6 +19,65 @@ const baseCoordinatesByFamily = {
 
 function safeWindow() {
   return typeof window !== 'undefined' ? window : null;
+}
+
+function cleanUndefinedFields(obj) {
+  if (obj === null || obj === undefined) return obj;
+  if (typeof obj !== 'object') return obj;
+
+  if (Array.isArray(obj)) {
+    return obj.map(item => cleanUndefinedFields(item)).filter(item => item !== undefined);
+  }
+
+  const cleaned = {};
+  Object.keys(obj).forEach(key => {
+    const value = obj[key];
+    if (value !== undefined) {
+      cleaned[key] = cleanUndefinedFields(value);
+    }
+  });
+  return cleaned;
+}
+
+async function saveLiveToFirestore(live) {
+  try {
+    console.log('[createdLiveService] saveLiveToFirestore called for:', live.id, 'creatorUid:', live.creatorUid);
+    const liveRef = doc(collection(db, 'activeLives'), live.id);
+    const data = cleanUndefinedFields({
+      ...live,
+      id: live.id,
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
+    });
+
+    await setDoc(liveRef, data);
+    console.log('[createdLiveService] Live saved to Firestore:', live.id);
+  } catch (err) {
+    console.error('[createdLiveService] Failed to save live:', err.message, err.code);
+  }
+}
+
+async function removeLiveFromFirestore(liveId) {
+  try {
+    const q = query(collection(db, 'activeLives'), where('id', '==', liveId));
+    const snapshot = await getDocs(q);
+    snapshot.forEach(async (docSnap) => {
+      await deleteDoc(docSnap.ref);
+    });
+  } catch (err) {
+    console.error('[Firestore] Failed to remove live:', err.message);
+  }
+}
+
+async function getFirestoreLives() {
+  try {
+    const q = query(collection(db, 'activeLives'), where('status', '==', 'live'));
+    const snapshot = await getDocs(q);
+    return snapshot.docs.map(docSnap => docSnap.data());
+  } catch (err) {
+    console.error('[Firestore] Failed to fetch lives:', err.message);
+    return [];
+  }
 }
 
 function readStoredLives() {
@@ -44,16 +106,28 @@ function coordinatesForDraft(draft) {
   return [base[0] + lngOffset, base[1] + latOffset];
 }
 
-export function getCreatedLives() {
-  return readStoredLives();
+export async function getCreatedLives() {
+  const local = readStoredLives();
+  const firestore = await getFirestoreLives();
+
+  const merged = {};
+  local.forEach(live => { merged[live.id] = live; });
+  firestore.forEach(live => { merged[live.id] = live; });
+
+  return Object.values(merged).sort((a, b) => {
+    const aTime = new Date(a.equipmentUpdatedAt || 0).getTime();
+    const bTime = new Date(b.equipmentUpdatedAt || 0).getTime();
+    return bTime - aTime;
+  });
 }
 
-export function createLocalLive(draft) {
+export function createLocalLive(draft, creatorUid = null) {
   const live = {
     id: `created-${Date.now()}`,
     status: 'live',
     name: 'Alex',
     streamer: 'Alex',
+    creatorUid,
     kind: draft.hasCameraStream ? 'camera' : 'image',
     job: draft.subcategory,
     city: draft.family === 'water' ? 'Marseille' : draft.family === 'air' ? 'Paris' : 'Chamonix',
@@ -85,6 +159,7 @@ export function createLocalLive(draft) {
 
   const nextLives = [live, ...readStoredLives()].slice(0, 12);
   writeStoredLives(nextLives);
+  saveLiveToFirestore(live);
   safeWindow()?.dispatchEvent(new CustomEvent(CREATED_LIVE_EVENT, { detail: live }));
   return live;
 }
@@ -102,7 +177,16 @@ export function subscribeToCreatedLives(callback) {
   const win = safeWindow();
   if (!win) return () => {};
 
-  const listener = () => callback(readStoredLives());
+  const listener = () => {
+    getCreatedLives().then(callback).catch(() => callback([]));
+  };
   win.addEventListener(CREATED_LIVE_EVENT, listener);
   return () => win.removeEventListener(CREATED_LIVE_EVENT, listener);
+}
+
+export async function endLive(liveId) {
+  const local = readStoredLives();
+  const updated = local.filter(live => live.id !== liveId);
+  writeStoredLives(updated);
+  await removeLiveFromFirestore(liveId);
 }

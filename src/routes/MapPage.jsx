@@ -7,6 +7,8 @@ import { ACTIVITY_CATEGORIES } from '../data/activityCategories.js';
 import { enrichExperience, getFamily, getPovType } from '../data/experienceTaxonomy.js';
 import { mapStreams } from '../data/mapStreams.js';
 import { getCreatedLives, subscribeToCreatedLives } from '../services/createdLiveService.js';
+import { collection, onSnapshot, query, where } from 'firebase/firestore';
+import { db } from '../firebase.js';
 
 function YouAreLivePanel({ live, onEnd }) {
   const videoRef = useRef(null);
@@ -75,15 +77,33 @@ export default function MapPage() {
   const [activeSubcategory, setActiveSubcategory] = useState('all');
   const [activeActivities, setActiveActivities] = useState([]);
   const [sheetState, setSheetState] = useState('closed');
-  const [selectedId, setSelectedId] = useState(() => {
-    const allInitial = [...getCreatedLives(), ...mapStreams];
-    const requested = allInitial.find((stream) => stream.id === requestedLiveId && stream.status === 'live');
-    return requested?.id ?? null;
-  });
+  const [selectedId, setSelectedId] = useState(null);
   const [resetSignal, setResetSignal] = useState(0);
   const [notifications, setNotifications] = useState({ 'surgeon-simulation': true });
   const [loading, setLoading] = useState(true);
-  const [createdLives, setCreatedLives] = useState(() => getCreatedLives());
+  const [createdLives, setCreatedLives] = useState([]);
+
+  useEffect(() => {
+    getCreatedLives().then((created) => {
+      setCreatedLives(created);
+      if (!selectedId && requestedLiveId) {
+        const allInitial = [...created, ...mapStreams];
+        const requested = allInitial.find((stream) => stream.id === requestedLiveId && stream.status === 'live');
+        setSelectedId(requested?.id ?? null);
+      }
+    }).catch(() => setCreatedLives([]));
+
+    const q = query(collection(db, 'activeLives'), where('status', '==', 'live'));
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      getCreatedLives().then((created) => {
+        setCreatedLives(created);
+      }).catch(() => setCreatedLives([]));
+    }, (err) => {
+      console.error('[MapPage] Firestore listener:', err.message);
+    });
+
+    return unsubscribe;
+  }, []);
   const [sheetMode, setSheetMode] = useState('compact');
 
   const allStreams = useMemo(() => [...createdLives, ...mapStreams], [createdLives]);

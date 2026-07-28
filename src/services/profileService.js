@@ -253,7 +253,7 @@ export function resolveCreatorProfile(input = {}) {
   return getCreatorProfile(candidateId) ?? profileFromContent(input, candidateId);
 }
 
-export function saveOwnCreatorProfile(nextProfile) {
+export async function saveOwnCreatorProfile(nextProfile) {
   const win = safeWindow();
   let current = {};
   try {
@@ -264,6 +264,7 @@ export function saveOwnCreatorProfile(nextProfile) {
   const normalized = {
     ...merged,
     username: String(merged.username ?? '').replace(/^@+/, '').trim(),
+    usernameNormalized: String(merged.username ?? '').replace(/^@+/, '').trim().toLowerCase(),
     websiteUrl: normalizeOptionalUrl(merged.websiteUrl),
     youtubeUrl: normalizeOptionalUrl(merged.youtubeUrl),
     instagramUrl: normalizeInstagram(merged.instagramUrl),
@@ -272,6 +273,16 @@ export function saveOwnCreatorProfile(nextProfile) {
   if (win) {
     win.localStorage.setItem(STORAGE_KEY, JSON.stringify(normalized));
     win.dispatchEvent(new CustomEvent(PROFILE_UPDATED_EVENT, { detail: normalized }));
+  }
+
+  try {
+    const { setDoc, doc } = await import('firebase/firestore');
+    const { db } = await import('../firebase.js');
+    if (normalized.uid) {
+      await setDoc(doc(db, 'users', normalized.uid), normalized, { merge: true });
+    }
+  } catch (err) {
+    console.error('[profileService] Failed to save profile to Firestore:', err.message);
   }
 
   return Promise.resolve(normalized);
