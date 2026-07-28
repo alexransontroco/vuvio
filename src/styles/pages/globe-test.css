@@ -39,10 +39,10 @@
   transform: translate(-50%, -50%);
   border-radius: 50%;
   background:
-    radial-gradient(circle, transparent 52%, rgba(43, 217, 200, 0.035) 58%, rgba(43, 217, 200, 0.12) 62%, rgba(95, 179, 255, 0.08) 65%, transparent 72%),
-    radial-gradient(circle at 50% 45%, transparent 56%, rgba(43, 217, 200, 0.09) 66%, transparent 78%);
+    radial-gradient(circle, transparent 52%, rgba(60, 185, 240, 0.045) 58%, rgba(60, 185, 240, 0.15) 62%, rgba(100, 200, 255, 0.09) 65%, transparent 72%),
+    radial-gradient(circle at 50% 45%, transparent 56%, rgba(60, 185, 240, 0.11) 66%, transparent 78%);
   filter: blur(1.8px);
-  opacity: 0.78;
+  opacity: 0.8;
   pointer-events: none;
 }
 
@@ -52,7 +52,7 @@
 }
 
 .test-old-globe .maplibregl-canvas {
-  filter: brightness(1.28) contrast(1.12) saturate(1.1);
+  filter: brightness(1.38) contrast(1.22) saturate(1.06);
 }
 
 .test-old-globe__vignette {
@@ -61,8 +61,8 @@
   z-index: 2;
   pointer-events: none;
   background:
-    radial-gradient(70% 54% at 50% 49%, rgba(43, 217, 200, 0.045), transparent 50%),
-    radial-gradient(120% 70% at 50% 45%, transparent 68%, rgba(6, 13, 22, 0.55) 100%);
+    radial-gradient(70% 54% at 50% 49%, rgba(60, 185, 240, 0.05), transparent 50%),
+    radial-gradient(120% 70% at 50% 45%, transparent 68%, rgba(6, 13, 22, 0.58) 100%);
 }
 
 .test-old-globe__controls {
@@ -312,19 +312,19 @@
 
 .test-globe-screen--actual .test-old-globe::before {
   background:
-    radial-gradient(circle, transparent 52%, rgba(60, 185, 240, 0.04) 58%, rgba(60, 185, 240, 0.14) 63%, rgba(100, 200, 255, 0.08) 67%, transparent 72%),
-    radial-gradient(circle at 50% 45%, transparent 56%, rgba(60, 185, 240, 0.08) 68%, transparent 80%);
-  opacity: 0.76;
+    radial-gradient(circle, transparent 50%, rgba(42, 175, 235, 0.05) 57%, rgba(42, 175, 235, 0.18) 62%, rgba(95, 179, 255, 0.1) 65%, transparent 72%),
+    radial-gradient(circle at 50% 45%, transparent 54%, rgba(42, 175, 235, 0.1) 66%, transparent 78%);
+  opacity: 0.82;
 }
 
 .test-globe-screen--actual .test-old-globe .maplibregl-canvas {
-  filter: brightness(1.72) contrast(1.14) saturate(1.18);
+  filter: brightness(1.82) contrast(1.20) saturate(1.18);
 }
 
 .test-globe-screen--actual .test-old-globe__vignette {
   background:
-    radial-gradient(68% 52% at 50% 49%, rgba(60, 185, 240, 0.03), transparent 50%),
-    radial-gradient(120% 70% at 50% 45%, transparent 68%, rgba(1, 4, 8, 0.62) 100%);
+    radial-gradient(68% 52% at 50% 49%, rgba(42, 175, 235, 0.04), transparent 50%),
+    radial-gradient(120% 70% at 50% 45%, transparent 68%, rgba(1, 4, 8, 0.72) 100%);
 }
 
 /* Segmented control */

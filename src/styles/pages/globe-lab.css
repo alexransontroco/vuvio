@@ -15,11 +15,24 @@
 
 .globe-lab-shell canvas {
   cursor: grab;
-  filter: brightness(1.24) contrast(1.12) saturate(1.32) hue-rotate(8deg);
+  filter: brightness(1.32) contrast(1.18) saturate(1.14) hue-rotate(2deg);
 }
 
 .globe-lab-shell canvas:active {
   cursor: grabbing;
+}
+
+/* Premium globe — enhanced atmosphere and depth */
+.globe-lab-shell::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 10;
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse 100% 100% at 50% 50%, rgba(38, 169, 197, 0.06) 0%, transparent 65%),
+    radial-gradient(ellipse 110% 110% at 50% 48%, transparent 55%, rgba(2, 11, 21, 0.42) 85%);
+  mix-blend-mode: screen;
 }
 
 .globe-lab-switch {

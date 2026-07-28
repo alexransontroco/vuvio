@@ -107,7 +107,7 @@ export default function App() {
         <Route path="/live" element={<Navigate to="/watch" replace />} />
         <Route path="/home" element={<Navigate to="/watch" replace />} />
         <Route path="/watch/:liveId" element={<Navigate to="/watch" replace />} />
-        <Route path="/discover" element={<Navigate to="/watch" replace />} />
+        <Route path="/discover" element={<Lazy component={DiscoverFeedPage} />} />
 
         {/* Public */}
         <Route path="/watch"         element={<Lazy component={HomePage} />} />

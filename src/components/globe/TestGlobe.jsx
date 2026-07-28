@@ -6,6 +6,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { ACTIVITY_CATEGORIES } from '../../data/activityCategories.js';
 import { enrichExperience } from '../../data/experienceTaxonomy.js';
 import MapBottomSheet from '../map/MapBottomSheet.jsx';
+import GlobeTestPremium from './GlobeTestPremium.jsx';
 
 const INITIAL_CENTER = [14, 20];
 const INITIAL_ZOOM = 1.28;
@@ -217,26 +218,26 @@ function buildCollection(streams) {
 function brightenBaseGlobe(map, isActual = false) {
   try {
     map.setFog?.({
-      color: isActual ? 'rgba(12, 35, 58, 0.54)' : 'rgba(11, 31, 42, 0.58)',
-      'high-color': isActual ? 'rgba(85, 155, 200, 0.58)' : 'rgba(32, 86, 105, 0.44)',
-      'horizon-blend': 0.1,
-      'space-color': isActual ? '#030c18' : '#050b13',
-      'star-intensity': 0.2,
+      color: isActual ? 'rgba(8, 28, 52, 0.62)' : 'rgba(4, 12, 24, 0.64)',
+      'high-color': isActual ? 'rgba(40, 100, 158, 0.54)' : 'rgba(200, 240, 255, 0.88)',
+      'horizon-blend': 0.08,
+      'space-color': isActual ? '#030c16' : '#050b13',
+      'star-intensity': 0.18,
     });
 
     map.getStyle().layers?.forEach((layer) => {
       const id = layer.id.toLowerCase();
       const sourceLayer = String(layer['source-layer'] ?? '').toLowerCase();
       if (layer.type === 'background') {
-        map.setPaintProperty(layer.id, 'background-color', isActual ? '#050d18' : '#07131e');
+        map.setPaintProperty(layer.id, 'background-color', isActual ? '#060f1a' : '#07131e');
       }
       if (layer.type === 'fill' && (id.includes('water') || sourceLayer.includes('water'))) {
-        map.setPaintProperty(layer.id, 'fill-color', isActual ? '#0a2844' : '#0a2130');
-        map.setPaintProperty(layer.id, 'fill-opacity', isActual ? 0.92 : 0.94);
+        map.setPaintProperty(layer.id, 'fill-color', isActual ? '#083548' : '#051628');
+        map.setPaintProperty(layer.id, 'fill-opacity', 0.94);
       }
       if (layer.type === 'line' && (id.includes('boundary') || id.includes('admin') || sourceLayer.includes('boundary'))) {
-        map.setPaintProperty(layer.id, 'line-color', isActual ? 'rgba(100, 180, 225, 0.52)' : 'rgba(126, 190, 205, 0.34)');
-        map.setPaintProperty(layer.id, 'line-opacity', isActual ? 0.56 : 0.42);
+        map.setPaintProperty(layer.id, 'line-color', isActual ? 'rgba(81, 167, 218, 0.42)' : 'rgba(120, 200, 240, 0.5)');
+        map.setPaintProperty(layer.id, 'line-opacity', isActual ? 0.52 : 0.50);
       }
     });
   } catch {
@@ -798,6 +799,11 @@ export default function TestGlobe({ streams, mode = 'test' }) {
   };
 
   const showGlobeSwitcher = true;
+
+  // Use premium globe for test mode
+  if (!isActualMode) {
+    return <GlobeTestPremium streams={streams} mode={mode} />;
+  }
 
   return (
     <section className={`screen test-globe-screen test-globe-screen--maplibre${isActualMode ? ' test-globe-screen--actual' : ''}`} data-sheet-state={sheetState} aria-label={isActualMode ? 'Current Vuvio globe' : 'Test Vuvio globe'}>
