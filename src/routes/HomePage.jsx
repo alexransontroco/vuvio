@@ -13,8 +13,10 @@ import { mapStreams } from '../data/mapStreams.js';
 import { streams, upcomingStreams } from '../data/mockStreams.js';
 import { createLiveSoundscape } from '../services/liveSoundscape.js';
 import { getCreatedLives, getCreatedLiveStream, subscribeToCreatedLives } from '../services/createdLiveService.js';
+import { startBroadcast, stopBroadcast, watchBroadcast, closePeer, getLocalStream, getRemoteStream } from '../services/webrtcService.js';
 import { collection, onSnapshot, query, where } from 'firebase/firestore';
 import { db } from '../firebase.js';
+import { useAuth } from '../context/AuthContext.jsx';
 import { getUnreadConversationCount, subscribeToMessaging } from '../services/messagingService.js';
 import { getUpcomingReminders, saveUpcomingReminder } from '../services/upcomingReminderService.js';
 import { demoLiveEquipmentIds } from '../data/equipmentModel.js';
@@ -1289,7 +1291,11 @@ function CreatorLiveSession({ live }) {
 function LiveViewer({ liveId, creatorMode = false }) {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [createdLives, setCreatedLives] = useState([]);
+  const localVideoRef = useRef(null);
+  const remoteVideoRef = useRef(null);
+  const webrtcCallRef = useRef(null);
 
   useEffect(() => {
     getCreatedLives().then(setCreatedLives).catch(() => setCreatedLives([]));
@@ -1348,6 +1354,57 @@ function LiveViewer({ liveId, creatorMode = false }) {
   }, [liveFeed, liveId]);
 
   useEffect(() => subscribeToCreatedLives(setCreatedLives), []);
+
+  // WebRTC streaming for broadcaster
+  useEffect(() => {
+    if (!creatorMode || !liveId || !user) return;
+
+    const setupBroadcaster = async () => {
+      try {
+        console.log('[LiveViewer] Setting up broadcaster');
+        const stream = await startBroadcast(liveId, user.uid);
+        if (localVideoRef.current) {
+          localVideoRef.current.srcObject = stream;
+        }
+      } catch (err) {
+        console.error('[LiveViewer] Broadcaster setup failed:', err.message);
+      }
+    };
+
+    setupBroadcaster();
+
+    return () => {
+      stopBroadcast(liveId).catch(console.error);
+      closePeer();
+    };
+  }, [creatorMode, liveId, user]);
+
+  // WebRTC streaming for watchers
+  useEffect(() => {
+    if (creatorMode || !liveId) return;
+
+    const setupWatcher = async () => {
+      try {
+        console.log('[LiveViewer] Setting up watcher');
+        webrtcCallRef.current = await watchBroadcast(liveId, (stream) => {
+          if (remoteVideoRef.current && stream) {
+            remoteVideoRef.current.srcObject = stream;
+          }
+        });
+      } catch (err) {
+        console.error('[LiveViewer] Watcher setup failed:', err.message);
+      }
+    };
+
+    setupWatcher();
+
+    return () => {
+      if (webrtcCallRef.current) {
+        webrtcCallRef.current.close();
+      }
+      closePeer();
+    };
+  }, [creatorMode, liveId]);
 
   const stopSound = () => {
     const current = soundRef.current;
@@ -1672,14 +1729,35 @@ function LiveViewer({ liveId, creatorMode = false }) {
                 />
               ) : (
                 <>
-                  <img className="live-slide__bg" src={item.image} aria-hidden="true" draggable="false" />
-                  <img
-                    className="live-slide__media live-slide__media--pov"
-                    src={item.image}
-                    alt={`${item.job ?? item.title ?? 'Live'} POV`}
-                    draggable="false"
-                    style={isActive && isDragging ? { transform: `scale(1.03) translateY(${dragY * 0.1}px)` } : undefined}
-                  />
+                  {creatorMode && isActive && localVideoRef ? (
+                    <video
+                      ref={localVideoRef}
+                      className="live-slide__media live-slide__media--pov"
+                      autoPlay
+                      muted
+                      playsInline
+                      style={isDragging ? { transform: `scale(1.03) translateY(${dragY * 0.1}px)` } : undefined}
+                    />
+                  ) : !creatorMode && isActive && remoteVideoRef ? (
+                    <video
+                      ref={remoteVideoRef}
+                      className="live-slide__media live-slide__media--pov"
+                      autoPlay
+                      playsInline
+                      style={isDragging ? { transform: `scale(1.03) translateY(${dragY * 0.1}px)` } : undefined}
+                    />
+                  ) : (
+                    <>
+                      <img className="live-slide__bg" src={item.image} aria-hidden="true" draggable="false" />
+                      <img
+                        className="live-slide__media live-slide__media--pov"
+                        src={item.image}
+                        alt={`${item.job ?? item.title ?? 'Live'} POV`}
+                        draggable="false"
+                        style={isActive && isDragging ? { transform: `scale(1.03) translateY(${dragY * 0.1}px)` } : undefined}
+                      />
+                    </>
+                  )}
                 </>
               )}
             </article>
