@@ -14,7 +14,7 @@ import { streams, upcomingStreams } from '../data/mockStreams.js';
 import { createLiveSoundscape } from '../services/liveSoundscape.js';
 import { getCreatedLives, getCreatedLiveStream, subscribeToCreatedLives } from '../services/createdLiveService.js';
 import { startBroadcast, stopBroadcast, watchBroadcast, closePeer, getLocalStream, getRemoteStream } from '../services/webrtcService.js';
-import { collection, onSnapshot, query, where } from 'firebase/firestore';
+import { collection, doc, onSnapshot, query, where } from 'firebase/firestore';
 import { db } from '../firebase.js';
 import { useAuth } from '../context/AuthContext.jsx';
 import { getUnreadConversationCount, subscribeToMessaging } from '../services/messagingService.js';
@@ -1293,23 +1293,21 @@ function LiveViewer({ liveId, creatorMode = false }) {
   const navigate = useNavigate();
   const { user } = useAuth();
   const [createdLives, setCreatedLives] = useState([]);
+  const [lives, setLives] = useState([]);
+  const [remoteStream, setRemoteStream] = useState(null);
+  const [broadcastEnded, setBroadcastEnded] = useState(false);
   const localVideoRef = useRef(null);
   const remoteVideoRef = useRef(null);
   const webrtcCallRef = useRef(null);
+  const watcherIdRef = useRef(null);
 
   useEffect(() => {
     getCreatedLives().then(setCreatedLives).catch(() => setCreatedLives([]));
-
-    const q = query(collection(db, 'activeLives'), where('status', '==', 'live'));
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      getCreatedLives().then(setCreatedLives).catch(() => setCreatedLives([]));
-    }, (err) => {
-      console.error('[HomePage] Firestore listener:', err.message);
-    });
-
-    return unsubscribe;
   }, []);
-  const liveFeed = useMemo(() => [...createdLives, ...lives], [createdLives]);
+  const liveFeed = useMemo(() => {
+    if (lives && lives.length > 0) return lives;
+    return streams.map(toHomeLive).filter((stream) => stream.status === 'live');
+  }, [lives]);
   const [index, setIndex] = useState(() => {
     const requestedIndex = liveFeed.findIndex((item) => item.id === liveId);
     return requestedIndex >= 0 ? requestedIndex : 0;
@@ -1340,8 +1338,8 @@ function LiveViewer({ liveId, creatorMode = false }) {
   const wheelLock = useRef(0);
   const soundRef = useRef(null);
   const soundRequestRef = useRef(0);
-  const live = liveFeed[index] ?? liveFeed[0];
-  const liveEquipment = getEquipmentSelection(getEquipmentLibrary(), live.equipment?.map((item) => item.equipmentId) ?? demoLiveEquipmentIds);
+  const live = liveFeed[index] ?? liveFeed[0] ?? { id: '', equipment: [] };
+  const liveEquipment = live.id ? getEquipmentSelection(getEquipmentLibrary(), live.equipment?.map((item) => item.equipmentId) ?? demoLiveEquipmentIds) : [];
   const isLiked = !!liked[live.id];
   const isFollowing = !!following[live.id];
 
@@ -1379,16 +1377,62 @@ function LiveViewer({ liveId, creatorMode = false }) {
     };
   }, [creatorMode, liveId, user]);
 
-  // WebRTC streaming for watchers
+  // Watch for broadcaster ending their live
   useEffect(() => {
     if (creatorMode || !liveId) return;
+
+    let isMounted = true;
+
+    const unsubscribe = onSnapshot(doc(db, 'activeLives', liveId), (docSnap) => {
+      if (!isMounted) return;
+
+      try {
+        if (docSnap.exists()) {
+          const data = docSnap.data();
+          if (data.status === 'ended') {
+            setBroadcastEnded(true);
+            setRemoteStream(null);
+            if (webrtcCallRef.current) {
+              webrtcCallRef.current.close();
+            }
+            closePeer();
+          }
+        }
+      } catch (err) {
+        console.error('[LiveViewer] Broadcast listener error:', err.message);
+      }
+    }, (err) => {
+      if (isMounted) {
+        console.error('[LiveViewer] Firestore subscription error:', err.message);
+      }
+    });
+
+    return () => {
+      isMounted = false;
+      unsubscribe();
+    };
+  }, [creatorMode, liveId]);
+
+  // WebRTC streaming for watchers (only for real active broadcasts)
+  useEffect(() => {
+    if (creatorMode || !liveId) return;
+
+    // Only set up WebRTC for real broadcasts with active broadcasters
+    const isRealBroadcast = live.creatorUid || live.createdLocally;
+    if (!isRealBroadcast) return;
+
+    setBroadcastEnded(false);
+    let isMounted = true;
 
     const setupWatcher = async () => {
       try {
         console.log('[LiveViewer] Setting up watcher');
         webrtcCallRef.current = await watchBroadcast(liveId, (stream) => {
-          if (remoteVideoRef.current && stream) {
-            remoteVideoRef.current.srcObject = stream;
+          if (isMounted && stream) {
+            if (remoteVideoRef.current) {
+              remoteVideoRef.current.srcObject = stream;
+            }
+            setRemoteStream(stream);
           }
         });
       } catch (err) {
@@ -1399,12 +1443,13 @@ function LiveViewer({ liveId, creatorMode = false }) {
     setupWatcher();
 
     return () => {
+      isMounted = false;
       if (webrtcCallRef.current) {
         webrtcCallRef.current.close();
       }
       closePeer();
     };
-  }, [creatorMode, liveId]);
+  }, [creatorMode, liveId, live.creatorUid, live.createdLocally]);
 
   const stopSound = () => {
     const current = soundRef.current;
@@ -1713,7 +1758,7 @@ function LiveViewer({ liveId, creatorMode = false }) {
 
           return (
             <article className="live-slide" key={item.id} aria-hidden={!isActive}>
-              {item.kind === 'camera' ? (
+              {item.kind === 'camera' && creatorMode ? (
                 <CameraLiveMedia live={item} isActive={isActive} isDragging={isDragging} dragY={dragY} />
               ) : item.kind === 'video' ? (
                 <video
@@ -1729,7 +1774,7 @@ function LiveViewer({ liveId, creatorMode = false }) {
                 />
               ) : (
                 <>
-                  {creatorMode && isActive && localVideoRef ? (
+                  {creatorMode && isActive ? (
                     <video
                       ref={localVideoRef}
                       className="live-slide__media live-slide__media--pov"
@@ -1738,7 +1783,7 @@ function LiveViewer({ liveId, creatorMode = false }) {
                       playsInline
                       style={isDragging ? { transform: `scale(1.03) translateY(${dragY * 0.1}px)` } : undefined}
                     />
-                  ) : !creatorMode && isActive && remoteVideoRef ? (
+                  ) : !creatorMode && isActive && !broadcastEnded ? (
                     <video
                       ref={remoteVideoRef}
                       className="live-slide__media live-slide__media--pov"
@@ -1773,8 +1818,14 @@ function LiveViewer({ liveId, creatorMode = false }) {
       </div>
 
       <div className="live-feed__status">
-        <LiveBadge pulse />
-        <span className="live-feed__watching">{live.viewers} watching</span>
+        {broadcastEnded ? (
+          <span className="live-feed__watching">{live.streamer ?? live.name} has ended their live</span>
+        ) : (
+          <>
+            <LiveBadge pulse />
+            <span className="live-feed__watching">{live.viewers} watching</span>
+          </>
+        )}
       </div>
 
       <LivePresenceOverlay liveId={live.id} liveTitle={live.title ?? live.note} onJoinFriend={() => {}} />
