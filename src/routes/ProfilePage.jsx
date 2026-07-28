@@ -8,6 +8,7 @@ import {
   ChevronRight,
   Clock3,
   Eye,
+  MessageCircle,
   MoreHorizontal,
   Play,
   Settings,
@@ -15,7 +16,7 @@ import {
   Sparkles,
 } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
+import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { getDoc, doc, collection, query, where, getDocs } from 'firebase/firestore';
 import { db } from '../firebase.js';
 import {
@@ -31,6 +32,7 @@ import {
   saveOwnCreatorProfile,
 } from '../services/profileService.js';
 import { isFollowingCreator, setFollowingCreator } from '../services/followService.js';
+import { getUnreadConversationCount, subscribeToMessaging } from '../services/messagingService.js';
 import { useAuth } from '../context/AuthContext.jsx';
 import {
   getEquipmentLibrary,
@@ -74,6 +76,9 @@ function ProfileState({ title, children }) {
 function ProfileCover({ profile, isOwnProfile, onShare, onEditCover }) {
   const navigate = useNavigate();
   const hasCover = Boolean(profile.coverUrl);
+  const [msgUnread, setMsgUnread] = useState(() => getUnreadConversationCount());
+
+  useEffect(() => subscribeToMessaging(() => setMsgUnread(getUnreadConversationCount())), []);
 
   return (
     <header className="creator-cover" style={!hasCover ? { background: 'linear-gradient(135deg, #0f1419 0%, #1a2332 100%)' } : undefined}>
@@ -84,6 +89,17 @@ function ProfileCover({ profile, isOwnProfile, onShare, onEditCover }) {
           <ChevronLeft size={20} strokeWidth={1.9} />
         </button>
         <div className="creator-cover__actions">
+          <Link to="/messages" className="creator-icon-button creator-icon-button--msg" aria-label="Messages">
+            <MessageCircle size={20} strokeWidth={2} />
+            {msgUnread > 0 ? (
+              <span className="creator-icon-button__badge" aria-label={`${msgUnread} unread`}>
+                {msgUnread > 9 ? '9+' : msgUnread}
+              </span>
+            ) : null}
+          </Link>
+          <button type="button" className="creator-icon-button" aria-label="Notifications">
+            <Bell size={18} strokeWidth={1.8} />
+          </button>
           <button type="button" className="creator-icon-button" onClick={onShare} aria-label="Share profile">
             <Share2 size={18} strokeWidth={1.8} />
           </button>
@@ -727,11 +743,19 @@ export default function ProfilePage() {
         setFollowStatus('idle');
         setNotificationsEnabled(Boolean(viewedProfile?.notificationsEnabled));
       } else {
-        setState({ loading: false, currentUser: userProfile || null, viewedProfile: null });
+        const localProfile = getCreatorProfile(uid);
+        setState({ loading: false, currentUser: userProfile || null, viewedProfile: localProfile });
+        setIsFollowing(Boolean(localProfile?.id && isFollowingCreator(localProfile.id)));
+        setFollowStatus('idle');
+        setNotificationsEnabled(Boolean(localProfile?.notificationsEnabled));
       }
     } catch (err) {
       console.error('[ProfilePage] Failed to load creator:', err.message);
-      setState({ loading: false, currentUser: userProfile || null, viewedProfile: null });
+      const localProfile = getCreatorProfile(uid);
+      setState({ loading: false, currentUser: userProfile || null, viewedProfile: localProfile });
+      setIsFollowing(Boolean(localProfile?.id && isFollowingCreator(localProfile.id)));
+      setFollowStatus('idle');
+      setNotificationsEnabled(Boolean(localProfile?.notificationsEnabled));
     }
   };
 

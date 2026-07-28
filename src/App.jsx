@@ -13,8 +13,10 @@ const EditProfilePage     = lazy(() => import('./routes/EditProfilePage.jsx'));
 const EquipmentManagePage = lazy(() => import('./routes/EquipmentManagePage.jsx'));
 const ForgotPasswordPage  = lazy(() => import('./routes/ForgotPasswordPage.jsx'));
 const HelpPage            = lazy(() => import('./routes/HelpPage.jsx'));
+const CurrentGlobePage    = lazy(() => import('./routes/CurrentGlobePage.jsx'));
 const GlobeLabPage        = lazy(() => import('./routes/GlobeLabPage.jsx'));
 const GlobeTestPage       = lazy(() => import('./routes/GlobeTestPage.jsx'));
+const GlobeTest2Page      = lazy(() => import('./routes/GlobeTest2Page.jsx'));
 const GlobeCesiumPage     = lazy(() => import('./routes/GlobeCesiumPage.jsx'));
 const IconsPreviewPage    = lazy(() => import('./routes/IconsPreviewPage.jsx'));
 const LoginPage           = lazy(() => import('./routes/LoginPage.jsx'));
@@ -113,10 +115,11 @@ export default function App() {
         <Route path="/watch"         element={<Lazy component={HomePage} />} />
         <Route path="/explore"      element={<Lazy component={ExplorePage} />} />
         <Route path="/explore/live" element={<Lazy component={AllLivesPage} />} />
-        <Route path="/globe"        element={<Suspense fallback={<RouteFallback />}><GlobeTestPage mode="actual" /></Suspense>} />
-        <Route path="/map"          element={<Suspense fallback={<RouteFallback />}><GlobeTestPage mode="actual" /></Suspense>} />
+        <Route path="/globe"        element={<Lazy component={CurrentGlobePage} />} />
+        <Route path="/map"          element={<Lazy component={CurrentGlobePage} />} />
         <Route path="/globe-lab"    element={<Lazy component={GlobeLabPage} />} />
         <Route path="/globe-test"   element={<Lazy component={GlobeTestPage} />} />
+        <Route path="/globe-test-2" element={<Lazy component={GlobeTest2Page} />} />
         <Route path="/globe-cesium" element={<Lazy component={GlobeCesiumPage} />} />
         <Route path="/terms"      element={<Lazy component={TermsPage} />} />
         <Route path="/privacy"    element={<Lazy component={PrivacyPage} />} />

@@ -60,7 +60,7 @@
   height: 100%;
   object-fit: cover;
   object-position: center 55%;
-  transform: scale(1.03);
+  transform: translateY(7px) scale(1.03);
 }
 
 .creator-cover__shade {
@@ -85,6 +85,35 @@
 .creator-cover__actions {
   display: flex;
   gap: 8px;
+}
+
+.creator-icon-button--msg {
+  position: relative;
+  text-decoration: none;
+  width: 48px;
+  height: 48px;
+  margin: -2px 0;
+  border-color: rgba(19, 200, 204, 0.36);
+  background: rgba(19, 200, 204, 0.15);
+  color: #e9feff;
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.18), inset 0 0 0 1px rgba(19, 200, 204, 0.08);
+}
+
+.creator-icon-button__badge {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  min-width: 16px;
+  height: 16px;
+  display: grid;
+  place-items: center;
+  border-radius: 999px;
+  background: var(--vuvio-cyan);
+  color: #04161f;
+  font-size: 9px;
+  font-weight: 800;
+  line-height: 1;
+  box-shadow: 0 0 0 2px rgba(7, 16, 28, 0.9);
 }
 
 .creator-icon-button,
@@ -455,17 +484,24 @@
   border: 2px solid rgba(255, 255, 255, 0.82);
   border-radius: 50%;
   background: var(--profile-live);
-  box-shadow: 0 0 0 0 rgba(255, 82, 93, 0.42);
-  animation: creator-live-dot 2.1s ease-out infinite;
+  box-shadow: 0 0 0 0 rgba(255, 82, 93, 0.58);
+  animation: creator-live-dot 1.45s ease-out infinite;
 }
 
 @keyframes creator-live-dot {
   0% {
-    box-shadow: 0 0 0 0 rgba(255, 82, 93, 0.42);
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(255, 82, 93, 0.58), 0 0 10px rgba(255, 82, 93, 0.4);
+  }
+
+  45% {
+    transform: scale(1.18);
+    box-shadow: 0 0 0 7px rgba(255, 82, 93, 0.22), 0 0 18px rgba(255, 82, 93, 0.46);
   }
 
   100% {
-    box-shadow: 0 0 0 12px rgba(255, 82, 93, 0);
+    transform: scale(1);
+    box-shadow: 0 0 0 16px rgba(255, 82, 93, 0), 0 0 10px rgba(255, 82, 93, 0.28);
   }
 }
 
@@ -540,6 +576,20 @@
   border-color: rgba(255, 82, 93, 0.22);
   background: rgba(255, 82, 93, 0.12);
   color: #ffd6d9;
+  animation: profile-live-button-pulse 1.8s ease-in-out infinite;
+  will-change: transform, box-shadow;
+}
+
+@keyframes profile-live-button-pulse {
+  0%, 100% {
+    transform: translateY(0) scale(1);
+    box-shadow: 0 0 0 0 rgba(255, 82, 93, 0.12);
+  }
+
+  50% {
+    transform: translateY(-1px) scale(1.035);
+    box-shadow: 0 0 0 6px rgba(255, 82, 93, 0.12), 0 8px 20px rgba(255, 82, 93, 0.16);
+  }
 }
 
 .creator-tabs {

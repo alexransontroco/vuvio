@@ -8,6 +8,7 @@ import waterIconRaw from '../../assets/icons/eau/eau.svg?raw';
 import { EXPERIENCE_FILTERS, enrichExperience, getFamily, getPovType } from '../../data/experienceTaxonomy.js';
 import { worldCountries } from '../../data/worldCountries.js';
 import { borderConfig, createBorderConfig } from '../../config/borderConfig.js';
+import { resolveCreatorProfile } from '../../services/profileService.js';
 
 const familyFilterIcons = {
   air: airIconRaw,
@@ -46,6 +47,7 @@ function GlobeLiveCard({ live, onClose, onWatch }) {
   if (!live) return null;
   const family = getFamily(live.family);
   const pov = getPovType(live.povType);
+  const profile = resolveCreatorProfile(live);
 
   return (
     <aside className="globe-lab-card" aria-label={`Selected live: ${live.experienceTitle}`}>
@@ -71,7 +73,7 @@ function GlobeLiveCard({ live, onClose, onWatch }) {
         {formatViewers(live)} viewers
       </p>
       <footer>
-        <button type="button" onClick={() => onWatch(`/profile/${encodeURIComponent(live.id)}`)}>
+        <button type="button" onClick={() => onWatch(`/profile/${encodeURIComponent(profile.id)}`)}>
           <UserRound size={15} strokeWidth={1.8} />
           Profile
         </button>
@@ -279,6 +281,9 @@ export default function VuvioGlobeLab({ streams }) {
             </button>
             <button type="button" onClick={() => navigate('/globe-test?switch=1')} aria-pressed="false">
               Test
+            </button>
+            <button type="button" onClick={() => navigate('/globe-test-2?switch=1')} aria-pressed="false">
+              Test 2
             </button>
           </div>
         ) : null}

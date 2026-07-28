@@ -37,6 +37,17 @@ const homeTabs = [
 const followedCreatorNames = ['Noah Perrin', 'Maya Afonso', 'Luka Marino'];
 const fallbackUserLocation = { latitude: 48.8566, longitude: 2.3522 };
 const fallbackCover = '/icons/icon-512.png';
+const demoVideoLiveIds = [
+  'chef-michelin-paris',
+  'motorbike-srinagar',
+  'horseback-cappadocia',
+  'skate-portland',
+  'sailor-split',
+  'road-cyclist-mallorca',
+  'biking-dolomites',
+  'buggy-marrakesh',
+  'glacier-guide-iceland',
+];
 const CLOCK_TICK_MS = 1000;
 const creatorComments = [
   { avatar: 'E', name: 'Emma', text: 'This looks amazing.' },
@@ -385,13 +396,13 @@ function HomeHeader({ onSearchOpen }) {
           <button type="button" className="home-icon-button" aria-label={t('common.search')} onClick={onSearchOpen}>
             <Search size={21} strokeWidth={1.9} />
           </button>
+          <Link to="/messages" className="home-icon-button home-icon-button--msg" aria-label={t('navigation.messages')}>
+            <MessageCircle size={22} strokeWidth={2} />
+            {msgUnread > 0 ? <span className="home-icon-badge" aria-label={`${msgUnread} unread`}>{msgUnread > 9 ? '9+' : msgUnread}</span> : null}
+          </Link>
           <button type="button" className="home-icon-button" aria-label={t('home.notifications')}>
             <Bell size={20} strokeWidth={1.9} />
           </button>
-          <Link to="/messages" className="home-icon-button home-icon-button--msg" aria-label={t('navigation.messages')}>
-            <MessageCircle size={20} strokeWidth={1.9} />
-            {msgUnread > 0 ? <span className="home-icon-badge" aria-label={`${msgUnread} unread`}>{msgUnread > 9 ? '9+' : msgUnread}</span> : null}
-          </Link>
         </div>
       </div>
     </header>
@@ -506,7 +517,7 @@ function CompactLiveCard({ live, onOpen }) {
             event.currentTarget.src = fallbackCover;
           }}
         />
-        <LiveBadge compact />
+        <LiveBadge compact pulse />
       </button>
       <div className="home-compact-live__body">
         <button type="button">
@@ -1319,7 +1330,20 @@ function LiveViewer({ liveId, creatorMode = false }) {
   }, []);
   const liveFeed = useMemo(() => {
     if (lives && lives.length > 0) return lives;
-    return streams.map(toHomeLive).filter((stream) => stream.status === 'live');
+    const baseFeed = streams.map(toHomeLive).filter((stream) => stream.status === 'live');
+    const demoVideos = demoVideoLiveIds
+      .map((id) => baseFeed.find((stream) => stream.id === id && stream.video))
+      .filter(Boolean);
+
+    if (!demoVideos.length) return baseFeed;
+
+    return baseFeed.flatMap((stream, streamIndex) => {
+      const featuredVideo = demoVideos[streamIndex % demoVideos.length];
+      return [
+        { ...stream, feedKey: `${stream.id}-base-${streamIndex}` },
+        { ...featuredVideo, feedKey: `${featuredVideo.id}-demo-${streamIndex}` },
+      ];
+    });
   }, [lives]);
   const [index, setIndex] = useState(() => {
     const requestedIndex = liveFeed.findIndex((item) => item.id === liveId);
@@ -1644,7 +1668,7 @@ function LiveViewer({ liveId, creatorMode = false }) {
 
     window.setTimeout(() => {
       setStarBursts((state) => state.filter((item) => item.id !== id));
-    }, 680);
+    }, 1200);
     window.setTimeout(() => {
       setStarPulse(false);
     }, 220);
@@ -1787,11 +1811,11 @@ function LiveViewer({ liveId, creatorMode = false }) {
       onWheel={onWheel}
     >
       <div className={isDragging ? 'live-feed__track is-dragging' : 'live-feed__track'} style={trackStyle}>
-        {liveFeed.map((item) => {
-          const isActive = item.id === live.id;
+        {liveFeed.map((item, itemIndex) => {
+          const isActive = itemIndex === index;
 
           return (
-            <article className="live-slide" key={item.id} aria-hidden={!isActive}>
+            <article className="live-slide" key={item.feedKey ?? item.id} aria-hidden={!isActive}>
               {item.kind === 'camera' && creatorMode ? (
                 <CameraLiveMedia live={item} isActive={isActive} isDragging={isDragging} dragY={dragY} />
               ) : item.kind === 'video' ? (
@@ -1847,6 +1871,9 @@ function LiveViewer({ liveId, creatorMode = false }) {
 
       <div className="live-feed__top-gradient" />
       <div className="live-feed__bottom-gradient" />
+      <div className="live-feed__watermark" aria-hidden="true">
+        <BrandMark size={26} showName />
+      </div>
 
       <div className="live-position-pill" aria-label={`Live ${index + 1} of ${liveFeed.length}`}>
         {index + 1} / {liveFeed.length}

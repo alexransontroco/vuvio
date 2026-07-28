@@ -102,6 +102,7 @@
 
 .bottom-nav__create .brand-mark {
   gap: 0;
+  transform: translateY(3px);
 }
 
 /* + badge on center button - sits below the W of the logo */
@@ -112,15 +113,16 @@
   transform: translateX(-50%);
   width: 18px;
   height: 18px;
-  display: grid;
-  place-items: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   border: 1.5px solid rgba(5, 18, 28, 0.94);
   border-radius: 50%;
   background: var(--vuvio-cyan);
   color: #03212a;
-  font-size: 12px;
+  font-size: 16px;
   font-weight: 800;
-  line-height: 1;
+  line-height: 18px;
   pointer-events: none;
   box-shadow: 0 2px 8px rgba(53, 227, 220, 0.3);
 }
@@ -1227,6 +1229,7 @@
 }
 
 .live-badge {
+  position: relative;
   display: inline-flex;
   align-items: center;
   gap: 5px;
@@ -1247,7 +1250,9 @@
 }
 
 .live-badge--pulse {
-  animation: livePulse 2.4s ease-out infinite;
+  transform-origin: center;
+  animation: livePulse 1.45s ease-out infinite;
+  will-change: transform, box-shadow;
 }
 
 @keyframes badge-breathe {
@@ -1256,10 +1261,16 @@
 }
 
 .live-badge__dot {
+  flex: none;
   width: 6px;
   height: 6px;
   border-radius: 50%;
   background: rgba(6, 35, 32, 0.45);
+}
+
+.live-badge--pulse .live-badge__dot {
+  animation: liveDotBeat 1.45s ease-in-out infinite;
+  background: rgba(6, 35, 32, 0.72);
 }
 
 .viewer-pill {
@@ -1923,7 +1934,13 @@
   display: grid;
   place-items: center;
   text-decoration: none;
-  color: inherit;
+  width: 42px;
+  height: 42px;
+  margin: -2px 0;
+  border-radius: 50%;
+  background: rgba(19, 200, 204, 0.13);
+  color: rgba(233, 254, 255, 0.96);
+  box-shadow: inset 0 0 0 1px rgba(19, 200, 204, 0.18);
 }
 
 .home-icon-badge,

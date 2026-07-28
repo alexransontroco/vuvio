@@ -1,22 +1,23 @@
 import Globe from 'react-globe.gl';
-import { Bell, LocateFixed, Minus, Play, Plus, X, Eye, UserRound, Radio } from 'lucide-react';
+import { Eye, LocateFixed, Minus, Plus, Radio, Sparkles, UserRound } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { enrichExperience } from '../../data/experienceTaxonomy.js';
 import { worldCountries } from '../../data/worldCountries.js';
+import { resolveCreatorProfile } from '../../services/profileService.js';
 
 // Premium theme configuration
 const TEST_GLOBE_THEME = {
-  oceanColor: '#020B15',
-  oceanSecondary: '#031321',
-  landColor: '#16465E',
-  landHighlight: '#27677C',
-  borderColor: 'rgba(83, 185, 216, 0.55)',
+  oceanColor: '#031827',
+  oceanSecondary: '#052B36',
+  landColor: '#1D6E79',
+  landHighlight: '#55E7DA',
+  borderColor: 'rgba(132, 240, 244, 0.68)',
   coastlineColor: 'rgba(97, 211, 232, 0.72)',
-  atmosphereColor: '#26A9C5',
-  atmosphereIntensity: 0.18,
-  landBrightness: 0.85,
-  borderOpacity: 0.55,
+  atmosphereColor: '#56F3E9',
+  atmosphereIntensity: 0.28,
+  landBrightness: 1.08,
+  borderOpacity: 0.68,
 };
 
 function viewersNumber(stream) {
@@ -48,6 +49,7 @@ function useElementSize(ref) {
 
 function GlobeLiveCard({ live, onClose, onWatch }) {
   if (!live) return null;
+  const profile = resolveCreatorProfile(live);
 
   return (
     <aside className="globe-lab-card" aria-label={`Selected live: ${live.experienceTitle}`}>
@@ -72,7 +74,7 @@ function GlobeLiveCard({ live, onClose, onWatch }) {
         {formatViewers(live)} viewers
       </p>
       <footer>
-        <button type="button" onClick={() => onWatch(`/profile/${encodeURIComponent(live.id)}`)}>
+        <button type="button" onClick={() => onWatch(`/profile/${encodeURIComponent(profile.id)}`)}>
           <UserRound size={15} strokeWidth={1.8} />
           Profile
         </button>
@@ -95,6 +97,9 @@ export default function GlobeTestPremium({ streams, mode = 'test' }) {
   const { width, height } = useElementSize(shellRef);
   const [activeFamily, setActiveFamily] = useState('all');
   const [selectedLive, setSelectedLive] = useState(null);
+  const [hoveredLive, setHoveredLive] = useState(null);
+  const isActualMode = mode === 'actual';
+  const isTestMode = mode === 'test';
 
   const livePoints = useMemo(() => {
     return streams
@@ -121,6 +126,24 @@ export default function GlobeTestPremium({ streams, mode = 'test' }) {
     );
   }, [streams]);
 
+  const topLive = useMemo(() => {
+    return [...livePoints].sort((a, b) => viewersNumber(b) - viewersNumber(a))[0] ?? null;
+  }, [livePoints]);
+
+  const spotlightArcs = useMemo(() => {
+    if (!topLive) return [];
+    return livePoints
+      .filter((live) => live.id !== topLive.id)
+      .slice(0, 5)
+      .map((live) => ({
+        ...live,
+        startLat: topLive.lat,
+        startLng: topLive.lng,
+        endLat: live.lat,
+        endLng: live.lng,
+      }));
+  }, [livePoints, topLive]);
+
   // Setup globe controls and rendering
   useEffect(() => {
     const globe = globeRef.current;
@@ -138,7 +161,7 @@ export default function GlobeTestPremium({ streams, mode = 'test' }) {
 
     const renderer = globe.renderer();
     rendererRef.current = renderer;
-    renderer?.setPixelRatio?.(Math.min(window.devicePixelRatio || 1, 2.0));
+    renderer?.setPixelRatio?.(Math.min(window.devicePixelRatio || 1, 2.5));
 
     const scene = globe.scene();
     sceneRef.current = scene;
@@ -227,6 +250,7 @@ export default function GlobeTestPremium({ streams, mode = 'test' }) {
 
   const selectLive = (live) => {
     setSelectedLive(live);
+    setHoveredLive(null);
     pauseAndMove({ lat: live.lat, lng: live.lng, altitude: 0.34 }, 1250, 6500);
   };
 
@@ -243,47 +267,74 @@ export default function GlobeTestPremium({ streams, mode = 'test' }) {
           showAtmosphere
           atmosphereColor={TEST_GLOBE_THEME.atmosphereColor}
           atmosphereAltitude={0.28}
+          arcsData={spotlightArcs}
+          arcStartLat="startLat"
+          arcStartLng="startLng"
+          arcEndLat="endLat"
+          arcEndLng="endLng"
+          arcColor={(live) => [topLive?.color || '#56F3E9', live.color]}
+          arcAltitude={0.22}
+          arcStroke={0.52}
+          arcDashLength={0.34}
+          arcDashGap={0.74}
+          arcDashInitialGap={() => Math.random()}
+          arcDashAnimateTime={4600}
           pointsData={livePoints}
           pointLat="lat"
           pointLng="lng"
-          pointAltitude={(live) => (live.family === 'air' ? 0.038 : live.family === 'water' ? 0.020 : 0.024)}
-          pointRadius={(live) => Math.min(0.45, 0.14 + viewersNumber(live) / 8600)}
+          pointAltitude={(live) => (live.family === 'air' ? 0.058 : live.family === 'water' ? 0.030 : 0.036)}
+          pointRadius={(live) => {
+            const isFocused = selectedLive?.id === live.id || hoveredLive?.id === live.id;
+            return Math.min(isFocused ? 0.72 : 0.56, (isFocused ? 0.28 : 0.18) + viewersNumber(live) / 7600);
+          }}
           pointColor={(live) => live.color}
           pointResolution={36}
-          pointsTransitionDuration={200}
+          pointsTransitionDuration={260}
           pointsMerge={false}
           ringsData={livePoints}
           ringLat="lat"
           ringLng="lng"
-          ringAltitude={0.016}
-          ringColor={(live) => (time) => `${live.color}${time < 0.48 ? 'aa' : '28'}`}
-          ringMaxRadius={(live) => (live.family === 'air' ? 2.8 : 2.1)}
-          ringPropagationSpeed={1.65}
-          ringRepeatPeriod={1350}
+          ringAltitude={0.026}
+          ringColor={(live) => (time) => `${live.color}${time < 0.36 ? 'ee' : time < 0.74 ? '88' : '22'}`}
+          ringMaxRadius={(live) => (live.family === 'air' ? 3.35 : live.family === 'water' ? 2.85 : 2.45)}
+          ringPropagationSpeed={2.05}
+          ringRepeatPeriod={1120}
           polygonsData={worldCountries.features}
           polygonGeoJsonGeometry="geometry"
           polygonCapColor={() => TEST_GLOBE_THEME.landColor}
           polygonSideColor={() => 'rgba(0,0,0,0)'}
           polygonStrokeColor={() => TEST_GLOBE_THEME.borderColor}
-          polygonAltitude={0.008}
+          polygonAltitude={0.012}
           polygonsTransitionDuration={0}
           onPointClick={selectLive}
+          onPointHover={(live) => setHoveredLive(live || null)}
           enablePointerInteraction
         />
         <div className="globe-lab-overlay" aria-hidden="true" />
 
+        <div className="globe-lab-status" aria-label={`${familyCounts.all} lives now`}>
+          <span>
+            <Sparkles size={14} strokeWidth={1.9} />
+            Live now
+          </span>
+          <strong>{familyCounts.all}</strong>
+        </div>
+
         <div className="map-engine-switch globe-lab-switch" role="group" aria-label="Choose globe">
-          <button type="button" onClick={() => navigate('/globe?switch=1')} aria-pressed="false">
+          <button type="button" className={isActualMode ? 'is-active' : ''} onClick={() => navigate('/globe?switch=1')} aria-pressed={isActualMode}>
             Current
           </button>
-          <button type="button" className="is-active" aria-pressed="true">
+          <button type="button" onClick={() => navigate('/globe-lab?switch=1')} aria-pressed="false">
             Lab
           </button>
           <button type="button" onClick={() => navigate('/globe-cesium?switch=1')} aria-pressed="false">
             Cesium
           </button>
-          <button type="button" onClick={() => navigate('/globe-test?switch=1')} aria-pressed="false">
+          <button type="button" className={isTestMode ? 'is-active' : ''} onClick={() => navigate('/globe-test?switch=1')} aria-pressed={isTestMode}>
             Test
+          </button>
+          <button type="button" onClick={() => navigate('/globe-test-2?switch=1')} aria-pressed="false">
+            Test 2
           </button>
         </div>
 

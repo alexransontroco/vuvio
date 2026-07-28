@@ -37,7 +37,6 @@ const quickFilters = [
   { id: 'jobs', label: 'Jobs' },
   { id: 'sports', label: 'Sports' },
   { id: 'crafts', label: 'Crafts' },
-  { id: 'city-tours', label: 'City Tours' },
   { id: 'travel', label: 'Travel' },
   { id: 'nature', label: 'Nature' },
   { id: 'music', label: 'Music' },
@@ -186,7 +185,7 @@ function NearbyCard({ stream, onOpen }) {
           loading="lazy"
           onError={(e) => { e.currentTarget.src = fallbackImage; }}
         />
-        <LiveBadge compact />
+        <LiveBadge compact pulse />
       </div>
       <div className="ep-nearby-card__info">
         <p className="ep-nearby-card__title">{title}</p>
@@ -516,13 +515,43 @@ function ExploreEmptyState({ title, body, action, onAction }) {
   );
 }
 
-function ExploreHeader({ filterCount, onOpenFilter, search, onSearchChange, hasSearch, onSearchClear, searchInputRef }) {
+function ExploreHeader({ filterCount, onOpenFilter }) {
   const [msgUnread, setMsgUnread] = useState(() => getUnreadConversationCount());
 
   useEffect(() => subscribeToMessaging(() => setMsgUnread(getUnreadConversationCount())), []);
 
   return (
     <header className="ep-header">
+      <h1 className="ep-header__title">Explore</h1>
+      <div className="ep-header__actions">
+        <Link to="/messages" className="ep-header__icon-btn ep-header__icon-btn--msg" aria-label="Messages">
+          <MessageCircle size={22} strokeWidth={2} />
+          {msgUnread > 0 ? (
+            <span className="ep-header__badge" aria-label={`${msgUnread} unread`}>
+              {msgUnread > 9 ? '9+' : msgUnread}
+            </span>
+          ) : null}
+        </Link>
+        <button type="button" className="ep-header__icon-btn" aria-label="Notifications">
+          <Bell size={20} strokeWidth={1.9} />
+        </button>
+        <button
+          type="button"
+          className={filterCount ? 'ep-header__filter-btn has-active' : 'ep-header__filter-btn'}
+          onClick={onOpenFilter}
+          aria-label="Open filters"
+        >
+          <SlidersHorizontal size={17} strokeWidth={1.9} />
+          {filterCount ? <span className="ep-header__filter-dot" aria-hidden="true" /> : null}
+        </button>
+      </div>
+    </header>
+  );
+}
+
+function ExploreSearch({ search, onSearchChange, hasSearch, onSearchClear, searchInputRef }) {
+  return (
+    <div className="ep-search-wrap">
       <div className="ep-search">
         <Search size={15} strokeWidth={1.9} className="ep-search__icon" />
         <input
@@ -545,29 +574,7 @@ function ExploreHeader({ filterCount, onOpenFilter, search, onSearchChange, hasS
           </button>
         ) : null}
       </div>
-      <div className="ep-header__actions">
-        <button type="button" className="ep-header__icon-btn" aria-label="Notifications">
-          <Bell size={20} strokeWidth={1.9} />
-        </button>
-        <Link to="/messages" className="ep-header__icon-btn ep-header__icon-btn--msg" aria-label="Messages">
-          <MessageCircle size={20} strokeWidth={1.9} />
-          {msgUnread > 0 ? (
-            <span className="ep-header__badge" aria-label={`${msgUnread} unread`}>
-              {msgUnread > 9 ? '9+' : msgUnread}
-            </span>
-          ) : null}
-        </Link>
-        <button
-          type="button"
-          className={filterCount ? 'ep-header__filter-btn has-active' : 'ep-header__filter-btn'}
-          onClick={onOpenFilter}
-          aria-label="Open filters"
-        >
-          <SlidersHorizontal size={17} strokeWidth={1.9} />
-          {filterCount ? <span className="ep-header__filter-dot" aria-hidden="true" /> : null}
-        </button>
-      </div>
-    </header>
+    </div>
   );
 }
 
@@ -672,6 +679,9 @@ export default function ExplorePage() {
       <ExploreHeader
         filterCount={filterCount}
         onOpenFilter={() => setFiltersOpen(true)}
+      />
+
+      <ExploreSearch
         search={search}
         onSearchChange={(e) => setSearch(e.target.value)}
         hasSearch={hasSearch}
@@ -694,108 +704,110 @@ export default function ExplorePage() {
         ))}
       </div>
 
-      {hasSearch ? (
-        <div className="ep-search-results">
-          {search.trim().startsWith('@') ? (
-            <>
-              {creators.length > 0 ? (
-                <>
-                  <p className="ep-results-count">{creators.length} creator{creators.length !== 1 ? 's' : ''}</p>
-                  <div className="ep-creators-grid">
-                    {creators.map((creator) => (
-                      <CreatorCard
-                        key={creator.id}
-                        creator={creator}
-                        isFollowing={userProfile?.followedCreators?.includes(creator.id) || false}
-                        onFollow={handleFollowCreator}
-                        onUnfollow={handleUnfollowCreator}
-                        onViewProfile={handleViewProfile}
-                      />
-                    ))}
-                  </div>
-                </>
+      <main className="ep-content">
+        {hasSearch ? (
+          <div className="ep-search-results">
+            {search.trim().startsWith('@') ? (
+              <>
+                {creators.length > 0 ? (
+                  <>
+                    <p className="ep-results-count">{creators.length} creator{creators.length !== 1 ? 's' : ''}</p>
+                    <div className="ep-creators-grid">
+                      {creators.map((creator) => (
+                        <CreatorCard
+                          key={creator.id}
+                          creator={creator}
+                          isFollowing={userProfile?.followedCreators?.includes(creator.id) || false}
+                          onFollow={handleFollowCreator}
+                          onUnfollow={handleUnfollowCreator}
+                          onViewProfile={handleViewProfile}
+                        />
+                      ))}
+                    </div>
+                  </>
+                ) : (
+                  <ExploreEmptyState
+                    title="No creators found"
+                    body="Try searching for another creator."
+                    action="Clear search"
+                    onAction={() => setSearch('')}
+                  />
+                )}
+              </>
+            ) : (
+              <>
+                {filteredStreams.length ? (
+                  <>
+                    <p className="ep-results-count">{filteredStreams.length} perspectives</p>
+                    <div className="ep-results-grid">
+                      {filteredStreams.map((stream) => (
+                        <LiveNowCard key={stream.id} stream={stream} onOpen={openStream} />
+                      ))}
+                    </div>
+                  </>
+                ) : (
+                  <ExploreEmptyState
+                    title="No live perspectives found"
+                    body="Try another activity, place or filter."
+                    action="Reset search"
+                    onAction={() => setSearch('')}
+                  />
+                )}
+              </>
+            )}
+          </div>
+        ) : (
+          <>
+            <ExploreSection title="Live now" onSeeAll={() => navigate('/explore/live')}>
+              {liveNowStreams.length ? (
+                <div className="ep-live-row">
+                  {liveNowStreams.map((stream) => (
+                    <LiveNowCard key={stream.id} stream={stream} onOpen={openStream} />
+                  ))}
+                </div>
               ) : (
                 <ExploreEmptyState
-                  title="No creators found"
-                  body="Try searching for another creator."
-                  action="Clear search"
-                  onAction={() => setSearch('')}
+                  title="No live streams right now"
+                  body="Explore upcoming perspectives or try another category."
                 />
               )}
-            </>
-          ) : (
-            <>
-              {filteredStreams.length ? (
-                <>
-                  <p className="ep-results-count">{filteredStreams.length} perspectives</p>
-                  <div className="ep-results-grid">
-                    {filteredStreams.map((stream) => (
-                      <LiveNowCard key={stream.id} stream={stream} onOpen={openStream} />
-                    ))}
-                  </div>
-                </>
+            </ExploreSection>
+
+            <ExploreSection title="Live nearby" onSeeAll={() => navigate('/explore/live')}>
+              {nearbyStreams.length ? (
+                <div className="ep-nearby-row">
+                  {nearbyStreams.map((stream) => (
+                    <NearbyCard key={stream.id} stream={stream} onOpen={openStream} />
+                  ))}
+                </div>
               ) : (
                 <ExploreEmptyState
-                  title="No live perspectives found"
-                  body="Try another activity, place or filter."
-                  action="Reset search"
-                  onAction={() => setSearch('')}
+                  title="Nothing live nearby yet"
+                  body="Try expanding your location or browse worldwide."
                 />
               )}
-            </>
-          )}
-        </div>
-      ) : (
-        <>
-          <ExploreSection title="Live now" onSeeAll={() => navigate('/explore/live')}>
-            {liveNowStreams.length ? (
-              <div className="ep-live-row">
-                {liveNowStreams.map((stream) => (
-                  <LiveNowCard key={stream.id} stream={stream} onOpen={openStream} />
-                ))}
-              </div>
-            ) : (
-              <ExploreEmptyState
-                title="No live streams right now"
-                body="Explore upcoming perspectives or try another category."
-              />
-            )}
-          </ExploreSection>
+            </ExploreSection>
 
-          <ExploreSection title="Live nearby" onSeeAll={() => navigate('/explore/live')}>
-            {nearbyStreams.length ? (
-              <div className="ep-nearby-row">
-                {nearbyStreams.map((stream) => (
-                  <NearbyCard key={stream.id} stream={stream} onOpen={openStream} />
-                ))}
-              </div>
-            ) : (
-              <ExploreEmptyState
-                title="Nothing live nearby yet"
-                body="Try expanding your location or browse worldwide."
-              />
-            )}
-          </ExploreSection>
+            {upcomingItems.length ? (
+            <ExploreSection title="Upcoming" onSeeAll={() => navigate('/explore/live')}>
+                <div className="ep-upcoming-row">
+                  {upcomingItems.map((item) => (
+                    <UpcomingCard key={item.id} item={item} />
+                  ))}
+                </div>
+              </ExploreSection>
+            ) : null}
 
-          {upcomingItems.length ? (
-            <ExploreSection title="Upcoming">
-              <div className="ep-upcoming-row">
-                {upcomingItems.map((item) => (
-                  <UpcomingCard key={item.id} item={item} />
+            <ExploreSection title="Browse by category">
+              <div className="ep-category-grid">
+                {categoryTiles.map((tile) => (
+                  <CategoryTile key={tile.id} tile={tile} onSelect={selectCategory} />
                 ))}
               </div>
             </ExploreSection>
-          ) : null}
-
-          <ExploreSection title="Browse by category">
-            <div className="ep-category-grid">
-              {categoryTiles.map((tile) => (
-                <CategoryTile key={tile.id} tile={tile} onSelect={selectCategory} />
-              ))}
-            </div>
-          </ExploreSection>
-        </>
-      )}
+          </>
+        )}
+      </main>
 
       {filtersOpen ? (
         <FilterSheet
