@@ -1,65 +1,4 @@
-export const CURRENT_USER_ID = 'current-user';
-
-const bakeryLives = {
-  currentLive: {
-    id: 'croissants-live',
-    title: 'Preparing croissants',
-    thumbnailUrl: '/assets/bread.jpg',
-    location: 'Paris, France',
-    status: 'ended',
-    viewers: 1800,
-  },
-  upcomingLives: [
-    {
-      id: 'saturday-batch',
-      title: 'Saturday’s first batch',
-      thumbnailUrl: '/assets/bread.jpg',
-      location: 'Paris, France',
-      status: 'upcoming',
-      scheduledAt: 'Saturday, July 18',
-      time: '05:30',
-    },
-    {
-      id: 'baguette-shaping',
-      title: 'Shaping baguettes',
-      thumbnailUrl: '/assets/bread.jpg',
-      location: 'Paris, France',
-      status: 'upcoming',
-      scheduledAt: 'Tuesday, July 21',
-      time: '06:10',
-    },
-  ],
-  recentLives: [
-    {
-      id: 'bread-from-oven',
-      title: 'Bread coming out of the oven',
-      thumbnailUrl: '/assets/bread.jpg',
-      location: 'Paris, France',
-      status: 'ended',
-      relativeDate: 'Yesterday',
-      duration: '58:24',
-      views: 1200,
-      category: 'Bakery',
-    },
-    {
-      id: 'morning-service',
-      title: 'Morning service',
-      thumbnailUrl: '/assets/coffee.jpg',
-      location: 'Paris, France',
-      status: 'ended',
-      relativeDate: '2 days ago',
-      duration: '47:31',
-      views: 1600,
-      category: 'Cooking',
-    },
-  ],
-};
-
-export const equipmentItems = [
-  { id: 'sony-zv-e10', category: 'Camera', name: 'Sony ZV-E10', note: 'Used in his live streams' },
-  { id: 'spiral-30l', category: 'Mixer', name: 'Spiral 30L', note: 'Used in his live streams' },
-  { id: 'bongard-soleo', category: 'Oven', name: 'Bongard Soleo', note: 'Used in his live streams' },
-];
+export const CURRENT_USER_ID = ‘current-user’;
 
 export const ownCreatorProfile = {
   id: CURRENT_USER_ID,
@@ -84,10 +23,10 @@ export const ownCreatorProfile = {
   totalViews: 1200000,
   totalLiveHours: 214,
   createdAt: 'March 2026',
-  currentLive: bakeryLives.currentLive,
-  upcomingLives: bakeryLives.upcomingLives,
-  recentLives: bakeryLives.recentLives,
-  equipment: equipmentItems,
+  currentLive: null,
+  upcomingLives: [],
+  recentLives: [],
+  equipment: [],
 };
 
 function profile({
