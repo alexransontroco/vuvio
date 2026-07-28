@@ -156,7 +156,7 @@ export async function getUserProfile(uid) {
 
 export async function updateUserProfile(uid, data) {
   const ref = doc(db, 'users', uid);
-  await updateDoc(ref, { ...data, updatedAt: serverTimestamp() });
+  await setDoc(ref, { uid, ...data, updatedAt: serverTimestamp() }, { merge: true });
 }
 
 /* ─── Username reservation ────────────────────────────────────── */
@@ -172,11 +172,12 @@ export async function reserveUsername(uid, username) {
       throw new Error('This username is already taken.');
     }
     tx.set(usernameRef, { uid, username, createdAt: serverTimestamp() });
-    tx.update(userRef, {
+    tx.set(userRef, {
+      uid,
       username,
       usernameNormalized: normalized,
       updatedAt: serverTimestamp(),
-    });
+    }, { merge: true });
   });
 }
 

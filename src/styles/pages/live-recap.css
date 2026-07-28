@@ -57,18 +57,18 @@
 /* ── Main content wrapper ───────────────────────────────── */
 .live-recap-main {
   width: 100%;
-  padding: 0 0 16px;
+  padding: 0 0 12px;
 }
 
 /* ── Hero card ──────────────────────────────────────────── */
 .live-recap-hero {
   position: relative;
-  margin: 14px 14px 0;
-  min-height: 240px;
+  margin: 12px 8px 0;
+  min-height: 200px;
   overflow: hidden;
-  border-radius: 22px;
+  border-radius: 18px;
   border: 1px solid rgba(134, 202, 224, 0.14);
-  box-shadow: 0 18px 56px rgba(0, 10, 22, 0.36);
+  box-shadow: 0 12px 32px rgba(0, 10, 22, 0.28);
   background: #092235;
 }
 
@@ -135,8 +135,8 @@
 }
 
 .live-recap-hero h1 {
-  margin: 10px 0 6px;
-  font-size: clamp(22px, 5.5vw, 28px);
+  margin: 8px 0 4px;
+  font-size: clamp(18px, 5vw, 28px);
   font-weight: 750;
   line-height: 1.06;
   letter-spacing: -0.01em;
@@ -151,32 +151,32 @@
 
 /* ── Creator message ────────────────────────────────────── */
 .live-recap-message {
-  margin: 18px 14px 0;
-  padding: 16px 18px;
+  margin: 14px 8px 0;
+  padding: 12px 14px;
   border: 1px solid rgba(134, 202, 224, 0.13);
-  border-radius: 18px;
+  border-radius: 14px;
   background: rgba(10, 30, 48, 0.72);
 }
 
 .live-recap-message h2 {
-  margin: 0 0 6px;
-  font-size: 16px;
+  margin: 0 0 4px;
+  font-size: 15px;
   font-weight: 750;
 }
 
 .live-recap-message p {
   margin: 0;
   color: rgba(168, 190, 203, 0.9);
-  font-size: 13px;
-  line-height: 1.55;
+  font-size: 12px;
+  line-height: 1.5;
 }
 
 /* ── Analytics grid (2-col mobile) ─────────────────────── */
 .live-analytics-bar {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 10px;
-  margin: 14px 14px 0;
+  gap: 8px;
+  margin: 12px 8px 0;
   padding: 0;
   background: transparent;
   border: none;
@@ -241,10 +241,10 @@
 
 /* ── Priority card (unanswered) ─────────────────────────── */
 .live-recap-priority {
-  margin: 14px 14px 0;
-  padding: 16px 18px;
+  margin: 12px 8px 0;
+  padding: 12px 14px;
   border: 1px solid rgba(255, 157, 77, 0.22);
-  border-radius: 18px;
+  border-radius: 14px;
   background: linear-gradient(135deg, rgba(180, 88, 20, 0.14), rgba(8, 23, 38, 0.72));
 }
 
@@ -302,7 +302,7 @@
 
 /* ── Section heading ────────────────────────────────────── */
 .live-recap-section {
-  margin-top: 24px;
+  margin-top: 18px;
 }
 
 .live-recap-section-heading {
@@ -310,8 +310,8 @@
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  padding: 0 16px;
-  margin-bottom: 12px;
+  padding: 0 8px;
+  margin-bottom: 10px;
 }
 
 .live-recap-section-heading h2 {
@@ -337,8 +337,8 @@
 /* ── Horizontal scroll track ────────────────────────────── */
 .live-recap-scroll-track {
   display: flex;
-  gap: 12px;
-  padding: 0 14px;
+  gap: 10px;
+  padding: 0 8px;
   overflow-x: auto;
   scroll-snap-type: x mandatory;
   scrollbar-width: none;
@@ -478,7 +478,7 @@
 .live-recap-replay-wrap {
   display: grid;
   grid-template-columns: 1fr;
-  margin: 0 14px;
+  margin: 0 8px;
 }
 
 /* ── Replay timeline ────────────────────────────────────── */
@@ -615,10 +615,12 @@
 /* ── Replay player (mobile: full-width 16:9) ────────────── */
 .replay-player {
   position: relative;
-  width: 100%;
+  width: calc(100% + 16px);
+  margin-left: -8px;
+  margin-right: -8px;
   aspect-ratio: 16 / 9;
   overflow: hidden;
-  border-radius: 18px;
+  border-radius: 14px;
   border: 1px solid rgba(134, 202, 224, 0.18);
   background: #061421;
 }
@@ -746,10 +748,10 @@
 
 /* ── Synchronized chat (stacked below player on mobile) ─── */
 .synchronized-chat {
-  margin-top: 12px;
-  padding: 16px;
+  margin: 0 8px 0;
+  padding: 14px;
   border: 1px solid rgba(134, 202, 224, 0.18);
-  border-radius: 16px;
+  border-radius: 14px;
   background: linear-gradient(180deg, rgba(15, 38, 60, 0.82), rgba(6, 21, 35, 0.86));
   box-shadow: 0 10px 32px rgba(0, 8, 18, 0.2);
 }
@@ -876,10 +878,10 @@
 
 /* ── Smart summary ───────────────────────────────────────── */
 .smart-summary {
-  margin: 0 14px;
-  padding: 18px;
+  margin: 0 8px;
+  padding: 14px;
   border: 1px solid rgba(134, 202, 224, 0.18);
-  border-radius: 18px;
+  border-radius: 14px;
   background: linear-gradient(180deg, rgba(15, 38, 60, 0.82), rgba(6, 21, 35, 0.86));
   box-shadow: 0 10px 32px rgba(0, 8, 18, 0.2);
 }
@@ -919,9 +921,9 @@
 
 /* ── Post-live action stack (mobile) ────────────────────── */
 .post-live-actions {
-  margin: 0 14px;
+  margin: 0 8px;
   border: 1px solid rgba(134, 202, 224, 0.18);
-  border-radius: 18px;
+  border-radius: 14px;
   overflow: hidden;
   background: linear-gradient(180deg, rgba(15, 38, 60, 0.82), rgba(6, 21, 35, 0.86));
   box-shadow: 0 10px 32px rgba(0, 8, 18, 0.2);
@@ -930,22 +932,23 @@
 .post-live-actions__grid {
   display: grid;
   grid-template-columns: 1fr;
-  gap: 8px;
-  padding: 14px;
+  gap: 6px;
+  padding: 12px;
 }
 
 .post-live-actions__grid button {
-  min-height: 60px;
+  min-height: 54px;
   display: grid;
-  grid-template-columns: 42px 1fr;
+  grid-template-columns: 36px 1fr;
   align-items: center;
-  gap: 4px 12px;
-  padding: 12px 14px;
+  gap: 4px 10px;
+  padding: 10px 12px;
   border: 1px solid rgba(134, 202, 224, 0.18);
-  border-radius: 14px;
+  border-radius: 12px;
   background: rgba(8, 24, 39, 0.56);
   color: #f5fbff;
   text-align: left;
+  font-size: 13px;
 }
 
 .post-live-actions__grid button span {

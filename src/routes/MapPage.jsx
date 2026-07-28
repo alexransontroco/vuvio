@@ -270,7 +270,12 @@ export default function MapPage() {
             setSelectedId(null);
             setResetSignal((value) => value + 1);
           }}
-          onWatch={(id) => navigate(`/discover?live=${encodeURIComponent(id)}`)}
+          onWatch={(id) => {
+            const live = allStreams.find((stream) => stream.id === id);
+            const path = live?.creatorUid || live?.createdLocally ? '/watch' : '/discover';
+            const mode = path === '/watch' ? '&mode=view' : '';
+            navigate(`${path}?live=${encodeURIComponent(id)}${mode}`);
+          }}
           notifications={notifications}
           onToggleNotification={(id) => setNotifications((state) => ({ ...state, [id]: !state[id] }))}
         />

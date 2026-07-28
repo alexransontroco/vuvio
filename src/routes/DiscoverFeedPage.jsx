@@ -1,7 +1,7 @@
 import { Eye, Heart, MapPin, MessageCircle, Plus, Send, SlidersHorizontal, X } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import BrandMark from '../components/BrandMark.jsx';
 import CreatorLink from '../components/CreatorLink.jsx';
 import LiveBadge from '../components/LiveBadge.jsx';
@@ -30,39 +30,38 @@ const swipeHintStorageKey = 'vuvio-discover-swipe-hint-seen';
 const swipeThreshold = 48;
 const wheelThreshold = 80;
 const swipeLockMs = 520;
-const devOnlyVideo = (src) => (import.meta.env.DEV ? src : null);
 
 const highResolutionDiscoverMedia = {
   air: {
-    src: devOnlyVideo('/assets/videos/20667540-uhd_2160_3840_60fps.mp4'),
+    src: '/assets/videos/20667540-uhd_2160_3840_60fps.mp4',
     poster: '/assets/videos/20667540-uhd_2160_3840_60fps-cover.jpg',
   },
   sky: {
-    src: devOnlyVideo('/assets/videos/20667540-uhd_2160_3840_60fps.mp4'),
+    src: '/assets/videos/20667540-uhd_2160_3840_60fps.mp4',
     poster: '/assets/videos/20667540-uhd_2160_3840_60fps-cover.jpg',
   },
   earth: {
-    src: devOnlyVideo('/assets/videos/16232606_2160_3840_30fps.mp4'),
+    src: '/assets/videos/16232606_2160_3840_30fps.mp4',
     poster: '/assets/videos/16232606_2160_3840_30fps-cover.jpg',
   },
   nature: {
-    src: devOnlyVideo('/assets/videos/16232606_2160_3840_30fps.mp4'),
+    src: '/assets/videos/16232606_2160_3840_30fps.mp4',
     poster: '/assets/videos/16232606_2160_3840_30fps-cover.jpg',
   },
   sport: {
-    src: devOnlyVideo('/assets/videos/16232606_2160_3840_30fps.mp4'),
+    src: '/assets/videos/16232606_2160_3840_30fps.mp4',
     poster: '/assets/videos/16232606_2160_3840_30fps-cover.jpg',
   },
   travel: {
-    src: devOnlyVideo('/assets/videos/16232606_2160_3840_30fps.mp4'),
+    src: '/assets/videos/16232606_2160_3840_30fps.mp4',
     poster: '/assets/videos/16232606_2160_3840_30fps-cover.jpg',
   },
   water: {
-    src: devOnlyVideo('/assets/videos/16352747_1080_1920_30fps.mp4'),
+    src: '/assets/videos/16352747_1080_1920_30fps.mp4',
     poster: '/assets/videos/16352747_1080_1920_30fps-cover.jpg',
   },
   fallback: {
-    src: devOnlyVideo('/assets/videos/8678453-hd_1080_1920_30fps.mp4'),
+    src: '/assets/videos/8678453-hd_1080_1920_30fps.mp4',
     poster: '/assets/videos/8678453-hd_1080_1920_30fps-cover.jpg',
   },
 };
@@ -86,7 +85,7 @@ function discoverMediaFor(stream) {
   }
 
   if (stream?.video) {
-    return { src: devOnlyVideo(stream.video), poster: stream.image ?? null };
+    return { src: stream.video, poster: stream.image ?? null };
   }
 
   if (stream?.image) {
@@ -134,6 +133,7 @@ function weightedDiscoverStreams(mode, streams) {
 
 export default function DiscoverFeedPage() {
   const { t, i18n } = useTranslation();
+  const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const requestedLiveId = searchParams.get('live');
   const [createdLives, setCreatedLives] = useState([]);
@@ -196,6 +196,14 @@ export default function DiscoverFeedPage() {
 
     return result;
   }, [mode, allAvailableStreams, requestedLiveId]);
+
+  useEffect(() => {
+    if (!requestedLiveId) return;
+    const requested = allAvailableStreams.find((stream) => stream.id === requestedLiveId);
+    if (requested?.creatorUid || requested?.createdLocally) {
+      navigate(`/watch?live=${encodeURIComponent(requestedLiveId)}&mode=view`, { replace: true });
+    }
+  }, [allAvailableStreams, navigate, requestedLiveId]);
 
   // Determine effective index: prioritize requested live
   const effectiveIndex = useMemo(() => {

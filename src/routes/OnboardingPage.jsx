@@ -214,13 +214,26 @@ export default function OnboardingPage() {
     setError('');
 
     if (step === 1) {
-      if (username) {
-        const validErr = validateUsername(username);
-        if (validErr) { setUsernameError(validErr); return; }
-        const available = await isUsernameAvailable(username);
-        if (!available) { setUsernameError('This username is already taken.'); return; }
+      setBusy(true);
+      try {
+        if (username) {
+          const validErr = validateUsername(username);
+          if (validErr) {
+            setUsernameError(validErr);
+            return;
+          }
+          const available = await isUsernameAvailable(username);
+          if (!available) {
+            setUsernameError('This username is already taken.');
+            return;
+          }
+        }
+        setStep(2);
+      } catch (err) {
+        setError(err.message || 'Could not validate this username. Please try again.');
+      } finally {
+        setBusy(false);
       }
-      setStep(2);
       return;
     }
 
@@ -232,6 +245,10 @@ export default function OnboardingPage() {
     if (step === 3) {
       setBusy(true);
       try {
+        if (!user?.uid) {
+          throw new Error('Your session is still loading. Please try again.');
+        }
+
         let photoURL = userProfile?.photoURL || null;
 
         if (avatarDataUrl && user?.uid) {
@@ -267,11 +284,15 @@ export default function OnboardingPage() {
   const skip = async () => {
     setBusy(true);
     try {
+      if (!user?.uid) {
+        throw new Error('Your session is still loading. Please try again.');
+      }
       await updateProfile({ onboardingCompleted: true });
       await refreshUserProfile();
       navigate(returnTo, { replace: true });
-    } catch {
-      navigate(returnTo, { replace: true });
+    } catch (err) {
+      setError(err.message || 'Could not finish onboarding. Please try again.');
+      setBusy(false);
     }
   };
 

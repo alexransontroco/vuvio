@@ -25,6 +25,7 @@ export default function LandingScreen({ onComplete }) {
         videoRef.current.currentTime = 0;
         videoRef.current.play();
       });
+      videoRef.current.play()?.catch?.(() => {});
     }
   }, []);
 

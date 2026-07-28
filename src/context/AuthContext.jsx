@@ -22,6 +22,7 @@ export function AuthProvider({ children }) {
   const [authLoading,     setAuthLoading]     = useState(true);
   const [profileLoading,  setProfileLoading]  = useState(false);
   const [currentUid,      setCurrentUid]      = useState(null);
+  const [showSplash,      setShowSplash]      = useState(true);
 
   const loadProfile = useCallback(async (firebaseUser) => {
     if (!firebaseUser) {
@@ -110,6 +111,13 @@ export function AuthProvider({ children }) {
     };
   }, [loadProfile]);
 
+  useEffect(() => {
+    const splashTimer = setTimeout(() => {
+      setShowSplash(false);
+    }, 8000);
+    return () => clearTimeout(splashTimer);
+  }, []);
+
   const refreshUserProfile = useCallback(async () => {
     if (user) await loadProfile(user);
   }, [user, loadProfile]);
@@ -171,6 +179,7 @@ export function AuthProvider({ children }) {
     userProfile,
     authLoading,
     profileLoading,
+    showSplash,
     isAuthenticated: Boolean(user),
     signUp,
     signIn,

@@ -23,6 +23,7 @@ export default function MobileLandingScreen({ onComplete }) {
         videoRef.current.currentTime = 0;
         videoRef.current.play();
       });
+      videoRef.current.play()?.catch?.(() => {});
     }
   }, []);
 

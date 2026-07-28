@@ -1133,6 +1133,29 @@
   transform: none;
 }
 
+.live-slide__connecting {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  display: grid;
+  place-items: center;
+  align-content: center;
+  gap: 8px;
+  color: rgba(248, 252, 251, 0.92);
+  background: radial-gradient(circle at 50% 45%, rgba(31, 224, 208, 0.18), rgba(5, 11, 18, 0.46) 42%, rgba(5, 11, 18, 0.74));
+  pointer-events: none;
+}
+
+.live-slide__connecting span {
+  font-size: 15px;
+  font-weight: 720;
+}
+
+.live-slide__connecting small {
+  font-size: 11px;
+  color: rgba(248, 252, 251, 0.58);
+}
+
 .live-feed__top-gradient,
 .live-feed__bottom-gradient {
   position: absolute;
@@ -2197,10 +2220,10 @@
   position: absolute;
   left: 14px;
   right: 14px;
-  bottom: calc(var(--safe-bottom) + 14px);
+  bottom: calc(var(--safe-bottom) + 86px);
   z-index: 9;
   display: grid;
-  grid-template-columns: repeat(6, minmax(0, 1fr));
+  grid-template-columns: repeat(5, minmax(0, 1fr));
   gap: 7px;
   transition: opacity 260ms ease, transform 260ms ease;
 }
@@ -2233,9 +2256,22 @@
 }
 
 .creator-live-controls button.is-end {
-  border-color: rgba(255, 59, 78, 0.42);
-  background: rgba(255, 59, 78, 0.2);
+  grid-column: 1 / -1;
+  justify-self: center;
+  width: min(148px, 42vw);
+  min-height: 48px;
+  margin-top: 3px;
+  border-color: rgba(255, 78, 96, 0.76);
+  background: linear-gradient(180deg, rgba(255, 70, 88, 0.76), rgba(180, 18, 38, 0.78));
+  box-shadow:
+    0 18px 38px rgba(130, 0, 16, 0.34),
+    0 0 0 1px rgba(255, 255, 255, 0.1) inset;
   color: #fff;
+}
+
+.creator-live-controls button.is-end span {
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 9.5px;
 }
 
 .creator-live-lock {

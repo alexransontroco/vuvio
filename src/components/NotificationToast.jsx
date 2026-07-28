@@ -6,7 +6,7 @@ export default function NotificationToast({ notifications, onDismiss }) {
   const navigate = useNavigate();
 
   const handleNotificationClick = (liveId) => {
-    navigate(`/watch?live=${encodeURIComponent(liveId)}`);
+    navigate(`/watch?live=${encodeURIComponent(liveId)}&mode=view`);
     onDismiss(liveId);
   };
 

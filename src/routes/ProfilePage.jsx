@@ -886,7 +886,7 @@ export default function ProfilePage() {
           profile={profile}
           isOwnProfile={isOwnProfile}
           notified={notificationsEnabled}
-          onJoin={() => profile.currentLive && navigate(`/watch?live=${encodeURIComponent(profile.currentLive.id)}`)}
+          onJoin={() => profile.currentLive && navigate(`/watch?live=${encodeURIComponent(profile.currentLive.id)}&mode=view`)}
           onNotify={() => notifyLive(profile.currentLive?.id)}
           onManage={manageLive}
         />

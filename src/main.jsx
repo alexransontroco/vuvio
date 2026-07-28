@@ -21,6 +21,7 @@ import './styles/pages/vision.css';
 import './styles/pages/auth.css';
 import './styles/pages/test-users.css';
 import './styles/pages/following.css';
+import './styles/pages/onboarding.css';
 import './components/social/social.css';
 
 createRoot(document.getElementById('root')).render(

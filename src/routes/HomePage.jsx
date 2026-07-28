@@ -12,7 +12,7 @@ import { lives } from '../data/lives.js';
 import { mapStreams } from '../data/mapStreams.js';
 import { streams, upcomingStreams } from '../data/mockStreams.js';
 import { createLiveSoundscape } from '../services/liveSoundscape.js';
-import { getCreatedLives, getCreatedLiveStream, subscribeToCreatedLives } from '../services/createdLiveService.js';
+import { getCreatedLives, getCreatedLiveStream, subscribeToCreatedLives, publishLivePing, endLive as deleteLiveFromDB } from '../services/createdLiveService.js';
 import { startBroadcast, stopBroadcast, watchBroadcast, closePeer, getLocalStream, getRemoteStream } from '../services/webrtcService.js';
 import { collection, doc, onSnapshot, query, where } from 'firebase/firestore';
 import { db } from '../firebase.js';
@@ -253,15 +253,8 @@ function isVisibleUpcoming(item, now) {
 function toHomeLive(stream) {
   const mapStream = mapStreamById.get(stream.id);
   const [city = '', country = ''] = String(stream.place ?? '').split(',').map((part) => part.trim());
-  const isLocalDev = typeof window !== 'undefined' && (
-    window.location.hostname === 'localhost' ||
-    window.location.hostname === '127.0.0.1' ||
-    window.location.hostname.startsWith('192.168.') ||
-    window.location.hostname.startsWith('10.') ||
-    window.location.hostname.startsWith('172.')
-  );
   const hasVideo = Boolean(stream.video);
-  const isVideoKind = isLocalDev && hasVideo;
+  const isVideoKind = hasVideo;
 
   return {
     ...stream,
@@ -691,20 +684,16 @@ function NearbyLiveSection({ lives: nearbyLives, locationStatus, onOpen, onSeeAl
   const { t } = useTranslation();
   const sectionRef = useRef(null);
   useScrollReveal(sectionRef);
-  const statusCopy = {
-    ready: 'Sorted around your region',
-    loading: t('home.nearby.loading'),
-    denied: t('home.nearby.fallback'),
-    unavailable: t('home.nearby.fallback'),
-    empty: t('home.nearby.empty'),
-  };
+
+  // Only show if geolocation is granted
+  if (locationStatus !== 'ready') return null;
 
   return (
     <section ref={sectionRef} className="home-section reveal-section">
       <header>
         <div>
           <h2>{t('home.nearby.title')}</h2>
-          <p>{statusCopy[nearbyLives.length ? locationStatus : 'empty']}</p>
+          <p>Sorted around your region</p>
         </div>
         <button type="button" onClick={onSeeAll}>
           {t('home.nearby.seeAll')}
@@ -856,6 +845,7 @@ function HomePage() {
       return;
     }
 
+    // Request geolocation with high accuracy for nearby features
     navigator.geolocation.getCurrentPosition(
       (position) => {
         setUserLocation({
@@ -867,7 +857,7 @@ function HomePage() {
       () => {
         setLocationStatus('denied');
       },
-      { enableHighAccuracy: false, timeout: 5000, maximumAge: 1000 * 60 * 20 },
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 },
     );
   }, []);
 
@@ -1089,8 +1079,9 @@ function CreatorCameraSurface({ live, className = '', children }) {
   );
 }
 
-function CreatorLiveSession({ live }) {
+function CreatorLiveSession({ live, onEndingChange }) {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [phase, setPhase] = useState('live');
   const [elapsed, setElapsed] = useState(0);
   const [viewerCount, setViewerCount] = useState(1);
@@ -1109,6 +1100,8 @@ function CreatorLiveSession({ live }) {
   const [starBursts, setStarBursts] = useState([]);
   const hideTimer = useRef(null);
   const longPressTimer = useRef(null);
+  const lastCenterTapRef = useRef({ time: 0, x: 0, y: 0 });
+  const broadcastStartedRef = useRef(false);
 
   const keepHudAwake = () => {
     if (locked || phase !== 'live') return;
@@ -1130,6 +1123,33 @@ function CreatorLiveSession({ live }) {
     keepHudAwake();
     return () => window.clearTimeout(hideTimer.current);
   }, []);
+
+  useEffect(() => {
+    if (!live?.id || !user?.uid || broadcastStartedRef.current) return undefined;
+    broadcastStartedRef.current = true;
+    let active = true;
+
+    const setupBroadcast = async () => {
+      try {
+        const stream = await startBroadcast(live.id, user.uid, getCreatedLiveStream(live.id));
+        if (!active) {
+          stream?.getTracks?.().forEach((track) => track.stop());
+        }
+      } catch (err) {
+        console.error('[CreatorLiveSession] Broadcast setup failed:', err.message);
+        setToast('Broadcast connection failed');
+        window.setTimeout(() => setToast(null), 1800);
+      }
+    };
+
+    setupBroadcast();
+
+    return () => {
+      active = false;
+      closePeer();
+      onEndingChange?.(false, live.id);
+    };
+  }, [live?.id, onEndingChange, user?.uid]);
 
   useEffect(() => {
     if (phase !== 'live') return undefined;
@@ -1205,8 +1225,48 @@ function CreatorLiveSession({ live }) {
     window.clearTimeout(longPressTimer.current);
   };
 
+  const sendGlobePing = async () => {
+    const ping = await publishLivePing(live.id);
+    if (!ping) return;
+    setToast('Orange ping sent');
+    window.setTimeout(() => setToast(null), 1400);
+  };
+
+  const onCreatorPointerUp = (event) => {
+    clearLongPress();
+    if (locked || phase !== 'live') return;
+    if (event.target?.closest?.('.creator-live-controls, .creator-end-sheet')) return;
+
+    const rect = event.currentTarget.getBoundingClientRect();
+    const x = event.clientX - rect.left;
+    const y = event.clientY - rect.top;
+    const inCenter =
+      x > rect.width * 0.24 &&
+      x < rect.width * 0.76 &&
+      y > rect.height * 0.28 &&
+      y < rect.height * 0.72;
+
+    if (!inCenter) {
+      lastCenterTapRef.current = { time: 0, x: 0, y: 0 };
+      return;
+    }
+
+    const now = Date.now();
+    const previous = lastCenterTapRef.current;
+    const distance = Math.hypot(previous.x - x, previous.y - y);
+    if (now - previous.time < 330 && distance < 54) {
+      lastCenterTapRef.current = { time: 0, x: 0, y: 0 };
+      sendGlobePing();
+      return;
+    }
+
+    lastCenterTapRef.current = { time: now, x, y };
+  };
+
   const endLive = async () => {
     setConfirmEnd(false);
+    setPhase('ending');
+    onEndingChange?.(true, live.id);
 
     // Stop broadcast and close peer connection immediately
     try {
@@ -1217,10 +1277,13 @@ function CreatorLiveSession({ live }) {
       console.error('[HomePage] Failed to stop broadcast:', err);
     }
 
-    // Show ending animation
-    setPhase('ending');
     window.setTimeout(() => setPhase('processing'), 1100);
-    window.setTimeout(() => navigate(`/live/${live.id}/recap`), 2900);
+    window.setTimeout(() => {
+      navigate(`/live/${live.id}/recap`);
+      deleteLiveFromDB(live.id).catch((err) => {
+        console.error('[HomePage] Failed to delete live from database:', err);
+      });
+    }, 2900);
   };
 
   const stats = {
@@ -1262,7 +1325,7 @@ function CreatorLiveSession({ live }) {
       className={`screen creator-live-screen${hudVisible ? ' is-awake' : ' is-idle'}${controlsVisible ? ' is-controls-open' : ''}${locked ? ' is-locked' : ''}`}
       onClick={revealControls}
       onPointerDown={onLockedPointerDown}
-      onPointerUp={clearLongPress}
+      onPointerUp={onCreatorPointerUp}
       onPointerCancel={clearLongPress}
       aria-label="Creator live camera"
     >
@@ -1329,6 +1392,7 @@ function LiveViewer({ liveId, creatorMode = false }) {
   const [createdLives, setCreatedLives] = useState([]);
   const [lives, setLives] = useState([]);
   const [remoteStream, setRemoteStream] = useState(null);
+  const [watchStatus, setWatchStatus] = useState('');
   const [broadcastEnded, setBroadcastEnded] = useState(false);
   const localVideoRef = useRef(null);
   const remoteVideoRef = useRef(null);
@@ -1342,20 +1406,24 @@ function LiveViewer({ liveId, creatorMode = false }) {
   const liveFeed = useMemo(() => {
     if (lives && lives.length > 0) return lives;
     const baseFeed = streams.map(toHomeLive).filter((stream) => stream.status === 'live');
+    const activeLives = createdLives.filter((live) => live.status === 'live');
     const demoVideos = demoVideoLiveIds
       .map((id) => baseFeed.find((stream) => stream.id === id && stream.video))
       .filter(Boolean);
 
-    if (!demoVideos.length) return baseFeed;
+    // Start with user's active lives, then mock streams
+    const combined = [...activeLives, ...baseFeed];
 
-    return baseFeed.flatMap((stream, streamIndex) => {
+    if (!demoVideos.length) return combined;
+
+    return combined.flatMap((stream, streamIndex) => {
       const featuredVideo = demoVideos[streamIndex % demoVideos.length];
       return [
         { ...stream, feedKey: `${stream.id}-base-${streamIndex}` },
         { ...featuredVideo, feedKey: `${featuredVideo.id}-demo-${streamIndex}` },
       ];
     });
-  }, [lives]);
+  }, [lives, createdLives]);
   const [index, setIndex] = useState(() => {
     const requestedIndex = liveFeed.findIndex((item) => item.id === liveId);
     return requestedIndex >= 0 ? requestedIndex : 0;
@@ -1375,7 +1443,7 @@ function LiveViewer({ liveId, creatorMode = false }) {
   const [immersive, setImmersive] = useState(false);
   const [chatDraft, setChatDraft] = useState('');
   const [localChat, setLocalChat] = useState({});
-  const [videoMuted, setVideoMuted] = useState(false);
+  const [videoMuted, setVideoMuted] = useState(true);
   const feedRef = useRef(null);
   const chatInputRef = useRef(null);
   const chatScrollRef = useRef({ x: 0, y: 0 });
@@ -1388,6 +1456,7 @@ function LiveViewer({ liveId, creatorMode = false }) {
   const soundRef = useRef(null);
   const soundRequestRef = useRef(0);
   const live = liveFeed[index] ?? liveFeed[0] ?? { id: '', equipment: [] };
+  const activeLiveId = live.id;
   const liveEquipment = live.id ? getEquipmentSelection(getEquipmentLibrary(), live.equipment?.map((item) => item.equipmentId) ?? demoLiveEquipmentIds) : [];
   const isLiked = !!liked[live.id];
   const isFollowing = !!following[live.id];
@@ -1404,7 +1473,7 @@ function LiveViewer({ liveId, creatorMode = false }) {
 
   // WebRTC streaming for broadcaster
   useEffect(() => {
-    if (!creatorMode || !liveId || !user) return;
+    if (!creatorMode || !liveId || !user || live.createdLocally) return;
 
     const setupBroadcaster = async () => {
       try {
@@ -1421,18 +1490,17 @@ function LiveViewer({ liveId, creatorMode = false }) {
     setupBroadcaster();
 
     return () => {
-      stopBroadcast(liveId).catch(console.error);
       closePeer();
     };
-  }, [creatorMode, liveId, user]);
+  }, [creatorMode, liveId, user, live.createdLocally]);
 
   // Watch for broadcaster ending their live (only for real broadcasts)
   useEffect(() => {
-    if (creatorMode || !liveId || !live.creatorUid) return;
+    if (creatorMode || !activeLiveId || !live.creatorUid) return;
 
     let isMounted = true;
 
-    const unsubscribe = onSnapshot(doc(db, 'activeLives', liveId), (docSnap) => {
+    const unsubscribe = onSnapshot(doc(db, 'activeLives', activeLiveId), (docSnap) => {
       if (!isMounted) return;
 
       try {
@@ -1460,11 +1528,11 @@ function LiveViewer({ liveId, creatorMode = false }) {
       isMounted = false;
       unsubscribe();
     };
-  }, [creatorMode, liveId, live.creatorUid]);
+  }, [creatorMode, activeLiveId, live.creatorUid]);
 
   // WebRTC streaming for watchers (only for real active broadcasts)
   useEffect(() => {
-    if (creatorMode || !liveId) return;
+    if (creatorMode || !activeLiveId) return;
 
     // Only set up WebRTC for real broadcasts with active broadcasters
     const isRealBroadcast = live.creatorUid || live.createdLocally;
@@ -1473,17 +1541,23 @@ function LiveViewer({ liveId, creatorMode = false }) {
     setBroadcastEnded(false);
     let isMounted = true;
 
-    const setupWatcher = async () => {
+  const setupWatcher = async () => {
       try {
         console.log('[LiveViewer] Setting up watcher');
-        webrtcCallRef.current = await watchBroadcast(liveId, (stream) => {
+        if (!watcherIdRef.current) {
+          watcherIdRef.current = `viewer-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+        }
+        webrtcCallRef.current = await watchBroadcast(activeLiveId, (stream, status) => {
+          if (isMounted && status) setWatchStatus(status);
           if (isMounted && stream) {
             if (remoteVideoRef.current) {
               remoteVideoRef.current.srcObject = stream;
+              remoteVideoRef.current.muted = true;
+              remoteVideoRef.current.play()?.catch?.(() => {});
             }
             setRemoteStream(stream);
           }
-        });
+        }, watcherIdRef.current);
       } catch (err) {
         console.error('[LiveViewer] Watcher setup failed:', err.message);
       }
@@ -1496,9 +1570,10 @@ function LiveViewer({ liveId, creatorMode = false }) {
       if (webrtcCallRef.current) {
         webrtcCallRef.current.close();
       }
+      watcherIdRef.current = null;
       closePeer();
     };
-  }, [creatorMode, liveId, live.creatorUid, live.createdLocally]);
+  }, [creatorMode, activeLiveId, live.creatorUid, live.createdLocally]);
 
   const stopSound = () => {
     const current = soundRef.current;
@@ -1665,6 +1740,22 @@ function LiveViewer({ liveId, creatorMode = false }) {
     wheelLock.current = now;
     goTo(event.deltaY > 0 ? 1 : -1);
   };
+
+  useEffect(() => {
+    setBroadcastEnded(false);
+    setRemoteStream(null);
+    setWatchStatus('');
+  }, [activeLiveId]);
+
+  useEffect(() => {
+    if (!broadcastEnded || liveFeed.length < 2) return undefined;
+
+    const timer = window.setTimeout(() => {
+      goTo(1);
+    }, 1800);
+
+    return () => window.clearTimeout(timer);
+  }, [broadcastEnded, liveFeed.length]);
 
   const reactWithStar = (event) => {
     const bounds = feedRef.current?.getBoundingClientRect();
@@ -1854,13 +1945,22 @@ function LiveViewer({ liveId, creatorMode = false }) {
                       style={isDragging ? { transform: `scale(1.03) translateY(${dragY * 0.1}px)` } : undefined}
                     />
                   ) : !creatorMode && isActive && !broadcastEnded && (item.creatorUid || item.createdLocally) ? (
-                    <video
-                      ref={remoteVideoRef}
-                      className="live-slide__media live-slide__media--pov"
-                      autoPlay
-                      playsInline
-                      style={isDragging ? { transform: `scale(1.03) translateY(${dragY * 0.1}px)` } : undefined}
-                    />
+                    <>
+                      <video
+                        ref={remoteVideoRef}
+                        className="live-slide__media live-slide__media--pov"
+                        autoPlay
+                        muted
+                        playsInline
+                        style={isDragging ? { transform: `scale(1.03) translateY(${dragY * 0.1}px)` } : undefined}
+                      />
+                      {!remoteStream ? (
+                        <div className="live-slide__connecting">
+                          <span>Connecting live</span>
+                          {watchStatus ? <small>{watchStatus}</small> : null}
+                        </div>
+                      ) : null}
+                    </>
                   ) : (
                     <>
                       <img className="live-slide__bg" src={item.image} aria-hidden="true" draggable="false" />
@@ -1892,7 +1992,7 @@ function LiveViewer({ liveId, creatorMode = false }) {
 
       <div className="live-feed__status">
         {broadcastEnded ? (
-          <span className="live-feed__watching">{live.streamer ?? live.name} has ended their live</span>
+          <span className="live-feed__watching">{live.streamer ?? live.name} has ended their live. Next live...</span>
         ) : (
           <>
             <LiveBadge pulse />
@@ -2082,17 +2182,32 @@ export function HomeDiscoverFeed() {
   return <HomePage />;
 }
 
-// Export LiveViewer for use in BroadcasterPage
-export { LiveViewer };
+// Export LiveViewer and CreatorLiveSession for use in other routes
+export { LiveViewer, CreatorLiveSession };
 
 export default function HomePageRoute() {
   const [searchParams] = useSearchParams();
+  const { user } = useAuth();
+  const [createdLives, setCreatedLives] = useState([]);
   const homeLives = useMemo(() => streams.map(toHomeLive).filter((stream) => stream.status === 'live'), []);
   const liveId = searchParams.get('live') ?? homeLives[0]?.id ?? '';
+  const forcedViewerMode = searchParams.get('mode') === 'view';
 
-  // IMPORTANT: Broadcaster should use /broadcast/:liveId route, NOT ?broadcast=1
-  // This keeps watch and broadcast completely separate
-  const creatorMode = false;
+  useEffect(() => {
+    getCreatedLives().then(setCreatedLives).catch(() => setCreatedLives([]));
+  }, []);
+
+  // Check if viewing own live to enable creator mode
+  const live = createdLives.find((l) => l.id === liveId);
+  const hasLocalBroadcastStream = !!getCreatedLiveStream(liveId);
+  const creatorMode = !!(
+    !forcedViewerMode
+    && user
+    && live
+    && live.creatorUid === user.uid
+    && live.status === 'live'
+    && hasLocalBroadcastStream
+  );
 
   return <LiveViewer liveId={liveId} creatorMode={creatorMode} />;
 }

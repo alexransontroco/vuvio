@@ -278,8 +278,9 @@ export async function saveOwnCreatorProfile(nextProfile) {
   try {
     const { setDoc, doc } = await import('firebase/firestore');
     const { db } = await import('../firebase.js');
-    if (normalized.uid) {
-      await setDoc(doc(db, 'users', normalized.uid), normalized, { merge: true });
+    const firestoreUid = normalized.uid || normalized.id;
+    if (firestoreUid && firestoreUid !== CURRENT_USER_ID) {
+      await setDoc(doc(db, 'users', firestoreUid), { ...normalized, uid: firestoreUid, id: firestoreUid }, { merge: true });
     }
   } catch (err) {
     console.error('[profileService] Failed to save profile to Firestore:', err.message);

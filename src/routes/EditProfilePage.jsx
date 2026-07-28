@@ -174,7 +174,7 @@ function isValidInstagram(value) {
 export default function EditProfilePage() {
   console.count('[EditProfilePage] render');
   const navigate = useNavigate();
-  const { user, userProfile, profileLoading } = useAuth();
+  const { user, userProfile, profileLoading, refreshUserProfile } = useAuth();
 
   console.log('[EditProfilePage] state:', {
     profileLoading,
@@ -188,6 +188,7 @@ export default function EditProfilePage() {
   const [showConfirm, setShowConfirm] = useState(false);
   const [toast, setToast] = useState('');
   const [imageError, setImageError] = useState('');
+  const [saveError, setSaveError] = useState('');
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
@@ -216,11 +217,11 @@ export default function EditProfilePage() {
       ? 'The display name must contain 2 to 50 characters.'
       : '',
     username: !form.username.trim()
-      ? 'Username is required.'
+      ? ''
       : usernamePattern.test(form.username.replace(/^@+/, ''))
         ? ''
         : 'Username can only contain letters, numbers, dots and underscores.',
-    profession: form.profession.trim() ? '' : 'Profession or activity is required.',
+    profession: '',
     websiteUrl: isValidOptionalUrl(form.websiteUrl) ? '' : 'Enter a valid URL.',
     instagramUrl: isValidInstagram(form.instagramUrl) ? '' : 'Enter a valid Instagram handle or URL.',
     youtubeUrl: isValidOptionalUrl(form.youtubeUrl) ? '' : 'Enter a valid URL.',
@@ -251,14 +252,28 @@ export default function EditProfilePage() {
   const save = async () => {
     if (!canSave) return;
     setSaving(true);
-    const updated = await saveOwnCreatorProfile({
-      ...form,
-      name: form.displayName,
-      username: form.username.replace(/^@+/, ''),
-    });
-    setForm(buildForm(updated));
-    setToast('Profile updated');
-    window.setTimeout(() => navigate('/profile'), 450);
+    setSaveError('');
+    try {
+      const cleanUsername = form.username.replace(/^@+/, '').trim();
+      const updated = await saveOwnCreatorProfile({
+        ...form,
+        id: user?.uid || form.id,
+        uid: user?.uid || form.uid,
+        name: form.displayName,
+        username: cleanUsername,
+        usernameNormalized: cleanUsername ? cleanUsername.toLowerCase() : null,
+      });
+      const built = buildForm(updated);
+      setForm(built);
+      setInitialSnapshot(JSON.stringify(built));
+      await refreshUserProfile?.();
+      setToast('Profile updated');
+      window.setTimeout(() => navigate('/profile'), 450);
+    } catch (err) {
+      setSaveError(err.message || 'Could not save profile. Please try again.');
+    } finally {
+      setSaving(false);
+    }
   };
 
   if (profileLoading) {
@@ -277,6 +292,7 @@ export default function EditProfilePage() {
       <EditProfileHeader canSave={canSave} saving={saving} onBack={back} onSave={save} />
       <ProfileImagesEditor form={form} onImageChange={update} onError={setImageError} />
       {imageError ? <p className="edit-profile-error">{imageError}</p> : null}
+      {saveError ? <p className="edit-profile-error" role="alert">{saveError}</p> : null}
 
       <section className="edit-form-section">
         <h2>Public information</h2>

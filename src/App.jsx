@@ -1,12 +1,14 @@
 import { lazy, Suspense } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Navigate, Route, Routes } from 'react-router-dom';
+import { Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import AppShell from './components/AppShell.jsx';
 import ProtectedRoute, { PublicOnlyRoute } from './components/ProtectedRoute.jsx';
+import SplashScreen from './components/SplashScreen.jsx';
+import { useAuth } from './context/AuthContext.jsx';
 
 const ConversationPage    = lazy(() => import('./routes/ConversationPage.jsx'));
 const HomePage            = lazy(() => import('./routes/HomePage.jsx'));
-const BroadcasterPage     = lazy(() => import('./routes/BroadcasterPage.jsx'));
+const LivePage            = lazy(() => import('./routes/LivePage.jsx'));
 const ExplorePage         = lazy(() => import('./routes/ExplorePage.jsx'));
 const AllLivesPage        = lazy(() => import('./routes/AllLivesPage.jsx'));
 const DiscoverFeedPage    = lazy(() => import('./routes/DiscoverFeedPage.jsx'));
@@ -24,6 +26,7 @@ const LoginPage           = lazy(() => import('./routes/LoginPage.jsx'));
 const LiveRecapPage       = lazy(() => import('./routes/LiveRecapPage.jsx'));
 const MessagesPage        = lazy(() => import('./routes/MessagesPage.jsx'));
 const OnboardingPage      = lazy(() => import('./routes/OnboardingPage.jsx'));
+const OnboardingTestPage  = lazy(() => import('./routes/OnboardingTestPage.jsx'));
 const PrivacyPage         = lazy(() => import('./routes/PrivacyPage.jsx'));
 const ProfilePage         = lazy(() => import('./routes/ProfilePage.jsx'));
 const ReportProblemPage   = lazy(() => import('./routes/ReportProblemPage.jsx'));
@@ -54,6 +57,13 @@ function Lazy({ component: Component }) {
 }
 
 export default function App() {
+  const { showSplash } = useAuth();
+  const location = useLocation();
+
+  if (showSplash && location.pathname !== '/onboarding-test') {
+    return <SplashScreen />;
+  }
+
   return (
     <Routes>
       {/* ── Public standalone ── */}
@@ -61,6 +71,7 @@ export default function App() {
       <Route path="/live/:liveId/recap" element={<Lazy component={LiveRecapPage} />} />
       <Route path="/test/live-recap" element={<Lazy component={LiveRecapPage} />} />
       <Route path="/desktop" element={<Lazy component={DesktopLayout} />} />
+      <Route path="/onboarding-test" element={<Lazy component={OnboardingTestPage} />} />
 
       {/* ── Auth pages (redirect if already logged in) ── */}
       <Route
@@ -107,14 +118,13 @@ export default function App() {
       {/* ── App shell with bottom nav ── */}
       <Route element={<AppShell />}>
         <Route index element={<Navigate to="/watch" replace />} />
-        <Route path="/live" element={<Navigate to="/watch" replace />} />
         <Route path="/home" element={<Navigate to="/watch" replace />} />
         <Route path="/watch/:liveId" element={<Navigate to="/watch" replace />} />
+        <Route path="/live/:liveId" element={<ProtectedRoute><Lazy component={LivePage} /></ProtectedRoute>} />
         <Route path="/discover" element={<Lazy component={DiscoverFeedPage} />} />
 
         {/* Public */}
         <Route path="/watch"         element={<Lazy component={HomePage} />} />
-        <Route path="/broadcast/:liveId" element={<ProtectedRoute><Lazy component={BroadcasterPage} /></ProtectedRoute>} />
         <Route path="/explore"      element={<Lazy component={ExplorePage} />} />
         <Route path="/explore/live" element={<Lazy component={AllLivesPage} />} />
         <Route path="/globe"        element={<Lazy component={CurrentGlobePage} />} />

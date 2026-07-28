@@ -589,7 +589,7 @@ export default function ExplorePage() {
   const searchInputRef = useRef(null);
   const chipsRef = useRef(null);
 
-  const openStream = useCallback((id) => navigate(`/watch?live=${encodeURIComponent(id)}`), [navigate]);
+  const openStream = useCallback((id) => navigate(`/watch?live=${encodeURIComponent(id)}&mode=view`), [navigate]);
 
   const handleFollowCreator = useCallback((creatorUid) => {
     if (!user?.uid) return;

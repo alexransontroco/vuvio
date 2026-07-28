@@ -8,7 +8,7 @@ import { enrichExperience } from '../../data/experienceTaxonomy.js';
 import MapBottomSheet from '../map/MapBottomSheet.jsx';
 
 const INITIAL_CENTER = [14, 20];
-const STYLE_URL = 'https://basemaps.cartocdn.com/gl/dark-matter-nolabels-gl-style/style.json';
+const STYLE_URL = 'https://basemaps.cartocdn.com/gl/positron-nolabels-gl-style/style.json';
 const LIVE_COLOR = '#2BD9C8';
 const UPCOMING_COLOR = '#3B82E6';
 const ROTATE_DEGREES_PER_SECOND = 3.5;
@@ -16,6 +16,8 @@ const ACTUAL_ROTATION_INTERVAL = 16;
 const SELECTED_LIVE_ZOOM = 4.05;
 const REQUESTED_LIVE_ZOOM = 4.2;
 const SELECTED_RING_COLOR = '#2BD9C8';
+const PING_COLOR = '#ff8a1f';
+const PING_TTL_MS = 12000;
 
 const statusColor = [
   'case',
@@ -37,6 +39,14 @@ function pulseSeed(id) {
     hash = (hash * 31 + id.charCodeAt(index)) % 1000;
   }
   return hash / 1000;
+}
+
+function pingTimestamp(stream) {
+  const value = stream.latestPing?.createdAt;
+  if (typeof value === 'number') return value;
+  if (typeof value === 'string') return new Date(value).getTime() || 0;
+  if (value?.seconds) return value.seconds * 1000;
+  return 0;
 }
 
 // Subtle breathing animation for live markers
@@ -99,6 +109,16 @@ function liveCrowdHaloOpacity(clock) {
     ['-', 1, wave],
     ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 0, 500, 0, 800, 0.09, 1500, 0.16],
   ];
+}
+
+function livePingRippleRadius(clock) {
+  const wave = breathingWave(clock);
+  return ['+', ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 15, 800, 21, 1500, 27], ['*', wave, 38]];
+}
+
+function livePingRippleOpacity(clock) {
+  const wave = breathingWave(clock);
+  return ['*', ['-', 1, wave], ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 0.34, 800, 0.42, 1500, 0.52]];
 }
 
 function liveBroadcastHaloRadius(clock, selectedId = '') {
@@ -209,6 +229,7 @@ function liveRingOpacity(selectedId = '', hoveredId = '') {
 }
 
 function toFeature(stream) {
+  const latestPingAt = pingTimestamp(stream);
   return {
     type: 'Feature',
     properties: {
@@ -217,6 +238,8 @@ function toFeature(stream) {
       viewers: stream.viewers ?? '',
       viewersNumber: viewersNumber(stream),
       pulseSeed: pulseSeed(stream.id),
+      pingActive: latestPingAt > 0 && Date.now() - latestPingAt < PING_TTL_MS,
+      pingSeed: pulseSeed(stream.latestPing?.id ?? `${stream.id}-ping`),
       family: stream.family,
       familyColor: stream.familyColor,
     },
@@ -264,7 +287,7 @@ function brightenBaseGlobe(map) {
   }
 }
 
-export default function CurrentGlobe({ streams }) {
+export default function CurrentGlobe({ streams, onboarding = false, onOnboardingLiveSelect }) {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const containerRef = useRef(null);
@@ -281,6 +304,7 @@ export default function CurrentGlobe({ streams }) {
   const [sheetState, setSheetState] = useState('closed');
   const [selectedId, setSelectedId] = useState(null);
   const [hoveredId, setHoveredId] = useState('');
+  const [pingRefreshTick, setPingRefreshTick] = useState(0);
   const [mapError, setMapError] = useState('');
 
   // Performance diagnostics
@@ -300,6 +324,7 @@ export default function CurrentGlobe({ streams }) {
   }, [enrichedStreams, requestedLiveId]);
 
   const liveStreams = useMemo(() => {
+    void pingRefreshTick;
     return enrichedStreams
       .filter((stream) => activeStatuses.includes(stream.status))
       .filter((stream) => activeFamily === 'all' || stream.family === activeFamily)
@@ -310,9 +335,19 @@ export default function CurrentGlobe({ streams }) {
           return activity?.subcategories.includes(stream.subcategory);
         });
       });
-  }, [activeActivities, activeFamily, activeStatuses, enrichedStreams]);
+  }, [activeActivities, activeFamily, activeStatuses, enrichedStreams, pingRefreshTick]);
 
   const selectedLive = enrichedStreams.find((stream) => stream.id === selectedId) ?? null;
+  const watchPathForLive = (live) => {
+    const target = encodeURIComponent(live.id);
+    return live.creatorUid || live.createdLocally ? `/watch?live=${target}&mode=view` : `/discover?live=${target}`;
+  };
+
+  useEffect(() => {
+    if (!enrichedStreams.some((stream) => pingTimestamp(stream) > 0)) return undefined;
+    const timer = window.setInterval(() => setPingRefreshTick((value) => value + 1), 1000);
+    return () => window.clearInterval(timer);
+  }, [enrichedStreams]);
 
   useEffect(() => {
     selectedIdRef.current = selectedId;
@@ -381,14 +416,25 @@ export default function CurrentGlobe({ streams }) {
     map.dragRotate.disable();
     map.touchZoomRotate.disableRotation();
 
-    const pause = () => {
-      pauseUntilRef.current = Date.now() + 1800;
+    const pauseInteraction = () => {
+      pauseUntilRef.current = Number.POSITIVE_INFINITY;
+    };
+    const resumeInteraction = () => {
+      pauseUntilRef.current = 0;
+      const center = map.getCenter();
+      map.jumpTo({ center: [center.lng + 0.0001, center.lat] });
     };
 
-    map.getCanvas().addEventListener('pointerdown', pause);
-    map.getCanvas().addEventListener('wheel', pause, { passive: true });
-    map.on('dragstart', pause);
-    map.on('zoomstart', pause);
+    map.getCanvas().addEventListener('pointerdown', pauseInteraction);
+    map.getCanvas().addEventListener('pointerup', resumeInteraction);
+    map.getCanvas().addEventListener('pointercancel', resumeInteraction);
+    map.getCanvas().addEventListener('lostpointercapture', resumeInteraction);
+    map.getCanvas().addEventListener('touchend', resumeInteraction, { passive: true });
+    map.getCanvas().addEventListener('wheel', resumeInteraction, { passive: true });
+    map.on('dragstart', pauseInteraction);
+    map.on('zoomstart', pauseInteraction);
+    map.on('dragend', resumeInteraction);
+    map.on('zoomend', resumeInteraction);
     map.on('error', (event) => {
       const message = event?.error?.message ?? event?.message ?? '';
       if (!message || /tile|glyph|sprite|network|abort/i.test(message)) return;
@@ -410,7 +456,7 @@ export default function CurrentGlobe({ streams }) {
           );
         }
 
-        map.setPadding({ top: 46, bottom: 48, left: 0, right: 0 });
+        map.setPadding({ top: 46, bottom: 200, left: 0, right: 0 });
 
         map.addSource('vuvio-test-lives', {
           type: 'geojson',
@@ -454,6 +500,22 @@ export default function CurrentGlobe({ streams }) {
             'circle-radius': liveCrowdHaloRadius(0),
             'circle-blur': 0.96,
             'circle-opacity': liveCrowdHaloOpacity(0),
+          },
+        });
+
+        map.addLayer({
+          id: 'vuvio-test-live-ping-ripple',
+          type: 'circle',
+          source: 'vuvio-test-lives',
+          filter: ['all', ['!', ['has', 'point_count']], ['==', ['get', 'pingActive'], true]],
+          paint: {
+            'circle-color': PING_COLOR,
+            'circle-radius': livePingRippleRadius(0),
+            'circle-blur': 0.72,
+            'circle-opacity': livePingRippleOpacity(0),
+            'circle-stroke-color': 'rgba(255, 202, 130, 0.82)',
+            'circle-stroke-width': 0.7,
+            'circle-stroke-opacity': livePingRippleOpacity(0),
           },
         });
 
@@ -515,6 +577,7 @@ export default function CurrentGlobe({ streams }) {
           const nextSelectedId = feature.properties.id;
           selectedIdRef.current = nextSelectedId;
           setSelectedId(nextSelectedId);
+          onOnboardingLiveSelect?.(nextSelectedId);
           pauseUntilRef.current = Date.now() + 8500;
           map.easeTo({
             center: feature.geometry.coordinates,
@@ -571,8 +634,16 @@ export default function CurrentGlobe({ streams }) {
     });
 
     return () => {
-      map.getCanvas().removeEventListener('pointerdown', pause);
-      map.getCanvas().removeEventListener('wheel', pause);
+      map.getCanvas().removeEventListener('pointerdown', pauseInteraction);
+      map.getCanvas().removeEventListener('pointerup', resumeInteraction);
+      map.getCanvas().removeEventListener('pointercancel', resumeInteraction);
+      map.getCanvas().removeEventListener('lostpointercapture', resumeInteraction);
+      map.getCanvas().removeEventListener('touchend', resumeInteraction);
+      map.getCanvas().removeEventListener('wheel', resumeInteraction);
+      map.off('dragstart', pauseInteraction);
+      map.off('zoomstart', pauseInteraction);
+      map.off('dragend', resumeInteraction);
+      map.off('zoomend', resumeInteraction);
       window.removeEventListener('resize', resizeHaloCanvas);
       if (animationRef.current) cancelAnimationFrame(animationRef.current);
       for (const marker of Object.values(dvMarkersRef.current)) marker.remove();
@@ -689,6 +760,11 @@ export default function CurrentGlobe({ streams }) {
           if (map.getLayer('vuvio-test-live-crowd-halo')) {
             map.setPaintProperty('vuvio-test-live-crowd-halo', 'circle-radius', liveCrowdHaloRadius(clock));
             map.setPaintProperty('vuvio-test-live-crowd-halo', 'circle-opacity', liveCrowdHaloOpacity(clock));
+          }
+          if (map.getLayer('vuvio-test-live-ping-ripple')) {
+            map.setPaintProperty('vuvio-test-live-ping-ripple', 'circle-radius', livePingRippleRadius(clock));
+            map.setPaintProperty('vuvio-test-live-ping-ripple', 'circle-opacity', livePingRippleOpacity(clock));
+            map.setPaintProperty('vuvio-test-live-ping-ripple', 'circle-stroke-opacity', livePingRippleOpacity(clock));
           }
           if (map.getLayer('vuvio-test-live-points')) {
             map.setPaintProperty('vuvio-test-live-points', 'circle-radius', livePointRadius(clock, selectedId ?? ''));
@@ -822,12 +898,17 @@ export default function CurrentGlobe({ streams }) {
   };
 
   return (
-    <section className="screen test-globe-screen test-globe-screen--maplibre test-globe-screen--actual" data-sheet-state={sheetState} aria-label="Current Vuvio globe">
+    <section
+      className={`screen test-globe-screen test-globe-screen--maplibre test-globe-screen--actual${onboarding ? ' test-globe-screen--onboarding' : ''}`}
+      data-sheet-state={sheetState}
+      aria-label="Current Vuvio globe"
+    >
       <div className="test-old-globe">
         <div ref={containerRef} className="test-old-globe__canvas" />
         <div className="test-old-globe__vignette" />
         {mapError ? <div className="test-old-globe__error">Error: {mapError}</div> : null}
 
+        {!onboarding ? (
         <div className="map-engine-switch test-globe-switch" role="group" aria-label="Choose globe">
           <button type="button" className="is-active" aria-pressed="true">
             Current
@@ -842,7 +923,9 @@ export default function CurrentGlobe({ streams }) {
             Test
           </button>
         </div>
+        ) : null}
 
+        {!onboarding ? (
         <div className="test-old-globe__controls" aria-label="Map controls">
           <button type="button" onClick={() => zoomBy(0.72)} aria-label="Zoom in">
             <Plus size={19} />
@@ -854,8 +937,9 @@ export default function CurrentGlobe({ streams }) {
             <LocateFixed size={19} />
           </button>
         </div>
+        ) : null}
 
-        {!selectedLive && (
+        {!onboarding && !selectedLive && (
           <MapBottomSheet
             sheetState={sheetState}
             onSheetStateChange={setSheetState}
@@ -869,7 +953,7 @@ export default function CurrentGlobe({ streams }) {
           />
         )}
 
-        {selectedLive ? (
+        {!onboarding && selectedLive ? (
           <aside className="test-globe-card" aria-label={`Live from ${selectedLive.name}`}>
             <button type="button" className="test-globe-card__close" onClick={closeSelectedLive} aria-label="Close">
               <X size={14} strokeWidth={2} />
@@ -889,7 +973,7 @@ export default function CurrentGlobe({ streams }) {
                 <button
                   type="button"
                   className="test-globe-card__watch"
-                  onClick={() => navigate(`/discover?live=${encodeURIComponent(selectedLive.id)}`)}
+                  onClick={() => navigate(watchPathForLive(selectedLive))}
                 >
                   <Play size={13} fill="currentColor" strokeWidth={1.8} />
                   Watch

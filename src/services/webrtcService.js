@@ -1,4 +1,4 @@
-import { doc, setDoc, getDoc, onSnapshot, updateDoc, deleteDoc, arrayUnion } from 'firebase/firestore';
+import { collection, doc, setDoc, getDoc, onSnapshot, updateDoc, deleteDoc, arrayUnion, serverTimestamp } from 'firebase/firestore';
 import { db } from '../firebase.js';
 
 let localStream = null;
@@ -9,20 +9,36 @@ const ICE_SERVERS = {
   iceServers: [
     { urls: 'stun:stun.l.google.com:19302' },
     { urls: 'stun:stun1.l.google.com:19302' },
+    {
+      urls: [
+        'turn:openrelay.metered.ca:80',
+        'turn:openrelay.metered.ca:443',
+        'turn:openrelay.metered.ca:443?transport=tcp',
+        'turns:openrelay.metered.ca:443?transport=tcp',
+      ],
+      username: 'openrelayproject',
+      credential: 'openrelayproject',
+    },
   ]
 };
 
-export async function startBroadcast(liveId, userId) {
+export async function startBroadcast(liveId, userId, existingStream = null) {
   try {
     console.log('[webrtcService] Starting broadcast for live:', liveId);
+    const signalSessionId = `signal-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 
-    // Get camera stream
-    console.log('[webrtcService] Requesting camera stream...');
-    localStream = await navigator.mediaDevices.getUserMedia({
-      video: { width: 1280, height: 720 },
-      audio: true,
-    });
-    console.log('[webrtcService] Camera stream acquired');
+    if (existingStream?.getTracks?.().length) {
+      localStream = existingStream;
+      console.log('[webrtcService] Using existing camera stream');
+    } else {
+      // Get camera stream
+      console.log('[webrtcService] Requesting camera stream...');
+      localStream = await navigator.mediaDevices.getUserMedia({
+        video: { width: 1280, height: 720 },
+        audio: true,
+      });
+      console.log('[webrtcService] Camera stream acquired');
+    }
 
     // Create peer connection
     console.log('[webrtcService] Creating peer connection...');
@@ -34,11 +50,23 @@ export async function startBroadcast(liveId, userId) {
       peerConnection.addTrack(track, localStream);
     });
 
-    // Collect ICE candidates
+    // Collect ICE candidates. Keep publishing after the initial offer because
+    // mobile browsers often discover useful candidates after the first batch.
     const candidates = [];
+    let offerSaved = false;
+    const publishBroadcasterCandidates = () => {
+      if (!offerSaved) return;
+      updateDoc(doc(db, 'activeLives', liveId), {
+        iceCandidates: candidates,
+        updatedAt: serverTimestamp(),
+      }).catch((err) => {
+        console.warn('[webrtcService] Failed to publish broadcaster ICE:', err.message);
+      });
+    };
     peerConnection.onicecandidate = (event) => {
       if (event.candidate) {
         candidates.push(event.candidate.toJSON());
+        publishBroadcasterCandidates();
       }
     };
 
@@ -61,9 +89,11 @@ export async function startBroadcast(liveId, userId) {
       peerConnection.onicecandidate = (event) => {
         if (event.candidate) {
           candidates.push(event.candidate.toJSON());
+          publishBroadcasterCandidates();
         } else {
           iceGatheringComplete = true;
           console.log('[webrtcService] ICE gathering complete (via candidate event)');
+          publishBroadcasterCandidates();
           resolve();
         }
       };
@@ -76,42 +106,66 @@ export async function startBroadcast(liveId, userId) {
     // Save offer to Firestore
     console.log('[webrtcService] Saving offer to Firestore with', candidates.length, 'candidates');
     await setDoc(doc(db, 'activeLives', liveId), {
+      creatorUid: userId,
+      status: 'live',
+      signalSessionId,
       sdpOffer: peerConnection.localDescription.sdp,
       iceCandidates: candidates,
+      updatedAt: serverTimestamp(),
     }, { merge: true });
+    offerSaved = true;
+    publishBroadcasterCandidates();
     console.log('[webrtcService] Offer created and saved');
 
-    // Listen for answer from watcher
+    // Listen for answer from a watcher. Each watcher writes its own answer in a
+    // subdocument so stale/parallel viewers cannot overwrite a single global answer.
     let answerProcessed = false;
-    const unsubscribe = onSnapshot(doc(db, 'activeLives', liveId), async (doc) => {
-      const data = doc.data();
-      if (data?.sdpAnswer && !answerProcessed && peerConnection.signalingState === 'have-local-offer') {
-        answerProcessed = true;
-        console.log('[webrtcService] Received answer from watcher');
+    const addedWatcherCandidates = new Set();
+    const unsubscribeWatchers = onSnapshot(collection(db, 'activeLives', liveId, 'watchers'), async (snapshot) => {
+      if (!peerConnection) return;
+      const answerDoc = snapshot.docs
+        .map((item) => ({ id: item.id, ...item.data() }))
+        .filter((item) => item.sdpAnswer && item.signalSessionId === signalSessionId)
+        .sort((a, b) => {
+          const aMs = a.updatedAt?.toMillis?.() ?? 0;
+          const bMs = b.updatedAt?.toMillis?.() ?? 0;
+          return bMs - aMs;
+        })[0];
+      const data = answerDoc;
+      if (!data?.sdpAnswer) return;
+
+      if (!answerProcessed && peerConnection.signalingState === 'have-local-offer') {
+        console.log('[webrtcService] Received answer from watcher:', answerDoc.id);
         try {
           const answer = new RTCSessionDescription({
             type: 'answer',
             sdp: data.sdpAnswer
           });
           await peerConnection.setRemoteDescription(answer);
+          answerProcessed = true;
           console.log('[webrtcService] Remote description set successfully');
-
-          // Add remote ICE candidates
-          if (data.watcherIceCandidates && data.watcherIceCandidates.length > 0) {
-            for (const candidate of data.watcherIceCandidates) {
-              try {
-                await peerConnection.addIceCandidate(new RTCIceCandidate(candidate));
-              } catch (err) {
-                console.warn('[webrtcService] Failed to add ICE candidate:', err.message);
-              }
-            }
-          }
         } catch (err) {
           console.error('[webrtcService] Failed to set remote description:', err.message);
           answerProcessed = false;
         }
       }
+
+      if (peerConnection.remoteDescription && data.watcherIceCandidates?.length) {
+        for (const candidate of data.watcherIceCandidates) {
+          const key = candidate.candidate ?? JSON.stringify(candidate);
+          if (addedWatcherCandidates.has(key)) continue;
+          addedWatcherCandidates.add(key);
+          try {
+            await peerConnection.addIceCandidate(new RTCIceCandidate(candidate));
+          } catch (err) {
+            console.warn('[webrtcService] Failed to add watcher ICE candidate:', err.message);
+          }
+        }
+      }
+    }, (err) => {
+      console.error('[webrtcService] Watcher answer listener failed:', err.message);
     });
+    peerConnection._vuvioUnsubscribe = unsubscribeWatchers;
 
     return localStream;
   } catch (err) {
@@ -171,7 +225,7 @@ async function waitForBroadcasterOffer(liveId, maxRetries = 12) {
   throw lastError || new Error('Broadcaster offer not found after retries');
 }
 
-export async function watchBroadcast(liveId, onStreamReceived) {
+export async function watchBroadcast(liveId, onStreamReceived, watcherId = `viewer-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`) {
   try {
     console.log('[webrtcService] Watching broadcast for live:', liveId);
 
@@ -179,7 +233,8 @@ export async function watchBroadcast(liveId, onStreamReceived) {
     const offerData = await waitForBroadcasterOffer(liveId);
     console.log('[webrtcService] Broadcaster offer received');
 
-    const { sdpOffer, iceCandidates } = offerData;
+    const { sdpOffer, iceCandidates, signalSessionId } = offerData;
+    const watcherRef = doc(db, 'activeLives', liveId, 'watchers', watcherId);
 
     // Create peer connection
     peerConnection = new RTCPeerConnection(ICE_SERVERS);
@@ -188,16 +243,29 @@ export async function watchBroadcast(liveId, onStreamReceived) {
     peerConnection.ontrack = (event) => {
       console.log('[webrtcService] Received remote track:', event.track.kind);
       console.log('[webrtcService] Streams available:', event.streams.length, event.streams[0]?.getTracks?.().length ?? 0, 'tracks');
+      onStreamReceived(null, `track:${event.track.kind}`);
       if (event.streams && event.streams.length > 0) {
         onStreamReceived(event.streams[0]);
       }
     };
 
-    // Collect ICE candidates
+    // Collect ICE candidates continuously and publish updates as they arrive.
     const watcherCandidates = [];
+    let watcherDocReady = false;
+    const publishWatcherCandidates = () => {
+      if (!watcherDocReady) return;
+      setDoc(watcherRef, {
+        signalSessionId,
+        watcherIceCandidates: watcherCandidates,
+        updatedAt: serverTimestamp(),
+      }, { merge: true }).catch((err) => {
+        console.warn('[webrtcService] Failed to publish watcher ICE:', err.message);
+      });
+    };
     peerConnection.onicecandidate = (event) => {
       if (event.candidate) {
         watcherCandidates.push(event.candidate.toJSON());
+        publishWatcherCandidates();
       }
     };
 
@@ -208,8 +276,12 @@ export async function watchBroadcast(liveId, onStreamReceived) {
     });
 
     // Add broadcaster ICE candidates
+    const addedBroadcasterCandidates = new Set();
     if (iceCandidates && iceCandidates.length > 0) {
       for (const candidate of iceCandidates) {
+        const key = candidate.candidate ?? JSON.stringify(candidate);
+        if (addedBroadcasterCandidates.has(key)) continue;
+        addedBroadcasterCandidates.add(key);
         try {
           await peerConnection.addIceCandidate(new RTCIceCandidate(candidate));
         } catch (err) {
@@ -217,6 +289,24 @@ export async function watchBroadcast(liveId, onStreamReceived) {
         }
       }
     }
+
+    const unsubscribeBroadcaster = onSnapshot(doc(db, 'activeLives', liveId), async (docSnap) => {
+      if (!docSnap.exists() || !peerConnection?.remoteDescription) return;
+      const data = docSnap.data();
+      if (data.signalSessionId !== signalSessionId || !data.iceCandidates?.length) return;
+      for (const candidate of data.iceCandidates) {
+        const key = candidate.candidate ?? JSON.stringify(candidate);
+        if (addedBroadcasterCandidates.has(key)) continue;
+        addedBroadcasterCandidates.add(key);
+        try {
+          await peerConnection.addIceCandidate(new RTCIceCandidate(candidate));
+        } catch (err) {
+          console.warn('[webrtcService] Failed to add updated broadcaster ICE candidate:', err.message);
+        }
+      }
+    }, (err) => {
+      console.error('[webrtcService] Broadcaster ICE listener failed:', err.message);
+    });
 
     // Create and send answer (only if not already set due to React Strict Mode)
     if (peerConnection.signalingState === 'have-remote-offer') {
@@ -244,11 +334,15 @@ export async function watchBroadcast(liveId, onStreamReceived) {
 
     // Save answer and candidates to Firestore (only if we have a local description)
     if (peerConnection.localDescription) {
-      await updateDoc(doc(db, 'activeLives', liveId), {
+      await setDoc(watcherRef, {
+        signalSessionId,
         sdpAnswer: peerConnection.localDescription.sdp,
         watcherIceCandidates: watcherCandidates,
-      });
-      console.log('[webrtcService] Answer sent to broadcaster');
+        updatedAt: serverTimestamp(),
+      }, { merge: true });
+      watcherDocReady = true;
+      publishWatcherCandidates();
+      console.log('[webrtcService] Answer sent to broadcaster:', watcherId);
     } else {
       console.log('[webrtcService] No local description to send (already established)');
     }
@@ -256,11 +350,18 @@ export async function watchBroadcast(liveId, onStreamReceived) {
     // Handle connection state changes
     peerConnection.onconnectionstatechange = () => {
       console.log('[webrtcService] Connection state:', peerConnection.connectionState);
+      onStreamReceived(null, peerConnection.connectionState);
       if (peerConnection.connectionState === 'failed' || peerConnection.connectionState === 'disconnected') {
         onStreamReceived(null);
       }
     };
 
+    peerConnection.oniceconnectionstatechange = () => {
+      console.log('[webrtcService] ICE connection state:', peerConnection.iceConnectionState);
+      onStreamReceived(null, `ice:${peerConnection.iceConnectionState}`);
+    };
+
+    peerConnection._vuvioUnsubscribe = unsubscribeBroadcaster;
     return peerConnection;
   } catch (err) {
     console.error('[webrtcService] Failed to watch broadcast:', err.message);
@@ -282,6 +383,7 @@ export function getRemoteStream() {
 
 export function closePeer() {
   if (peerConnection) {
+    peerConnection._vuvioUnsubscribe?.();
     peerConnection.close();
     peerConnection = null;
   }

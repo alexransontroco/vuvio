@@ -46,7 +46,7 @@ const initialLiveDraft = {
   subcategory: '',
   description: '',
   title: '',
-  location: 'Chamonix, France',
+  location: '',
   privacy: 'Everyone',
   quality: '1080p',
   equipmentIds: [],
@@ -55,7 +55,49 @@ const initialLiveDraft = {
 const privacyOptions = ['Everyone', 'Followers', 'Private'];
 const qualityOptions = ['720p', '1080p', 'Auto'];
 
-function LivePreview({ draft, selectedFamily, equipmentLibrary, onEditGear, onLaunch }) {
+function CreateLiveMark() {
+  return (
+    <span className="create-live-mark" aria-hidden="true">
+      <svg className="create-live-mark__logo" viewBox="0 0 96 72" focusable="false">
+        <defs>
+          <linearGradient id="create-live-v-left" x1="18" y1="14" x2="42" y2="58" gradientUnits="userSpaceOnUse">
+            <stop offset="0" stopColor="#2563ff" />
+            <stop offset="1" stopColor="#0ea5ff" />
+          </linearGradient>
+          <linearGradient id="create-live-v-right" x1="54" y1="14" x2="78" y2="58" gradientUnits="userSpaceOnUse">
+            <stop offset="0" stopColor="#35e3dc" />
+            <stop offset="1" stopColor="#14f2d4" />
+          </linearGradient>
+          <linearGradient id="create-live-dot" x1="38" y1="4" x2="58" y2="24" gradientUnits="userSpaceOnUse">
+            <stop offset="0" stopColor="#2563ff" />
+            <stop offset="1" stopColor="#35e3dc" />
+          </linearGradient>
+        </defs>
+        <circle className="create-live-mark__dot" cx="48" cy="12" r="8.5" fill="url(#create-live-dot)" />
+        <path
+          className="create-live-mark__v create-live-mark__v--left"
+          d="M19 29 L35.6 56 L47 35"
+          fill="none"
+          stroke="url(#create-live-v-left)"
+          strokeWidth="13"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+        <path
+          className="create-live-mark__v create-live-mark__v--right"
+          d="M49 35 L60.4 56 L77 29"
+          fill="none"
+          stroke="url(#create-live-v-right)"
+          strokeWidth="13"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+      </svg>
+    </span>
+  );
+}
+
+function LivePreview({ draft, selectedFamily, equipmentLibrary, onEditGear, onLaunch, locationStatus }) {
   const selectedItems = getEquipmentSelection(equipmentLibrary, draft.equipmentIds ?? []);
   const captureItems = selectedItems.filter((item) => item.category !== 'activity');
   const activityItems = selectedItems.filter((item) => item.category === 'activity');
@@ -141,7 +183,7 @@ function LivePreview({ draft, selectedFamily, equipmentLibrary, onEditGear, onLa
           Edit gear
         </button>
       </div>
-      <button type="button" className="create-live-launch" onClick={handleLaunch}>
+      <button type="button" className="create-live-launch" onClick={handleLaunch} disabled={locationStatus !== 'ready'} title={locationStatus !== 'ready' ? 'Enable location to start a live' : ''}>
         <Play size={17} fill="currentColor" strokeWidth={1.8} />
         Start live
       </button>
@@ -159,8 +201,26 @@ export default function BottomNav({ collapsible = false, collapsed = false, onEx
   const [equipmentLibrary, setEquipmentLibrary] = useState(() => getEquipmentLibrary());
   const [quickAddOpen, setQuickAddOpen] = useState(false);
   const [quickAddDraft, setQuickAddDraft] = useState({ category: 'recording', brand: '', model: '' });
+  const [locationStatus, setLocationStatus] = useState('loading');
+  const [userCoordinates, setUserCoordinates] = useState(null);
   const location = useLocation();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    if (!navigator.geolocation) {
+      setLocationStatus('unavailable');
+      return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        setUserCoordinates([position.coords.longitude, position.coords.latitude]);
+        setLocationStatus('ready');
+      },
+      () => setLocationStatus('denied'),
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 },
+    );
+  }, []);
 
   useEffect(() => {
     setCreateOpen(false);
@@ -185,19 +245,19 @@ export default function BottomNav({ collapsible = false, collapsed = false, onEx
   };
 
   const launchLive = (cameraStream = null) => {
-    if (!canLaunch) return;
+    if (!canLaunch || locationStatus !== 'ready') return;
     const selectedIds = draft.equipmentIds ?? [];
     const live = createLocalLive({
       ...draft,
       hasCameraStream: Boolean(cameraStream),
       equipment: selectedIds.map((equipmentId) => ({ equipmentId })),
       equipmentSnapshots: buildEquipmentSnapshots(equipmentLibrary, selectedIds),
-    }, user?.uid);
+    }, user?.uid, userCoordinates);
     registerCreatedLiveStream(live.id, cameraStream);
     rememberLiveEquipmentSetup(draft.family, selectedIds);
     rememberLiveEquipmentSetupBySubcategory(draft.subcategory, selectedIds);
     closeCreate();
-    navigate(`/watch?live=${encodeURIComponent(live.id)}&broadcast=1`);
+    navigate(`/live/${encodeURIComponent(live.id)}`);
   };
 
   const applyPreviousSetup = () => {
@@ -437,9 +497,10 @@ export default function BottomNav({ collapsible = false, collapsed = false, onEx
                     equipmentLibrary={equipmentLibrary}
                     onEditGear={() => setShowPreview(false)}
                     onLaunch={launchLive}
+                    locationStatus={locationStatus}
                   />
                 ) : (
-                  <button type="button" className="create-live-launch" disabled={!canLaunch} onClick={() => setShowPreview(true)}>
+                  <button type="button" className="create-live-launch" disabled={!canLaunch || locationStatus !== 'ready'} onClick={() => setShowPreview(true)} title={locationStatus !== 'ready' ? 'Enable location to start a live' : ''}>
                     <Play size={17} fill="currentColor" strokeWidth={1.8} />
                     Preview
                   </button>
@@ -476,8 +537,13 @@ export default function BottomNav({ collapsible = false, collapsed = false, onEx
             <span className="bottom-nav__label">{t(labelKey)}</span>
           </NavLink>
         ))}
-        <button type="button" className="bottom-nav__create" onClick={() => setCreateOpen(true)} aria-label={t('navigation.create')}>
-          <BrandMark size={40} style={{ marginTop: 10 }} />
+        <button
+          type="button"
+          className={createOpen ? 'bottom-nav__create is-active' : 'bottom-nav__create'}
+          onClick={() => setCreateOpen(true)}
+          aria-label={t('navigation.create')}
+        >
+          <CreateLiveMark />
           <span className="bottom-nav__create-badge" aria-hidden="true">+</span>
         </button>
         {navItems.slice(2).map(({ to, labelKey, icon: Icon }) => (

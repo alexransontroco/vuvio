@@ -38,5 +38,37 @@ service cloud.firestore {
         && resource.data.uid == request.auth.uid;
       allow delete: if false;
     }
+
+    // ── Active live sessions ───────────────────────
+    match /activeLives/{liveId} {
+      allow read: if true;
+      allow create: if request.auth != null
+        && request.resource.data.creatorUid == request.auth.uid
+        && request.resource.data.status == 'live';
+      allow update: if request.auth != null
+        && resource.data.creatorUid == request.auth.uid
+        && request.resource.data.creatorUid == resource.data.creatorUid;
+      allow delete: if request.auth != null
+        && resource.data.creatorUid == request.auth.uid;
+
+      match /watchers/{watcherId} {
+        allow read: if true;
+        allow create: if request.auth != null
+          && request.resource.data.keys().hasOnly([
+            'sdpAnswer',
+            'signalSessionId',
+            'watcherIceCandidates',
+            'updatedAt'
+          ]);
+        allow update: if request.auth != null
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+            'sdpAnswer',
+            'signalSessionId',
+            'watcherIceCandidates',
+            'updatedAt'
+          ]);
+        allow delete: if false;
+      }
+    }
   }
 }

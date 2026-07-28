@@ -4,7 +4,7 @@ import { existsSync, readdirSync, rmSync, statSync } from 'node:fs';
 import { join, relative } from 'node:path';
 
 const excludedPublicPatterns = [
-  /^assets\/videos\/.*\.(mp4|mov|webm)$/i,
+  /^assets\/videos\/.*\.(mov|webm)$/i,
   /^assets\/audio\/.*\.(wav|mp3|m4a)$/i,
 ];
 

@@ -1,9 +1,13 @@
-import { collection, setDoc, deleteDoc, doc, getDocs, query, where, serverTimestamp, updateDoc } from 'firebase/firestore';
+import { collection, setDoc, deleteDoc, doc, getDocs, onSnapshot, query, where, serverTimestamp, updateDoc } from 'firebase/firestore';
 import { db } from '../firebase.js';
 
 const STORAGE_KEY = 'vuvio:createdLives';
 const CREATED_LIVE_EVENT = 'vuvio:created-live';
 const activeLiveStreams = new Map();
+const LOCAL_LIVE_GRACE_MS = 2 * 60 * 1000;
+const RETIRED_LIVE_IDS = new Set([
+  'created-1785259033066',
+]);
 
 const coverByFamily = {
   air: '/assets/pov/01_mountain_rescue_helicopter.jpg',
@@ -114,6 +118,42 @@ function writeStoredLives(lives) {
   win.localStorage.setItem(STORAGE_KEY, JSON.stringify(lives));
 }
 
+function createdLiveTimestamp(live) {
+  const fromId = String(live?.id ?? '').match(/^created-(\d+)$/)?.[1];
+  if (fromId) return Number(fromId);
+  return new Date(live?.equipmentUpdatedAt || live?.createdAt || 0).getTime() || 0;
+}
+
+function isRetiredLive(live) {
+  return RETIRED_LIVE_IDS.has(live?.id) || live?.status === 'ended' || live?.status === 'cancelled';
+}
+
+function isUsableLocalLive(live, firestoreIds) {
+  if (!live?.id || isRetiredLive(live)) return false;
+  if (firestoreIds.has(live.id)) return true;
+  if (activeLiveStreams.has(live.id)) return true;
+  return Date.now() - createdLiveTimestamp(live) <= LOCAL_LIVE_GRACE_MS;
+}
+
+function mergeCreatedLives(local, firestore) {
+  const firestoreIds = new Set(firestore.map((live) => live.id).filter(Boolean));
+  const usableLocal = local.filter((live) => isUsableLocalLive(live, firestoreIds));
+
+  if (usableLocal.length !== local.length) {
+    writeStoredLives(usableLocal);
+  }
+
+  const merged = {};
+  usableLocal.forEach(live => { merged[live.id] = live; });
+  firestore.filter((live) => !isRetiredLive(live)).forEach(live => { merged[live.id] = live; });
+
+  return Object.values(merged).sort((a, b) => {
+    const aTime = new Date(a.equipmentUpdatedAt || 0).getTime();
+    const bTime = new Date(b.equipmentUpdatedAt || 0).getTime();
+    return bTime - aTime;
+  });
+}
+
 function coordinatesForDraft(draft) {
   const base = baseCoordinatesByFamily[draft.family] ?? baseCoordinatesByFamily.earth;
   const seed = Date.now() % 1000;
@@ -125,19 +165,10 @@ function coordinatesForDraft(draft) {
 export async function getCreatedLives() {
   const local = readStoredLives();
   const firestore = await getFirestoreLives();
-
-  const merged = {};
-  local.forEach(live => { merged[live.id] = live; });
-  firestore.forEach(live => { merged[live.id] = live; });
-
-  return Object.values(merged).sort((a, b) => {
-    const aTime = new Date(a.equipmentUpdatedAt || 0).getTime();
-    const bTime = new Date(b.equipmentUpdatedAt || 0).getTime();
-    return bTime - aTime;
-  });
+  return mergeCreatedLives(local, firestore);
 }
 
-export function createLocalLive(draft, creatorUid = null) {
+export function createLocalLive(draft, creatorUid = null, userCoordinates = null) {
   const live = {
     id: `created-${Date.now()}`,
     status: 'live',
@@ -148,14 +179,14 @@ export function createLocalLive(draft, creatorUid = null) {
     job: draft.subcategory,
     city: draft.family === 'water' ? 'Marseille' : draft.family === 'air' ? 'Paris' : 'Chamonix',
     country: 'France',
-    location: draft.location?.trim() || 'Chamonix, France',
-    locationLabel: draft.location?.trim() || 'Chamonix, France',
+    location: draft.location?.trim() || 'My location',
+    locationLabel: draft.location?.trim() || 'My location',
     privacy: draft.privacy || 'Everyone',
     quality: draft.quality || '1080p',
     viewers: '1',
     viewerLabel: '1',
     image: coverByFamily[draft.family] ?? coverByFamily.earth,
-    coordinates: coordinatesForDraft(draft),
+    coordinates: userCoordinates || coordinatesForDraft(draft),
     family: draft.family,
     subcategory: draft.subcategory,
     povType: draft.family === 'air' ? 'drone' : draft.family === 'water' ? 'marine' : 'pov',
@@ -193,11 +224,37 @@ export function subscribeToCreatedLives(callback) {
   const win = safeWindow();
   if (!win) return () => {};
 
-  const listener = () => {
-    getCreatedLives().then(callback).catch(() => callback([]));
+  let firestoreLives = [];
+  const emit = () => {
+    callback(mergeCreatedLives(readStoredLives(), firestoreLives));
   };
+
+  const listener = () => emit();
   win.addEventListener(CREATED_LIVE_EVENT, listener);
-  return () => win.removeEventListener(CREATED_LIVE_EVENT, listener);
+  win.addEventListener('storage', listener);
+
+  let unsubscribeFirestore = () => {};
+  try {
+    const q = query(collection(db, 'activeLives'), where('status', '==', 'live'));
+    unsubscribeFirestore = onSnapshot(q, (snapshot) => {
+      firestoreLives = snapshot.docs.map(docSnap => docSnap.data());
+      emit();
+    }, (err) => {
+      if (err.code !== 'permission-denied') {
+        console.error('[Firestore] Failed to subscribe to lives:', err.message);
+      }
+    });
+  } catch (err) {
+    console.error('[Firestore] Failed to start live subscription:', err.message);
+  }
+
+  emit();
+
+  return () => {
+    win.removeEventListener(CREATED_LIVE_EVENT, listener);
+    win.removeEventListener('storage', listener);
+    unsubscribeFirestore();
+  };
 }
 
 export async function endLive(liveId) {
@@ -205,4 +262,32 @@ export async function endLive(liveId) {
   const updated = local.filter(live => live.id !== liveId);
   writeStoredLives(updated);
   await removeLiveFromFirestore(liveId);
+}
+
+export async function publishLivePing(liveId) {
+  if (!liveId) return null;
+
+  const ping = {
+    id: `ping-${Date.now()}`,
+    color: '#ff8a1f',
+    createdAt: Date.now(),
+  };
+
+  const local = readStoredLives();
+  const updated = local.map((live) => (live.id === liveId ? { ...live, latestPing: ping } : live));
+  if (updated.some((live) => live.id === liveId)) writeStoredLives(updated);
+
+  try {
+    await updateDoc(doc(db, 'activeLives', liveId), {
+      latestPing: ping,
+      updatedAt: serverTimestamp(),
+    });
+  } catch (err) {
+    if (err.code !== 'permission-denied') {
+      console.error('[Firestore] Failed to publish ping:', err.message);
+    }
+  }
+
+  safeWindow()?.dispatchEvent(new CustomEvent(CREATED_LIVE_EVENT, { detail: { liveId, latestPing: ping } }));
+  return ping;
 }

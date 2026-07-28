@@ -12,6 +12,7 @@ const SOURCE_PREVIEW = 'vuvio-test2-preview-source';
 const SOURCE_PARTICLES = 'vuvio-test2-particle-source';
 const ROTATE_DEGREES_PER_SECOND = 3.5;
 const ROTATE_INTERVAL = 16;
+const PING_TTL_MS = 12000;
 
 const FAMILY_META = {
   earth: { id: 'earth', label: 'Land', color: globeTest2Config.colors.land },
@@ -22,6 +23,14 @@ const FAMILY_META = {
 function viewersNumber(live) {
   if (!live?.viewers) return 0;
   return Number.parseInt(String(live.viewers).replace(/\D/g, ''), 10) || 0;
+}
+
+function pingTimestamp(live) {
+  const value = live?.latestPing?.createdAt;
+  if (typeof value === 'number') return value;
+  if (typeof value === 'string') return new Date(value).getTime() || 0;
+  if (value?.seconds) return value.seconds * 1000;
+  return 0;
 }
 
 function formatCompact(value) {
@@ -50,8 +59,9 @@ export function getLivePriorityScore(live, cameraState, activeFilters) {
   const recency = Math.max(0, 1 - (live.startedMinutesAgo ?? 120) / 240);
   const filterMatch = activeFilters.families[live.family] ? 0.12 : -0.35;
   const featuredBoost = live.featured ? 0.72 : 0;
+  const createdLiveBoost = live.createdLocally || live.creatorUid ? 1.4 : 0;
 
-  return featuredBoost + viewers * 0.28 + quality * 0.26 + proximity * 0.22 + recency * 0.12 + filterMatch;
+  return createdLiveBoost + featuredBoost + viewers * 0.28 + quality * 0.26 + proximity * 0.22 + recency * 0.12 + filterMatch;
 }
 
 function normalizeLive(live) {
@@ -120,6 +130,8 @@ function toCollection(lives, displayCoords) {
         viewersNumber: live.viewersNumber,
         qualityScore: live.qualityScore ?? 0.6,
         pulseSeed: live.pulseSeed,
+        pingActive: pingTimestamp(live) > 0 && Date.now() - pingTimestamp(live) < PING_TTL_MS,
+        pingSeed: stableSeed(live.latestPing?.id ?? `${live.id}-ping`),
       },
       geometry: {
         type: 'Point',
@@ -233,32 +245,44 @@ function pointAuraRadiusExpression(clock, selectedId) {
   return [
     'case',
     ['==', ['get', 'id'], selectedId],
-    ['+', 18, ['*', wave, 2.4]],
-    ['+', ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 5.6, 900, 8.4, 2600, 11.5], ['*', wave, 1.15]],
+    ['+', 18, ['*', wave, 3.15]],
+    [
+      '+',
+      ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 5.9, 900, 8.9, 2600, 12.8, 5200, 15.6],
+      ['*', wave, ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 1.15, 900, 1.7, 2600, 2.5, 5200, 3.25]],
+    ],
   ];
 }
 
 function pointAuraOpacityExpression(clock, selectedId) {
   const wave = [
-    '-',
-    1,
-    ['*', breathWave(clock), 0.32],
+    '+',
+    0.7,
+    ['*', breathWave(clock), ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 0.22, 900, 0.34, 2600, 0.48, 5200, 0.58]],
   ];
   return [
     'case',
     ['==', ['get', 'id'], selectedId],
-    ['*', wave, 0.2],
-    ['*', wave, ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 0.045, 900, 0.08, 2600, 0.115]],
+    ['*', wave, 0.24],
+    ['*', wave, ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 0.068, 900, 0.11, 2600, 0.165, 5200, 0.215]],
   ];
 }
 
 function particleRadiusExpression(clock) {
   const wave = breathWave(clock, 'particleSeed');
-  return ['+', ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 0.55, 2600, 0.92], ['*', wave, 0.16]];
+  return [
+    '+',
+    ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 0.55, 2600, 0.92, 5200, 1.12],
+    ['*', wave, ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 0.18, 900, 0.26, 2600, 0.38, 5200, 0.48]],
+  ];
 }
 
 function particleOpacityExpression(clock) {
-  return ['*', ['-', 1, ['*', breathWave(clock, 'particleSeed'), 0.45]], ['case', ['==', ['get', 'featured'], true], 0.34, 0.2]];
+  return [
+    '*',
+    ['+', 0.62, ['*', breathWave(clock, 'particleSeed'), 0.38]],
+    ['case', ['==', ['get', 'featured'], true], 0.5, ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 0.27, 900, 0.34, 2600, 0.43, 5200, 0.5]],
+  ];
 }
 
 function featuredRingRadiusExpression(clock, selectedId) {
@@ -266,9 +290,9 @@ function featuredRingRadiusExpression(clock, selectedId) {
   return [
     'case',
     ['==', ['get', 'id'], selectedId],
-    ['+', 9.4, ['*', wave, 0.65]],
+    ['+', 9.4, ['*', wave, 1.05]],
     ['==', ['get', 'featured'], true],
-    ['+', 5.6, ['*', wave, 0.32]],
+    ['+', 5.6, ['*', wave, 0.58]],
     0,
   ];
 }
@@ -358,7 +382,7 @@ function clusterOpacityFactorByZoom(factorExpression) {
 }
 
 function pointOpacityByZoom() {
-  return ['interpolate', ['linear'], ['zoom'], 2.2, 0.58, 4.7, 0.78, 6.6, 0.9];
+  return ['interpolate', ['linear'], ['zoom'], 2.2, 0.68, 4.7, 0.88, 6.6, 0.98];
 }
 
 function pointOpacityFactorByZoom(factorExpression) {
@@ -384,14 +408,27 @@ function particleOpacityByZoom(clock) {
     3.4,
     0,
     4.8,
-    ['*', opacity, 0.72],
+    ['*', opacity, 0.88],
     7,
     opacity,
   ];
 }
 
+function pingRippleRadiusExpression(clock) {
+  const wave = breathWave(clock, 'pingSeed');
+  return ['+', ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 15, 900, 22, 2600, 29, 5200, 36], ['*', wave, 42]];
+}
+
+function pingRippleOpacityExpression(clock) {
+  const wave = breathWave(clock, 'pingSeed');
+  return ['*', ['-', 1, wave], ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 0.38, 900, 0.46, 2600, 0.54, 5200, 0.62]];
+}
+
 function selectedLiveCard(live, closeSelectedLive, navigate) {
   if (!live) return null;
+  const watchPath = live.creatorUid || live.createdLocally
+    ? `/watch?live=${encodeURIComponent(live.id)}&mode=view`
+    : `/discover?live=${encodeURIComponent(live.id)}`;
   return (
     <aside className={`globe-test2-card ${live.featured ? 'is-featured' : ''}`} aria-label={`Selected live: ${live.title}`}>
       <button type="button" className="globe-test2-card__close" onClick={closeSelectedLive} aria-label="Close">
@@ -407,7 +444,7 @@ function selectedLiveCard(live, closeSelectedLive, navigate) {
         <h2>{live.title}</h2>
         <p>{live.streamer} · {live.city}, {live.country}</p>
         <strong>{formatCompact(live.viewersNumber)} watching</strong>
-        <button type="button" onClick={() => navigate(`/discover?live=${encodeURIComponent(live.id)}`)}>
+        <button type="button" onClick={() => navigate(watchPath)}>
           <Play size={13} fill="currentColor" strokeWidth={1.8} />
           Watch Live
         </button>
@@ -435,6 +472,7 @@ export default function GlobeTest2({ streams }) {
   const [cameraState, setCameraState] = useState(cameraStateRef.current);
   const [selectedId, setSelectedId] = useState('');
   const [hoverId, setHoverId] = useState('');
+  const [pingRefreshTick, setPingRefreshTick] = useState(0);
   const [mapError, setMapError] = useState('');
 
   const allLives = useMemo(() => createGlobeTest2Lives(density, streams).map(normalizeLive), [density, streams]);
@@ -456,8 +494,8 @@ export default function GlobeTest2({ streams }) {
   const priorityIds = useMemo(() => new Set(priorityLives.map((live) => live.id)), [priorityLives]);
   const clusteredLives = useMemo(() => filteredLives.filter((live) => !priorityIds.has(live.id)), [filteredLives, priorityIds]);
   const displayCoords = useMemo(() => separatedCoordinates(filteredLives, cameraState.zoom), [cameraState.zoom, filteredLives]);
-  const clusterCollection = useMemo(() => toCollection(clusteredLives, displayCoords), [clusteredLives, displayCoords]);
-  const priorityCollection = useMemo(() => toCollection(priorityLives, displayCoords), [priorityLives, displayCoords]);
+  const clusterCollection = useMemo(() => toCollection(clusteredLives, displayCoords), [clusteredLives, displayCoords, pingRefreshTick]);
+  const priorityCollection = useMemo(() => toCollection(priorityLives, displayCoords), [priorityLives, displayCoords, pingRefreshTick]);
   const particleCollection = useMemo(() => toParticleCollection(priorityLives, displayCoords), [displayCoords, priorityLives]);
   const selectedLive = useMemo(() => allLives.find((live) => live.id === selectedId) ?? null, [allLives, selectedId]);
   const previewLives = useMemo(() => {
@@ -485,6 +523,12 @@ export default function GlobeTest2({ streams }) {
 
   useEffect(() => {
     liveByIdRef.current = new Map(allLives.map((live) => [live.id, live]));
+  }, [allLives]);
+
+  useEffect(() => {
+    if (!allLives.some((live) => pingTimestamp(live) > 0)) return undefined;
+    const timer = window.setInterval(() => setPingRefreshTick((value) => value + 1), 1000);
+    return () => window.clearInterval(timer);
   }, [allLives]);
 
   const syncSources = useCallback(() => {
@@ -681,6 +725,22 @@ export default function GlobeTest2({ streams }) {
           },
         });
         map.addLayer({
+          id: 'vuvio-test2-ping-ripple',
+          type: 'circle',
+          source: SOURCE_PRIORITY,
+          minzoom: 2.2,
+          filter: ['==', ['get', 'pingActive'], true],
+          paint: {
+            'circle-color': '#ff8a1f',
+            'circle-radius': pingRippleRadiusExpression(0),
+            'circle-blur': 0.74,
+            'circle-opacity': pingRippleOpacityExpression(0),
+            'circle-stroke-color': 'rgba(255, 214, 150, 0.84)',
+            'circle-stroke-width': 0.75,
+            'circle-stroke-opacity': pingRippleOpacityExpression(0),
+          },
+        });
+        map.addLayer({
           id: 'vuvio-test2-priority-points',
           type: 'circle',
           source: SOURCE_PRIORITY,
@@ -859,6 +919,11 @@ export default function GlobeTest2({ streams }) {
           if (map.getLayer('vuvio-test2-particles')) {
             map.setPaintProperty('vuvio-test2-particles', 'circle-radius', particleRadiusExpression(clock));
             map.setPaintProperty('vuvio-test2-particles', 'circle-opacity', particleOpacityByZoom(clock));
+          }
+          if (map.getLayer('vuvio-test2-ping-ripple')) {
+            map.setPaintProperty('vuvio-test2-ping-ripple', 'circle-radius', pingRippleRadiusExpression(clock));
+            map.setPaintProperty('vuvio-test2-ping-ripple', 'circle-opacity', pingRippleOpacityExpression(clock));
+            map.setPaintProperty('vuvio-test2-ping-ripple', 'circle-stroke-opacity', pingRippleOpacityExpression(clock));
           }
           if (map.getLayer('vuvio-test2-priority-points')) {
             map.setPaintProperty('vuvio-test2-priority-points', 'circle-radius', pointCoreRadiusExpression(clock, selectedIdRef.current, hoverIdRef.current));

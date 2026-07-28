@@ -10,9 +10,9 @@ export default function AppShell() {
   const location = useLocation();
   const { userProfile } = useAuth();
   const { notifications, dismissNotification } = useFollowedCreatorNotifications(userProfile);
-  const searchParams = new URLSearchParams(location.search);
-  const isBroadcast = location.pathname === '/watch' && searchParams.get('broadcast') === '1';
-  const isLive = location.pathname.startsWith('/watch/') || (location.pathname === '/watch' && searchParams.has('live'));
+  // When on /live/:liveId, hide bottom nav (broadcaster page)
+  const isBroadcast = location.pathname.startsWith('/live/');
+  const isLive = location.pathname.startsWith('/watch/');
   const [liveNavCollapsed, setLiveNavCollapsed] = useState(false);
   const [showLanding, setShowLanding] = useState(() => {
     return !localStorage.getItem('vuvio-landing-shown');
