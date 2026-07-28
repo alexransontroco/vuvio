@@ -1151,9 +1151,24 @@
   font-weight: 720;
 }
 
+.live-slide__connecting i {
+  width: 34px;
+  height: 34px;
+  border-radius: 999px;
+  border: 2px solid rgba(248, 252, 251, 0.2);
+  border-top-color: rgba(31, 224, 208, 0.9);
+  animation: live-connect-spin 900ms linear infinite;
+}
+
 .live-slide__connecting small {
   font-size: 11px;
   color: rgba(248, 252, 251, 0.58);
+}
+
+@keyframes live-connect-spin {
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .live-feed__top-gradient,

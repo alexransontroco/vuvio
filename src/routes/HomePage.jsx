@@ -1393,12 +1393,15 @@ function LiveViewer({ liveId, creatorMode = false }) {
   const [lives, setLives] = useState([]);
   const [remoteStream, setRemoteStream] = useState(null);
   const [watchStatus, setWatchStatus] = useState('');
+  const [watchRetry, setWatchRetry] = useState(0);
   const [broadcastEnded, setBroadcastEnded] = useState(false);
   const localVideoRef = useRef(null);
   const remoteVideoRef = useRef(null);
   const videoPlaybackRef = useRef(null);
   const webrtcCallRef = useRef(null);
   const watcherIdRef = useRef(null);
+  const retryTimerRef = useRef(null);
+  const timeoutTimerRef = useRef(null);
 
   useEffect(() => {
     getCreatedLives().then(setCreatedLives).catch(() => setCreatedLives([]));
@@ -1540,6 +1543,22 @@ function LiveViewer({ liveId, creatorMode = false }) {
 
     setBroadcastEnded(false);
     let isMounted = true;
+    let receivedStream = false;
+    window.clearTimeout(retryTimerRef.current);
+    window.clearTimeout(timeoutTimerRef.current);
+
+    const scheduleRetry = (reason) => {
+      if (!isMounted || receivedStream || watchRetry >= 3) return;
+      setWatchStatus(reason);
+      window.clearTimeout(retryTimerRef.current);
+      retryTimerRef.current = window.setTimeout(() => {
+        if (!isMounted || receivedStream) return;
+        closePeer();
+        watcherIdRef.current = `viewer-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+        setRemoteStream(null);
+        setWatchRetry((value) => value + 1);
+      }, 1400);
+    };
 
   const setupWatcher = async () => {
       try {
@@ -1547,9 +1566,20 @@ function LiveViewer({ liveId, creatorMode = false }) {
         if (!watcherIdRef.current) {
           watcherIdRef.current = `viewer-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
         }
+        timeoutTimerRef.current = window.setTimeout(() => {
+          scheduleRetry('retrying');
+        }, 12000);
         webrtcCallRef.current = await watchBroadcast(activeLiveId, (stream, status) => {
-          if (isMounted && status) setWatchStatus(status);
+          if (isMounted && status) {
+            setWatchStatus(status);
+            if (['failed', 'disconnected', 'ice:failed', 'ice:disconnected'].includes(status)) {
+              scheduleRetry('retrying');
+            }
+          }
           if (isMounted && stream) {
+            receivedStream = true;
+            window.clearTimeout(retryTimerRef.current);
+            window.clearTimeout(timeoutTimerRef.current);
             if (remoteVideoRef.current) {
               remoteVideoRef.current.srcObject = stream;
               remoteVideoRef.current.muted = true;
@@ -1557,9 +1587,10 @@ function LiveViewer({ liveId, creatorMode = false }) {
             }
             setRemoteStream(stream);
           }
-        }, watcherIdRef.current);
+        }, watcherIdRef.current, user?.uid ?? null);
       } catch (err) {
         console.error('[LiveViewer] Watcher setup failed:', err.message);
+        scheduleRetry('retrying');
       }
     };
 
@@ -1570,10 +1601,12 @@ function LiveViewer({ liveId, creatorMode = false }) {
       if (webrtcCallRef.current) {
         webrtcCallRef.current.close();
       }
+      window.clearTimeout(retryTimerRef.current);
+      window.clearTimeout(timeoutTimerRef.current);
       watcherIdRef.current = null;
       closePeer();
     };
-  }, [creatorMode, activeLiveId, live.creatorUid, live.createdLocally]);
+  }, [creatorMode, activeLiveId, live.creatorUid, live.createdLocally, user?.uid, watchRetry]);
 
   const stopSound = () => {
     const current = soundRef.current;
@@ -1745,6 +1778,7 @@ function LiveViewer({ liveId, creatorMode = false }) {
     setBroadcastEnded(false);
     setRemoteStream(null);
     setWatchStatus('');
+    setWatchRetry(0);
   }, [activeLiveId]);
 
   useEffect(() => {
@@ -1956,8 +1990,9 @@ function LiveViewer({ liveId, creatorMode = false }) {
                       />
                       {!remoteStream ? (
                         <div className="live-slide__connecting">
-                          <span>Connecting live</span>
-                          {watchStatus ? <small>{watchStatus}</small> : null}
+                          <i aria-hidden="true" />
+                          <span>{watchRetry > 0 ? 'Reconnecting live' : 'Connecting live'}</span>
+                          {import.meta.env.DEV && watchStatus ? <small>{watchStatus}</small> : null}
                         </div>
                       ) : null}
                     </>

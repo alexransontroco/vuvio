@@ -1,15 +1,28 @@
-import { collection, doc, setDoc, getDoc, onSnapshot, updateDoc, deleteDoc, arrayUnion, serverTimestamp } from 'firebase/firestore';
+import { collection, doc, setDoc, getDoc, onSnapshot, updateDoc, deleteDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../firebase.js';
 
 let localStream = null;
 let peerConnection = null;
 let iceGatheringComplete = false;
 
-const ICE_SERVERS = {
-  iceServers: [
-    { urls: 'stun:stun.l.google.com:19302' },
-    { urls: 'stun:stun1.l.google.com:19302' },
-    {
+function splitEnvList(value) {
+  return String(value ?? '')
+    .split(',')
+    .map((item) => item.trim())
+    .filter(Boolean);
+}
+
+function getIceServers() {
+  const configuredTurnUrls = splitEnvList(import.meta.env.VITE_TURN_URLS);
+  const configuredTurnUsername = import.meta.env.VITE_TURN_USERNAME;
+  const configuredTurnCredential = import.meta.env.VITE_TURN_CREDENTIAL;
+  const turnServer = configuredTurnUrls.length && configuredTurnUsername && configuredTurnCredential
+    ? {
+      urls: configuredTurnUrls,
+      username: configuredTurnUsername,
+      credential: configuredTurnCredential,
+    }
+    : {
       urls: [
         'turn:openrelay.metered.ca:80',
         'turn:openrelay.metered.ca:443',
@@ -18,9 +31,16 @@ const ICE_SERVERS = {
       ],
       username: 'openrelayproject',
       credential: 'openrelayproject',
-    },
-  ]
-};
+    };
+
+  return [
+    { urls: 'stun:stun.l.google.com:19302' },
+    { urls: 'stun:stun1.l.google.com:19302' },
+    turnServer,
+  ];
+}
+
+const RTC_CONFIG = { iceServers: getIceServers() };
 
 export async function startBroadcast(liveId, userId, existingStream = null) {
   try {
@@ -42,7 +62,7 @@ export async function startBroadcast(liveId, userId, existingStream = null) {
 
     // Create peer connection
     console.log('[webrtcService] Creating peer connection...');
-    peerConnection = new RTCPeerConnection(ICE_SERVERS);
+    peerConnection = new RTCPeerConnection(RTC_CONFIG);
     console.log('[webrtcService] Peer connection created');
 
     // Add local stream tracks to peer connection
@@ -189,6 +209,8 @@ export async function stopBroadcast(liveId) {
 
     // Close peer connection immediately
     if (peerConnection) {
+      peerConnection._vuvioUnsubscribe?.();
+      peerConnection._vuvioCleanup?.();
       peerConnection.close();
       peerConnection = null;
     }
@@ -225,7 +247,7 @@ async function waitForBroadcasterOffer(liveId, maxRetries = 12) {
   throw lastError || new Error('Broadcaster offer not found after retries');
 }
 
-export async function watchBroadcast(liveId, onStreamReceived, watcherId = `viewer-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`) {
+export async function watchBroadcast(liveId, onStreamReceived, watcherId = `viewer-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`, watcherUid = null) {
   try {
     console.log('[webrtcService] Watching broadcast for live:', liveId);
 
@@ -237,7 +259,7 @@ export async function watchBroadcast(liveId, onStreamReceived, watcherId = `view
     const watcherRef = doc(db, 'activeLives', liveId, 'watchers', watcherId);
 
     // Create peer connection
-    peerConnection = new RTCPeerConnection(ICE_SERVERS);
+    peerConnection = new RTCPeerConnection(RTC_CONFIG);
 
     // Handle remote stream
     peerConnection.ontrack = (event) => {
@@ -256,6 +278,7 @@ export async function watchBroadcast(liveId, onStreamReceived, watcherId = `view
       if (!watcherDocReady) return;
       setDoc(watcherRef, {
         signalSessionId,
+        watcherUid,
         watcherIceCandidates: watcherCandidates,
         updatedAt: serverTimestamp(),
       }, { merge: true }).catch((err) => {
@@ -336,6 +359,7 @@ export async function watchBroadcast(liveId, onStreamReceived, watcherId = `view
     if (peerConnection.localDescription) {
       await setDoc(watcherRef, {
         signalSessionId,
+        watcherUid,
         sdpAnswer: peerConnection.localDescription.sdp,
         watcherIceCandidates: watcherCandidates,
         updatedAt: serverTimestamp(),
@@ -361,7 +385,14 @@ export async function watchBroadcast(liveId, onStreamReceived, watcherId = `view
       onStreamReceived(null, `ice:${peerConnection.iceConnectionState}`);
     };
 
-    peerConnection._vuvioUnsubscribe = unsubscribeBroadcaster;
+    peerConnection._vuvioCleanup = () => {
+      unsubscribeBroadcaster();
+      deleteDoc(watcherRef).catch((err) => {
+        if (err.code !== 'permission-denied') {
+          console.warn('[webrtcService] Failed to clean watcher doc:', err.message);
+        }
+      });
+    };
     return peerConnection;
   } catch (err) {
     console.error('[webrtcService] Failed to watch broadcast:', err.message);
@@ -384,6 +415,7 @@ export function getRemoteStream() {
 export function closePeer() {
   if (peerConnection) {
     peerConnection._vuvioUnsubscribe?.();
+    peerConnection._vuvioCleanup?.();
     peerConnection.close();
     peerConnection = null;
   }
