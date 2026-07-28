@@ -70,25 +70,33 @@ export async function startBroadcast(liveId, userId) {
     console.log('[webrtcService] Offer created and saved');
 
     // Listen for answer from watcher
-    const unsubscribe = onSnapshot(doc(db, 'activeLives', liveId), (doc) => {
+    let answerProcessed = false;
+    const unsubscribe = onSnapshot(doc(db, 'activeLives', liveId), async (doc) => {
       const data = doc.data();
-      if (data?.sdpAnswer && !peerConnection.remoteDescription) {
+      if (data?.sdpAnswer && !answerProcessed && peerConnection.signalingState === 'have-local-offer') {
+        answerProcessed = true;
         console.log('[webrtcService] Received answer from watcher');
-        const answer = new RTCSessionDescription({
-          type: 'answer',
-          sdp: data.sdpAnswer
-        });
-        peerConnection.setRemoteDescription(answer).catch(err => {
-          console.error('[webrtcService] Failed to set remote description:', err.message);
-        });
-
-        // Add remote ICE candidates
-        if (data.watcherIceCandidates) {
-          data.watcherIceCandidates.forEach(candidate => {
-            peerConnection.addIceCandidate(new RTCIceCandidate(candidate)).catch(err => {
-              console.warn('[webrtcService] Failed to add ICE candidate:', err.message);
-            });
+        try {
+          const answer = new RTCSessionDescription({
+            type: 'answer',
+            sdp: data.sdpAnswer
           });
+          await peerConnection.setRemoteDescription(answer);
+          console.log('[webrtcService] Remote description set successfully');
+
+          // Add remote ICE candidates
+          if (data.watcherIceCandidates && data.watcherIceCandidates.length > 0) {
+            for (const candidate of data.watcherIceCandidates) {
+              try {
+                await peerConnection.addIceCandidate(new RTCIceCandidate(candidate));
+              } catch (err) {
+                console.warn('[webrtcService] Failed to add ICE candidate:', err.message);
+              }
+            }
+          }
+        } catch (err) {
+          console.error('[webrtcService] Failed to set remote description:', err.message);
+          answerProcessed = false;
         }
       }
     });
@@ -215,6 +223,10 @@ export async function watchBroadcast(liveId, onStreamReceived) {
 
 export function getLocalStream() {
   return localStream;
+}
+
+export function getRemoteStream() {
+  return null; // Remote stream is handled via ontrack callback
 }
 
 export function closePeer() {

@@ -208,17 +208,14 @@ export default function CesiumGlobe({ streams, mode = 'cesium' }) {
         0
       );
 
-      const transparentColor = color.withAlpha(0.4);
-      const glowColor = color.withAlpha(0.2);
-
       const entity = viewer.entities.add({
         id: stream.id,
         position,
         point: {
           pixelSize: 12,
-          color: transparentColor,
-          outlineColor: color.withAlpha(0.8),
-          outlineWidth: 2.5,
+          color: color,
+          outlineColor: Cesium.Color.WHITE,
+          outlineWidth: 2,
           heightReference: Cesium.HeightReference.NONE,
         },
         properties: {
@@ -232,23 +229,18 @@ export default function CesiumGlobe({ streams, mode = 'cesium' }) {
         },
       });
 
-      const glowEntity = viewer.entities.add({
-        position,
-        point: {
-          pixelSize: 24,
-          color: glowColor,
-          heightReference: Cesium.HeightReference.NONE,
-        },
-      });
-
       entitiesRef.current[stream.id] = entity;
     });
   }, [liveStreams]);
 
   // Handle click on points and double-click zoom
+  const handlerRef = useRef(null);
+
   useEffect(() => {
     const viewer = viewerRef.current;
-    if (!viewer) return;
+    if (!viewer || !window.Cesium) return;
+
+    if (handlerRef.current) return;
 
     const handler = new Cesium.ScreenSpaceEventHandler(viewer.scene.canvas);
 
@@ -257,16 +249,17 @@ export default function CesiumGlobe({ streams, mode = 'cesium' }) {
       if (!Cesium.defined(pickedObject) || !Cesium.defined(pickedObject.id)) return;
 
       const entity = pickedObject.id;
-      if (entity.properties?.id) {
-        const streamId = entity.properties.id;
+      const streamId = entity.id;
+
+      if (streamId) {
         setSelectedId(streamId);
         const stream = enrichedStreams.find((s) => s.id === streamId);
-        if (stream && stream.coordinates) {
+        if (stream?.coordinates) {
           viewer.camera.flyTo({
             destination: Cesium.Cartesian3.fromDegrees(
               stream.coordinates[0],
               stream.coordinates[1],
-              1500000
+              3500000,
             ),
             duration: 1.5,
           });
@@ -278,8 +271,13 @@ export default function CesiumGlobe({ streams, mode = 'cesium' }) {
       zoomBy(-0.5);
     }, Cesium.ScreenSpaceEventType.DOUBLE_CLICK);
 
-    return () => handler.destroy();
-  }, [enrichedStreams]);
+    handlerRef.current = handler;
+
+    return () => {
+      handler.destroy();
+      handlerRef.current = null;
+    };
+  }, []);
 
   // Focus on requested live
   useEffect(() => {
