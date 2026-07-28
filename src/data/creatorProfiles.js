@@ -142,13 +142,6 @@ function profile({
 }
 
 export const creatorProfiles = {
-  'thomas-mercier': {
-    ...ownCreatorProfile,
-    id: 'thomas-mercier',
-    username: 'thomasmercier',
-    isFollowing: false,
-    notificationsEnabled: false,
-  },
   'arthur-l': profile({
     id: 'arthur-l',
     username: 'arthurl',
