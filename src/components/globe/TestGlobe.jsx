@@ -702,9 +702,8 @@ export default function TestGlobe({ streams, mode = 'test' }) {
     let lastPaintTime = 0;
     let lastRotationTime = 0;
     let lastRafTime = 0;
-    // OPTIMIZATION 4: Throttle RAF itself to 30 FPS in actual mode
-    // Skips every other frame in actual mode, matching paint throttle
-    const RAF_INTERVAL = isActualMode ? 33 : 0; // 0 = no throttle in test mode
+    // OPTIMIZATION 4: Throttle RAF itself to 60 FPS in actual mode (was 30 FPS causing drops to 2 FPS)
+    const RAF_INTERVAL = isActualMode ? 16 : 0; // 16ms = ~60fps, 0 = no throttle in test mode
     const PAINT_INTERVAL = 33; // ~30fps for expensive setPaintProperty calls
     const ROTATION_INTERVAL = 33; // ~30fps for rotation (throttle expensive jumpTo)
 
