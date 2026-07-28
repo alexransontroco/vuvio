@@ -825,26 +825,42 @@
 
 .home-countdown {
   display: grid;
-  gap: 2px;
-  border: 0.5px solid rgba(31, 224, 208, 0.22);
-  border-radius: var(--radius-sm);
-  background: rgba(31, 224, 208, 0.075);
-  padding: 9px 10px;
+  gap: 4px;
+  border: 1px solid rgba(31, 224, 208, 0.4);
+  border-radius: var(--radius-md);
+  background: linear-gradient(135deg, rgba(31, 224, 208, 0.12) 0%, rgba(31, 224, 208, 0.05) 100%);
+  padding: 14px 16px;
 }
 
 .home-countdown span {
-  color: var(--color-text-secondary);
-  font-size: 10px;
-  font-weight: 560;
+  color: var(--color-accent);
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
 .home-countdown strong {
   color: var(--color-accent);
-  font-size: 18px;
-  font-weight: 650;
+  font-size: 28px;
+  font-weight: 700;
   line-height: 1;
   font-variant-numeric: tabular-nums;
-  letter-spacing: 0.01em;
+  letter-spacing: 0.02em;
+  text-shadow: 0 0 20px rgba(31, 224, 208, 0.3);
+}
+
+.home-upcoming-card .home-countdown {
+  padding: 10px 12px;
+  gap: 3px;
+}
+
+.home-upcoming-card .home-countdown strong {
+  font-size: 22px;
+}
+
+.home-upcoming-card .home-countdown span {
+  font-size: 11px;
 }
 
 .home-upcoming-card--live .home-countdown strong,
@@ -1063,6 +1079,12 @@
   height: 100%;
   overflow: hidden;
   background: #050b12;
+  opacity: 0.5;
+  transition: opacity 300ms ease;
+}
+
+.live-slide[aria-hidden="false"] {
+  opacity: 1;
 }
 
 .live-slide__bg {
@@ -1092,8 +1114,9 @@
 }
 
 .live-slide__media--pov {
-  object-fit: contain;
+  object-fit: cover;
   transform: none;
+  image-rendering: crisp-edges;
 }
 
 .live-slide__media--video {

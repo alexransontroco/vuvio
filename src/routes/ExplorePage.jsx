@@ -29,6 +29,7 @@ import { streams, upcomingStreams } from '../data/mockStreams.js';
 import { getUnreadConversationCount, subscribeToMessaging } from '../services/messagingService.js';
 import { searchCreators, followCreator, unfollowCreator } from '../services/creatorService.js';
 import { useAuth } from '../context/AuthContext.jsx';
+import { getCountdownState } from '../utils/countdown.js';
 
 const quickFilters = [
   { id: 'for-you', label: 'For you' },
@@ -205,7 +206,15 @@ function NearbyCard({ stream, onOpen }) {
 
 function UpcomingCard({ item }) {
   const [hasReminder, setHasReminder] = useState(false);
+  const [now, setNow] = useState(() => new Date());
   const date = item.day === 'TODAY' ? `Today · ${item.time}` : `Tomorrow · ${item.time}`;
+
+  useEffect(() => {
+    const timer = setInterval(() => setNow(new Date()), 1000);
+    return () => clearInterval(timer);
+  }, []);
+
+  const countdown = item.startsAt ? getCountdownState(item.startsAt, now) : null;
 
   return (
     <article className="ep-upcoming-card">
@@ -220,7 +229,20 @@ function UpcomingCard({ item }) {
       </div>
       <div className="ep-upcoming-card__info">
         <p className="ep-upcoming-card__title">{item.title}</p>
-        <span className="ep-upcoming-card__time">{date}</span>
+        {countdown ? (
+          <div style={{ marginBottom: '6px' }}>
+            <span style={{ fontSize: '10px', color: 'rgba(242, 247, 246, 0.6)', textTransform: 'uppercase', fontWeight: 600 }}>
+              {countdown.label}
+            </span>
+            {countdown.value && (
+              <strong style={{ display: 'block', fontSize: '16px', color: 'var(--color-accent)', fontWeight: 700 }}>
+                {countdown.value}
+              </strong>
+            )}
+          </div>
+        ) : (
+          <span className="ep-upcoming-card__time">{date}</span>
+        )}
         {item.locationLabel ? (
           <span className="ep-upcoming-card__loc">
             <MapPin size={10} strokeWidth={1.8} />

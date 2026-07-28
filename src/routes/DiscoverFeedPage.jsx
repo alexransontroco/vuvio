@@ -7,7 +7,9 @@ import CreatorLink from '../components/CreatorLink.jsx';
 import LiveBadge from '../components/LiveBadge.jsx';
 import SegmentedControl from '../components/SegmentedControl.jsx';
 import WatchMiniGlobe from '../components/WatchMiniGlobe.jsx';
-import { streams } from '../data/mockStreams.js';
+import { getCreatedLives } from '../services/createdLiveService.js';
+import { mapStreams } from '../data/mapStreams.js';
+import { streams as mockStreams } from '../data/mockStreams.js';
 
 const discoverModes = [
   { labelKey: 'explore.modes.forYou', value: 'for-you' },
@@ -102,21 +104,39 @@ function discoverMediaFor(stream) {
   };
 }
 
-function weightedDiscoverStreams(mode) {
+function formatStreamForDiscover(stream) {
+  // Si c'est déjà au bon format (a viewerLabel), le retourner tel quel
+  if (stream.viewerLabel) return stream;
+
+  // Sinon, le formater à partir de viewers
+  return {
+    ...stream,
+    role: stream.job || stream.role,
+    place: stream.place || `${stream.city}, ${stream.country}`,
+    viewerLabel: stream.viewers ? String(stream.viewers) : '0',
+    category: stream.category || 'Travel',
+    environment: stream.family,
+  };
+}
+
+function weightedDiscoverStreams(mode, streams) {
+  const formattedStreams = streams.map(formatStreamForDiscover);
+
   if (mode === 'random') {
-    return [...streams]
+    return [...formattedStreams]
       .map((stream, index) => ({ stream, score: ((index * 37) % 11) + viewerCount(stream.viewerLabel) / 1000 }))
       .sort((a, b) => b.score - a.score)
       .map((item) => item.stream);
   }
 
-  return [...streams].sort((a, b) => viewerCount(b.viewerLabel) - viewerCount(a.viewerLabel));
+  return [...formattedStreams].sort((a, b) => viewerCount(b.viewerLabel) - viewerCount(a.viewerLabel));
 }
 
 export default function DiscoverFeedPage() {
   const { t, i18n } = useTranslation();
   const [searchParams] = useSearchParams();
   const requestedLiveId = searchParams.get('live');
+  const [createdLives, setCreatedLives] = useState([]);
   const [mode, setMode] = useState('for-you');
   const [index, setIndex] = useState(0);
   const [liked, setLiked] = useState({});
@@ -144,16 +164,64 @@ export default function DiscoverFeedPage() {
   const [isDragging, setIsDragging] = useState(false);
   const [swipeDir, setSwipeDir] = useState(1);
 
-  const feed = useMemo(() => weightedDiscoverStreams(mode), [mode]);
-  const current = feed[index] ?? feed[0] ?? null;
-  const nextIndex = (index + 1) % (feed.length || 1);
-  const prevIndex = (index - 1 + (feed.length || 1)) % (feed.length || 1);
+  useEffect(() => {
+    getCreatedLives().then(setCreatedLives).catch(() => setCreatedLives([]));
+  }, []);
+
+  const allAvailableStreams = useMemo(() => {
+    // Si un live spécifique est demandé, utiliser les vraies données du globe
+    if (requestedLiveId) {
+      const globeStreams = [...createdLives, ...mapStreams];
+      const requested = globeStreams.find(s => s.id === requestedLiveId);
+      if (requested) {
+        // Retourner le live demandé + tous les autres
+        return [requested, ...globeStreams.filter(s => s.id !== requestedLiveId), ...mockStreams];
+      }
+    }
+    // Sinon utiliser tous les flux
+    return [...createdLives, ...mapStreams, ...mockStreams];
+  }, [createdLives, requestedLiveId]);
+
+  const feed = useMemo(() => {
+    const result = weightedDiscoverStreams(mode, allAvailableStreams);
+
+    // Ensure requested live is in feed
+    if (requestedLiveId && !result.find(s => s.id === requestedLiveId)) {
+      const requested = allAvailableStreams.find(s => s.id === requestedLiveId);
+      if (requested) {
+        console.log('⚠️ Requested live not in feed, adding it');
+        const formatted = formatStreamForDiscover(requested);
+        return [formatted, ...result];
+      }
+    }
+
+    return result;
+  }, [mode, allAvailableStreams, requestedLiveId]);
+
+  // Determine effective index: prioritize requested live, then use feed index
+  const effectiveIndex = useMemo(() => {
+    if (!requestedLiveId || !feed.length) return index;
+
+    const requestedIndex = feed.findIndex((stream) => stream.id === requestedLiveId);
+
+    if (requestedIndex < 0) {
+      console.warn('⚠️ Requested live not found:', requestedLiveId, 'Feed size:', feed.length);
+    }
+
+    return requestedIndex >= 0 ? requestedIndex : index;
+  }, [requestedLiveId, feed, index]);
+
+  const current = feed[effectiveIndex] ?? feed[0] ?? null;
+  const nextIndex = (effectiveIndex + 1) % (feed.length || 1);
+  const prevIndex = (effectiveIndex - 1 + (feed.length || 1)) % (feed.length || 1);
   const globeAdjacentStream = swipeDir > 0 ? feed[nextIndex] : feed[prevIndex];
 
   useEffect(() => {
     if (!requestedLiveId || !feed.length) return;
     const requestedIndex = feed.findIndex((stream) => stream.id === requestedLiveId);
-    if (requestedIndex >= 0) setIndex(requestedIndex);
+    if (requestedIndex >= 0) {
+      setIndex(requestedIndex);
+    }
   }, [feed, requestedLiveId]);
 
   const goTo = (direction) => {

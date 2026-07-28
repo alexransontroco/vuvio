@@ -2,8 +2,8 @@ export const EXPERIENCE_FAMILIES = {
   air: {
     id: 'air',
     label: 'Air',
-    color: '#2F6BFF',
-    glow: 'rgba(47, 107, 255, 0.26)',
+    color: '#3B5AFF',
+    glow: 'rgba(59, 90, 255, 0.26)',
     shape: 'diamond',
     altitudeOffset: 12,
     description: 'Drone, airplane, helicopter, paragliding',

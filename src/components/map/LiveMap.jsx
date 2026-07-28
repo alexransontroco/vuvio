@@ -242,6 +242,9 @@ export default function LiveMap({
       attributionControl: false,
       logoPosition: 'bottom-left',
       renderWorldCopies: false,
+      fadeDuration: 0,
+      crossSourceCollisions: false,
+      optimizeForTerrain: false,
     });
 
     mapRef.current = map;

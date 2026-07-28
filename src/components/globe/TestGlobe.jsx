@@ -14,8 +14,8 @@ const TERRAIN_SOURCE_ID = 'vuvio-test-terrain';
 const LIVE_COLOR = '#2BD9C8';
 const UPCOMING_COLOR = '#3B82E6';
 const MIXED_CLUSTER_COLOR = '#24C6F0';
-const ROTATE_DEGREES_PER_SECOND = 2.1;
-const SELECTED_LIVE_ZOOM = 2.0;
+const ROTATE_DEGREES_PER_SECOND = 3.5;
+const SELECTED_LIVE_ZOOM = 3.2;
 const REQUESTED_LIVE_ZOOM = 3.5;
 const SELECTED_RING_COLOR = '#2BD9C8';
 
@@ -217,26 +217,26 @@ function buildCollection(streams) {
 function brightenBaseGlobe(map, isActual = false) {
   try {
     map.setFog?.({
-      color: isActual ? 'rgba(8, 28, 52, 0.62)' : 'rgba(11, 31, 42, 0.58)',
-      'high-color': isActual ? 'rgba(40, 100, 158, 0.54)' : 'rgba(32, 86, 105, 0.44)',
-      'horizon-blend': 0.08,
-      'space-color': isActual ? '#030c16' : '#050b13',
-      'star-intensity': 0.18,
+      color: isActual ? 'rgba(12, 35, 58, 0.54)' : 'rgba(11, 31, 42, 0.58)',
+      'high-color': isActual ? 'rgba(85, 155, 200, 0.58)' : 'rgba(32, 86, 105, 0.44)',
+      'horizon-blend': 0.1,
+      'space-color': isActual ? '#030c18' : '#050b13',
+      'star-intensity': 0.2,
     });
 
     map.getStyle().layers?.forEach((layer) => {
       const id = layer.id.toLowerCase();
       const sourceLayer = String(layer['source-layer'] ?? '').toLowerCase();
       if (layer.type === 'background') {
-        map.setPaintProperty(layer.id, 'background-color', isActual ? '#060f1a' : '#07131e');
+        map.setPaintProperty(layer.id, 'background-color', isActual ? '#050d18' : '#07131e');
       }
       if (layer.type === 'fill' && (id.includes('water') || sourceLayer.includes('water'))) {
-        map.setPaintProperty(layer.id, 'fill-color', isActual ? '#083548' : '#0a2130');
-        map.setPaintProperty(layer.id, 'fill-opacity', 0.94);
+        map.setPaintProperty(layer.id, 'fill-color', isActual ? '#0a2844' : '#0a2130');
+        map.setPaintProperty(layer.id, 'fill-opacity', isActual ? 0.92 : 0.94);
       }
       if (layer.type === 'line' && (id.includes('boundary') || id.includes('admin') || sourceLayer.includes('boundary'))) {
-        map.setPaintProperty(layer.id, 'line-color', isActual ? 'rgba(81, 167, 218, 0.42)' : 'rgba(126, 190, 205, 0.34)');
-        map.setPaintProperty(layer.id, 'line-opacity', isActual ? 0.52 : 0.42);
+        map.setPaintProperty(layer.id, 'line-color', isActual ? 'rgba(100, 180, 225, 0.52)' : 'rgba(126, 190, 205, 0.34)');
+        map.setPaintProperty(layer.id, 'line-opacity', isActual ? 0.56 : 0.42);
       }
     });
   } catch {
@@ -800,7 +800,7 @@ export default function TestGlobe({ streams, mode = 'test' }) {
   const showGlobeSwitcher = true;
 
   return (
-    <section className={`screen test-globe-screen test-globe-screen--maplibre${isActualMode ? ' test-globe-screen--actual' : ''}`} aria-label={isActualMode ? 'Current Vuvio globe' : 'Test Vuvio globe'}>
+    <section className={`screen test-globe-screen test-globe-screen--maplibre${isActualMode ? ' test-globe-screen--actual' : ''}`} data-sheet-state={sheetState} aria-label={isActualMode ? 'Current Vuvio globe' : 'Test Vuvio globe'}>
       <div className="test-old-globe">
         <div ref={containerRef} className="test-old-globe__canvas" />
         <div className="test-old-globe__vignette" />
@@ -871,6 +871,7 @@ export default function TestGlobe({ streams, mode = 'test' }) {
             <img src={selectedLive.image} alt="" loading="lazy" />
             <div className="test-globe-card__body">
               <div className="test-globe-card__info">
+                <span style={{ fontSize: '8px', color: '#666' }}>ID: {selectedId}</span>
                 <span className="test-globe-card__tag" style={{ '--experience-color': selectedLive.familyColor }}>
                   <i />
                   {selectedLive.subcategory}

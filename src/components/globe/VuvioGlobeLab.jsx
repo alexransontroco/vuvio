@@ -235,8 +235,8 @@ export default function VuvioGlobeLab({ streams }) {
           globeImageUrl="/globe/earth-night.jpg"
           bumpImageUrl="/globe/earth-bump.jpg"
           showAtmosphere
-          atmosphereColor="#5db8ff"
-          atmosphereAltitude={0.22}
+          atmosphereColor="#4ba3d8"
+          atmosphereAltitude={0.25}
           pointsData={livePoints}
           pointLat="lat"
           pointLng="lng"

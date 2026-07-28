@@ -242,12 +242,24 @@ function isVisibleUpcoming(item, now) {
 function toHomeLive(stream) {
   const mapStream = mapStreamById.get(stream.id);
   const [city = '', country = ''] = String(stream.place ?? '').split(',').map((part) => part.trim());
+  const isLocalDev = typeof window !== 'undefined' && (
+    window.location.hostname === 'localhost' ||
+    window.location.hostname === '127.0.0.1' ||
+    window.location.hostname.startsWith('192.168.') ||
+    window.location.hostname.startsWith('10.') ||
+    window.location.hostname.startsWith('172.')
+  );
+  const hasVideo = Boolean(stream.video);
+  const isVideoKind = isLocalDev && hasVideo;
 
   return {
     ...stream,
     title: mapStream?.experienceTitle ?? stream.note ?? stream.role ?? stream.job ?? stream.name,
     role: stream.role ?? mapStream?.job ?? stream.job,
     image: stream.image ?? mapStream?.image,
+    video: stream.video,
+    kind: isVideoKind ? 'video' : stream.kind,
+    hasVideoAudio: isVideoKind || stream.hasVideoAudio,
     viewerLabel: stream.viewerLabel ?? mapStream?.viewers ?? stream.viewers ?? '0',
     city: mapStream?.city ?? stream.city ?? city,
     country: mapStream?.country ?? stream.country ?? country,
@@ -1298,6 +1310,7 @@ function LiveViewer({ liveId, creatorMode = false }) {
   const [broadcastEnded, setBroadcastEnded] = useState(false);
   const localVideoRef = useRef(null);
   const remoteVideoRef = useRef(null);
+  const videoPlaybackRef = useRef(null);
   const webrtcCallRef = useRef(null);
   const watcherIdRef = useRef(null);
 
@@ -1327,6 +1340,7 @@ function LiveViewer({ liveId, creatorMode = false }) {
   const [immersive, setImmersive] = useState(false);
   const [chatDraft, setChatDraft] = useState('');
   const [localChat, setLocalChat] = useState({});
+  const [videoMuted, setVideoMuted] = useState(false);
   const feedRef = useRef(null);
   const chatInputRef = useRef(null);
   const chatScrollRef = useRef({ x: 0, y: 0 });
@@ -1377,9 +1391,9 @@ function LiveViewer({ liveId, creatorMode = false }) {
     };
   }, [creatorMode, liveId, user]);
 
-  // Watch for broadcaster ending their live
+  // Watch for broadcaster ending their live (only for real broadcasts)
   useEffect(() => {
-    if (creatorMode || !liveId) return;
+    if (creatorMode || !liveId || !live.creatorUid) return;
 
     let isMounted = true;
 
@@ -1402,7 +1416,7 @@ function LiveViewer({ liveId, creatorMode = false }) {
         console.error('[LiveViewer] Broadcast listener error:', err.message);
       }
     }, (err) => {
-      if (isMounted) {
+      if (isMounted && err.code !== 'permission-denied') {
         console.error('[LiveViewer] Firestore subscription error:', err.message);
       }
     });
@@ -1411,7 +1425,7 @@ function LiveViewer({ liveId, creatorMode = false }) {
       isMounted = false;
       unsubscribe();
     };
-  }, [creatorMode, liveId]);
+  }, [creatorMode, liveId, live.creatorUid]);
 
   // WebRTC streaming for watchers (only for real active broadcasts)
   useEffect(() => {
@@ -1496,6 +1510,11 @@ function LiveViewer({ liveId, creatorMode = false }) {
   };
 
   const toggleSound = () => {
+    if (live.hasVideoAudio) {
+      setVideoMuted((prev) => !prev);
+      return;
+    }
+
     if (soundEnabled) {
       setSoundEnabled(false);
       soundRequestRef.current += 1;
@@ -1664,6 +1683,21 @@ function LiveViewer({ liveId, creatorMode = false }) {
     };
   }, []);
 
+  useEffect(() => {
+    const onKeyDown = (event) => {
+      if (event.key === 'ArrowDown') {
+        event.preventDefault();
+        goTo(1);
+      } else if (event.key === 'ArrowUp') {
+        event.preventDefault();
+        goTo(-1);
+      }
+    };
+
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, []);
+
   const openChatComposer = () => {
     chatScrollRef.current = {
       x: window.scrollX || document.documentElement.scrollLeft || 0,
@@ -1762,10 +1796,11 @@ function LiveViewer({ liveId, creatorMode = false }) {
                 <CameraLiveMedia live={item} isActive={isActive} isDragging={isDragging} dragY={dragY} />
               ) : item.kind === 'video' ? (
                 <video
+                  ref={isActive ? videoPlaybackRef : null}
                   className="live-slide__media live-slide__media--video"
                   src={isActive ? item.video : undefined}
                   poster={item.image}
-                  muted
+                  muted={item.hasVideoAudio && videoMuted}
                   loop
                   playsInline
                   autoPlay={isActive}
@@ -1783,7 +1818,7 @@ function LiveViewer({ liveId, creatorMode = false }) {
                       playsInline
                       style={isDragging ? { transform: `scale(1.03) translateY(${dragY * 0.1}px)` } : undefined}
                     />
-                  ) : !creatorMode && isActive && !broadcastEnded ? (
+                  ) : !creatorMode && isActive && !broadcastEnded && (item.creatorUid || item.createdLocally) ? (
                     <video
                       ref={remoteVideoRef}
                       className="live-slide__media live-slide__media--pov"
@@ -1898,12 +1933,12 @@ function LiveViewer({ liveId, creatorMode = false }) {
           </button>
           <button
             type="button"
-            className={soundEnabled ? 'is-active live-sound-button' : 'live-sound-button'}
+            className={live.hasVideoAudio ? (videoMuted ? 'live-sound-button' : 'is-active live-sound-button') : (soundEnabled ? 'is-active live-sound-button' : 'live-sound-button')}
             onClick={toggleSound}
-            aria-label={soundEnabled ? 'Mute POV sound' : 'Enable POV sound'}
+            aria-label={live.hasVideoAudio ? (videoMuted ? 'Unmute video' : 'Mute video') : (soundEnabled ? 'Mute POV sound' : 'Enable POV sound')}
           >
-            {soundEnabled ? <Volume2 size={22} strokeWidth={1.8} /> : <VolumeX size={22} strokeWidth={1.8} />}
-            {soundEnabled ? <span>{t('live.soundOn')}</span> : null}
+            {live.hasVideoAudio ? (videoMuted ? <VolumeX size={22} strokeWidth={1.8} /> : <Volume2 size={22} strokeWidth={1.8} />) : (soundEnabled ? <Volume2 size={22} strokeWidth={1.8} /> : <VolumeX size={22} strokeWidth={1.8} />)}
+            {!live.hasVideoAudio && soundEnabled ? <span>{t('live.soundOn')}</span> : null}
           </button>
         </div>
       </div>
@@ -2011,7 +2046,8 @@ export function HomeDiscoverFeed() {
 
 export default function HomePageRoute() {
   const [searchParams] = useSearchParams();
-  const liveId = searchParams.get('live') ?? lives[0]?.id ?? '';
+  const homeLives = useMemo(() => streams.map(toHomeLive).filter((stream) => stream.status === 'live'), []);
+  const liveId = searchParams.get('live') ?? homeLives[0]?.id ?? '';
   const creatorMode = searchParams.get('broadcast') === '1';
   return <LiveViewer liveId={liveId} creatorMode={creatorMode} />;
 }

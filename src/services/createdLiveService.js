@@ -1,4 +1,4 @@
-import { collection, setDoc, deleteDoc, doc, getDocs, query, where, serverTimestamp } from 'firebase/firestore';
+import { collection, setDoc, deleteDoc, doc, getDocs, query, where, serverTimestamp, updateDoc } from 'firebase/firestore';
 import { db } from '../firebase.js';
 
 const STORAGE_KEY = 'vuvio:createdLives';
@@ -42,6 +42,20 @@ function cleanUndefinedFields(obj) {
 async function saveLiveToFirestore(live) {
   try {
     console.log('[createdLiveService] saveLiveToFirestore called for:', live.id, 'creatorUid:', live.creatorUid);
+
+    // Mark all previous lives for this creator as ended
+    if (live.creatorUid) {
+      try {
+        const prevQ = query(collection(db, 'activeLives'), where('creatorUid', '==', live.creatorUid), where('status', '==', 'live'));
+        const prevSnap = await getDocs(prevQ);
+        for (const doc of prevSnap.docs) {
+          await updateDoc(doc.ref, { status: 'ended' });
+        }
+      } catch (err) {
+        console.warn('[createdLiveService] Failed to mark previous lives as ended:', err.message);
+      }
+    }
+
     const liveRef = doc(collection(db, 'activeLives'), live.id);
     const data = cleanUndefinedFields({
       ...live,
@@ -75,7 +89,9 @@ async function getFirestoreLives() {
     const snapshot = await getDocs(q);
     return snapshot.docs.map(docSnap => docSnap.data());
   } catch (err) {
-    console.error('[Firestore] Failed to fetch lives:', err.message);
+    if (err.code !== 'permission-denied') {
+      console.error('[Firestore] Failed to fetch lives:', err.message);
+    }
     return [];
   }
 }

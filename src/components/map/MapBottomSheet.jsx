@@ -62,7 +62,7 @@ export default function MapBottomSheet({
       : filteredActivities.slice(0, INITIAL_ACTIVITY_COUNT);
 
   const summaryText = () => {
-    if (activeFilterCount === 0) return `All live · ${streamCounts.total}`;
+    if (activeFilterCount === 0) return 'Filters';
     const parts = [];
     if (activeFamily !== 'all') {
       const fam = EXPERIENCE_FILTERS.find((f) => f.id === activeFamily);
@@ -72,7 +72,7 @@ export default function MapBottomSheet({
       const a = ACTIVITY_CATEGORIES.find((cat) => cat.id === id);
       if (a) parts.push(a.label);
     });
-    return `${parts.join(' + ')} · ${streamCounts.total}`;
+    return parts.join(' + ');
   };
 
   const handlePointerDown = useCallback(
@@ -180,9 +180,28 @@ export default function MapBottomSheet({
         </div>
       </div>
 
+      {sheetState === 'closed' && (
+        <div className="map-sheet-collapsed">
+          <div className="map-sheet-quick-filters" role="group" aria-label="Quick filters">
+            {EXPERIENCE_FILTERS.filter((item) => item.id !== 'all').map((item) => (
+              <button
+                key={item.id}
+                type="button"
+                className={`map-sheet-quick-chip${activeFamily === item.id ? ' is-active' : ''}`}
+                style={{ '--exp-color': item.color }}
+                onClick={() => onFamilyChange(item.id)}
+                aria-pressed={activeFamily === item.id}
+              >
+                <i />
+                {item.label} <small>{streamCounts.byFamily?.[item.id] ?? 0}</small>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
       <div className="map-sheet-content" aria-hidden={sheetState === 'closed'}>
         <div className="map-sheet-header">
-          <h2>Filters</h2>
           <div className="map-sheet-header__right">
             {activeFilterCount > 0 && (
               <button type="button" className="map-sheet-clear-all" onClick={clearAll}>

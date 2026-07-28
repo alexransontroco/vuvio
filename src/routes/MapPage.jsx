@@ -3,6 +3,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import MapBottomSheet from '../components/map/MapBottomSheet.jsx';
 import LiveMap from '../components/map/LiveMap.jsx';
+import SelectedLiveCard from '../components/map/SelectedLiveCard.jsx';
 import { ACTIVITY_CATEGORIES } from '../data/activityCategories.js';
 import { enrichExperience, getFamily, getPovType } from '../data/experienceTaxonomy.js';
 import { mapStreams } from '../data/mapStreams.js';
@@ -123,7 +124,7 @@ export default function MapPage() {
       });
   }, [activeActivities, activeFamily, activeStatuses, activeSubcategory, experiences]);
 
-  const selected = visibleStreams.find((stream) => stream.id === selectedId) ?? null;
+  const selected = experiences.find((stream) => stream.id === selectedId) ?? null;
   const selectedFamily = selected ? getFamily(selected.family) : null;
   const selectedPov = selected ? getPovType(selected.povType) : null;
   const storyStreams = selected?.storyGroup
@@ -202,7 +203,7 @@ export default function MapPage() {
   };
 
   return (
-    <section className="screen map-screen" aria-label="VuVio live map">
+    <section className="screen map-screen" data-sheet-state={sheetState} aria-label="VuVio live map">
       {userLive && !userLiveEnded ? (
         <YouAreLivePanel live={userLive} onEnd={() => setUserLiveEnded(true)} />
       ) : null}
@@ -258,123 +259,21 @@ export default function MapPage() {
       )}
 
       {selected ? (
-        <aside className={sheetMode === 'full' ? 'map-bottom-panel map-bottom-panel--full' : 'map-bottom-panel'} aria-label={selected.status === 'upcoming' ? selected.title : `Live from ${selected.name}`}>
-          <button
-            type="button"
-            className="map-bottom-panel__close"
-            onClick={() => {
-              if (sheetMode === 'full') {
-                setSheetMode('compact');
-              } else {
-                setSelectedId(null);
-                setResetSignal((value) => value + 1);
-              }
-            }}
-            aria-label="Close selected live"
-          >
-            {sheetMode === 'full' ? <ChevronDown size={17} strokeWidth={2} /> : <X size={16} strokeWidth={2} />}
-          </button>
-          <div className="map-bottom-panel__image">
-            <img src={selected.image} alt={`${selected.job} POV`} />
-          </div>
-          <div className="map-bottom-panel__content">
-            <div>
-              <div className="map-bottom-panel__badges">
-                <span style={{ '--experience-color': selectedFamily.color }}>
-                  <i className={`is-${selectedFamily.shape}`} />
-                  {selected.subcategory}
-                </span>
-                <span>
-                  {selectedPov.icon} {selectedPov.label}
-                </span>
-              </div>
-              <h2>{selected.status === 'upcoming' ? selected.title : selected.experienceTitle}</h2>
-              <p>
-                {selected.status === 'upcoming'
-                  ? selected.who
-                  : `${selected.job} - ${selected.city}, ${selected.country}`}
-              </p>
-              <p className="map-bottom-panel__distance">
-                {selected.city}, {selected.country} · 2.1 km away
-              </p>
-              {selected.status === 'upcoming' ? (
-                <time className="map-bottom-panel__time">
-                  <small>{selected.day}</small>
-                  {selected.time}
-                </time>
-              ) : (
-                <span>{selected.viewers} viewers</span>
-              )}
-              {storyStreams.length > 1 ? (
-                <div className="map-story-line" aria-label="Other viewpoints in the same place">
-                  {storyStreams.map((stream) => (
-                    <button
-                      key={stream.id}
-                      type="button"
-                      className={stream.id === selected.id ? 'is-active' : ''}
-                      onClick={() => setSelectedId(stream.id)}
-                    >
-                      <small>{stream.storyStep}</small>
-                      {stream.subcategory}
-                      <ChevronRight size={13} strokeWidth={1.8} />
-                    </button>
-                  ))}
-                </div>
-              ) : null}
-              {sheetMode === 'full' ? (
-                <div className="map-live-detail">
-                  <div>
-                    <Radio size={16} strokeWidth={1.8} />
-                    <span>
-                      <strong>{selected.createdLocally ? 'Live created locally' : 'Live now'}</strong>
-                      <small>{selected.description ?? 'Live POV experience on Vuvio.'}</small>
-                    </span>
-                  </div>
-                  <div>
-                    <UsersRound size={16} strokeWidth={1.8} />
-                    <span>
-                      <strong>{selected.viewers} viewers</strong>
-                      <small>{selectedPov.label} · {selectedFamily.label}</small>
-                    </span>
-                  </div>
-                  {storyStreams.length > 1 ? (
-                    <section className="map-live-detail__story">
-                      <h3>Other viewpoints here</h3>
-                      {storyStreams.map((stream) => (
-                        <button key={stream.id} type="button" onClick={() => setSelectedId(stream.id)}>
-                          <small>{stream.storyStep}</small>
-                          <span>{stream.experienceTitle}</span>
-                        </button>
-                      ))}
-                    </section>
-                  ) : null}
-                </div>
-              ) : null}
-            </div>
-            {selected.status === 'upcoming' ? (
-              <button
-                type="button"
-                className={notifications[selected.id] ? 'map-notify-button is-active' : 'map-notify-button'}
-                onClick={() => setNotifications((state) => ({ ...state, [selected.id]: !state[selected.id] }))}
-                aria-label={notifications[selected.id] ? 'Notification active' : 'Enable notification'}
-              >
-                <Bell size={17} strokeWidth={1.9} />
-                {notifications[selected.id] ? 'Notified' : 'Notify me'}
-              </button>
-            ) : (
-              <div className="map-bottom-panel__actions">
-                {sheetMode === 'compact' ? (
-                  <button type="button" className="map-secondary-action" onClick={() => setSheetMode('full')}>
-                    Fiche
-                  </button>
-                ) : null}
-                <button type="button" onClick={() => navigate(`/discover?live=${encodeURIComponent(selected.id)}`)}>
-                  Watch
-                </button>
-              </div>
-            )}
-          </div>
-        </aside>
+        <SelectedLiveCard
+          selected={selected}
+          selectedFamily={selectedFamily}
+          selectedPov={selectedPov}
+          storyStreams={storyStreams}
+          sheetMode={sheetMode}
+          setSheetMode={setSheetMode}
+          onClose={() => {
+            setSelectedId(null);
+            setResetSignal((value) => value + 1);
+          }}
+          onWatch={(id) => navigate(`/discover?live=${encodeURIComponent(id)}`)}
+          notifications={notifications}
+          onToggleNotification={(id) => setNotifications((state) => ({ ...state, [id]: !state[id] }))}
+        />
       ) : null}
 
       {loading ? (

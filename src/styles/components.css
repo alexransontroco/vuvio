@@ -81,6 +81,7 @@
   height: 62px;
   display: grid;
   place-items: center;
+  align-items: start;
   border: 1px solid rgba(53, 227, 220, 0.42);
   border-radius: 50%;
   background:
@@ -106,11 +107,11 @@
 /* + badge on center button - sits below the W of the logo */
 .bottom-nav__create-badge {
   position: absolute;
-  top: 35px;
+  top: 33px;
   left: 50%;
   transform: translateX(-50%);
-  width: 22px;
-  height: 22px;
+  width: 18px;
+  height: 18px;
   display: grid;
   place-items: center;
   border: 1.5px solid rgba(5, 18, 28, 0.94);

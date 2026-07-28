@@ -569,6 +569,32 @@ export const streams = [
       { who: 'Priya', text: 'What food is that stall selling?' },
     ],
   },
+  {
+    id: 'chef-michelin-paris',
+    name: 'Antoine Rousseau',
+    role: 'Chef Michelin',
+    place: 'Paris, France',
+    city: 'Paris',
+    country: 'France',
+    category: 'Cuisine',
+    subcategory: 'Cooking',
+    family: 'earth',
+    environment: 'earth',
+    povType: 'pov',
+    video: '/assets/videos/chef-paris.mp4',
+    image: '/assets/pov/07_baker.jpg',
+    viewers: 2847,
+    viewerLabel: '2,847',
+    duration: '22 min',
+    note: 'Preparing coq au vin in my Paris kitchen',
+    hasVideoAudio: true,
+    map: { top: '35%', left: '50%' },
+    chat: [
+      { who: 'Marie', text: 'Belle technique!' },
+      { who: 'Jean', text: 'Quelle est cette sauce?' },
+      { who: 'Sophie', text: 'Magnifique!' },
+    ],
+  },
 ];
 
 function resolveUpcomingStart(day, time) {
