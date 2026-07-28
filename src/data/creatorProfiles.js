@@ -6,7 +6,7 @@ const bakeryLives = {
     title: 'Preparing croissants',
     thumbnailUrl: '/assets/bread.jpg',
     location: 'Paris, France',
-    status: 'live',
+    status: 'ended',
     viewers: 1800,
   },
   upcomingLives: [

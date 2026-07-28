@@ -249,9 +249,10 @@ function ProfileStats({ profile, isOwnProfile, onViewFollowing }) {
 }
 
 function FeaturedLiveCard({ profile, isOwnProfile, notified, onJoin, onNotify, onManage }) {
-  const featured = profile.currentLive ?? (profile.upcomingLives?.[0]) ?? null;
+  const featured = profile.currentLive?.status !== 'ended' ? profile.currentLive : null;
+  const fallback = featured ? null : profile.upcomingLives?.[0];
 
-  if (!featured) {
+  if (!featured && !fallback) {
     if (!isOwnProfile) return null;
     return (
       <section className="featured-live featured-live--none" aria-label="No scheduled live">
@@ -263,22 +264,23 @@ function FeaturedLiveCard({ profile, isOwnProfile, notified, onJoin, onNotify, o
     );
   }
 
-  const isLive = featured.status === 'live';
+  const displayLive = featured ?? fallback;
+  const isLive = displayLive.status === 'live';
 
   return (
     <section className={isLive ? 'featured-live is-live' : 'featured-live'} aria-label={isLive ? 'Live now' : 'Upcoming live'}>
       <div className="featured-live__thumb">
-        <img src={featured.thumbnailUrl} alt="" />
+        <img src={displayLive.thumbnailUrl} alt="" />
         {isLive ? <span className="featured-live__live-dot" aria-hidden="true" /> : <Clock3 size={18} strokeWidth={1.8} />}
       </div>
       <div className="featured-live__content">
         <span className="featured-live__label">{isLive ? 'LIVE NOW' : 'UPCOMING LIVE'}</span>
-        <h2>{featured.title}</h2>
-        <p>{featured.location}</p>
-        {isLive ? <time>{formatCompact(featured.viewers)} viewers</time> : null}
-        {!isLive && featured.scheduledAt ? (
+        <h2>{displayLive.title}</h2>
+        <p>{displayLive.location}</p>
+        {isLive ? <time>{formatCompact(displayLive.viewers)} viewers</time> : null}
+        {!isLive && displayLive.scheduledAt ? (
           <time>
-            {featured.scheduledAt} · {featured.time}
+            {displayLive.scheduledAt} · {displayLive.time}
           </time>
         ) : null}
       </div>
@@ -417,7 +419,7 @@ function RecentLivesTab({ lives, isOwnProfile, openMenuId, onOpenLive, onMenu })
 }
 
 function LivesTab({ profile, isOwnProfile, notified, onJoin, onNotify, onManage }) {
-  if (!profile.currentLive) {
+  if (!profile.currentLive || profile.currentLive.status === 'ended') {
     return (
       <div className="profile-empty-state">
         <p>{profile.displayName} is not live right now.</p>
@@ -705,9 +707,16 @@ export default function ProfilePage() {
         try {
           const livesQ = query(collection(db, 'activeLives'), where('creatorUid', '==', uid));
           const livesSnap = await getDocs(livesQ);
-          const activeLive = livesSnap.docs.map(doc => doc.data()).find(live => live.status === 'live');
-          if (activeLive) {
-            viewedProfile.currentLive = activeLive;
+          const activeLives = livesSnap.docs
+            .map(doc => doc.data())
+            .filter(live => live.status === 'live')
+            .sort((a, b) => {
+              const aTime = new Date(a.createdAt || 0).getTime();
+              const bTime = new Date(b.createdAt || 0).getTime();
+              return bTime - aTime;
+            });
+          if (activeLives.length > 0) {
+            viewedProfile.currentLive = activeLives[0];
           }
         } catch (err) {
           console.warn('[ProfilePage] Failed to load live:', err.message);
