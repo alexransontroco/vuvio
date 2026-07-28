@@ -1,4 +1,14 @@
 .test-globe-screen {
+  position: relative;
+  height: 100dvh;
+  background: #060d16;
+  overflow: hidden;
+}
+
+.test-globe-shell {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
   background: #060d16;
 }
 
@@ -86,6 +96,7 @@
 
 .test-globe-switch {
   top: 10px;
+  z-index: 20;
 }
 
 .test-globe-switch button {
@@ -93,7 +104,11 @@
 }
 
 .test-globe-filter {
+  position: absolute;
   bottom: calc(var(--nav-height) + var(--safe-bottom) + 12px);
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 20;
 }
 
 .test-globe-card {
@@ -101,7 +116,7 @@
   left: 12px;
   right: 12px;
   bottom: calc(var(--nav-height) + var(--safe-bottom) + 66px);
-  z-index: 18;
+  z-index: 25;
   display: grid;
   grid-template-columns: 86px minmax(0, 1fr);
   gap: 10px;

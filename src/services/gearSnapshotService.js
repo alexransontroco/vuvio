@@ -79,6 +79,10 @@ export function clearLiveGearSnapshots(liveId) {
   }
 }
 
+export async function suggestGearImage({ category, brand, model, name }) {
+  return getGearImageSuggestions({ category, brand, model, displayName: name });
+}
+
 export async function getGearImageSuggestions({ category, brand, model, displayName }) {
   try {
     const query = displayName || `${brand} ${model}`.trim();

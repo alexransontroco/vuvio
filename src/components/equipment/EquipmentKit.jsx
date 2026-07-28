@@ -17,7 +17,7 @@ import {
 } from 'lucide-react';
 import { useState } from 'react';
 import { GearThumbnail, GearItemRow } from '../gear/index.js';
-import { EQUIPMENT_CATEGORIES, EQUIPMENT_OWNERSHIP, SUBCATEGORY_EQUIPMENT_TYPES } from '../../data/equipmentModel.js';
+import { EQUIPMENT_CATEGORIES, EQUIPMENT_OWNERSHIP, SUBCATEGORY_EQUIPMENT_TYPES, getCategoryIcon } from '../../data/equipmentModel.js';
 import { equipmentLabel, groupEquipmentByCategory } from '../../services/equipmentService.js';
 
 export const categoryIcons = {
@@ -66,15 +66,9 @@ export function EquipmentItemRow({ item, selectable = false, selected = false, o
     <>
       <span className="equipment-item-row__icon">
         {item.imageUrl ? (
-          <GearThumbnail
-            imageUrl={item.imageUrl}
-            category={item.category}
-            displayName={equipmentLabel(item)}
-            size="sm"
-            rounded
-          />
+          <img src={item.imageUrl} alt="" className="equipment-item-row__img" aria-hidden="true" />
         ) : (
-          <EquipmentIcon category={item.category} />
+          <span className="equipment-item-row__icon-emoji" aria-hidden="true">{getCategoryIcon(item.category)}</span>
         )}
       </span>
       <span className="equipment-item-row__copy">

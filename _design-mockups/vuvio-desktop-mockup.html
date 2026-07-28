@@ -1,0 +1,1240 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vuvio Desktop Mockup</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    :root {
+      --dark-bg: #0D1117;
+      --dark-surface: #161B22;
+      --dark-border: #30363D;
+      --text-primary: #E6EDF3;
+      --text-secondary: #8B949E;
+      --live-color: #2BD9C8;
+      --upcoming-color: #3B82E6;
+      --accent-orange: #FB8500;
+      --hover-elevation: 0 8px 24px rgba(0, 0, 0, 0.6);
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+      background: var(--dark-bg);
+      color: var(--text-primary);
+      overflow: hidden;
+    }
+
+    .app-container {
+      display: flex;
+      height: 100vh;
+    }
+
+    /* ═══════════════════════ SIDEBAR NAV ═══════════════════════ */
+    .sidebar {
+      width: 280px;
+      background: var(--dark-surface);
+      border-right: 1px solid var(--dark-border);
+      display: flex;
+      flex-direction: column;
+      padding: 24px 16px;
+      overflow-y: auto;
+    }
+
+    .logo {
+      font-size: 20px;
+      font-weight: 700;
+      margin-bottom: 32px;
+      letter-spacing: -1px;
+    }
+
+    .logo span {
+      color: var(--live-color);
+    }
+
+    .nav-section {
+      margin-bottom: 32px;
+    }
+
+    .nav-section-title {
+      font-size: 11px;
+      text-transform: uppercase;
+      color: var(--text-secondary);
+      font-weight: 600;
+      letter-spacing: 1px;
+      margin-bottom: 12px;
+      padding: 0 12px;
+    }
+
+    .nav-item {
+      padding: 12px 16px;
+      margin-bottom: 8px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 14px;
+      color: var(--text-secondary);
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .nav-item:hover {
+      background: rgba(255, 255, 255, 0.08);
+      color: var(--text-primary);
+    }
+
+    .nav-item.active {
+      background: var(--live-color);
+      color: var(--dark-bg);
+      font-weight: 600;
+    }
+
+    .nav-icon {
+      width: 20px;
+      height: 20px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+    }
+
+    .nav-spacer {
+      flex: 1;
+    }
+
+    .cta-button {
+      padding: 14px 16px;
+      border-radius: 8px;
+      background: linear-gradient(135deg, var(--live-color), var(--accent-orange));
+      border: none;
+      color: var(--dark-bg);
+      font-weight: 600;
+      cursor: pointer;
+      width: 100%;
+      transition: all 0.3s ease;
+      font-size: 14px;
+    }
+
+    .cta-button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 16px rgba(43, 217, 200, 0.3);
+    }
+
+    /* ═══════════════════════ MAIN CONTENT ═══════════════════════ */
+    .main-content {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .top-bar {
+      height: 64px;
+      border-bottom: 1px solid var(--dark-border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 32px;
+      background: rgba(13, 17, 23, 0.8);
+      backdrop-filter: blur(8px);
+    }
+
+    .page-title {
+      font-size: 24px;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+    }
+
+    .top-controls {
+      display: flex;
+      gap: 16px;
+      align-items: center;
+    }
+
+    .search-box {
+      padding: 10px 16px;
+      background: var(--dark-surface);
+      border: 1px solid var(--dark-border);
+      border-radius: 8px;
+      color: var(--text-primary);
+      width: 280px;
+      font-size: 14px;
+      transition: all 0.2s ease;
+    }
+
+    .search-box:focus {
+      outline: none;
+      border-color: var(--live-color);
+      box-shadow: 0 0 0 3px rgba(43, 217, 200, 0.1);
+    }
+
+    .filter-button {
+      padding: 10px 16px;
+      background: var(--dark-surface);
+      border: 1px solid var(--dark-border);
+      border-radius: 8px;
+      color: var(--text-primary);
+      cursor: pointer;
+      font-size: 14px;
+      transition: all 0.2s ease;
+    }
+
+    .filter-button:hover {
+      background: rgba(255, 255, 255, 0.08);
+      border-color: var(--live-color);
+    }
+
+    .user-avatar {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--live-color), var(--upcoming-color));
+      cursor: pointer;
+    }
+
+    /* ═══════════════════════ CONTENT AREA ═══════════════════════ */
+    .content-scroll {
+      flex: 1;
+      overflow-y: auto;
+      padding: 32px;
+    }
+
+    .content-scroll::-webkit-scrollbar {
+      width: 8px;
+    }
+
+    .content-scroll::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    .content-scroll::-webkit-scrollbar-thumb {
+      background: var(--dark-border);
+      border-radius: 4px;
+    }
+
+    .content-scroll::-webkit-scrollbar-thumb:hover {
+      background: var(--text-secondary);
+    }
+
+    /* ─── LIVE FEED GRID ─── */
+    .streams-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+      gap: 24px;
+      margin-top: 24px;
+    }
+
+    .stream-card {
+      background: var(--dark-surface);
+      border-radius: 12px;
+      overflow: hidden;
+      cursor: pointer;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      border: 1px solid var(--dark-border);
+      display: flex;
+      flex-direction: column;
+    }
+
+    .stream-card:hover {
+      transform: translateY(-8px);
+      box-shadow: var(--hover-elevation);
+      border-color: var(--live-color);
+    }
+
+    .stream-thumbnail {
+      width: 100%;
+      aspect-ratio: 16 / 9;
+      background: linear-gradient(135deg, #1f6feb, #1f3a5f);
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 48px;
+    }
+
+    .stream-badge {
+      position: absolute;
+      top: 12px;
+      left: 12px;
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .stream-badge.live {
+      background: var(--live-color);
+      color: var(--dark-bg);
+    }
+
+    .stream-badge.upcoming {
+      background: var(--upcoming-color);
+      color: white;
+    }
+
+    .stream-badge::before {
+      width: 6px;
+      height: 6px;
+      background: currentColor;
+      border-radius: 50%;
+      display: inline-block;
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+
+    .stream-info {
+      padding: 16px;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .stream-meta {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+
+    .stream-avatar {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--live-color), var(--accent-orange));
+      flex-shrink: 0;
+    }
+
+    .stream-details {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .stream-title {
+      font-size: 14px;
+      font-weight: 600;
+      margin-bottom: 4px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .stream-creator {
+      font-size: 13px;
+      color: var(--text-secondary);
+    }
+
+    .stream-category {
+      display: inline-block;
+      padding: 4px 8px;
+      background: rgba(43, 217, 200, 0.15);
+      border-radius: 4px;
+      font-size: 11px;
+      color: var(--live-color);
+      margin-bottom: 8px;
+      text-transform: uppercase;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+    }
+
+    .stream-stats {
+      display: flex;
+      gap: 16px;
+      font-size: 12px;
+      color: var(--text-secondary);
+    }
+
+    .stream-actions {
+      display: flex;
+      gap: 8px;
+      margin-top: 12px;
+      opacity: 0;
+      transition: opacity 0.2s ease;
+    }
+
+    .stream-card:hover .stream-actions {
+      opacity: 1;
+    }
+
+    .action-btn {
+      flex: 1;
+      padding: 8px 12px;
+      border-radius: 6px;
+      border: 1px solid var(--dark-border);
+      background: transparent;
+      color: var(--text-primary);
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: 600;
+      transition: all 0.2s ease;
+    }
+
+    .action-btn:hover {
+      background: var(--live-color);
+      color: var(--dark-bg);
+      border-color: var(--live-color);
+    }
+
+    /* ─── GLOBE PAGE ─── */
+    .globe-layout {
+      display: grid;
+      grid-template-columns: 1fr 360px;
+      gap: 0;
+      height: calc(100vh - 96px);
+    }
+
+    .globe-container {
+      background: linear-gradient(135deg, #0a1628, #0d1b2e);
+      position: relative;
+      border-radius: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 96px;
+      color: rgba(255, 255, 255, 0.1);
+    }
+
+    .globe-controls {
+      position: absolute;
+      bottom: 32px;
+      left: 32px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .globe-button {
+      width: 48px;
+      height: 48px;
+      border-radius: 8px;
+      background: rgba(13, 17, 23, 0.8);
+      border: 1px solid var(--dark-border);
+      color: var(--text-primary);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      transition: all 0.2s ease;
+      backdrop-filter: blur(8px);
+    }
+
+    .globe-button:hover {
+      background: var(--live-color);
+      color: var(--dark-bg);
+      border-color: var(--live-color);
+      transform: scale(1.05);
+    }
+
+    .globe-sidebar {
+      background: var(--dark-surface);
+      border-left: 1px solid var(--dark-border);
+      padding: 20px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .globe-sidebar-title {
+      font-size: 12px;
+      text-transform: uppercase;
+      color: var(--text-secondary);
+      font-weight: 600;
+      letter-spacing: 1px;
+      margin-bottom: 16px;
+    }
+
+    .globe-filter {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-bottom: 20px;
+    }
+
+    .filter-tag {
+      padding: 8px 12px;
+      border-radius: 6px;
+      border: 1px solid var(--dark-border);
+      background: transparent;
+      color: var(--text-secondary);
+      cursor: pointer;
+      font-size: 12px;
+      transition: all 0.2s ease;
+    }
+
+    .filter-tag:hover {
+      border-color: var(--live-color);
+      color: var(--live-color);
+    }
+
+    .filter-tag.active {
+      background: var(--live-color);
+      color: var(--dark-bg);
+      border-color: var(--live-color);
+    }
+
+    /* ─── PROFILE PAGE ─── */
+    .profile-header {
+      background: linear-gradient(135deg, rgba(43, 217, 200, 0.1), rgba(59, 130, 246, 0.1));
+      padding: 40px 32px;
+      margin-bottom: 32px;
+      border-radius: 12px;
+      border: 1px solid var(--dark-border);
+      display: grid;
+      grid-template-columns: auto 1fr auto;
+      gap: 32px;
+      align-items: center;
+    }
+
+    .profile-avatar {
+      width: 120px;
+      height: 120px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--live-color), var(--upcoming-color));
+      flex-shrink: 0;
+    }
+
+    .profile-info h2 {
+      font-size: 28px;
+      margin-bottom: 8px;
+    }
+
+    .profile-info p {
+      color: var(--text-secondary);
+      margin-bottom: 4px;
+      font-size: 14px;
+    }
+
+    .profile-stats {
+      display: flex;
+      gap: 32px;
+      margin-top: 16px;
+    }
+
+    .stat {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .stat-value {
+      font-size: 18px;
+      font-weight: 700;
+    }
+
+    .stat-label {
+      font-size: 12px;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+    }
+
+    .profile-actions {
+      display: flex;
+      gap: 12px;
+    }
+
+    .action-button {
+      padding: 10px 20px;
+      border-radius: 8px;
+      border: 1px solid var(--dark-border);
+      background: var(--dark-surface);
+      color: var(--text-primary);
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 600;
+      transition: all 0.2s ease;
+    }
+
+    .action-button:hover {
+      background: var(--live-color);
+      color: var(--dark-bg);
+      border-color: var(--live-color);
+    }
+
+    .action-button.primary {
+      background: var(--live-color);
+      color: var(--dark-bg);
+      border-color: var(--live-color);
+    }
+
+    /* ─── EQUIPMENT SHOWCASE ─── */
+    .section-title {
+      font-size: 20px;
+      font-weight: 700;
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .section-title::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: linear-gradient(90deg, var(--dark-border), transparent);
+    }
+
+    .equipment-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 16px;
+      margin-bottom: 40px;
+    }
+
+    .equipment-item {
+      background: var(--dark-surface);
+      border: 1px solid var(--dark-border);
+      border-radius: 8px;
+      padding: 16px;
+      text-align: center;
+      transition: all 0.2s ease;
+      cursor: pointer;
+    }
+
+    .equipment-item:hover {
+      border-color: var(--live-color);
+      transform: translateY(-4px);
+      box-shadow: 0 4px 12px rgba(43, 217, 200, 0.15);
+    }
+
+    .equipment-icon {
+      font-size: 40px;
+      margin-bottom: 12px;
+    }
+
+    .equipment-name {
+      font-size: 13px;
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+
+    .equipment-type {
+      font-size: 11px;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    /* ─── START LIVE FLOW ─── */
+    .form-layout {
+      display: grid;
+      grid-template-columns: 1fr 360px;
+      gap: 32px;
+      height: calc(100vh - 96px);
+    }
+
+    .form-container {
+      display: flex;
+      flex-direction: column;
+      padding: 40px;
+    }
+
+    .form-section {
+      margin-bottom: 40px;
+    }
+
+    .form-section-title {
+      font-size: 18px;
+      font-weight: 700;
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .step-indicator {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: var(--dark-surface);
+      border: 1px solid var(--dark-border);
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-secondary);
+    }
+
+    .step-indicator.active {
+      background: var(--live-color);
+      color: var(--dark-bg);
+      border-color: var(--live-color);
+    }
+
+    .option-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+    }
+
+    .option-button {
+      padding: 16px;
+      border-radius: 8px;
+      border: 2px solid var(--dark-border);
+      background: transparent;
+      color: var(--text-primary);
+      cursor: pointer;
+      text-align: center;
+      transition: all 0.2s ease;
+      font-size: 13px;
+      font-weight: 600;
+    }
+
+    .option-button:hover {
+      border-color: var(--live-color);
+      background: rgba(43, 217, 200, 0.1);
+    }
+
+    .option-button.selected {
+      border-color: var(--live-color);
+      background: var(--live-color);
+      color: var(--dark-bg);
+    }
+
+    .form-input {
+      width: 100%;
+      padding: 12px 16px;
+      background: var(--dark-surface);
+      border: 1px solid var(--dark-border);
+      border-radius: 8px;
+      color: var(--text-primary);
+      font-size: 14px;
+      margin-bottom: 12px;
+      transition: all 0.2s ease;
+    }
+
+    .form-input:focus {
+      outline: none;
+      border-color: var(--live-color);
+      box-shadow: 0 0 0 3px rgba(43, 217, 200, 0.1);
+    }
+
+    .form-preview {
+      position: sticky;
+      top: 0;
+      background: var(--dark-surface);
+      border: 1px solid var(--dark-border);
+      border-radius: 12px;
+      padding: 24px;
+      height: fit-content;
+    }
+
+    .preview-title {
+      font-size: 12px;
+      text-transform: uppercase;
+      color: var(--text-secondary);
+      font-weight: 600;
+      margin-bottom: 16px;
+      letter-spacing: 1px;
+    }
+
+    .preview-content {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .preview-item {
+      padding: 12px;
+      background: var(--dark-bg);
+      border-radius: 6px;
+      font-size: 13px;
+    }
+
+    .preview-item-label {
+      color: var(--text-secondary);
+      margin-bottom: 4px;
+      font-size: 11px;
+      text-transform: uppercase;
+    }
+
+    .preview-item-value {
+      color: var(--text-primary);
+      font-weight: 600;
+    }
+
+    /* ─── PAGE VISIBILITY ─── */
+    .page {
+      display: none;
+    }
+
+    .page.active {
+      display: contents;
+    }
+
+    /* ─── RESPONSIVE ─── */
+    @media (max-width: 1600px) {
+      .streams-grid {
+        grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+      }
+    }
+
+    @media (max-width: 1200px) {
+      .sidebar {
+        width: 240px;
+      }
+
+      .streams-grid {
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      }
+
+      .globe-layout {
+        grid-template-columns: 1fr 320px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app-container">
+    <!-- SIDEBAR NAVIGATION -->
+    <aside class="sidebar">
+      <div class="logo">VUV<span>IO</span></div>
+
+      <nav class="nav-section">
+        <div class="nav-section-title">Discover</div>
+        <div class="nav-item active" data-page="live">
+          <span class="nav-icon">🔴</span>
+          <span>Live Feed</span>
+        </div>
+        <div class="nav-item" data-page="discover">
+          <span class="nav-icon">🔍</span>
+          <span>Explore</span>
+        </div>
+        <div class="nav-item" data-page="globe">
+          <span class="nav-icon">🌍</span>
+          <span>Globe</span>
+        </div>
+      </nav>
+
+      <nav class="nav-section">
+        <div class="nav-section-title">Account</div>
+        <div class="nav-item" data-page="profile">
+          <span class="nav-icon">👤</span>
+          <span>My Profile</span>
+        </div>
+        <div class="nav-item">
+          <span class="nav-icon">⚙️</span>
+          <span>Settings</span>
+        </div>
+      </nav>
+
+      <div class="nav-spacer"></div>
+
+      <button class="cta-button" data-page="start-live">+ Start Live</button>
+    </aside>
+
+    <!-- MAIN CONTENT -->
+    <div class="main-content">
+      <!-- TOP BAR -->
+      <div class="top-bar">
+        <div class="page-title" id="page-title">Live Feed</div>
+        <div class="top-controls" id="top-controls">
+          <input type="text" class="search-box" placeholder="Search streams...">
+          <button class="filter-button">Filter</button>
+          <div class="user-avatar"></div>
+        </div>
+      </div>
+
+      <!-- LIVE FEED PAGE -->
+      <div class="page active" data-page="live">
+        <div class="content-scroll">
+          <div style="font-size: 14px; color: var(--text-secondary); margin-bottom: 24px;">
+            Showing <strong style="color: var(--text-primary);">52 live streams</strong> · Updated just now
+          </div>
+
+          <div class="streams-grid" id="streams-live">
+            <!-- Stream cards generated by JS -->
+          </div>
+        </div>
+      </div>
+
+      <!-- DISCOVER PAGE -->
+      <div class="page" data-page="discover">
+        <div class="content-scroll">
+          <div style="margin-bottom: 24px;">
+            <div style="font-size: 14px; color: var(--text-secondary); margin-bottom: 12px;">
+              <strong style="color: var(--text-primary);">Explore By Category</strong>
+            </div>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; margin-bottom: 40px;">
+              <div style="padding: 16px; background: rgba(43, 217, 200, 0.15); border-radius: 8px; text-align: center; cursor: pointer; transition: all 0.2s; border: 1px solid rgba(43, 217, 200, 0.3);">
+                <div style="font-size: 32px; margin-bottom: 8px;">🚴</div>
+                <div style="font-size: 12px; font-weight: 600;">Cycling</div>
+              </div>
+              <div style="padding: 16px; background: rgba(59, 130, 246, 0.15); border-radius: 8px; text-align: center; cursor: pointer; transition: all 0.2s; border: 1px solid rgba(59, 130, 246, 0.3);">
+                <div style="font-size: 32px; margin-bottom: 8px;">🏄</div>
+                <div style="font-size: 12px; font-weight: 600;">Surfing</div>
+              </div>
+              <div style="padding: 16px; background: rgba(251, 133, 0, 0.15); border-radius: 8px; text-align: center; cursor: pointer; transition: all 0.2s; border: 1px solid rgba(251, 133, 0, 0.3);">
+                <div style="font-size: 32px; margin-bottom: 8px;">🛩️</div>
+                <div style="font-size: 12px; font-weight: 600;">Paragliding</div>
+              </div>
+              <div style="padding: 16px; background: rgba(43, 217, 200, 0.15); border-radius: 8px; text-align: center; cursor: pointer; transition: all 0.2s; border: 1px solid rgba(43, 217, 200, 0.3);">
+                <div style="font-size: 32px; margin-bottom: 8px;">👨‍🍳</div>
+                <div style="font-size: 12px; font-weight: 600;">Cooking</div>
+              </div>
+              <div style="padding: 16px; background: rgba(59, 130, 246, 0.15); border-radius: 8px; text-align: center; cursor: pointer; transition: all 0.2s; border: 1px solid rgba(59, 130, 246, 0.3);">
+                <div style="font-size: 32px; margin-bottom: 8px;">🥾</div>
+                <div style="font-size: 12px; font-weight: 600;">Hiking</div>
+              </div>
+              <div style="padding: 16px; background: rgba(251, 133, 0, 0.15); border-radius: 8px; text-align: center; cursor: pointer; transition: all 0.2s; border: 1px solid rgba(251, 133, 0, 0.3);">
+                <div style="font-size: 32px; margin-bottom: 8px;">🤿</div>
+                <div style="font-size: 12px; font-weight: 600;">Diving</div>
+              </div>
+            </div>
+          </div>
+
+          <div style="font-size: 14px; color: var(--text-secondary); margin-bottom: 12px;">
+            <strong style="color: var(--text-primary);">Featured Creators</strong>
+          </div>
+
+          <div class="streams-grid" id="streams-discover">
+            <!-- Featured streams -->
+          </div>
+        </div>
+      </div>
+
+      <!-- GLOBE PAGE -->
+      <div class="page" data-page="globe">
+        <div class="globe-layout">
+          <div class="globe-container">
+            🌐
+            <div class="globe-controls">
+              <button class="globe-button" title="Zoom in">➕</button>
+              <button class="globe-button" title="Zoom out">➖</button>
+              <button class="globe-button" title="Recenter">⬆️</button>
+            </div>
+          </div>
+          <div class="globe-sidebar">
+            <div class="globe-sidebar-title">Family</div>
+            <div class="globe-filter">
+              <button class="filter-tag active">All</button>
+              <button class="filter-tag">Air 🛩️</button>
+              <button class="filter-tag">Land 🚴</button>
+              <button class="filter-tag">Water 🏄</button>
+            </div>
+
+            <div class="globe-sidebar-title" style="margin-top: 20px;">Activity Type</div>
+            <div class="globe-filter">
+              <button class="filter-tag">Cycling</button>
+              <button class="filter-tag">Hiking</button>
+              <button class="filter-tag">Surfing</button>
+              <button class="filter-tag">Cooking</button>
+            </div>
+
+            <div style="margin-top: auto; padding: 16px; background: var(--dark-bg); border-radius: 8px; font-size: 12px;">
+              <div style="color: var(--text-secondary); margin-bottom: 4px;">LIVE STREAMS</div>
+              <div style="font-size: 24px; font-weight: 700; color: var(--live-color);">47</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- PROFILE PAGE -->
+      <div class="page" data-page="profile">
+        <div class="content-scroll">
+          <div class="profile-header">
+            <div class="profile-avatar"></div>
+            <div class="profile-info">
+              <h2>Alex Mountain</h2>
+              <p>@alexmountain · Hiking · Adventure</p>
+              <p style="font-size: 13px; margin-top: 8px;">Documenting first-person perspectives from mountain trails and alpine environments. 📍 Colorado</p>
+              <div class="profile-stats">
+                <div class="stat">
+                  <div class="stat-value">847</div>
+                  <div class="stat-label">Followers</div>
+                </div>
+                <div class="stat">
+                  <div class="stat-value">42</div>
+                  <div class="stat-label">Lives</div>
+                </div>
+                <div class="stat">
+                  <div class="stat-value">28.5K</div>
+                  <div class="stat-label">Total Viewers</div>
+                </div>
+              </div>
+            </div>
+            <div class="profile-actions">
+              <button class="action-button">Follow</button>
+              <button class="action-button primary">Watch Live</button>
+            </div>
+          </div>
+
+          <h3 class="section-title">Capture Setup</h3>
+          <div class="equipment-grid">
+            <div class="equipment-item">
+              <div class="equipment-icon">📹</div>
+              <div class="equipment-name">GoPro 12</div>
+              <div class="equipment-type">Camera</div>
+            </div>
+            <div class="equipment-item">
+              <div class="equipment-icon">🎤</div>
+              <div class="equipment-name">Rode Wireless Go II</div>
+              <div class="equipment-type">Audio</div>
+            </div>
+            <div class="equipment-item">
+              <div class="equipment-icon">🔌</div>
+              <div class="equipment-name">Anker 737</div>
+              <div class="equipment-type">Power Bank</div>
+            </div>
+          </div>
+
+          <h3 class="section-title">Activity Equipment</h3>
+          <div class="equipment-grid">
+            <div class="equipment-item">
+              <div class="equipment-icon">⛑️</div>
+              <div class="equipment-name">BD Half Dome</div>
+              <div class="equipment-type">Helmet</div>
+            </div>
+            <div class="equipment-item">
+              <div class="equipment-icon">🎒</div>
+              <div class="equipment-name">Osprey Atmos 65L</div>
+              <div class="equipment-type">Backpack</div>
+            </div>
+            <div class="equipment-item">
+              <div class="equipment-icon">👟</div>
+              <div class="equipment-name">Salomon Quest 4D</div>
+              <div class="equipment-type">Boots</div>
+            </div>
+            <div class="equipment-item">
+              <div class="equipment-icon">🧥</div>
+              <div class="equipment-name">Arc'teryx Beta LT</div>
+              <div class="equipment-type">Jacket</div>
+            </div>
+          </div>
+
+          <h3 class="section-title">Recent Streams</h3>
+          <div class="streams-grid" id="streams-profile">
+            <!-- Recent streams -->
+          </div>
+        </div>
+      </div>
+
+      <!-- START LIVE FLOW PAGE -->
+      <div class="page" data-page="start-live">
+        <div class="form-layout">
+          <div class="form-container">
+            <!-- Step 1: Family Selection -->
+            <div class="form-section">
+              <div class="form-section-title">
+                <span class="step-indicator active">1</span>
+                Choose Your Experience Type
+              </div>
+              <div class="option-grid">
+                <button class="option-button selected">
+                  <div style="font-size: 24px; margin-bottom: 8px;">🚴</div>
+                  Land
+                </button>
+                <button class="option-button">
+                  <div style="font-size: 24px; margin-bottom: 8px;">🛩️</div>
+                  Air
+                </button>
+                <button class="option-button">
+                  <div style="font-size: 24px; margin-bottom: 8px;">🏄</div>
+                  Water
+                </button>
+              </div>
+            </div>
+
+            <!-- Step 2: Subcategory -->
+            <div class="form-section">
+              <div class="form-section-title">
+                <span class="step-indicator">2</span>
+                What Activity?
+              </div>
+              <div class="option-grid">
+                <button class="option-button">Hiking</button>
+                <button class="option-button">Cycling</button>
+                <button class="option-button">Cooking</button>
+                <button class="option-button selected">Walking</button>
+                <button class="option-button">Work</button>
+                <button class="option-button">Tour</button>
+              </div>
+            </div>
+
+            <!-- Step 3: Title & Description -->
+            <div class="form-section">
+              <div class="form-section-title">
+                <span class="step-indicator">3</span>
+                Describe Your Stream
+              </div>
+              <input type="text" class="form-input" placeholder="Stream Title" value="Morning Walk Through Downtown">
+              <textarea class="form-input" style="resize: vertical; min-height: 80px; font-family: inherit;" placeholder="What will you be showing viewers?">Urban exploring with street photography. This is the historic downtown district and I'll be documenting the architecture and people.</textarea>
+            </div>
+
+            <!-- Step 4: Select Gear -->
+            <div class="form-section">
+              <div class="form-section-title">
+                <span class="step-indicator">4</span>
+                Your Gear Setup
+              </div>
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                <div style="padding: 12px; background: var(--dark-surface); border-radius: 8px; border: 1px solid var(--live-color); cursor: pointer;">
+                  <div style="font-size: 20px; margin-bottom: 8px;">📹</div>
+                  <div style="font-size: 12px; font-weight: 600;">GoPro 12</div>
+                </div>
+                <div style="padding: 12px; background: var(--dark-surface); border-radius: 8px; border: 1px solid var(--dark-border); cursor: pointer;">
+                  <div style="font-size: 20px; margin-bottom: 8px;">🎤</div>
+                  <div style="font-size: 12px; font-weight: 600;">Add Audio</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Right Panel: Preview -->
+          <div class="form-preview">
+            <div class="preview-title">Live Preview</div>
+            <div class="preview-content">
+              <div class="preview-item">
+                <div class="preview-item-label">Type</div>
+                <div class="preview-item-value">Land · Walking</div>
+              </div>
+              <div class="preview-item">
+                <div class="preview-item-label">Title</div>
+                <div class="preview-item-value">Morning Walk Through Downtown</div>
+              </div>
+              <div class="preview-item">
+                <div class="preview-item-label">Viewers (Est.)</div>
+                <div class="preview-item-value" style="color: var(--live-color);">128 watching</div>
+              </div>
+              <div class="preview-item">
+                <div class="preview-item-label">Camera</div>
+                <div class="preview-item-value">GoPro 12</div>
+              </div>
+              <div style="margin-top: 20px;">
+                <button class="cta-button">🔴 Go Live</button>
+              </div>
+              <button style="width: 100%; padding: 10px; margin-top: 8px; border: 1px solid var(--dark-border); background: transparent; border-radius: 6px; color: var(--text-primary); cursor: pointer; font-weight: 600;">Save as Draft</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Generate mock stream data
+    function generateStreamCard(title, creator, viewers, status = 'live') {
+      const statusClass = status === 'live' ? 'live' : 'upcoming';
+      const statusText = status === 'live' ? '🔴 LIVE' : '⏰ UPCOMING';
+      const category = ['Cycling', 'Hiking', 'Cooking', 'Surfing', 'Paragliding'][Math.floor(Math.random() * 5)];
+
+      return `
+        <div class="stream-card">
+          <div class="stream-thumbnail">
+            <div class="stream-badge ${statusClass}">${statusText}</div>
+          </div>
+          <div class="stream-info">
+            <div class="stream-meta">
+              <div class="stream-avatar"></div>
+              <div class="stream-details">
+                <div class="stream-title">${title}</div>
+                <div class="stream-creator">${creator}</div>
+              </div>
+            </div>
+            <div class="stream-category">${category}</div>
+            <div class="stream-stats">
+              <span>👁️ ${viewers}</span>
+              <span>🌍 USA</span>
+            </div>
+            <div class="stream-actions">
+              <button class="action-btn">Watch</button>
+              <button class="action-btn">Save</button>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    // Populate streams
+    const streamTitles = [
+      'Morning Cycle Through the Alps',
+      'Live Hiking in Rocky Mountains',
+      'Cooking Fresh Pasta in Tuscany',
+      'Urban Exploration – Tokyo Streets',
+      'Paragliding Over Colorado',
+      'Surfing Big Waves at Pipeline',
+      'Meditation Walk Through Forest',
+      'Drone Photography – Sunset Valley',
+      'Downtown Food Tour',
+      'Rock Climbing – El Capitan',
+      'Coastal Bike Ride',
+      'Live Fishing in Iceland'
+    ];
+
+    const creators = [
+      'Alex Mountain', 'Sarah Wild', 'Marco Explorer', 'Luna Sky',
+      'River Guide', 'Ocean Max', 'City Wanderer', 'Desert Dave'
+    ];
+
+    // Live Feed
+    const liveFeed = document.getElementById('streams-live');
+    for (let i = 0; i < 9; i++) {
+      const title = streamTitles[i % streamTitles.length];
+      const creator = creators[i % creators.length];
+      const viewers = Math.floor(Math.random() * 1200) + 50;
+      liveFeed.innerHTML += generateStreamCard(title, creator, viewers);
+    }
+
+    // Discover
+    const discoverFeed = document.getElementById('streams-discover');
+    for (let i = 0; i < 8; i++) {
+      const title = streamTitles[i % streamTitles.length];
+      const creator = creators[i % creators.length];
+      const viewers = Math.floor(Math.random() * 800) + 30;
+      discoverFeed.innerHTML += generateStreamCard(title, creator, viewers, i % 3 === 0 ? 'upcoming' : 'live');
+    }
+
+    // Profile
+    const profileFeed = document.getElementById('streams-profile');
+    for (let i = 0; i < 6; i++) {
+      const title = streamTitles[i % streamTitles.length];
+      profileFeed.innerHTML += generateStreamCard(title, 'Alex Mountain', Math.floor(Math.random() * 500) + 50);
+    }
+
+    // Page Navigation
+    document.querySelectorAll('[data-page]').forEach(el => {
+      el.addEventListener('click', (e) => {
+        const pageName = el.getAttribute('data-page');
+
+        // Update active nav
+        document.querySelectorAll('.nav-item').forEach(nav => nav.classList.remove('active'));
+        document.querySelector(`[data-page="${pageName}"].nav-item`)?.classList.add('active');
+
+        // Update active page
+        document.querySelectorAll('.page').forEach(page => page.classList.remove('active'));
+        document.querySelector(`.page[data-page="${pageName}"]`)?.classList.add('active');
+
+        // Update title
+        const titles = {
+          'live': 'Live Feed',
+          'discover': 'Explore',
+          'globe': 'Interactive Globe',
+          'profile': 'My Profile',
+          'start-live': 'Start a Live'
+        };
+        document.getElementById('page-title').textContent = titles[pageName];
+
+        // Show/hide top controls
+        const topControls = document.getElementById('top-controls');
+        if (pageName === 'globe' || pageName === 'start-live') {
+          topControls.style.display = 'none';
+        } else {
+          topControls.style.display = 'flex';
+        }
+      });
+    });
+  </script>
+</body>
+</html>

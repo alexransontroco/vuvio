@@ -42,6 +42,18 @@ function removeMatchingFiles(publicRoot, outputRoot, pattern, currentDir = publi
 
 export default defineConfig({
   plugins: [react(), copyPublicWithoutMockMedia()],
+  server: {
+    host: '0.0.0.0',
+    port: 5173,
+  },
+  resolve: {
+    alias: {
+      '@zip.js/zip.js/lib/zip-no-worker.js': '@zip.js/zip.js',
+    },
+  },
+  optimizeDeps: {
+    exclude: ['cesium'],
+  },
   build: {
     rollupOptions: {
       output: {
@@ -49,7 +61,7 @@ export default defineConfig({
           react: ['react', 'react-dom', 'react-router-dom'],
           icons: ['lucide-react'],
           maps: ['maplibre-gl'],
-          globe: ['react-globe.gl', 'three'],
+          globe: ['react-globe.gl', 'three', 'cesium'],
         },
       },
     },

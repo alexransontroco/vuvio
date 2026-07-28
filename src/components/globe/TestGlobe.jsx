@@ -14,9 +14,9 @@ const TERRAIN_SOURCE_ID = 'vuvio-test-terrain';
 const LIVE_COLOR = '#2BD9C8';
 const UPCOMING_COLOR = '#3B82E6';
 const MIXED_CLUSTER_COLOR = '#24C6F0';
-const ROTATE_DEGREES_PER_SECOND = 1.35;
-const SELECTED_LIVE_ZOOM = 5.15;
-const REQUESTED_LIVE_ZOOM = 6.35;
+const ROTATE_DEGREES_PER_SECOND = 2.1;
+const SELECTED_LIVE_ZOOM = 2.0;
+const REQUESTED_LIVE_ZOOM = 3.5;
 const SELECTED_RING_COLOR = '#2BD9C8';
 
 const cityLights = [
@@ -94,8 +94,8 @@ function breathingWave(clock) {
       'let',
       'wave',
       ['case', ['<', ['var', 'phase'], 0.5], ['*', ['var', 'phase'], 2], ['*', ['-', 1, ['var', 'phase']], 2]],
-      ['*', ['var', 'wave'], ['var', 'wave'], ['-', 3, ['*', 2, ['var', 'wave']]]],
-    ],
+      ['*', ['var', 'wave'], ['var', 'wave'], ['-', 3, ['*', 2, ['var', 'wave']]]]
+    ]
   ];
 }
 
@@ -105,17 +105,17 @@ function markerGlowRadius(clock) {
   return [
     '+',
     ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 7, 300, 9, 800, 11],
-    ['*', wave, ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 0.4, 300, 0.5, 800, 0.7]],
+    ['*', wave, ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 0.6, 300, 0.8, 800, 1.2]],
   ];
 }
 
-// Soft glow opacity — very subtle and almost imperceptible breathing
+// Soft glow opacity — more luminous with white-weighted breathing
 function markerGlowOpacity(clock) {
   const wave = breathingWave(clock);
   return [
     '+',
-    ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 0.04, 300, 0.05, 800, 0.06],
-    ['*', wave, ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 0.02, 300, 0.025, 800, 0.03]],
+    ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 0.06, 300, 0.1, 800, 0.14],
+    ['*', wave, ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 0.06, 300, 0.1, 800, 0.16]],
   ];
 }
 
@@ -181,37 +181,38 @@ function buildCollection(streams) {
   };
 }
 
-function buildCityLightCollection() {
-  const offsets = [
-    [0, 0, 1],
-    [0.34, 0.12, 0.58],
-    [-0.3, 0.18, 0.46],
-    [0.16, -0.26, 0.4],
-    [-0.18, -0.16, 0.32],
-    [0.58, -0.06, 0.24],
-    [-0.54, 0.02, 0.2],
-    [0.08, 0.42, 0.18],
-    [0.38, -0.38, 0.16],
-  ];
-
-  return {
-    type: 'FeatureCollection',
-    features: cityLights.flatMap(([lng, lat, intensity], cityIndex) =>
-      offsets.map(([lngOffset, latOffset, weight], pointIndex) => ({
-        type: 'Feature',
-        properties: {
-          id: `city-light-${cityIndex}-${pointIndex}`,
-          intensity: intensity * weight,
-          core: pointIndex === 0 ? 1 : 0,
-        },
-        geometry: {
-          type: 'Point',
-          coordinates: [lng + lngOffset, lat + latOffset],
-        },
-      })),
-    ),
-  };
-}
+// OPTIMIZATION 1: City lights disabled (279 points × 3 layers = 837 vertices)
+// function buildCityLightCollection() {
+//   const offsets = [
+//     [0, 0, 1],
+//     [0.34, 0.12, 0.58],
+//     [-0.3, 0.18, 0.46],
+//     [0.16, -0.26, 0.4],
+//     [-0.18, -0.16, 0.32],
+//     [0.58, -0.06, 0.24],
+//     [-0.54, 0.02, 0.2],
+//     [0.08, 0.42, 0.18],
+//     [0.38, -0.38, 0.16],
+//   ];
+//
+//   return {
+//     type: 'FeatureCollection',
+//     features: cityLights.flatMap(([lng, lat, intensity], cityIndex) =>
+//       offsets.map(([lngOffset, latOffset, weight], pointIndex) => ({
+//         type: 'Feature',
+//         properties: {
+//           id: `city-light-${cityIndex}-${pointIndex}`,
+//           intensity: intensity * weight,
+//           core: pointIndex === 0 ? 1 : 0,
+//         },
+//         geometry: {
+//           type: 'Point',
+//           coordinates: [lng + lngOffset, lat + latOffset],
+//         },
+//       })),
+//     ),
+//   };
+// }
 
 function brightenBaseGlobe(map, isActual = false) {
   try {
@@ -259,6 +260,15 @@ export default function TestGlobe({ streams, mode = 'test' }) {
   const [selectedId, setSelectedId] = useState(null);
   const [hoveredId, setHoveredId] = useState('');
   const [mapError, setMapError] = useState('');
+
+  // Performance diagnostics
+  const perfRef = useRef({
+    rafCalls: 0,
+    paintCalls: 0,
+    jumpToCalls: 0,
+    startTime: performance.now(),
+    lastReportTime: performance.now(),
+  });
 
   const enrichedStreams = useMemo(() => streams.map(enrichExperience), [streams]);
   const requestedLiveId = searchParams.get('live') ?? '';
@@ -319,7 +329,9 @@ export default function TestGlobe({ streams, mode = 'test' }) {
       logoPosition: 'bottom-left',
       renderWorldCopies: false,
       fadeDuration: 0,
-      pixelRatio: isActualMode ? Math.min(window.devicePixelRatio, 1.5) : window.devicePixelRatio,
+      // OPTIMIZATION 3: Reduced pixel ratio in actual mode (1.5 → 1.0)
+      // Saves 2.25x pixels on mobile retina displays
+      pixelRatio: isActualMode ? 1.0 : window.devicePixelRatio,
     });
 
     mapRef.current = map;
@@ -384,110 +396,113 @@ export default function TestGlobe({ streams, mode = 'test' }) {
           type: 'geojson',
           data: buildCollection(liveStreams),
           cluster: false,
-          clusterMaxZoom: 5,
-          clusterMinPoints: 3,
-          clusterRadius: 52,
-          clusterProperties: {
-            upcomingCount: ['+', ['case', ['==', ['get', 'status'], 'upcoming'], 1, 0]],
-            liveCount: ['+', ['case', ['==', ['get', 'status'], 'live'], 1, 0]],
-          },
+          // OPTIMIZATION 2: Removed dead clustering properties
+          // clusterMaxZoom: 5,
+          // clusterMinPoints: 3,
+          // clusterRadius: 52,
+          // clusterProperties: {
+          //   upcomingCount: ['+', ['case', ['==', ['get', 'status'], 'upcoming'], 1, 0]],
+          //   liveCount: ['+', ['case', ['==', ['get', 'status'], 'live'], 1, 0]],
+          // },
         });
-        map.addSource('vuvio-test-city-lights', {
-          type: 'geojson',
-          data: buildCityLightCollection(),
-        });
+        // OPTIMIZATION 1: City lights source removed
+        // map.addSource('vuvio-test-city-lights', {
+        //   type: 'geojson',
+        //   data: buildCityLightCollection(),
+        // });
 
-        map.addLayer({
-          id: 'vuvio-test-city-light-aura',
-          type: 'circle',
-          source: 'vuvio-test-city-lights',
-          paint: {
-            'circle-color': '#F5A85B',
-            'circle-radius': ['interpolate', ['linear'], ['get', 'intensity'], 0.12, 2.4, 1, 8.5],
-            'circle-blur': 1,
-            'circle-opacity': ['interpolate', ['linear'], ['get', 'intensity'], 0.12, isActualMode ? 0.04 : 0.032, 1, isActualMode ? 0.16 : 0.14],
-          },
-        });
+        // OPTIMIZATION 1: City light layers disabled (3 × 279 = 837 vertices)
+        // map.addLayer({
+        //   id: 'vuvio-test-city-light-aura',
+        //   type: 'circle',
+        //   source: 'vuvio-test-city-lights',
+        //   paint: {
+        //     'circle-color': '#F5A85B',
+        //     'circle-radius': ['interpolate', ['linear'], ['get', 'intensity'], 0.12, 2.4, 1, 8.5],
+        //     'circle-blur': 1,
+        //     'circle-opacity': ['interpolate', ['linear'], ['get', 'intensity'], 0.12, isActualMode ? 0.04 : 0.032, 1, isActualMode ? 0.16 : 0.14],
+        //   },
+        // });
+        //
+        // map.addLayer({
+        //   id: 'vuvio-test-city-light-glow',
+        //   type: 'circle',
+        //   source: 'vuvio-test-city-lights',
+        //   paint: {
+        //     'circle-color': '#E8B45B',
+        //     'circle-radius': ['interpolate', ['linear'], ['get', 'intensity'], 0.12, 0.9, 1, 3.4],
+        //     'circle-blur': 0.9,
+        //     'circle-opacity': ['interpolate', ['linear'], ['get', 'intensity'], 0.12, isActualMode ? 0.08 : 0.07, 1, isActualMode ? 0.30 : 0.26],
+        //   },
+        // });
+        //
+        // map.addLayer({
+        //   id: 'vuvio-test-city-light-points',
+        //   type: 'circle',
+        //   source: 'vuvio-test-city-lights',
+        //   paint: {
+        //     'circle-color': '#FFD48A',
+        //     'circle-radius': [
+        //       'case',
+        //       ['==', ['get', 'core'], 1],
+        //       ['interpolate', ['linear'], ['get', 'intensity'], 0.12, 0.45, 1, 0.9],
+        //       ['interpolate', ['linear'], ['get', 'intensity'], 0.12, 0.18, 1, 0.42],
+        //     ],
+        //     'circle-blur': 0.2,
+        //     'circle-opacity': ['interpolate', ['linear'], ['get', 'intensity'], 0.12, isActualMode ? 0.18 : 0.16, 1, isActualMode ? 0.72 : 0.62],
+        //   },
+        // });
 
-        map.addLayer({
-          id: 'vuvio-test-city-light-glow',
-          type: 'circle',
-          source: 'vuvio-test-city-lights',
-          paint: {
-            'circle-color': '#E8B45B',
-            'circle-radius': ['interpolate', ['linear'], ['get', 'intensity'], 0.12, 0.9, 1, 3.4],
-            'circle-blur': 0.9,
-            'circle-opacity': ['interpolate', ['linear'], ['get', 'intensity'], 0.12, isActualMode ? 0.08 : 0.07, 1, isActualMode ? 0.30 : 0.26],
-          },
-        });
-
-        map.addLayer({
-          id: 'vuvio-test-city-light-points',
-          type: 'circle',
-          source: 'vuvio-test-city-lights',
-          paint: {
-            'circle-color': '#FFD48A',
-            'circle-radius': [
-              'case',
-              ['==', ['get', 'core'], 1],
-              ['interpolate', ['linear'], ['get', 'intensity'], 0.12, 0.45, 1, 0.9],
-              ['interpolate', ['linear'], ['get', 'intensity'], 0.12, 0.18, 1, 0.42],
-            ],
-            'circle-blur': 0.2,
-            'circle-opacity': ['interpolate', ['linear'], ['get', 'intensity'], 0.12, isActualMode ? 0.18 : 0.16, 1, isActualMode ? 0.72 : 0.62],
-          },
-        });
-
-        // Elegant cluster marker — very subtle and lightweight
-        map.addLayer({
-          id: 'vuvio-test-cluster-glow',
-          type: 'circle',
-          source: 'vuvio-test-lives',
-          filter: ['has', 'point_count'],
-          paint: {
-            'circle-color': clusterColor,
-            'circle-radius': isActualMode
-              ? ['step', ['get', 'point_count'], 14, 3, 17, 6, 20]
-              : ['step', ['get', 'point_count'], 11, 3, 14, 6, 17],
-            'circle-blur': 0.92,
-            'circle-opacity': 0.08,
-          },
-        });
-
-        map.addLayer({
-          id: 'vuvio-test-clusters',
-          type: 'circle',
-          source: 'vuvio-test-lives',
-          filter: ['has', 'point_count'],
-          paint: {
-            'circle-color': clusterColor,
-            'circle-opacity': 0.12,
-            'circle-stroke-color': clusterColor,
-            'circle-stroke-opacity': 0.38,
-            'circle-stroke-width': 0.6,
-            'circle-radius': isActualMode
-              ? ['step', ['get', 'point_count'], 11, 3, 13, 6, 15]
-              : ['step', ['get', 'point_count'], 9, 3, 11, 6, 13],
-          },
-        });
-
-        map.addLayer({
-          id: 'vuvio-test-cluster-count',
-          type: 'symbol',
-          source: 'vuvio-test-lives',
-          filter: ['has', 'point_count'],
-          layout: {
-            'text-field': ['get', 'point_count_abbreviated'],
-            'text-size': 9,
-            'text-font': ['Open Sans Regular'],
-            'text-allow-overlap': true,
-          },
-          paint: {
-            'text-color': 'rgba(242, 247, 246, 0.84)',
-            'text-halo-color': 'rgba(6, 13, 22, 0.62)',
-            'text-halo-width': 0.6,
-          },
-        });
+        // OPTIMIZATION 2: Cluster layers removed (cluster: false means never displayed)
+        // map.addLayer({
+        //   id: 'vuvio-test-cluster-glow',
+        //   type: 'circle',
+        //   source: 'vuvio-test-lives',
+        //   filter: ['has', 'point_count'],
+        //   paint: {
+        //     'circle-color': clusterColor,
+        //     'circle-radius': isActualMode
+        //       ? ['step', ['get', 'point_count'], 14, 3, 17, 6, 20]
+        //       : ['step', ['get', 'point_count'], 11, 3, 14, 6, 17],
+        //     'circle-blur': 0.92,
+        //     'circle-opacity': 0.08,
+        //   },
+        // });
+        //
+        // map.addLayer({
+        //   id: 'vuvio-test-clusters',
+        //   type: 'circle',
+        //   source: 'vuvio-test-lives',
+        //   filter: ['has', 'point_count'],
+        //   paint: {
+        //     'circle-color': clusterColor,
+        //     'circle-opacity': 0.12,
+        //     'circle-stroke-color': clusterColor,
+        //     'circle-stroke-opacity': 0.38,
+        //     'circle-stroke-width': 0.6,
+        //     'circle-radius': isActualMode
+        //       ? ['step', ['get', 'point_count'], 11, 3, 13, 6, 15]
+        //       : ['step', ['get', 'point_count'], 9, 3, 11, 6, 13],
+        //   },
+        // });
+        //
+        // map.addLayer({
+        //   id: 'vuvio-test-cluster-count',
+        //   type: 'symbol',
+        //   source: 'vuvio-test-lives',
+        //   filter: ['has', 'point_count'],
+        //   layout: {
+        //     'text-field': ['get', 'point_count_abbreviated'],
+        //     'text-size': 9,
+        //     'text-font': ['Open Sans Regular'],
+        //     'text-allow-overlap': true,
+        //   },
+        //   paint: {
+        //     'text-color': 'rgba(242, 247, 246, 0.84)',
+        //     'text-halo-color': 'rgba(6, 13, 22, 0.62)',
+        //     'text-halo-width': 0.6,
+        //   },
+        // });
 
         // Soft outer glow layer for live markers
         map.addLayer({
@@ -539,42 +554,39 @@ export default function TestGlobe({ streams, mode = 'test' }) {
           if (!feature) return;
           setSelectedId(feature.properties.id);
           pauseUntilRef.current = Date.now() + 8500;
-          map.stop();
-          map.setProjection({ type: 'globe' });
           map.easeTo({
             center: feature.geometry.coordinates,
             zoom: SELECTED_LIVE_ZOOM,
-            bearing: 0,
-            pitch: 0,
-            duration: 1350,
-            easing: (t) => 1 - Math.pow(1 - t, 3),
+            duration: 650,
             essential: true,
           });
         });
 
-        map.on('click', 'vuvio-test-clusters', (event) => {
-          const feature = event.features?.[0];
-          const clusterId = feature?.properties?.cluster_id;
-          if (!feature || clusterId === undefined) return;
-          const source = map.getSource('vuvio-test-lives');
-          source.getClusterExpansionZoom(clusterId, (error, zoom) => {
-            if (error) return;
-            pauseUntilRef.current = Date.now() + 2400;
-            map.easeTo({
-              center: feature.geometry.coordinates,
-              zoom: Math.min(zoom + 0.35, SELECTED_LIVE_ZOOM),
-              duration: 650,
-              essential: true,
-            });
-          });
-        });
+        // OPTIMIZATION 2: Cluster click handler removed
+        // map.on('click', 'vuvio-test-clusters', (event) => {
+        //   const feature = event.features?.[0];
+        //   const clusterId = feature?.properties?.cluster_id;
+        //   if (!feature || clusterId === undefined) return;
+        //   const source = map.getSource('vuvio-test-lives');
+        //   source.getClusterExpansionZoom(clusterId, (error, zoom) => {
+        //     if (error) return;
+        //     pauseUntilRef.current = Date.now() + 2400;
+        //     map.easeTo({
+        //       center: feature.geometry.coordinates,
+        //       zoom: Math.min(zoom + 0.35, SELECTED_LIVE_ZOOM),
+        //       duration: 650,
+        //       essential: true,
+        //     });
+        //   });
+        // });
 
         map.on('mouseenter', 'vuvio-test-live-points', () => {
           map.getCanvas().style.cursor = 'pointer';
         });
-        map.on('mouseenter', 'vuvio-test-clusters', () => {
-          map.getCanvas().style.cursor = 'pointer';
-        });
+        // OPTIMIZATION 2: Cluster mouse handlers removed
+        // map.on('mouseenter', 'vuvio-test-clusters', () => {
+        //   map.getCanvas().style.cursor = 'pointer';
+        // });
         map.on('mousemove', 'vuvio-test-live-points', (event) => {
           const feature = event.features?.[0];
           setHoveredId(feature?.properties?.id ?? '');
@@ -583,9 +595,10 @@ export default function TestGlobe({ streams, mode = 'test' }) {
           map.getCanvas().style.cursor = '';
           setHoveredId('');
         });
-        map.on('mouseleave', 'vuvio-test-clusters', () => {
-          map.getCanvas().style.cursor = '';
-        });
+        // OPTIMIZATION 2: Cluster mouse leave handler removed
+        // map.on('mouseleave', 'vuvio-test-clusters', () => {
+        //   map.getCanvas().style.cursor = '';
+        // });
       } catch (error) {
         setMapError(error instanceof Error ? error.message : String(error));
       }
@@ -650,33 +663,35 @@ export default function TestGlobe({ streams, mode = 'test' }) {
     };
   }, [requestedLive]);
 
-  // Double-V pulse markers (test mode only)
-  useEffect(() => {
-    if (isActualMode) return;
-    const map = mapRef.current;
-    if (!map) return;
-
-    const sync = () => {
-      const currentIds = new Set(liveStreams.map((s) => s.id));
-      for (const [id, marker] of Object.entries(dvMarkersRef.current)) {
-        if (!currentIds.has(id)) { marker.remove(); delete dvMarkersRef.current[id]; }
-      }
-      for (const stream of liveStreams) {
-        if (dvMarkersRef.current[stream.id]) continue;
-        const color = stream.familyColor || '#2BD9C8';
-        const delay = (pulseSeed(stream.id) * 2.2).toFixed(2);
-        const el = document.createElement('div');
-        el.className = 'vuvio-dv-pulse';
-        el.style.cssText = `--dv-color:${color};--dv-delay:${delay}s`;
-        el.innerHTML = '<svg viewBox="-16 -15 32 28" width="32" height="28" aria-hidden="true"><circle cx="0" cy="-9" r="2" fill="currentColor" opacity="0.9"/><path d="M-9,-4 L-5.5,5 L0,-1 L5.5,5 L9,-4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>';
-        dvMarkersRef.current[stream.id] = new maplibregl.Marker({ element: el, anchor: 'center' })
-          .setLngLat(stream.coordinates)
-          .addTo(map);
-      }
-    };
-
-    if (map.loaded()) sync(); else map.once('load', sync);
-  }, [isActualMode, liveStreams]);
+  // OPTIMIZATION 8: DOM markers disabled
+  // Double-V pulse markers (test mode only) - removed for performance
+  // These SVG overlays duplicate canvas rendering and add DOM overhead
+  // useEffect(() => {
+  //   if (isActualMode) return;
+  //   const map = mapRef.current;
+  //   if (!map) return;
+  //
+  //   const sync = () => {
+  //     const currentIds = new Set(liveStreams.map((s) => s.id));
+  //     for (const [id, marker] of Object.entries(dvMarkersRef.current)) {
+  //       if (!currentIds.has(id)) { marker.remove(); delete dvMarkersRef.current[id]; }
+  //     }
+  //     for (const stream of liveStreams) {
+  //       if (dvMarkersRef.current[stream.id]) continue;
+  //       const color = stream.familyColor || '#2BD9C8';
+  //       const delay = (pulseSeed(stream.id) * 2.2).toFixed(2);
+  //       const el = document.createElement('div');
+  //       el.className = 'vuvio-dv-pulse';
+  //       el.style.cssText = `--dv-color:${color};--dv-delay:${delay}s`;
+  //       el.innerHTML = '<svg viewBox="-16 -15 32 28" width="32" height="28" aria-hidden="true"><circle cx="0" cy="-9" r="2" fill="currentColor" opacity="0.9"/><path d="M-9,-4 L-5.5,5 L0,-1 L5.5,5 L9,-4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+  //       dvMarkersRef.current[stream.id] = new maplibregl.Marker({ element: el, anchor: 'center' })
+  //         .setLngLat(stream.coordinates)
+  //         .addTo(map);
+  //     }
+  //   };
+  //
+  //   if (map.loaded()) sync(); else map.once('load', sync);
+  // }, [isActualMode, liveStreams]);
 
   useEffect(() => {
     const map = mapRef.current;
@@ -685,10 +700,23 @@ export default function TestGlobe({ streams, mode = 'test' }) {
     let previousTime = performance.now();
     let lastPaintTime = 0;
     let lastRotationTime = 0;
+    let lastRafTime = 0;
+    // OPTIMIZATION 4: Throttle RAF itself to 30 FPS in actual mode
+    // Skips every other frame in actual mode, matching paint throttle
+    const RAF_INTERVAL = isActualMode ? 33 : 0; // 0 = no throttle in test mode
     const PAINT_INTERVAL = 33; // ~30fps for expensive setPaintProperty calls
     const ROTATION_INTERVAL = 33; // ~30fps for rotation (throttle expensive jumpTo)
 
     const tick = (time) => {
+      perfRef.current.rafCalls++;
+
+      // OPTIMIZATION 4: Throttle RAF itself in actual mode
+      if (RAF_INTERVAL > 0 && time - lastRafTime < RAF_INTERVAL) {
+        animationRef.current = requestAnimationFrame(tick);
+        return; // Skip this frame
+      }
+      lastRafTime = time;
+
       const delta = Math.min(80, time - previousTime);
       previousTime = time;
 
@@ -696,6 +724,7 @@ export default function TestGlobe({ streams, mode = 'test' }) {
       if (Date.now() > pauseUntilRef.current && !selectedId) {
         if (time - lastRotationTime >= ROTATION_INTERVAL) {
           lastRotationTime = time;
+          perfRef.current.jumpToCalls++;
           const center = map.getCenter();
           map.jumpTo({ center: [center.lng + (ROTATE_DEGREES_PER_SECOND * ROTATION_INTERVAL) / 1000, center.lat] });
         }
@@ -704,6 +733,7 @@ export default function TestGlobe({ streams, mode = 'test' }) {
       // Breathing animation updates throttled to 30fps
       if (time - lastPaintTime >= PAINT_INTERVAL) {
         lastPaintTime = time;
+        perfRef.current.paintCalls++;
         const breathingClock = (time % 2800) / 2800; // 2.8s breathing cycle
 
         if (map.getLayer('vuvio-test-live-glow')) {
@@ -717,6 +747,19 @@ export default function TestGlobe({ streams, mode = 'test' }) {
           map.setPaintProperty('vuvio-test-live-selection-ring', 'circle-radius', liveRingRadius(breathingClock, selectedId ?? '', hoveredId));
           map.setPaintProperty('vuvio-test-live-selection-ring', 'circle-stroke-opacity', liveRingOpacity(selectedId ?? '', hoveredId));
         }
+      }
+
+      // Report perf every 3 seconds
+      if (time - perfRef.current.lastReportTime > 3000) {
+        const elapsed = (time - perfRef.current.lastReportTime) / 1000;
+        const rafPerSec = (perfRef.current.rafCalls / elapsed).toFixed(1);
+        const paintPerSec = (perfRef.current.paintCalls / elapsed).toFixed(1);
+        const jumpPerSec = (perfRef.current.jumpToCalls / elapsed).toFixed(1);
+        console.log(`📊 PERF: RAF ${rafPerSec}/s | Paint ${paintPerSec}/s | Jump ${jumpPerSec}/s | Points: ${liveStreams.length}`);
+        perfRef.current.rafCalls = 0;
+        perfRef.current.paintCalls = 0;
+        perfRef.current.jumpToCalls = 0;
+        perfRef.current.lastReportTime = time;
       }
 
       animationRef.current = requestAnimationFrame(tick);
@@ -735,10 +778,10 @@ export default function TestGlobe({ streams, mode = 'test' }) {
       zoom: isActualMode ? 1.35 : INITIAL_ZOOM,
       bearing: 0,
       pitch: 0,
-      duration: 620,
+      duration: 1800,
       essential: true,
     });
-    pauseUntilRef.current = Date.now() + 1200;
+    pauseUntilRef.current = Date.now() + 2200;
     setSelectedId(null);
     setHoveredId('');
   };
@@ -777,6 +820,9 @@ export default function TestGlobe({ streams, mode = 'test' }) {
             </button>
             <button type="button" onClick={() => navigate('/globe-lab?switch=1')} aria-pressed="false">
               Lab
+            </button>
+            <button type="button" onClick={() => navigate('/globe-cesium?switch=1')} aria-pressed="false">
+              Cesium
             </button>
             <button
               type="button"
@@ -819,7 +865,7 @@ export default function TestGlobe({ streams, mode = 'test' }) {
 
         {selectedLive ? (
           <aside className="test-globe-card" aria-label={`Live from ${selectedLive.name}`}>
-            <button type="button" className="test-globe-card__close" onClick={recenter} aria-label="Close">
+            <button type="button" className="test-globe-card__close" onClick={() => { setSelectedId(null); setHoveredId(''); }} aria-label="Close">
               <X size={14} strokeWidth={2} />
             </button>
             <img src={selectedLive.image} alt="" loading="lazy" />

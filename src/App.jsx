@@ -15,6 +15,7 @@ const ForgotPasswordPage  = lazy(() => import('./routes/ForgotPasswordPage.jsx')
 const HelpPage            = lazy(() => import('./routes/HelpPage.jsx'));
 const GlobeLabPage        = lazy(() => import('./routes/GlobeLabPage.jsx'));
 const GlobeTestPage       = lazy(() => import('./routes/GlobeTestPage.jsx'));
+const GlobeCesiumPage     = lazy(() => import('./routes/GlobeCesiumPage.jsx'));
 const IconsPreviewPage    = lazy(() => import('./routes/IconsPreviewPage.jsx'));
 const LoginPage           = lazy(() => import('./routes/LoginPage.jsx'));
 const LiveRecapPage       = lazy(() => import('./routes/LiveRecapPage.jsx'));
@@ -28,6 +29,7 @@ const SignupPage          = lazy(() => import('./routes/SignupPage.jsx'));
 const TermsPage           = lazy(() => import('./routes/TermsPage.jsx'));
 const VisionPage          = lazy(() => import('./routes/VisionPage.jsx'));
 const SocialDemoPage      = lazy(() => import('./routes/SocialDemoPage.jsx'));
+const DesktopLayout       = lazy(() => import('./components/desktop/DesktopLayout.jsx'));
 
 function RouteFallback() {
   const { t } = useTranslation();
@@ -53,6 +55,7 @@ export default function App() {
       <Route path="/vision" element={<Lazy component={VisionPage} />} />
       <Route path="/live/:liveId/recap" element={<Lazy component={LiveRecapPage} />} />
       <Route path="/test/live-recap" element={<Lazy component={LiveRecapPage} />} />
+      <Route path="/desktop" element={<Lazy component={DesktopLayout} />} />
 
       {/* ── Auth pages (redirect if already logged in) ── */}
       <Route
@@ -108,10 +111,11 @@ export default function App() {
         <Route path="/watch"         element={<Lazy component={HomePage} />} />
         <Route path="/explore"      element={<Lazy component={ExplorePage} />} />
         <Route path="/explore/live" element={<Lazy component={AllLivesPage} />} />
-        <Route path="/globe"      element={<Suspense fallback={<RouteFallback />}><GlobeTestPage mode="actual" /></Suspense>} />
-        <Route path="/map"        element={<Suspense fallback={<RouteFallback />}><GlobeTestPage mode="actual" /></Suspense>} />
-        <Route path="/globe-lab"  element={<Lazy component={GlobeLabPage} />} />
-        <Route path="/globe-test" element={<Lazy component={GlobeTestPage} />} />
+        <Route path="/globe"        element={<Suspense fallback={<RouteFallback />}><GlobeTestPage mode="actual" /></Suspense>} />
+        <Route path="/map"          element={<Suspense fallback={<RouteFallback />}><GlobeTestPage mode="actual" /></Suspense>} />
+        <Route path="/globe-lab"    element={<Lazy component={GlobeLabPage} />} />
+        <Route path="/globe-test"   element={<Lazy component={GlobeTestPage} />} />
+        <Route path="/globe-cesium" element={<Lazy component={GlobeCesiumPage} />} />
         <Route path="/terms"      element={<Lazy component={TermsPage} />} />
         <Route path="/privacy"    element={<Lazy component={PrivacyPage} />} />
         <Route path="/help"       element={<Lazy component={HelpPage} />} />

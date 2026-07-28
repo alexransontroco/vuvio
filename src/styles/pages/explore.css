@@ -559,12 +559,13 @@
 
 .discover-brand-logo {
   position: absolute;
-  top: calc(env(safe-area-inset-top, 0px) + 14px);
+  top: calc(env(safe-area-inset-top, 0px) + 12px);
   left: 16px;
   z-index: 6;
   pointer-events: none;
-  opacity: 0.82;
-  filter: drop-shadow(0 1px 6px rgba(0, 0, 0, 0.52));
+  opacity: 1;
+  filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.62));
+  font-size: 18px;
 }
 
 .watch-globe-wrap {

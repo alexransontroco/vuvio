@@ -5,6 +5,7 @@ import {
   EquipmentItemRow,
   EquipmentManageActions,
 } from '../components/equipment/EquipmentKit.jsx';
+import { GearImageUploader } from '../components/gear/index.js';
 import { EQUIPMENT_CATEGORIES, EQUIPMENT_OWNERSHIP } from '../data/equipmentModel.js';
 import { getGearImageSuggestions } from '../services/gearSnapshotService.js';
 import {
@@ -82,6 +83,14 @@ function EquipmentForm({ value, onChange, onSave, onCancel, submitLabel = 'Save 
         Equipment type
         <input value={value.equipmentType} onChange={(event) => onChange({ ...value, equipmentType: event.target.value })} placeholder="Example: Action Camera" />
       </label>
+
+      <GearImageUploader
+        imageUrl={value.imageUrl}
+        category={value.category}
+        displayName={`${value.brand} ${value.model}`.trim() || 'Equipment'}
+        onImageChange={(data) => onChange({ ...value, ...data })}
+        onRemoveImage={() => onChange({ ...value, imageUrl: '', imageSource: null, imageStatus: null })}
+      />
 
       {imageFetching && (
         <div className="image-fetch-status">

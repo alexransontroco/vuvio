@@ -274,6 +274,9 @@ export default function VuvioGlobeLab({ streams }) {
             <button type="button" className="is-active" aria-pressed="true">
               Lab
             </button>
+            <button type="button" onClick={() => navigate('/globe-cesium?switch=1')} aria-pressed="false">
+              Cesium
+            </button>
             <button type="button" onClick={() => navigate('/globe-test?switch=1')} aria-pressed="false">
               Test
             </button>

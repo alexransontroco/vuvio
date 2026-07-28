@@ -419,7 +419,7 @@ export default function DiscoverFeedPage() {
       </div>
 
       <div className="discover-brand-logo" aria-hidden="true">
-        <BrandMark size={20} showName />
+        <BrandMark size={32} showName />
       </div>
 
       <header className="discover-topbar">
