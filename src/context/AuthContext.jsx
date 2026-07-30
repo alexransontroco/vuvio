@@ -1,6 +1,7 @@
 import { onAuthStateChanged } from 'firebase/auth';
 import { createContext, useCallback, useContext, useEffect, useState } from 'react';
 import { auth } from '../firebase.js';
+import { creatorProfiles } from '../data/creatorProfiles.js';
 import {
   createUserProfileIfMissing,
   getUserProfile,
@@ -12,6 +13,7 @@ import {
   signOutUser,
   signUpWithEmail,
   updateUserProfile,
+  isDemoAccount,
 } from '../services/authService.js';
 
 const AuthContext = createContext(null);
@@ -39,6 +41,14 @@ export function AuthProvider({ children }) {
     setCurrentUid(uid);
 
     try {
+      if (isDemoAccount(firebaseUser.email)) {
+        console.log('[Auth] Loading demo account profile for Thomas Mercier');
+        const demoProfile = creatorProfiles['thomas-mercier'];
+        setUserProfile({ id: uid, ...demoProfile });
+        console.timeEnd('[Auth] profile Firestore read');
+        return;
+      }
+
       let profile = await getUserProfile(uid);
       console.timeEnd('[Auth] profile Firestore read');
 

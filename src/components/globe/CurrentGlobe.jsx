@@ -451,7 +451,7 @@ export default function CurrentGlobe({ streams, onboarding = false, onOnboarding
   const selectedLive = enrichedStreams.find((stream) => stream.id === selectedId) ?? null;
   const watchPathForLive = (live) => {
     const target = encodeURIComponent(live.id);
-    return live.creatorUid || live.createdLocally ? `/watch?live=${target}&mode=view` : `/discover?live=${target}`;
+    return `/watch?live=${target}`;
   };
 
   useEffect(() => {

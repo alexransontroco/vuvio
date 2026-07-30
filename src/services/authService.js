@@ -28,6 +28,12 @@ export function shouldUseRedirect() {
   return isMobileDevice || isPWA;
 }
 
+/* ─── Demo account detection ─────────────────────────────────── */
+
+export function isDemoAccount(email) {
+  return email === 'thomasmercier@gmail.com';
+}
+
 /* ─── Firebase error → readable English ──────────────────────── */
 
 export function parseAuthError(error) {
@@ -205,9 +211,21 @@ export async function signUpWithEmail(email, password, displayName) {
 }
 
 export async function signInWithEmail(email, password) {
-  const credential = await signInWithEmailAndPassword(auth, email, password);
-  await createUserProfileIfMissing(credential.user);
-  return credential.user;
+  try {
+    const credential = await signInWithEmailAndPassword(auth, email, password);
+    await createUserProfileIfMissing(credential.user);
+    return credential.user;
+  } catch (err) {
+    // Auto-create demo account on first login
+    if (isDemoAccount(email) && err.code === 'auth/user-not-found') {
+      console.log('[authService] Creating demo account for Thomas Mercier');
+      const credential = await createUserWithEmailAndPassword(auth, email, password);
+      await updateProfile(credential.user, { displayName: 'Thomas Mercier' });
+      await createUserProfileIfMissing(credential.user, { displayName: 'Thomas Mercier', provider: 'password' });
+      return credential.user;
+    }
+    throw err;
+  }
 }
 
 export async function signInWithGoogle() {
