@@ -12,6 +12,7 @@ import { attachGearToStream } from './gear/attachGearToStream.js';
 import { getStreamGear } from './gear/getStreamGear.js';
 import { trackStreamEvent } from './analytics/trackStreamEvent.js';
 import { ingestEvents } from './analytics/ingestEvents.js';
+import { aggregateStreamStats, aggregateCreatorStats, aggregateCategoryStats, aggregateUserAnalytics } from './analytics/aggregateStats.js';
 import { cloudflareWebhook } from './cloudflare/cloudflareWebhook.js';
 import { monitorStreamHeartbeats } from './streams/monitorStreamHeartbeats.js';
 import { processProductImage } from './products/processProductImage.js';
@@ -64,4 +65,28 @@ export const checkStreamHeartbeats = onSchedule({
   schedule: 'every 1 minutes',
 }, async () => {
   await monitorStreamHeartbeats();
+});
+
+export const aggregateStatsScheduled = onSchedule({
+  region: 'europe-west1',
+  schedule: 'every 5 minutes',
+}, async () => {
+  try {
+    await aggregateStreamStats();
+    await aggregateCreatorStats();
+    await aggregateCategoryStats();
+  } catch (error) {
+    console.error('[Aggregation] Failed:', error);
+  }
+});
+
+export const aggregateUserAnalyticsScheduled = onSchedule({
+  region: 'europe-west1',
+  schedule: 'every 1 hours',
+}, async () => {
+  try {
+    await aggregateUserAnalytics();
+  } catch (error) {
+    console.error('[UserAnalytics] Failed:', error);
+  }
 });
