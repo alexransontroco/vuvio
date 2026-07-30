@@ -11,6 +11,7 @@ export default function SplashScreen({ leaving = false }) {
     video.muted = true;
     video.defaultMuted = true;
     video.playsInline = true;
+    video.playbackRate = 0.7;
 
     const attemptPlay = () => {
       video.play()
