@@ -33,6 +33,7 @@ import {
 } from '../services/profileService.js';
 import { isFollowingCreator, setFollowingCreator } from '../services/followService.js';
 import { getUnreadConversationCount, subscribeToMessaging } from '../services/messagingService.js';
+import { analyticsService } from '../services/analytics/index.js';
 import { useAuth } from '../context/AuthContext.jsx';
 import {
   getEquipmentLibrary,
@@ -762,6 +763,18 @@ export default function ProfilePage() {
   useEffect(() => {
     if (searchParams.get('tab') === 'equipment') setActiveTab('equipment');
   }, [searchParams]);
+
+  useEffect(() => {
+    // Track profile open from stream
+    const streamId = searchParams.get('stream');
+    if (streamId && creatorId && state.viewedProfile) {
+      analyticsService.trackCreatorProfileOpened(
+        creatorId,
+        streamId,
+        'watch'
+      );
+    }
+  }, [creatorId, state.viewedProfile, searchParams]);
 
   useEffect(() => subscribeToEquipment(setEquipmentLibrary), []);
 
