@@ -1,0 +1,142 @@
+[
+  {
+    "id": "cycling",
+    "label": "Cycling",
+    "environment": "land",
+    "icon": "bike",
+    "enabled": true
+  },
+  {
+    "id": "mountain-biking",
+    "label": "Mountain Biking",
+    "environment": "land",
+    "icon": "bike",
+    "enabled": true
+  },
+  {
+    "id": "hiking",
+    "label": "Hiking",
+    "environment": "land",
+    "icon": "mountains",
+    "enabled": true
+  },
+  {
+    "id": "running",
+    "label": "Running",
+    "environment": "land",
+    "icon": "run",
+    "enabled": true
+  },
+  {
+    "id": "surfing",
+    "label": "Surfing",
+    "environment": "water",
+    "icon": "waves",
+    "enabled": true
+  },
+  {
+    "id": "kayaking",
+    "label": "Kayaking",
+    "environment": "water",
+    "icon": "canoe",
+    "enabled": true
+  },
+  {
+    "id": "fishing",
+    "label": "Fishing",
+    "environment": "water",
+    "icon": "fish",
+    "enabled": true
+  },
+  {
+    "id": "sailing",
+    "label": "Sailing",
+    "environment": "water",
+    "icon": "sailboat",
+    "enabled": true
+  },
+  {
+    "id": "diving",
+    "label": "Diving",
+    "environment": "water",
+    "icon": "scuba",
+    "enabled": true
+  },
+  {
+    "id": "cooking",
+    "label": "Cooking",
+    "environment": "indoor",
+    "icon": "utensils",
+    "enabled": true
+  },
+  {
+    "id": "baking",
+    "label": "Baking",
+    "environment": "indoor",
+    "icon": "cake",
+    "enabled": true
+  },
+  {
+    "id": "coffee",
+    "label": "Coffee",
+    "environment": "indoor",
+    "icon": "coffee",
+    "enabled": true
+  },
+  {
+    "id": "photography",
+    "label": "Photography",
+    "environment": "all",
+    "icon": "camera",
+    "enabled": true
+  },
+  {
+    "id": "filmmaking",
+    "label": "Filmmaking",
+    "environment": "all",
+    "icon": "video",
+    "enabled": true
+  },
+  {
+    "id": "music",
+    "label": "Music",
+    "environment": "indoor",
+    "icon": "music",
+    "enabled": true
+  },
+  {
+    "id": "driving",
+    "label": "Driving",
+    "environment": "land",
+    "icon": "car",
+    "enabled": true
+  },
+  {
+    "id": "motorcycling",
+    "label": "Motorcycling",
+    "environment": "land",
+    "icon": "bike",
+    "enabled": true
+  },
+  {
+    "id": "craftsmanship",
+    "label": "Craftsmanship",
+    "environment": "indoor",
+    "icon": "wrench",
+    "enabled": true
+  },
+  {
+    "id": "gardening",
+    "label": "Gardening",
+    "environment": "outdoor",
+    "icon": "leaf",
+    "enabled": true
+  },
+  {
+    "id": "urban-exploration",
+    "label": "Urban Exploration",
+    "environment": "outdoor",
+    "icon": "map",
+    "enabled": true
+  }
+]

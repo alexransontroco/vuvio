@@ -2,7 +2,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useCallback, useEffect, useState } from 'react';
 import { useAuth } from '../context/AuthContext.jsx';
 import { getCreatedLives, subscribeToCreatedLives } from '../services/createdLiveService.js';
-import { CreatorLiveSession } from './HomePage.jsx';
+import { CreatorLiveSession } from './WatchPage.jsx';
 
 export default function LivePage() {
   const { liveId } = useParams();

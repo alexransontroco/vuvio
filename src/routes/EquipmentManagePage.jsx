@@ -1,24 +1,25 @@
-import { ChevronLeft, Plus, CheckCircle, Loader } from 'lucide-react';
-import { useEffect, useMemo, useState } from 'react';
+import { ChevronLeft, Plus, CheckCircle } from 'lucide-react';
+import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   EquipmentItemRow,
   EquipmentManageActions,
 } from '../components/equipment/EquipmentKit.jsx';
 import { GearImageUploader } from '../components/gear/index.js';
+import { ProductSearch, ProductThumbnail } from '../components/product/index.js';
+import { getProductThumbnailUrl, getProductName } from '../services/productService.js';
 import { EQUIPMENT_CATEGORIES, EQUIPMENT_OWNERSHIP } from '../data/equipmentModel.js';
-import { getGearImageSuggestions } from '../services/gearSnapshotService.js';
 import {
   addEquipmentItem,
   groupEquipmentByCategory,
   removeEquipmentItem,
   updateEquipmentItem,
   getEquipmentLibrary,
-  fetchMissingEquipmentImages,
 } from '../services/equipmentService.js';
 
 const emptyForm = {
   category: 'recording',
+  productId: null,
   brand: '',
   model: '',
   equipmentType: '',
@@ -32,90 +33,119 @@ const emptyForm = {
 };
 
 function EquipmentForm({ value, onChange, onSave, onCancel, submitLabel = 'Save equipment' }) {
-  const [imageSuggestions, setImageSuggestions] = useState([]);
-  const [imageFetching, setImageFetching] = useState(false);
+  const [showManualEntry, setShowManualEntry] = useState(!!value.productId === false);
 
-  useEffect(() => {
-    if (!value.brand.trim() || !value.model.trim()) {
-      setImageSuggestions([]);
-      return;
-    }
+  const handleProductSelect = (product) => {
+    // Auto-fill form from selected product
+    const thumbnailUrl = getProductThumbnailUrl(product, 'medium');
+    onChange({
+      ...value,
+      productId: product.id,
+      brand: product.brand,
+      model: product.name,
+      equipmentType: product.category,
+      imageUrl: thumbnailUrl || '',
+      productUrl: product.productUrl || '',
+      affiliateUrl: product.affiliateUrl || '',
+      imageSource: 'product-catalog',
+    });
+    setShowManualEntry(false);
+  };
 
-    setImageFetching(true);
-    getGearImageSuggestions({
-      brand: value.brand,
-      model: value.model,
-      displayName: `${value.brand} ${value.model}`.trim(),
-    })
-      .then((result) => {
-        if (result.success && result.suggestions?.length > 0) {
-          setImageSuggestions(result.suggestions);
-          if (!value.imageUrl) {
-            onChange({ ...value, imageUrl: result.suggestions[0].url, imageSource: 'auto' });
-          }
-        } else {
-          setImageSuggestions([]);
-        }
-      })
-      .catch(() => setImageSuggestions([]))
-      .finally(() => setImageFetching(false));
-  }, [value.brand, value.model]);
+  const displayProductName = value.brand && value.model ? `${value.brand} ${value.model}` : 'Equipment';
 
   return (
     <section className="equipment-private-form" aria-label="Equipment form">
       <label>
         Category
-        <select value={value.category} onChange={(event) => onChange({ ...value, category: event.target.value })}>
+        <select value={value.category} onChange={(event) => {
+          onChange({ ...value, category: event.target.value });
+        }}>
           {EQUIPMENT_CATEGORIES.map((category) => (
             <option key={category.id} value={category.id}>{category.label}</option>
           ))}
         </select>
       </label>
-      <label>
-        Brand
-        <input value={value.brand} onChange={(event) => onChange({ ...value, brand: event.target.value })} placeholder="Example: GoPro" />
-      </label>
-      <label>
-        Model
-        <input value={value.model} onChange={(event) => onChange({ ...value, model: event.target.value })} placeholder="Example: HERO13 Black" />
-      </label>
-      <label>
-        Equipment type
-        <input value={value.equipmentType} onChange={(event) => onChange({ ...value, equipmentType: event.target.value })} placeholder="Example: Action Camera" />
-      </label>
 
-      <GearImageUploader
-        imageUrl={value.imageUrl}
-        category={value.category}
-        displayName={`${value.brand} ${value.model}`.trim() || 'Equipment'}
-        onImageChange={(data) => onChange({ ...value, ...data })}
-        onRemoveImage={() => onChange({ ...value, imageUrl: '', imageSource: null, imageStatus: null })}
-      />
+      {/* Product Search - Primary method */}
+      <div className="equipment-form-section">
+        <label>Find your product</label>
+        <ProductSearch
+          categoryId={value.category}
+          onSelectProduct={handleProductSelect}
+          disabled={false}
+        />
+      </div>
 
-      {imageFetching && (
-        <div className="image-fetch-status">
-          <Loader size={16} /> Searching for product image...
+      {/* Selected Product Display */}
+      {value.productId && (
+        <div className="equipment-selected-product">
+          <div className="equipment-selected-product__thumbnail">
+            {value.imageUrl && (
+              <img src={value.imageUrl} alt={displayProductName} />
+            )}
+          </div>
+          <div className="equipment-selected-product__info">
+            <strong>{value.brand} {value.model}</strong>
+            <small>{value.equipmentType || 'Equipment'}</small>
+            <button
+              type="button"
+              className="equipment-selected-product__change"
+              onClick={() => {
+                onChange({
+                  ...value,
+                  productId: null,
+                  brand: '',
+                  model: '',
+                  equipmentType: '',
+                  imageUrl: '',
+                  imageSource: null,
+                });
+                setShowManualEntry(false);
+              }}
+            >
+              Change product
+            </button>
+          </div>
         </div>
       )}
 
-      {imageSuggestions.length > 0 && (
-        <div className="image-suggestions">
-          <p>Product image (automatically found):</p>
-          <div className="image-suggestions-grid">
-            {imageSuggestions.map((img) => (
-              <button
-                key={img.url}
-                type="button"
-                className={value.imageUrl === img.url ? 'suggestion is-selected' : 'suggestion'}
-                onClick={() => onChange({ ...value, imageUrl: img.url, imageSource: 'auto' })}
-                title="Click to select"
-              >
-                <img src={img.thumb} alt={img.alt} />
-                {value.imageUrl === img.url && <CheckCircle size={20} />}
-              </button>
-            ))}
-          </div>
-        </div>
+      {/* Manual Entry - Fallback */}
+      {!value.productId && (
+        <>
+          {!showManualEntry ? (
+            <button
+              type="button"
+              className="equipment-form-fallback"
+              onClick={() => setShowManualEntry(true)}
+            >
+              Can't find your product? Enter manually
+            </button>
+          ) : (
+            <div className="equipment-manual-entry">
+              <label>
+                Brand
+                <input value={value.brand} onChange={(event) => onChange({ ...value, brand: event.target.value })} placeholder="Example: GoPro" />
+              </label>
+              <label>
+                Model
+                <input value={value.model} onChange={(event) => onChange({ ...value, model: event.target.value })} placeholder="Example: HERO13 Black" />
+              </label>
+              <label>
+                Equipment type
+                <input value={value.equipmentType} onChange={(event) => onChange({ ...value, equipmentType: event.target.value })} placeholder="Example: Action Camera" />
+              </label>
+
+              <GearImageUploader
+                imageUrl={value.imageUrl}
+                category={value.category}
+                displayName={displayProductName}
+                onImageChange={(data) => onChange({ ...value, ...data })}
+                onRemoveImage={() => onChange({ ...value, imageUrl: '', imageSource: null })}
+              />
+            </div>
+          )}
+        </>
       )}
 
       <label>
@@ -162,26 +192,12 @@ export default function EquipmentManagePage() {
   const [form, setForm] = useState(null);
   const [editingId, setEditingId] = useState(null);
   const [toast, setToast] = useState('');
-  const [imageFetching, setImageFetching] = useState(false);
   const groups = useMemo(() => groupEquipmentByCategory(items), [items]);
 
   const showToast = (message) => {
     setToast(message);
     window.setTimeout(() => setToast(''), 1600);
   };
-
-  useEffect(() => {
-    setImageFetching(true);
-    fetchMissingEquipmentImages()
-      .then((result) => {
-        if (result.updated > 0) {
-          setItems(getEquipmentLibrary());
-          showToast(`Found images for ${result.updated} equipment`);
-        }
-      })
-      .catch(() => {})
-      .finally(() => setImageFetching(false));
-  }, [showToast]);
 
   const saveForm = () => {
     if (!form?.brand.trim() || !form?.model.trim()) return;

@@ -55,48 +55,6 @@ const initialLiveDraft = {
 const privacyOptions = ['Everyone', 'Followers', 'Private'];
 const qualityOptions = ['720p', '1080p', 'Auto'];
 
-function CreateLiveMark() {
-  return (
-    <span className="create-live-mark" aria-hidden="true">
-      <svg className="create-live-mark__logo" viewBox="0 0 96 72" focusable="false">
-        <defs>
-          <linearGradient id="create-live-v-left" x1="18" y1="14" x2="42" y2="58" gradientUnits="userSpaceOnUse">
-            <stop offset="0" stopColor="#2563ff" />
-            <stop offset="1" stopColor="#0ea5ff" />
-          </linearGradient>
-          <linearGradient id="create-live-v-right" x1="54" y1="14" x2="78" y2="58" gradientUnits="userSpaceOnUse">
-            <stop offset="0" stopColor="#35e3dc" />
-            <stop offset="1" stopColor="#14f2d4" />
-          </linearGradient>
-          <linearGradient id="create-live-dot" x1="38" y1="4" x2="58" y2="24" gradientUnits="userSpaceOnUse">
-            <stop offset="0" stopColor="#2563ff" />
-            <stop offset="1" stopColor="#35e3dc" />
-          </linearGradient>
-        </defs>
-        <circle className="create-live-mark__dot" cx="48" cy="12" r="8.5" fill="url(#create-live-dot)" />
-        <path
-          className="create-live-mark__v create-live-mark__v--left"
-          d="M19 29 L35.6 56 L47 35"
-          fill="none"
-          stroke="url(#create-live-v-left)"
-          strokeWidth="13"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        />
-        <path
-          className="create-live-mark__v create-live-mark__v--right"
-          d="M49 35 L60.4 56 L77 29"
-          fill="none"
-          stroke="url(#create-live-v-right)"
-          strokeWidth="13"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        />
-      </svg>
-    </span>
-  );
-}
-
 function LivePreview({ draft, selectedFamily, equipmentLibrary, onEditGear, onLaunch, locationStatus }) {
   const selectedItems = getEquipmentSelection(equipmentLibrary, draft.equipmentIds ?? []);
   const captureItems = selectedItems.filter((item) => item.category !== 'activity');
@@ -543,7 +501,7 @@ export default function BottomNav({ collapsible = false, collapsed = false, onEx
           onClick={() => setCreateOpen(true)}
           aria-label={t('navigation.create')}
         >
-          <CreateLiveMark />
+          <BrandMark size={40} withCircle={false} style={{ marginTop: 10 }} />
           <span className="bottom-nav__create-badge" aria-hidden="true">+</span>
         </button>
         {navItems.slice(2).map(({ to, labelKey, icon: Icon }) => (

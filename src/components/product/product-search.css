@@ -1,198 +1,169 @@
-/**
- * Product Search Component Styles
- */
-
+/* Product Search */
 .product-search {
   position: relative;
   width: 100%;
-  max-width: 600px;
 }
 
 .product-search__input-wrapper {
   position: relative;
   display: flex;
   align-items: center;
-  background: white;
-  border: 1px solid #e5e7eb;
-  border-radius: 8px;
-  transition: all 0.2s ease;
+  height: 44px;
+  padding: 0 12px;
+  border: 0.5px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  background: rgba(8, 24, 40, 0.6);
+  backdrop-filter: blur(8px);
 }
 
-.product-search__input-wrapper:focus-within {
-  border-color: #3b82f6;
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
-}
-
-.product-search__icon {
-  position: absolute;
-  left: 12px;
-  color: #9ca3af;
-  pointer-events: none;
+.product-search__input-icon {
+  color: rgba(142, 172, 190, 0.5);
+  margin-right: 8px;
+  flex-shrink: 0;
 }
 
 .product-search__input {
   flex: 1;
-  padding: 10px 40px;
-  font-size: 15px;
   border: none;
   background: transparent;
+  color: rgba(242, 247, 246, 0.9);
+  font-size: 14px;
   outline: none;
-  font-family: inherit;
 }
 
 .product-search__input::placeholder {
-  color: #d1d5db;
+  color: rgba(142, 172, 190, 0.4);
 }
 
 .product-search__clear {
-  position: absolute;
-  right: 12px;
-  background: none;
-  border: none;
-  padding: 4px;
-  cursor: pointer;
-  color: #9ca3af;
+  width: 24px;
+  height: 24px;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: color 0.2s ease;
+  border: none;
+  background: transparent;
+  color: rgba(142, 172, 190, 0.5);
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: color 200ms ease;
 }
 
 .product-search__clear:hover {
-  color: #6b7280;
+  color: rgba(142, 172, 190, 0.8);
 }
 
-/* Dropdown */
+.product-search__backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 30;
+}
+
 .product-search__dropdown {
   position: absolute;
   top: 100%;
   left: 0;
   right: 0;
+  z-index: 31;
   margin-top: 8px;
-  background: white;
-  border: 1px solid #e5e7eb;
-  border-radius: 8px;
-  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
-  z-index: 1000;
-  max-height: 600px;
+  max-height: 360px;
+  border: 0.5px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  background: rgba(8, 24, 40, 0.95);
+  backdrop-filter: blur(16px);
   overflow-y: auto;
 }
 
-.product-search__loading {
-  padding: 20px;
-  text-align: center;
-  color: #6b7280;
-  font-size: 14px;
-}
-
-.product-search__error {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 16px;
-  background: #fef2f2;
-  color: #dc2626;
-  border-bottom: 1px solid #fee2e2;
-  font-size: 14px;
-}
-
 .product-search__results {
-  padding: 12px;
-}
-
-.product-search__results-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
-  gap: 12px;
-  margin-bottom: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 6px;
 }
 
 .product-search__result-item {
+  display: grid;
+  grid-template-columns: 48px 1fr 16px;
+  gap: 12px;
+  align-items: center;
+  width: 100%;
+  padding: 10px 12px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  cursor: pointer;
+  transition: background 200ms ease;
+  text-align: left;
+}
+
+.product-search__result-item:hover {
+  background: rgba(53, 227, 220, 0.08);
+}
+
+.product-search__result-info {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.product-search__result-info strong {
+  font-size: 13px;
+  color: rgba(242, 247, 246, 0.95);
+}
+
+.product-search__result-info small {
+  font-size: 12px;
+  color: rgba(142, 172, 190, 0.6);
+}
+
+.product-search__state {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 8px;
-  padding: 8px;
-  background: transparent;
-  border: 2px solid transparent;
-  border-radius: 8px;
-  cursor: pointer;
-  transition: all 0.2s ease;
+  justify-content: center;
+  gap: 12px;
+  padding: 32px 16px;
   text-align: center;
 }
 
-.product-search__result-item:hover,
-.product-search__result-item.is-highlighted {
-  background: #f9fafb;
-  border-color: #3b82f6;
+.spinner {
+  width: 20px;
+  height: 20px;
+  border: 2px solid rgba(53, 227, 220, 0.2);
+  border-top-color: rgba(53, 227, 220, 0.6);
+  border-radius: 50%;
+  animation: spin 800ms linear infinite;
 }
 
-.product-search__result-label {
-  width: 100%;
-  min-width: 0;
+@keyframes spin {
+  to { transform: rotate(360deg); }
 }
 
-.product-search__result-brand {
-  font-size: 11px;
-  font-weight: 600;
-  color: #6b7280;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  margin-bottom: 2px;
-}
-
-.product-search__result-name {
-  font-size: 12px;
-  color: #1f2937;
-  line-height: 1.3;
-  word-break: break-word;
-}
-
-.product-search__empty {
-  padding: 24px;
-  text-align: center;
-  color: #6b7280;
-  font-size: 14px;
-}
-
-.product-search__hint {
-  padding: 16px;
-  text-align: center;
-  color: #9ca3af;
-  font-size: 13px;
-  border-top: 1px solid #f3f4f6;
-}
-
-.product-search__not-found {
+.product-search__not-found-action {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   padding: 8px 12px;
-  border-top: 1px solid #e5e7eb;
-}
-
-.product-search__not-found-button {
-  width: 100%;
-  padding: 10px;
-  background: #f3f4f6;
-  border: 1px solid #e5e7eb;
-  border-radius: 6px;
-  color: #3b82f6;
+  border: 0.5px solid rgba(53, 227, 220, 0.3);
+  border-radius: 8px;
+  background: rgba(53, 227, 220, 0.08);
+  color: rgba(53, 227, 220, 0.8);
   font-size: 13px;
-  font-weight: 500;
   cursor: pointer;
-  transition: all 0.2s ease;
+  margin-top: 8px;
 }
 
-.product-search__not-found-button:hover {
-  background: #e5e7eb;
-  border-color: #3b82f6;
+.product-search__not-found-action:hover {
+  background: rgba(53, 227, 220, 0.12);
+  color: rgba(53, 227, 220, 1);
 }
 
-/* Responsive */
-@media (max-width: 640px) {
-  .product-search__results-grid {
-    grid-template-columns: repeat(3, 1fr);
+@media (prefers-reduced-motion: reduce) {
+  .product-search__result-item {
+    transition: none;
   }
-
-  .product-search__dropdown {
-    max-height: 70vh;
+  .spinner {
+    animation: none;
   }
 }

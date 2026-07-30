@@ -1,0 +1,73 @@
+/* ── Product Thumbnail ──────────────────────────── */
+
+.product-thumbnail {
+  position: relative;
+  flex-shrink: 0;
+  transition: opacity 200ms ease;
+}
+
+.product-thumbnail.is-processing {
+  opacity: 0.7;
+}
+
+.product-thumbnail.is-error {
+  opacity: 0.6;
+}
+
+.product-thumbnail__status {
+  position: absolute;
+  bottom: -18px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 11px;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+.product-thumbnail__status.processing {
+  color: rgba(53, 227, 220, 0.6);
+  font-weight: 500;
+}
+
+.product-thumbnail__status.error {
+  color: rgba(255, 59, 59, 0.6);
+  font-weight: 500;
+}
+
+/* ── Image Processing Service CSS ──────────────── */
+
+.product-image-skeleton {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    rgba(53, 227, 220, 0.05) 0%,
+    rgba(53, 227, 220, 0.1) 50%,
+    rgba(53, 227, 220, 0.05) 100%
+  );
+  background-size: 200% 100%;
+  animation: skeleton-loading 1.5s infinite;
+  border-radius: 12px;
+}
+
+@keyframes skeleton-loading {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .product-thumbnail {
+    transition: none;
+  }
+
+  .product-image-skeleton {
+    animation: none;
+    opacity: 0.5;
+  }
+}

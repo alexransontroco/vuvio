@@ -1,0 +1,21 @@
+import { FieldValue } from 'firebase-admin/firestore';
+import type { Request, Response } from 'firebase-functions/v2/https';
+import { authenticateUser } from '../middleware/authenticateUser.js';
+import { ApiError } from '../shared/errors.js';
+import { asRecord, stringArray } from '../shared/validation.js';
+import { assertGearOwnership } from './gearHelpers.js';
+import { streamRef } from '../streams/streamHelpers.js';
+import type { StreamDocument } from '../types/stream.js';
+
+export async function attachGearToStream(req: Request, res: Response, streamId: string) {
+  const user = await authenticateUser(req);
+  const body = asRecord(req.body);
+  const gearIds = await assertGearOwnership(user.uid, stringArray(body, 'gearIds', 20));
+  const ref = streamRef(streamId);
+  const snap = await ref.get();
+  if (!snap.exists) throw new ApiError('not_found', 'Stream not found');
+  const stream = snap.data() as StreamDocument;
+  if (stream.creatorId !== user.uid) throw new ApiError('forbidden', 'Only the creator can modify stream gear');
+  await ref.update({ gearIds, updatedAt: FieldValue.serverTimestamp() });
+  res.json({ stream: { id: streamId, gearIds } });
+}

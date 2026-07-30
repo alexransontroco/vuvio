@@ -1066,6 +1066,9 @@
   background: #050b12;
   touch-action: none;
   user-select: none;
+  min-height: 100dvh;
+  height: 100dvh;
+  overflow: hidden;
 }
 
 .live-feed__track {
@@ -1089,7 +1092,7 @@
   overflow: hidden;
   background: #050b12;
   opacity: 0.5;
-  transition: opacity 300ms ease;
+  transition: none;
 }
 
 .live-slide[aria-hidden="false"] {
@@ -1189,8 +1192,13 @@
 
 .live-feed__bottom-gradient {
   bottom: 0;
-  height: 50%;
-  background: linear-gradient(180deg, transparent, rgba(3, 10, 18, 0.96));
+  height: 60%;
+  background: linear-gradient(
+    to bottom,
+    transparent 50%,
+    rgba(3, 15, 23, 0.15) 65%,
+    rgba(3, 15, 23, 0.72) 100%
+  );
 }
 
 .live-feed__watermark {
@@ -1250,11 +1258,11 @@
 
 .live-location-globe {
   position: absolute;
-  top: 24px;
+  top: calc(12px + env(safe-area-inset-top));
   right: 14px;
   z-index: 9;
-  width: 76px;
-  height: 76px;
+  width: 72px;
+  height: 72px;
   display: grid;
   place-items: center;
   border: 0;
@@ -1302,10 +1310,10 @@
 
 .live-location-globe__world {
   position: relative;
-  width: 62px;
+  width: 60px;
   aspect-ratio: 1;
   overflow: hidden;
-  border: 1px solid rgba(53, 227, 220, 0.42);
+  border: 1px solid rgba(53, 227, 220, 0.35);
   border-radius: 50%;
   background:
     radial-gradient(circle at 36% 27%, rgba(95, 179, 255, 0.44), transparent 14%),
@@ -1383,7 +1391,7 @@
 .live-chat {
   position: absolute;
   left: 16px;
-  bottom: calc(var(--nav-height) + var(--safe-bottom) + 112px);
+  bottom: calc(var(--nav-height) + var(--safe-bottom) + 100px);
   z-index: 8;
   display: flex;
   max-width: min(270px, calc(100% - 104px));
@@ -1401,32 +1409,28 @@
 
 .live-chat button {
   margin: 0;
-  border: 0.5px solid rgba(255, 255, 255, 0.06);
-  border-radius: 14px;
-  background: rgba(4, 9, 15, 0.12);
-  backdrop-filter: blur(14px);
-  padding: 7px 10px;
-  color: rgba(255, 255, 255, 0.62);
-  font-size: 11.5px;
-  line-height: 1.28;
+  border: transparent;
+  border-radius: 0;
+  background: transparent;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  padding: 2px 0;
+  color: rgba(242, 252, 251, 0.75);
+  font-size: 12px;
+  line-height: 1.4;
   text-align: left;
   pointer-events: auto;
-  animation: live-chat-fade 5.8s ease both;
+  animation: none;
 }
 
 .live-chat strong {
-  color: rgba(255, 255, 255, 0.78);
+  color: rgba(34, 223, 194, 0.65);
   font-weight: 700;
+  margin-right: 4px;
 }
 
 .live-chat__count {
-  width: fit-content;
-  border-color: rgba(43, 217, 200, 0.08) !important;
-  background: rgba(5, 18, 30, 0.2) !important;
-  color: rgba(218, 255, 251, 0.56) !important;
-  font-size: 10.5px !important;
-  font-weight: 580;
-  animation: none !important;
+  display: none !important;
 }
 
 @keyframes live-chat-fade {
@@ -1451,7 +1455,7 @@
   position: absolute;
   left: 16px;
   right: 16px;
-  bottom: calc(var(--nav-height) + var(--safe-bottom) + 12px);
+  bottom: calc(var(--nav-height) + var(--safe-bottom) + 4px);
   z-index: 9;
   display: flex;
   align-items: flex-end;
@@ -1501,9 +1505,13 @@
 }
 
 .live-feed__copy p {
-  margin: 3px 0 0;
-  color: rgba(255, 255, 255, 0.72);
-  font-size: 12px;
+  margin: 0 0 0;
+  color: #27dfc1;
+  font-size: 13px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 5px;
 }
 
 .live-feed__copy span {
@@ -1516,27 +1524,34 @@
 }
 
 .live-actions {
+  position: absolute;
+  right: 4px;
+  bottom: calc(var(--nav-height) + var(--safe-bottom) - 65px);
   display: flex;
   flex: none;
   flex-direction: column;
   align-items: center;
-  gap: 12px;
+  gap: 16px;
+  z-index: 9;
 }
 
 .live-actions button {
-  width: 46px;
-  height: 46px;
+  width: 44px;
+  height: 44px;
   display: grid;
   place-items: center;
-  border: 0.5px solid rgba(53, 227, 220, 0.12);
+  border: 0.5px solid rgba(255, 255, 255, 0.08);
   border-radius: 50%;
-  background: rgba(5, 15, 28, 0.6);
+  background: rgba(5, 15, 22, 0.52);
   backdrop-filter: blur(10px);
-  color: #fff;
+  -webkit-backdrop-filter: blur(10px);
+  color: rgba(255, 255, 255, 0.72);
   transition:
     transform 140ms ease,
     color 180ms ease,
-    background 180ms ease;
+    background 180ms ease,
+    border-color 180ms ease,
+    box-shadow 180ms ease;
 }
 
 .live-feed.is-immersive .live-feed__top-gradient,
@@ -1572,6 +1587,14 @@
   background: rgba(43, 217, 200, 0.14);
   color: var(--color-cyan);
   box-shadow: 0 0 0 1px rgba(53, 227, 220, 0.18), 0 0 18px rgba(53, 227, 220, 0.12);
+}
+
+.live-actions button.equipment-button {
+  border: 1.5px solid rgba(32, 225, 195, 0.85);
+  color: rgba(32, 225, 195, 0.95);
+  box-shadow:
+    0 0 0 5px rgba(32, 225, 195, 0.09),
+    0 0 18px rgba(32, 225, 195, 0.25);
 }
 
 .live-actions button.is-pulsing {
@@ -2596,7 +2619,7 @@
 }
 
 .live-slide.is-active {
-  animation: live-slide-enter 380ms ease both;
+  animation: none;
 }
 
 @media (max-width: 360px) {
@@ -2632,16 +2655,18 @@
 
 .live-position-pill {
   position: absolute;
-  top: calc(14px + env(safe-area-inset-top));
-  right: 16px;
+  top: calc(28px + env(safe-area-inset-top));
+  right: 14px;
   z-index: 6;
   border-radius: 999px;
-  background: rgba(6, 17, 27, 0.62);
-  color: rgba(242, 247, 246, 0.72);
-  padding: 4px 10px;
+  background: rgba(7, 22, 31, 0.72);
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  color: rgba(242, 252, 251, 0.92);
+  padding: 6px 12px;
   font-size: 11px;
-  font-weight: 560;
+  font-weight: 580;
   backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
   pointer-events: none;
 }
 

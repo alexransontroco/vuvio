@@ -80,6 +80,45 @@ const TITLES = {
 
 const STREAMERS = ['Maya', 'Noah', 'Sofia', 'Rui', 'Clara', 'Tomas', 'Lena', 'Amina', 'Kenji', 'Leyla', 'Eli', 'Nora'];
 const FEATURED_TYPES = ['editorial', 'trending', 'partner'];
+const WATER_ACTIVITIES = ['surf', 'sailing', 'kayaking', 'diving', 'fishing', 'paddle'];
+
+function inferWaterActivityFromStream(stream) {
+  const value = String(stream?.activity ?? stream?.subcategory ?? stream?.title ?? stream?.experienceTitle ?? stream?.name ?? '').toLowerCase();
+  if (value.includes('surf')) return 'surf';
+  if (value.includes('sail')) return 'sailing';
+  if (value.includes('kayak')) return 'kayaking';
+  if (value.includes('div')) return 'diving';
+  if (value.includes('fish')) return 'fishing';
+  if (value.includes('paddle')) return 'paddle';
+  if (value.includes('ferry')) return 'ferry';
+  if (value.includes('jet')) return 'jetSki';
+  if (value.includes('swim')) return 'swimming';
+  if (value.includes('boat')) return 'boat';
+  return undefined;
+}
+
+const WATER_PRIORITY_LIVES = [
+  { id: 'water-live-basque-01', title: 'Basque break cam', streamer: 'Maya', city: 'Biarritz', country: 'France', coordinates: [-1.58, 43.48], viewers: 124, featured: false, activity: 'surf' },
+  { id: 'water-live-basque-02', title: 'La barre live', streamer: 'Noah', city: 'Hossegor', country: 'France', coordinates: [-1.43, 43.66], viewers: 268, featured: true, activity: 'surf' },
+  { id: 'water-live-portugal-01', title: 'Atlantic point', streamer: 'Rui', city: 'Nazaré', country: 'Portugal', coordinates: [-9.07, 39.6], viewers: 312, featured: false, activity: 'surf' },
+  { id: 'water-live-portugal-02', title: 'Harbor runner', streamer: 'Clara', city: 'Lisbon', country: 'Portugal', coordinates: [-9.14, 38.72], viewers: 154, featured: false, activity: 'sailing' },
+  { id: 'water-live-mediterranean-01', title: 'Port wake', streamer: 'Tomas', city: 'Split', country: 'Croatia', coordinates: [16.44, 43.51], viewers: 89, featured: false, activity: 'boat' },
+  { id: 'water-live-mediterranean-02', title: 'Coastline tack', streamer: 'Sofia', city: 'Nice', country: 'France', coordinates: [7.27, 43.7], viewers: 211, featured: false, activity: 'sailing' },
+  { id: 'water-live-norway-01', title: 'Fjord paddle line', streamer: 'Lena', city: 'Bergen', country: 'Norway', coordinates: [5.33, 60.39], viewers: 73, featured: false, activity: 'kayaking' },
+  { id: 'water-live-norway-02', title: 'Cold water channel', streamer: 'Eli', city: 'Oslo', country: 'Norway', coordinates: [10.75, 59.91], viewers: 142, featured: false, activity: 'kayaking' },
+  { id: 'water-live-greece-01', title: 'Aegean sails', streamer: 'Leyla', city: 'Athens', country: 'Greece', coordinates: [23.73, 37.98], viewers: 188, featured: true, activity: 'sailing' },
+  { id: 'water-live-greece-02', title: 'Island crossing', streamer: 'Kenji', city: 'Crete', country: 'Greece', coordinates: [24.99, 35.34], viewers: 97, featured: false, activity: 'boat' },
+  { id: 'water-live-red-sea-01', title: 'Reef descent', streamer: 'Amina', city: 'Hurghada', country: 'Egypt', coordinates: [33.81, 27.26], viewers: 207, featured: false, activity: 'diving' },
+  { id: 'water-live-red-sea-02', title: 'Blue wall dive', streamer: 'Nora', city: 'Sharm El Sheikh', country: 'Egypt', coordinates: [34.29, 27.85], viewers: 231, featured: true, activity: 'diving' },
+  { id: 'water-live-brittany-01', title: 'Harbor cast', streamer: 'Rui', city: 'Brest', country: 'France', coordinates: [-4.49, 48.39], viewers: 66, featured: false, activity: 'fishing' },
+  { id: 'water-live-brittany-02', title: 'Tide line', streamer: 'Maya', city: 'Concarneau', country: 'France', coordinates: [-3.92, 47.87], viewers: 112, featured: false, activity: 'fishing' },
+  { id: 'water-live-caribbean-01', title: 'Lagoon glide', streamer: 'Sofia', city: 'Cozumel', country: 'Mexico', coordinates: [-86.95, 20.51], viewers: 173, featured: false, activity: 'paddle' },
+  { id: 'water-live-caribbean-02', title: 'Coral drift', streamer: 'Tomas', city: 'Nassau', country: 'Bahamas', coordinates: [-77.35, 25.05], viewers: 236, featured: true, activity: 'diving' },
+  { id: 'water-live-california-01', title: 'West swell', streamer: 'Clara', city: 'Santa Cruz', country: 'United States', coordinates: [-122.03, 36.95], viewers: 342, featured: true, activity: 'surf' },
+  { id: 'water-live-california-02', title: 'Harbor morning', streamer: 'Noah', city: 'Monterey', country: 'United States', coordinates: [-121.89, 36.6], viewers: 85, featured: false, activity: 'paddle' },
+  { id: 'water-live-japan-01', title: 'Fish market run', streamer: 'Kenji', city: 'Tokyo', country: 'Japan', coordinates: [139.79, 35.67], viewers: 145, featured: false, activity: 'fishing' },
+  { id: 'water-live-japan-02', title: 'Ferry line', streamer: 'Amina', city: 'Osaka', country: 'Japan', coordinates: [135.5, 34.69], viewers: 192, featured: false, activity: 'ferry' },
+];
 
 function seededRandom(seed) {
   let value = seed + 0x6d2b79f5;
@@ -112,6 +151,7 @@ function generatedLive(index, random) {
   const viewers = Math.floor(40 + Math.pow(random(), 1.9) * 5200);
   const featured = random() < (viewers > 2200 ? 0.18 : 0.055);
   const imagePool = IMAGE_POOL[family] ?? IMAGE_POOL.earth;
+  const activity = family === 'water' ? WATER_ACTIVITIES[index % WATER_ACTIVITIES.length] : undefined;
 
   return {
     id: `test2-${index.toString(36).padStart(4, '0')}`,
@@ -125,6 +165,7 @@ function generatedLive(index, random) {
     viewers,
     image: imagePool[index % imagePool.length],
     coordinates: [Number(lng.toFixed(4)), Number(lat.toFixed(4))],
+    activity,
     experienceTitle: TITLES[family][index % TITLES[family].length],
     title: TITLES[family][index % TITLES[family].length],
     featured,
@@ -146,9 +187,10 @@ export function createGlobeTest2Lives(density = 'medium', baseStreams = []) {
       featuredType: index % 18 === 0 ? 'editorial' : 'trending',
       qualityScore: 0.7 + (index % 25) / 100,
       startedMinutesAgo: 8 + index * 3,
+      activity: stream.activity ?? inferWaterActivityFromStream(stream),
     }));
 
   const random = seededRandom(targetCount * 97);
-  const generated = Array.from({ length: Math.max(0, targetCount - normalizedBase.length) }, (_, index) => generatedLive(index, random));
-  return [...normalizedBase, ...generated].slice(0, targetCount);
+  const generated = Array.from({ length: Math.max(0, targetCount - normalizedBase.length - WATER_PRIORITY_LIVES.length) }, (_, index) => generatedLive(index, random));
+  return [...normalizedBase, ...WATER_PRIORITY_LIVES, ...generated].slice(0, targetCount);
 }

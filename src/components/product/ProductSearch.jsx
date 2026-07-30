@@ -1,271 +1,118 @@
-/**
- * Product Search Component
- * Provides autocomplete search with product thumbnails
- * Allows selection of a product or "can't find?" action
- */
-
-import { useState, useEffect, useRef, useCallback } from 'react';
-import { Search, X, AlertCircle } from 'lucide-react';
-import { searchProducts } from '../../services/productService.js';
-import ProductThumbnail from './ProductThumbnail.jsx';
+import { useState, useEffect, useRef } from 'react';
+import { Search, X, ChevronRight } from 'lucide-react';
+import { searchProducts, getProductName } from '../../services/productService.js';
+import { ProductThumbnail } from './ProductThumbnail.jsx';
 import './product-search.css';
 
 /**
- * Product Search Component with autocomplete
- * @param {Object} props
- * @param {Function} props.onSelect - Called when product is selected
- * @param {Function} [props.onNotFound] - Called when user can't find product
- * @param {string} [props.placeholder='Search products...'] - Input placeholder
- * @param {number} [props.maxResults=12] - Max search results to show
- * @param {boolean} [props.open=false] - Open state (for controlled mode)
- * @param {Function} [props.onOpenChange] - Open state change callback
- * @returns {JSX.Element}
+ * ProductSearch - Search and select products with autocomplete
  */
-export function ProductSearch({
-  onSelect,
-  onNotFound,
-  placeholder = 'Search products...',
-  maxResults = 12,
-  open = false,
-  onOpenChange,
-}) {
+export function ProductSearch({ categoryId, onSelectProduct, disabled = false }) {
   const [query, setQuery] = useState('');
   const [results, setResults] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
-  const [isOpen, setIsOpen] = useState(open);
-  const [selectedIndex, setSelectedIndex] = useState(-1);
+  const [isOpen, setIsOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const searchInputRef = useRef(null);
+  const debounceTimer = useRef(null);
 
-  const inputRef = useRef(null);
-  const resultsRef = useRef(null);
-  const searchTimeoutRef = useRef(null);
-
-  // Handle open state changes
   useEffect(() => {
-    setIsOpen(open);
-  }, [open]);
-
-  // Perform search
-  const performSearch = useCallback(async (searchQuery) => {
-    if (!searchQuery || searchQuery.length < 2) {
-      setResults([]);
-      setError(null);
-      return;
-    }
-
-    setLoading(true);
-    setError(null);
-    setSelectedIndex(-1);
-
-    try {
-      const searchResults = await searchProducts(searchQuery);
-      setResults(searchResults.slice(0, maxResults));
-    } catch (err) {
-      console.error('Search error:', err);
-      setError('Failed to search products');
-      setResults([]);
-    } finally {
-      setLoading(false);
-    }
-  }, [maxResults]);
-
-  // Debounced search
-  const handleInputChange = (e) => {
-    const value = e.target.value;
-    setQuery(value);
-
-    if (searchTimeoutRef.current) {
-      clearTimeout(searchTimeoutRef.current);
-    }
-
-    if (value.length < 2) {
+    if (debounceTimer.current) clearTimeout(debounceTimer.current);
+    if (!query || query.length < 2) {
       setResults([]);
       return;
     }
 
-    setLoading(true);
-    searchTimeoutRef.current = setTimeout(() => {
-      performSearch(value);
-    }, 300);
-  };
-
-  // Handle product selection
-  const handleSelectProduct = (product) => {
-    onSelect?.(product);
-    setQuery('');
-    setResults([]);
-    setIsOpen(false);
-    onOpenChange?.(false);
-  };
-
-  // Handle "can't find" action
-  const handleNotFound = () => {
-    onNotFound?.(query);
-    setQuery('');
-    setResults([]);
-    setIsOpen(false);
-    onOpenChange?.(false);
-  };
-
-  // Handle keyboard navigation
-  const handleKeyDown = (e) => {
-    if (!isOpen || results.length === 0) {
-      if (e.key === 'Enter' && query.length > 0) {
+    setIsLoading(true);
+    debounceTimer.current = setTimeout(async () => {
+      try {
+        const products = await searchProducts(query, categoryId);
+        setResults(products);
         setIsOpen(true);
-        onOpenChange?.(true);
+      } catch (err) {
+        console.error('[ProductSearch] Error:', err);
+      } finally {
+        setIsLoading(false);
       }
-      return;
-    }
+    }, 300);
+  }, [query, categoryId]);
 
-    switch (e.key) {
-      case 'ArrowDown':
-        e.preventDefault();
-        setSelectedIndex(prev => (prev < results.length - 1 ? prev + 1 : prev));
-        break;
-      case 'ArrowUp':
-        e.preventDefault();
-        setSelectedIndex(prev => (prev > -1 ? prev - 1 : -1));
-        break;
-      case 'Enter':
-        e.preventDefault();
-        if (selectedIndex >= 0) {
-          handleSelectProduct(results[selectedIndex]);
-        }
-        break;
-      case 'Escape':
-        e.preventDefault();
-        setIsOpen(false);
-        onOpenChange?.(false);
-        break;
-      default:
-        break;
-    }
+  const handleSelectProduct = (product) => {
+    onSelectProduct(product);
+    setQuery('');
+    setIsOpen(false);
   };
-
-  // Close on outside click
-  useEffect(() => {
-    const handleClickOutside = (e) => {
-      if (resultsRef.current && !resultsRef.current.contains(e.target) &&
-          inputRef.current && !inputRef.current.contains(e.target)) {
-        setIsOpen(false);
-        onOpenChange?.(false);
-      }
-    };
-
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [onOpenChange]);
 
   return (
     <div className="product-search">
       <div className="product-search__input-wrapper">
-        <Search size={20} className="product-search__icon" />
+        <Search size={18} className="product-search__input-icon" />
         <input
-          ref={inputRef}
+          ref={searchInputRef}
           type="text"
           className="product-search__input"
-          placeholder={placeholder}
+          placeholder="Search by brand or model..."
           value={query}
-          onChange={handleInputChange}
-          onKeyDown={handleKeyDown}
-          onFocus={() => {
-            setIsOpen(true);
-            onOpenChange?.(true);
-          }}
+          onChange={(e) => setQuery(e.target.value)}
+          onFocus={() => query.length >= 2 && setIsOpen(true)}
+          disabled={disabled}
           autoComplete="off"
         />
         {query && (
           <button
+            type="button"
             className="product-search__clear"
-            onClick={() => {
-              setQuery('');
-              setResults([]);
-              inputRef.current?.focus();
-            }}
-            aria-label="Clear search"
+            onClick={() => { setQuery(''); setResults([]); setIsOpen(false); }}
           >
-            <X size={18} />
+            <X size={16} />
           </button>
         )}
       </div>
 
       {isOpen && (
-        <div className="product-search__dropdown" ref={resultsRef}>
-          {loading && (
-            <div className="product-search__loading">
-              <span>Searching...</span>
-            </div>
-          )}
-
-          {error && (
-            <div className="product-search__error">
-              <AlertCircle size={18} />
-              <span>{error}</span>
-            </div>
-          )}
-
-          {!loading && !error && results.length > 0 && (
-            <div className="product-search__results">
-              <div className="product-search__results-grid">
-                {results.map((product, index) => (
+        <>
+          <div className="product-search__backdrop" onClick={() => setIsOpen(false)} />
+          <div className="product-search__dropdown">
+            {isLoading ? (
+              <div className="product-search__state">
+                <div className="spinner" />
+                <span>Searching...</span>
+              </div>
+            ) : results.length === 0 ? (
+              <div className="product-search__state">
+                {query.length < 2 ? (
+                  <span>Type at least 2 characters</span>
+                ) : (
+                  <>
+                    <span>No products found for "{query}"</span>
+                    <button type="button" className="product-search__not-found-action">
+                      Can't find your equipment?
+                      <ChevronRight size={16} />
+                    </button>
+                  </>
+                )}
+              </div>
+            ) : (
+              <div className="product-search__results">
+                {results.map((product) => (
                   <button
                     key={product.id}
-                    className={`product-search__result-item ${
-                      index === selectedIndex ? 'is-highlighted' : ''
-                    }`}
+                    type="button"
+                    className="product-search__result-item"
                     onClick={() => handleSelectProduct(product)}
-                    onMouseEnter={() => setSelectedIndex(index)}
-                    title={`${product.brand} ${product.name}`}
                   >
-                    <ProductThumbnail
-                      product={product}
-                      size="md"
-                      onClick={() => handleSelectProduct(product)}
-                    />
-                    <div className="product-search__result-label">
-                      <div className="product-search__result-brand">{product.brand}</div>
-                      <div className="product-search__result-name">{product.name}</div>
+                    <ProductThumbnail product={product} size="sm" />
+                    <div className="product-search__result-info">
+                      <strong>{getProductName(product)}</strong>
+                      <small>{product.description}</small>
                     </div>
+                    <ChevronRight size={16} />
                   </button>
                 ))}
               </div>
-
-              {query && (
-                <div className="product-search__not-found">
-                  <button
-                    className="product-search__not-found-button"
-                    onClick={handleNotFound}
-                  >
-                    Can't find what you're looking for?
-                  </button>
-                </div>
-              )}
-            </div>
-          )}
-
-          {!loading && !error && results.length === 0 && query && (
-            <div className="product-search__empty">
-              <p>No products found for "{query}"</p>
-              {onNotFound && (
-                <button
-                  className="product-search__not-found-button"
-                  onClick={handleNotFound}
-                >
-                  Can't find what you're looking for?
-                </button>
-              )}
-            </div>
-          )}
-
-          {!loading && !error && results.length === 0 && !query && (
-            <div className="product-search__hint">
-              <p>Type at least 2 characters to search</p>
-            </div>
-          )}
-        </div>
+            )}
+          </div>
+        </>
       )}
     </div>
   );
 }
-
-export default ProductSearch;

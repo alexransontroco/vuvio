@@ -159,17 +159,6 @@ export const legacyMapStreams = [
     coordinates: [4.8357, 45.7640],
   },
   {
-    id: 'firefighter-lisbon',
-    status: 'live',
-    name: 'Rafa Silva',
-    job: 'Firefighter',
-    city: 'Lisbon',
-    country: 'Portugal',
-    viewers: '1,126',
-    image: '/assets/pov/12_firefighter.jpg',
-    coordinates: [-9.1393, 38.7223],
-  },
-  {
     id: 'cabinetmaker-session',
     status: 'upcoming',
     name: 'Niels Vester',

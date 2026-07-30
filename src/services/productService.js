@@ -294,6 +294,16 @@ export async function preloadProductCategory(categoryId) {
  * Get all product categories with product counts
  * @returns {Promise<Array>}
  */
+export function getProductName(product) {
+  return product?.name || product?.displayName || 'Unknown Product';
+}
+
+export function getProductThumbnailUrl(product, size = 'medium') {
+  if (!product) return null;
+  const sizeKey = `thumbnail_${size}`;
+  return product?.images?.[sizeKey] || product?.thumbnailUrl || product?.imageUrl || null;
+}
+
 export async function getProductCategoriesWithCounts() {
   try {
     const categoryCounts = {};

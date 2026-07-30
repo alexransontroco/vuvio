@@ -73,8 +73,13 @@ export const demoProducts = [
       'https://images.unsplash.com/photo-1595428774223-ef52624120d2?w=500&h=500&fit=crop',
     ],
     imageStatus: {
-      status: 'pending',
-      sourceUrl: 'https://images.unsplash.com/photo-1595428774223-ef52624120d2?w=500&h=500&fit=crop',
+      status: 'ready',
+      sourceUrl: 'https://images.unsplash.com/photo-1595428774223-ef52624120d2',
+      urls: {
+        small: 'https://images.unsplash.com/photo-1595428774223-ef52624120d2?w=160&h=160&fit=crop',
+        medium: 'https://images.unsplash.com/photo-1595428774223-ef52624120d2?w=320&h=320&fit=crop',
+        large: 'https://images.unsplash.com/photo-1595428774223-ef52624120d2?w=640&h=640&fit=crop',
+      },
     },
     createdAt: Date.now(),
     updatedAt: Date.now(),
@@ -90,8 +95,13 @@ export const demoProducts = [
       'https://images.unsplash.com/photo-1612198188060-c7c2a3b66eae?w=500&h=500&fit=crop',
     ],
     imageStatus: {
-      status: 'pending',
-      sourceUrl: 'https://images.unsplash.com/photo-1612198188060-c7c2a3b66eae?w=500&h=500&fit=crop',
+      status: 'ready',
+      sourceUrl: 'https://images.unsplash.com/photo-1612198188060-c7c2a3b66eae',
+      urls: {
+        small: 'https://images.unsplash.com/photo-1612198188060-c7c2a3b66eae?w=160&h=160&fit=crop',
+        medium: 'https://images.unsplash.com/photo-1612198188060-c7c2a3b66eae?w=320&h=320&fit=crop',
+        large: 'https://images.unsplash.com/photo-1612198188060-c7c2a3b66eae?w=640&h=640&fit=crop',
+      },
     },
     createdAt: Date.now(),
     updatedAt: Date.now(),
@@ -106,7 +116,7 @@ export const demoProducts = [
     description: 'Chest mount for hands-free POV recording',
     productUrl: 'https://gopro.com/en/us/shop/mounts-accessories',
     imageStatus: {
-      status: 'pending',
+      status: 'ready',
     },
     createdAt: Date.now(),
     updatedAt: Date.now(),
@@ -119,7 +129,7 @@ export const demoProducts = [
     description: 'Universal camera clip for any camera',
     productUrl: 'https://www.peakdesign.com/products/capture-clip',
     imageStatus: {
-      status: 'pending',
+      status: 'ready',
     },
     createdAt: Date.now(),
     updatedAt: Date.now(),
@@ -138,8 +148,13 @@ export const demoProducts = [
       'https://images.unsplash.com/photo-1608043152269-423dbba4e7e1?w=500&h=500&fit=crop',
     ],
     imageStatus: {
-      status: 'pending',
-      sourceUrl: 'https://images.unsplash.com/photo-1608043152269-423dbba4e7e1?w=500&h=500&fit=crop',
+      status: 'ready',
+      sourceUrl: 'https://images.unsplash.com/photo-1608043152269-423dbba4e7e1',
+      urls: {
+        small: 'https://images.unsplash.com/photo-1608043152269-423dbba4e7e1?w=160&h=160&fit=crop',
+        medium: 'https://images.unsplash.com/photo-1608043152269-423dbba4e7e1?w=320&h=320&fit=crop',
+        large: 'https://images.unsplash.com/photo-1608043152269-423dbba4e7e1?w=640&h=640&fit=crop',
+      },
     },
     createdAt: Date.now(),
     updatedAt: Date.now(),
@@ -155,8 +170,13 @@ export const demoProducts = [
       'https://images.unsplash.com/photo-1615127398623-88f5fad8e3cb?w=500&h=500&fit=crop',
     ],
     imageStatus: {
-      status: 'pending',
-      sourceUrl: 'https://images.unsplash.com/photo-1615127398623-88f5fad8e3cb?w=500&h=500&fit=crop',
+      status: 'ready',
+      sourceUrl: 'https://images.unsplash.com/photo-1615127398623-88f5fad8e3cb',
+      urls: {
+        small: 'https://images.unsplash.com/photo-1615127398623-88f5fad8e3cb?w=160&h=160&fit=crop',
+        medium: 'https://images.unsplash.com/photo-1615127398623-88f5fad8e3cb?w=320&h=320&fit=crop',
+        large: 'https://images.unsplash.com/photo-1615127398623-88f5fad8e3cb?w=640&h=640&fit=crop',
+      },
     },
     createdAt: Date.now(),
     updatedAt: Date.now(),
@@ -169,7 +189,7 @@ export const demoProducts = [
     description: 'Professional wireless microphone system',
     productUrl: 'https://rode.com/en/microphones/wireless/wireless-go',
     imageStatus: {
-      status: 'pending',
+      status: 'ready',
     },
     createdAt: Date.now(),
     updatedAt: Date.now(),
@@ -184,7 +204,7 @@ export const demoProducts = [
     description: 'Full-suspension mountain bike',
     productUrl: 'https://www.canyon.com/en-us/mtb/spectral/',
     imageStatus: {
-      status: 'pending',
+      status: 'ready',
     },
     createdAt: Date.now(),
     updatedAt: Date.now(),
@@ -197,7 +217,7 @@ export const demoProducts = [
     description: 'High-performance cross-country mountain bike',
     productUrl: 'https://www.specialized.com/us/en/s-works-epic',
     imageStatus: {
-      status: 'pending',
+      status: 'ready',
     },
     createdAt: Date.now(),
     updatedAt: Date.now(),
@@ -213,7 +233,7 @@ export const demoProducts = [
     productUrl: 'https://www.pocsports.com/en/kortal-race-mips',
     affiliateUrl: 'https://example.com/poc-kortal',
     imageStatus: {
-      status: 'pending',
+      status: 'ready',
     },
     createdAt: Date.now(),
     updatedAt: Date.now(),
@@ -228,7 +248,7 @@ export const demoProducts = [
     description: 'Portable live streaming encoder',
     productUrl: 'https://www.liveu.tv/products/liveu-solo/',
     imageStatus: {
-      status: 'pending',
+      status: 'ready',
     },
     createdAt: Date.now(),
     updatedAt: Date.now(),
@@ -241,7 +261,7 @@ export const demoProducts = [
     description: 'Wireless video transmission system',
     productUrl: 'https://www.teradek.com/products/bolt-lt',
     imageStatus: {
-      status: 'pending',
+      status: 'ready',
     },
     createdAt: Date.now(),
     updatedAt: Date.now(),
@@ -256,7 +276,7 @@ export const demoProducts = [
     description: 'High-capacity portable power bank',
     productUrl: 'https://www.anker.com/products/a1223',
     imageStatus: {
-      status: 'pending',
+      status: 'ready',
     },
     createdAt: Date.now(),
     updatedAt: Date.now(),
@@ -269,7 +289,7 @@ export const demoProducts = [
     description: 'Fast UHS-II SDXC memory card',
     productUrl: 'https://www.sandisk.com/products/memory-cards/sd-cards/extreme-pro-sd-uhs-ii',
     imageStatus: {
-      status: 'pending',
+      status: 'ready',
     },
     createdAt: Date.now(),
     updatedAt: Date.now(),
@@ -282,7 +302,7 @@ export const demoProducts = [
     description: 'Official GoPro rechargeable battery',
     productUrl: 'https://gopro.com/en/us/shop/hero13-battery',
     imageStatus: {
-      status: 'pending',
+      status: 'ready',
     },
     createdAt: Date.now(),
     updatedAt: Date.now(),

@@ -14,6 +14,7 @@ import {
   ShieldCheck,
   Sparkles,
   Trash2,
+  X,
 } from 'lucide-react';
 import { useState } from 'react';
 import { GearThumbnail, GearItemRow } from '../gear/index.js';
@@ -338,55 +339,70 @@ export function QuickAddEquipmentForm({ value, onChange, onCancel, onSave, sugge
 }
 
 export function EquipmentViewerSheet({ items, onClose, onViewProfile }) {
-  const captureItems = items.filter((item) => item.category !== 'activity');
   const activityItems = items.filter((item) => item.category === 'activity');
+  const recordingItems = items.filter((item) => item.category !== 'activity');
+  const hasAffiliateLinks = items.some((item) => item.affiliateUrl);
+  const mainActivityId = activityItems[0]?.id;
+  const mainRecordingId = recordingItems[0]?.id;
 
-  function renderItem(item) {
+  function renderItem(item, isMain) {
     return (
-      <EquipmentItemRow
-        key={item.id ?? item.equipmentId}
-        item={item}
-        compact
-        actions={item.productUrl || item.affiliateUrl ? (
-          <a href={item.affiliateUrl || item.productUrl} target="_blank" rel="noreferrer" onClick={(event) => event.stopPropagation()}>
-            View product
-            <ExternalLink size={13} strokeWidth={2} />
-          </a>
-        ) : null}
-      />
+      <div key={item.id ?? item.equipmentId} className={isMain ? 'equipment-item-wrapper is-main' : 'equipment-item-wrapper'}>
+        {isMain && <span className="equipment-main-badge">Main</span>}
+        <EquipmentItemRow
+          item={item}
+          compact
+          actions={item.productUrl || item.affiliateUrl ? (
+            <a href={item.affiliateUrl || item.productUrl} target="_blank" rel="noreferrer" onClick={(event) => event.stopPropagation()}>
+              View product
+              <ExternalLink size={13} strokeWidth={2} />
+            </a>
+          ) : null}
+        />
+      </div>
     );
   }
 
   return (
-    <div className="equipment-viewer-sheet" role="dialog" aria-modal="true" aria-label="Gear in this live">
+    <div className="equipment-viewer-sheet" role="dialog" aria-modal="true" aria-label="Equipment used in this live">
       <button type="button" className="equipment-viewer-sheet__backdrop" onClick={onClose} aria-label="Close" />
       <div className="equipment-viewer-sheet__panel">
         <span className="equipment-viewer-sheet__handle" aria-hidden="true" />
         <header>
           <div>
-            <h2>Gear in this live</h2>
-            <p>Equipment selected by the creator.</p>
+            <h2>Equipment <span className="equipment-used-highlight">used</span> in this live</h2>
+            <p>Everything the creator is using right now.</p>
           </div>
-          <button type="button" onClick={onClose} aria-label="Close">Close</button>
+          <button type="button" onClick={onClose} aria-label="Close">
+            <X size={18} strokeWidth={2} />
+          </button>
         </header>
         <div className="equipment-viewer-sheet__list">
-          {captureItems.length > 0 && (
-            <div className="equipment-viewer-sheet__group">
-              <span className="equipment-viewer-sheet__group-label">Captured with</span>
-              {captureItems.map(renderItem)}
-            </div>
-          )}
           {activityItems.length > 0 && (
             <div className="equipment-viewer-sheet__group">
-              <span className="equipment-viewer-sheet__group-label">Activity equipment</span>
-              {activityItems.map(renderItem)}
+              <div className="equipment-viewer-sheet__group-header">
+                <Bike size={14} strokeWidth={1.8} />
+                <span className="equipment-viewer-sheet__group-label">Activity equipment</span>
+              </div>
+              {activityItems.map((item) => renderItem(item, item.id === mainActivityId))}
+            </div>
+          )}
+          {recordingItems.length > 0 && (
+            <div className="equipment-viewer-sheet__group">
+              <div className="equipment-viewer-sheet__group-header">
+                <Camera size={14} strokeWidth={1.8} />
+                <span className="equipment-viewer-sheet__group-label">Recording equipment</span>
+              </div>
+              {recordingItems.map((item) => renderItem(item, item.id === mainRecordingId))}
             </div>
           )}
         </div>
-        <button type="button" className="equipment-viewer-sheet__profile" onClick={onViewProfile}>
-          View full setup
-          <ChevronRight size={16} strokeWidth={1.9} />
-        </button>
+        {hasAffiliateLinks && (
+          <div className="equipment-viewer-sheet__disclosure">
+            <Sparkles size={12} strokeWidth={2} />
+            <small>Some links may be affiliate links.</small>
+          </div>
+        )}
       </div>
     </div>
   );

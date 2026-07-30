@@ -330,12 +330,46 @@
 
 .test-globe-screen--actual {
   background:
-    radial-gradient(ellipse 60% 44% at 50% 40%, rgba(8, 28, 52, 0.48) 0%, rgba(3, 8, 18, 0.28) 52%, transparent 72%),
-    linear-gradient(180deg, #010408 0%, #000306 55%, #010408 100%);
+    radial-gradient(circle at 12% 18%, rgba(255, 255, 255, 0.9) 0 0.9px, transparent 1.35px),
+    radial-gradient(circle at 38% 72%, rgba(255, 255, 255, 0.82) 0 0.75px, transparent 1.2px),
+    radial-gradient(circle at 78% 12%, rgba(215, 238, 255, 0.78) 0 1px, transparent 1.45px),
+    radial-gradient(circle at 86% 46%, rgba(255, 255, 255, 0.64) 0 0.85px, transparent 1.25px),
+    radial-gradient(circle at 28% 62%, rgba(178, 216, 255, 0.68) 0 0.85px, transparent 1.35px),
+    radial-gradient(circle at 62% 76%, rgba(255, 255, 255, 0.56) 0 0.7px, transparent 1.15px),
+    radial-gradient(circle at 52% 22%, rgba(190, 222, 255, 0.48) 0 0.6px, transparent 1px),
+    radial-gradient(ellipse 72% 50% at 50% 42%, rgba(17, 64, 106, 0.22) 0%, rgba(5, 15, 32, 0.16) 54%, transparent 76%),
+    linear-gradient(180deg, #02050c 0%, #01030a 48%, #000106 100%);
+  background-size:
+    110px 110px,
+    140px 140px,
+    155px 155px,
+    96px 96px,
+    128px 128px,
+    178px 178px,
+    86px 86px,
+    auto,
+    auto;
 }
 
 .test-globe-screen--actual .test-old-globe {
-  background: #010408;
+  background:
+    radial-gradient(circle at 18% 22%, rgba(255, 255, 255, 0.88) 0 0.85px, transparent 1.35px),
+    radial-gradient(circle at 46% 42%, rgba(255, 255, 255, 0.58) 0 0.65px, transparent 1.05px),
+    radial-gradient(circle at 72% 18%, rgba(196, 225, 255, 0.76) 0 0.95px, transparent 1.45px),
+    radial-gradient(circle at 88% 58%, rgba(255, 255, 255, 0.58) 0 0.8px, transparent 1.2px),
+    radial-gradient(circle at 34% 78%, rgba(160, 205, 255, 0.62) 0 0.85px, transparent 1.3px),
+    radial-gradient(circle at 64% 86%, rgba(210, 232, 255, 0.5) 0 0.65px, transparent 1.05px),
+    radial-gradient(ellipse 74% 54% at 50% 46%, rgba(12, 52, 90, 0.2) 0%, rgba(4, 12, 25, 0.14) 58%, transparent 78%),
+    linear-gradient(180deg, #02050c 0%, #01030a 48%, #000106 100%);
+  background-size:
+    112px 112px,
+    92px 92px,
+    152px 152px,
+    108px 108px,
+    138px 138px,
+    174px 174px,
+    auto,
+    auto;
   top: 0;
 }
 
@@ -616,6 +650,47 @@
   padding: 8px 10px;
 }
 
+.globe-test2-water-mode {
+  position: absolute;
+  top: calc(var(--safe-top, 0px) + 78px);
+  left: 12px;
+  z-index: 24;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid rgba(118, 158, 191, 0.26);
+  border-radius: 999px;
+  background: rgba(5, 22, 38, 0.74);
+  color: rgba(223, 242, 255, 0.84);
+  padding: 8px 10px;
+  backdrop-filter: blur(14px);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.22);
+}
+
+.globe-test2-water-mode span {
+  font-size: 11px;
+  font-weight: 760;
+  color: rgba(197, 226, 246, 0.7);
+}
+
+.globe-test2-water-mode button {
+  min-width: 0;
+  min-height: 28px;
+  border: 1px solid rgba(122, 203, 240, 0.18);
+  border-radius: 999px;
+  background: rgba(8, 26, 42, 0.62);
+  color: rgba(235, 248, 255, 0.72);
+  padding: 0 9px;
+  font-size: 10.5px;
+  font-weight: 760;
+}
+
+.globe-test2-water-mode button.is-active {
+  background: rgba(48, 173, 242, 0.2);
+  color: #fff;
+  border-color: rgba(123, 222, 255, 0.58);
+}
+
 .globe-test2-density svg {
   color: rgba(170, 220, 245, 0.86);
 }
@@ -651,6 +726,51 @@
 .globe-test2-status span {
   color: rgba(223, 242, 255, 0.62);
   font-size: 11px;
+}
+
+.test-globe-legend {
+  position: absolute;
+  left: 12px;
+  top: calc(var(--safe-top, 0px) + 136px);
+  z-index: 24;
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  max-width: min(92vw, 320px);
+}
+
+.test-globe-legend span {
+  min-height: 22px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid rgba(118, 158, 191, 0.22);
+  border-radius: 999px;
+  background: rgba(5, 22, 38, 0.66);
+  color: rgba(223, 242, 255, 0.76);
+  padding: 0 8px;
+  font-size: 10px;
+  font-weight: 720;
+  backdrop-filter: blur(14px);
+}
+
+.test-globe-legend i {
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  display: inline-block;
+  background: #2bd9c8;
+  box-shadow: 0 0 10px rgba(43, 217, 200, 0.34);
+}
+
+.test-globe-legend .is-sponsored {
+  background: #ffb04a;
+  box-shadow: 0 0 10px rgba(255, 176, 74, 0.34);
+}
+
+.test-globe-legend .is-vuvio {
+  background: #b47bff;
+  box-shadow: 0 0 10px rgba(180, 123, 255, 0.34);
 }
 
 .globe-test2-card {
@@ -766,6 +886,32 @@
   font-size: 10px;
 }
 
+.test-globe-card__marker-badge {
+  min-height: 20px;
+  display: inline-flex;
+  align-items: center;
+  width: fit-content;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 999px;
+  padding: 0 7px;
+  font-size: 8.5px;
+  font-weight: 780;
+  letter-spacing: 0;
+  color: rgba(255, 245, 232, 0.9);
+}
+
+.test-globe-card__marker-badge.is-sponsored {
+  border-color: rgba(255, 176, 74, 0.28);
+  background: rgba(255, 176, 74, 0.12);
+  color: rgba(255, 224, 189, 0.95);
+}
+
+.test-globe-card__marker-badge.is-vuvio {
+  border-color: rgba(180, 123, 255, 0.28);
+  background: rgba(180, 123, 255, 0.12);
+  color: rgba(233, 216, 255, 0.95);
+}
+
 .globe-test2-card button:not(.globe-test2-card__close) {
   min-height: 28px;
   display: inline-flex;
@@ -791,6 +937,101 @@
   }
 }
 
+/* ── Globe Marker Legend — 3 types of lives ────────────── */
+
+.globe-marker-legend {
+  position: absolute;
+  left: 12px;
+  bottom: calc(var(--nav-height) + var(--safe-bottom) + 124px);
+  z-index: 20;
+  display: inline-flex;
+  flex-direction: column;
+  gap: 8px;
+  border: 0.5px solid rgba(118, 158, 191, 0.22);
+  border-radius: 14px;
+  background: rgba(5, 22, 38, 0.72);
+  padding: 10px 12px;
+  backdrop-filter: blur(14px);
+  max-width: min(92vw, 280px);
+}
+
+.globe-marker-legend__title {
+  font-size: 10px;
+  font-weight: 780;
+  color: rgba(223, 242, 255, 0.72);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.globe-marker-legend__items {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.globe-marker-legend__item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 10px;
+  font-weight: 560;
+  color: rgba(242, 247, 246, 0.84);
+}
+
+.globe-marker-legend__dot,
+.globe-marker-legend__diamond,
+.globe-marker-legend__star {
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  width: 12px;
+  height: 12px;
+}
+
+.globe-marker-legend__dot--standard {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #2BD9C8;
+  box-shadow: 0 0 8px rgba(43, 217, 200, 0.4);
+}
+
+.globe-marker-legend__diamond--sponsored {
+  width: 12px;
+  height: 12px;
+  background: #FFB04A;
+  box-shadow: 0 0 8px rgba(255, 176, 74, 0.4);
+  clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%);
+}
+
+.globe-marker-legend__star--vuvio {
+  position: relative;
+  width: 14px;
+  height: 14px;
+  color: #B47BFF;
+  box-shadow: 0 0 8px rgba(180, 123, 255, 0.4);
+}
+
+.globe-marker-legend__star--vuvio::before {
+  content: "★";
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  color: inherit;
+  font-size: 11px;
+  line-height: 1;
+}
+
+.globe-marker-legend__hint {
+  margin-top: 2px;
+  font-size: 9px;
+  font-weight: 480;
+  color: rgba(223, 242, 255, 0.52);
+  line-height: 1.25;
+  opacity: 0.8;
+}
+
 @media (min-width: 760px) {
   .globe-test2-filterbar {
     top: calc(var(--safe-top, 0px) + 30px);
@@ -805,6 +1046,11 @@
     right: 18px;
   }
 
+  .globe-test2-water-mode {
+    top: calc(var(--safe-top, 0px) + 32px);
+    left: 18px;
+  }
+
   .globe-test2-status {
     left: 18px;
     bottom: 92px;
@@ -816,5 +1062,10 @@
     bottom: 92px;
     width: 288px;
     grid-template-columns: 78px minmax(0, 1fr);
+  }
+
+  .globe-marker-legend {
+    left: 18px;
+    bottom: 92px;
   }
 }

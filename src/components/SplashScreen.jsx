@@ -7,9 +7,21 @@ export default function SplashScreen({ leaving = false }) {
   useEffect(() => {
     const video = videoRef.current;
     if (!video) return;
-    video.playbackRate = 0.8;
-    const playPromise = video.play();
-    if (playPromise?.catch) playPromise.catch(() => {});
+
+    video.muted = true;
+    video.defaultMuted = true;
+    video.playsInline = true;
+
+    video.play()
+      .then(() => {
+        console.log('[Splash] autoplay success');
+      })
+      .catch((error) => {
+        console.error('[Splash] autoplay failed', {
+          name: error.name,
+          message: error.message,
+        });
+      });
   }, []);
 
   return (
@@ -19,18 +31,19 @@ export default function SplashScreen({ leaving = false }) {
         className="splash-screen__video"
         autoPlay
         muted
-        loop
+        defaultMuted
         playsInline
+        loop
         preload="auto"
+        controls={false}
+        disablePictureInPicture
       >
-        <source src="/assets/videos/landing-loop.mp4" type="video/mp4" />
+        <source src="/assets/videos/vuvland.mp4?v=1" type="video/mp4" />
       </video>
-      <div className="splash-screen__overlay" />
-      <div className="splash-screen__glow" />
       <div className="splash-screen__logo">
-        <BrandMark size={72} showName />
+        <BrandMark size={72} />
+        <h1 className="splash-screen__title">vuvio</h1>
       </div>
-      <span className="splash-screen__pulse" />
     </div>
   );
 }

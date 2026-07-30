@@ -136,6 +136,11 @@ export async function createUserProfileIfMissing(firebaseUser, extra = {}) {
   };
 
   try {
+    console.log('[authService] profile write debug', {
+      uid: firebaseUser.uid,
+      path: `users/${firebaseUser.uid}`,
+      profileDataKeys: Object.keys(profile),
+    });
     console.time('[authService] setDoc creating profile');
     await setDoc(ref, profile);
     console.timeEnd('[authService] setDoc creating profile');
@@ -148,9 +153,10 @@ export async function createUserProfileIfMissing(firebaseUser, extra = {}) {
 }
 
 export async function getUserProfile(uid) {
-  console.time(`[authService] getDoc users/${uid.slice(0, 8)}`);
+  const timerKey = `[authService] getDoc users/${uid.slice(0, 8)}`;
+  console.time(timerKey);
   const snap = await getDoc(doc(db, 'users', uid));
-  console.timeEnd(`[authService] getDoc users/${uid.slice(0, 8)}`);
+  console.timeEnd(timerKey);
   return snap.exists() ? { id: snap.id, ...snap.data() } : null;
 }
 

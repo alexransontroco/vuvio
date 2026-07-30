@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import BrandMark from '../components/BrandMark.jsx';
 import SplashScreen from '../components/SplashScreen.jsx';
 import CurrentGlobe from '../components/globe/CurrentGlobe.jsx';
-import { LiveViewer } from './HomePage.jsx';
+import { LiveViewer } from './WatchPage.jsx';
 import { mapStreams } from '../data/mapStreams.js';
 
 const COMPLETED_KEY = 'vuvio_onboarding_completed';

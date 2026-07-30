@@ -1,8 +1,9 @@
-export default function BrandMark({ size = 34, showName = false, dark = false }) {
+export default function BrandMark({ size = 34, showName = false, dark = false, withCircle = true }) {
   const iconColor = dark ? '#062320' : null; // null = use gradient
   const dotColor  = dark ? '#062320' : '#3B82F6';
   const textColor = dark ? '#062320' : '#ffffff';
   const gradId    = 'vuvio-brand-grad';
+  const circleGradId = 'vuvio-circle-grad';
 
   const icon = (
     <svg
@@ -20,8 +21,15 @@ export default function BrandMark({ size = 34, showName = false, dark = false })
             <stop offset="50%"  stopColor="#2BD9C8" />
             <stop offset="100%" stopColor="#1EC8BA" />
           </linearGradient>
+          {withCircle && (
+            <linearGradient id={circleGradId} x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%"   stopColor="#41B4FF" />
+              <stop offset="100%" stopColor="#2184D8" />
+            </linearGradient>
+          )}
         </defs>
       )}
+      {withCircle && <circle cx="48" cy="48" r="45" stroke={dark ? '#162429' : `url(#${circleGradId})`} strokeWidth="2.5" fill="none" />}
       <path
         d="M16 34 L34 66 L48 44 L62 66 L80 34"
         stroke={dark ? iconColor : `url(#${gradId})`}

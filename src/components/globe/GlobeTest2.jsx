@@ -5,6 +5,12 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { enrichExperience } from '../../data/experienceTaxonomy.js';
 import { createGlobeTest2Lives, globeTest2Config } from '../../data/globeTest2Data.js';
+import {
+  createWaterIconsLayer,
+  getVisibleWaterIconLives,
+  isWaterOnlyFilters,
+  preloadWaterIconTextures,
+} from './globeTest2WaterIcons.js';
 
 const SOURCE_CLUSTER = 'vuvio-test2-cluster-source';
 const SOURCE_PRIORITY = 'vuvio-test2-priority-source';
@@ -462,6 +468,7 @@ export default function GlobeTest2({ streams }) {
   const selectedIdRef = useRef('');
   const hoverIdRef = useRef('');
   const liveByIdRef = useRef(new Map());
+  const waterIconsLayerRef = useRef(null);
   const previousViewRef = useRef(null);
   const cameraStateRef = useRef({ center: globeTest2Config.initialCenter, zoom: globeTest2Config.initialZoom });
   const [density, setDensity] = useState('medium');
@@ -470,10 +477,12 @@ export default function GlobeTest2({ streams }) {
     featured: false,
   });
   const [cameraState, setCameraState] = useState(cameraStateRef.current);
+  const [viewport, setViewport] = useState({ width: 0, height: 0 });
   const [selectedId, setSelectedId] = useState('');
   const [hoverId, setHoverId] = useState('');
   const [pingRefreshTick, setPingRefreshTick] = useState(0);
   const [mapError, setMapError] = useState('');
+  const [waterMarkerMode, setWaterMarkerMode] = useState('auto');
 
   const allLives = useMemo(() => createGlobeTest2Lives(density, streams).map(normalizeLive), [density, streams]);
   const filteredLives = useMemo(() => allLives.filter((live) => passesActiveFilters(live, activeFilters)), [activeFilters, allLives]);
@@ -521,6 +530,36 @@ export default function GlobeTest2({ streams }) {
     );
   }, [allLives]);
 
+  const waterOnlyActive = isWaterOnlyFilters(activeFilters);
+  const resolvedWaterMarkerMode = waterOnlyActive ? (waterMarkerMode === 'classic' ? 'classic' : 'floating') : 'classic';
+  const waterLives = useMemo(() => filteredLives.filter((live) => live.family === 'water'), [filteredLives]);
+  const visibleWaterIconLives = useMemo(() => {
+    if (!waterOnlyActive || resolvedWaterMarkerMode !== 'floating') return [];
+    return getVisibleWaterIconLives({
+      lives: waterLives,
+      cameraState,
+      viewport,
+      selectedLiveId: selectedId,
+    });
+  }, [cameraState, resolvedWaterMarkerMode, selectedId, viewport, waterLives, waterOnlyActive]);
+  const waterIconLayerItems = useMemo(() => {
+    return visibleWaterIconLives.map((live, index) => ({
+      id: live.id,
+      coordinates: live.coordinates,
+      activity: live.activity,
+      featured: Boolean(live.featured),
+      selected: live.id === selectedId,
+      mode: resolvedWaterMarkerMode,
+      phase: (live.pulseSeed ?? index * 0.31) * Math.PI * 2,
+      bobSpeed: 0.28 + ((live.pulseSeed ?? index * 0.31) * 0.16),
+      bobAmplitude: live.id === selectedId ? 2200 : 1400,
+      lineHeightMeters: live.id === selectedId ? 62000 : live.featured ? 56000 : 48000,
+      pointAltitudeMeters: 900,
+      iconAltitudeMeters: live.id === selectedId ? 68000 : live.featured ? 60000 : 52000,
+      iconScaleMeters: live.id === selectedId ? 38000 : live.featured ? 34000 : 30000,
+    }));
+  }, [resolvedWaterMarkerMode, selectedId, visibleWaterIconLives]);
+
   useEffect(() => {
     liveByIdRef.current = new Map(allLives.map((live) => [live.id, live]));
   }, [allLives]);
@@ -552,6 +591,15 @@ export default function GlobeTest2({ streams }) {
   }, [syncSources]);
 
   useEffect(() => {
+    const layer = waterIconsLayerRef.current;
+    if (!layer) return;
+    const enabled = waterOnlyActive && resolvedWaterMarkerMode === 'floating';
+    layer.setEnabled(enabled);
+    layer.setItems(enabled ? waterIconLayerItems : []);
+    preloadWaterIconTextures().catch(() => {});
+  }, [resolvedWaterMarkerMode, waterIconLayerItems, waterOnlyActive]);
+
+  useEffect(() => {
     if (!containerRef.current || mapRef.current) return undefined;
 
     const map = new maplibregl.Map({
@@ -572,22 +620,38 @@ export default function GlobeTest2({ streams }) {
     map.dragRotate.disable();
     map.touchZoomRotate.disableRotation();
 
-    const pause = () => {
-      pauseUntilRef.current = Date.now() + 1800;
+    const pauseInteraction = () => {
+      pauseUntilRef.current = Number.POSITIVE_INFINITY;
+    };
+    const resumeInteraction = () => {
+      pauseUntilRef.current = 0;
+      const center = map.getCenter();
+      map.jumpTo({ center: [center.lng + 0.0001, center.lat] });
     };
     const updateCamera = () => {
       const center = map.getCenter();
       const next = { center: [center.lng, center.lat], zoom: map.getZoom() };
       cameraStateRef.current = next;
       setCameraState(next);
+      setViewport({
+        width: map.getCanvas().clientWidth || 0,
+        height: map.getCanvas().clientHeight || 0,
+      });
     };
 
-    map.getCanvas().addEventListener('pointerdown', pause);
-    map.getCanvas().addEventListener('wheel', pause, { passive: true });
-    map.on('dragstart', pause);
-    map.on('zoomstart', pause);
+    map.getCanvas().addEventListener('pointerdown', pauseInteraction);
+    map.getCanvas().addEventListener('pointerup', resumeInteraction);
+    map.getCanvas().addEventListener('pointercancel', resumeInteraction);
+    map.getCanvas().addEventListener('lostpointercapture', resumeInteraction);
+    map.getCanvas().addEventListener('touchend', resumeInteraction, { passive: true });
+    map.getCanvas().addEventListener('wheel', resumeInteraction, { passive: true });
+    map.on('dragstart', pauseInteraction);
+    map.on('zoomstart', pauseInteraction);
+    map.on('dragend', resumeInteraction);
+    map.on('zoomend', resumeInteraction);
     map.on('moveend', updateCamera);
     map.on('zoomend', updateCamera);
+    map.on('resize', updateCamera);
     map.on('error', (event) => {
       const message = event?.error?.message ?? event?.message ?? '';
       if (!message || /tile|glyph|sprite|network|abort/i.test(message)) return;
@@ -807,6 +871,11 @@ export default function GlobeTest2({ streams }) {
           },
         });
 
+        const waterLayer = createWaterIconsLayer();
+        waterIconsLayerRef.current = waterLayer;
+        map.addLayer(waterLayer);
+        updateCamera();
+
         const selectFeature = (event) => {
           const feature = event.features?.[0];
           if (!feature) return;
@@ -886,9 +955,22 @@ export default function GlobeTest2({ streams }) {
     });
 
     return () => {
-      map.getCanvas().removeEventListener('pointerdown', pause);
-      map.getCanvas().removeEventListener('wheel', pause);
+      map.getCanvas().removeEventListener('pointerdown', pauseInteraction);
+      map.getCanvas().removeEventListener('pointerup', resumeInteraction);
+      map.getCanvas().removeEventListener('pointercancel', resumeInteraction);
+      map.getCanvas().removeEventListener('lostpointercapture', resumeInteraction);
+      map.getCanvas().removeEventListener('touchend', resumeInteraction);
+      map.getCanvas().removeEventListener('wheel', resumeInteraction);
+      map.off('dragstart', pauseInteraction);
+      map.off('zoomstart', pauseInteraction);
+      map.off('dragend', resumeInteraction);
+      map.off('zoomend', resumeInteraction);
       if (animationRef.current) cancelAnimationFrame(animationRef.current);
+      if (map.getLayer('vuvio-test2-water-icons')) {
+        map.removeLayer('vuvio-test2-water-icons');
+      }
+      waterIconsLayerRef.current?.dispose?.();
+      waterIconsLayerRef.current = null;
       map.remove();
       mapRef.current = null;
     };
@@ -1028,7 +1110,8 @@ export default function GlobeTest2({ streams }) {
           <button type="button" onClick={() => navigate('/globe-lab?switch=1')} aria-pressed="false">Lab</button>
           <button type="button" onClick={() => navigate('/globe-cesium?switch=1')} aria-pressed="false">Cesium</button>
           <button type="button" onClick={() => navigate('/globe-test?switch=1')} aria-pressed="false">Test</button>
-          <button type="button" className="is-active" aria-pressed="true">Test 2</button>
+          <button type="button" className="is-active" onClick={() => navigate('/globe-test-2?switch=1')} aria-pressed="true">Test 2</button>
+          <button type="button" onClick={() => navigate('/globe-test-3?switch=1')} aria-pressed="false">Test 3</button>
         </div>
 
         <div className="globe-test2-filterbar" role="group" aria-label="Filter lives">
@@ -1064,6 +1147,37 @@ export default function GlobeTest2({ streams }) {
             ))}
           </select>
         </div>
+
+        <div className="globe-test2-status" aria-label="Globe status">
+          <strong>{counts.water.toLocaleString('en-US')} water lives</strong>
+          <span>
+            {waterOnlyActive
+              ? `${resolvedWaterMarkerMode === 'floating' ? 'Floating icons' : 'Classic points'} active`
+              : 'Classic points and clusters active'}
+          </span>
+        </div>
+
+        {import.meta.env.DEV ? (
+          <div className="globe-test2-water-mode" role="group" aria-label="Water markers">
+            <span>Water markers</span>
+            <button
+              type="button"
+              className={waterMarkerMode === 'classic' ? 'is-active' : ''}
+              onClick={() => setWaterMarkerMode('classic')}
+              aria-pressed={waterMarkerMode === 'classic'}
+            >
+              Classic
+            </button>
+            <button
+              type="button"
+              className={waterMarkerMode !== 'classic' ? 'is-active' : ''}
+              onClick={() => setWaterMarkerMode('floating')}
+              aria-pressed={waterMarkerMode !== 'classic'}
+            >
+              Floating icons
+            </button>
+          </div>
+        ) : null}
 
         <div className="test-old-globe__controls" aria-label="Map controls">
           <button type="button" onClick={() => zoomBy(0.72)} aria-label="Zoom in"><Plus size={19} /></button>

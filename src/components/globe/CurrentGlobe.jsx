@@ -5,17 +5,20 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { ACTIVITY_CATEGORIES } from '../../data/activityCategories.js';
 import { enrichExperience } from '../../data/experienceTaxonomy.js';
+import { MARKER_TYPES, decorateGlobeTest3Streams, isRelevantOutsideFilter, shouldFeatureEditorially } from '../../data/globeTest3Data.js';
 import MapBottomSheet from '../map/MapBottomSheet.jsx';
+import { ISSLiveCard } from './ISSLiveCard.jsx';
+import '../../styles/components/iss-globe.css';
 
 const INITIAL_CENTER = [14, 20];
 const STYLE_URL = 'https://basemaps.cartocdn.com/gl/positron-nolabels-gl-style/style.json';
+const STYLE_URL_GREEN = 'https://basemaps.cartocdn.com/gl/voyager-nolabels-gl-style/style.json';
 const LIVE_COLOR = '#2BD9C8';
 const UPCOMING_COLOR = '#3B82E6';
 const ROTATE_DEGREES_PER_SECOND = 3.5;
 const ACTUAL_ROTATION_INTERVAL = 16;
 const SELECTED_LIVE_ZOOM = 4.05;
 const REQUESTED_LIVE_ZOOM = 4.2;
-const SELECTED_RING_COLOR = '#2BD9C8';
 const PING_COLOR = '#ff8a1f';
 const PING_TTL_MS = 12000;
 
@@ -27,6 +30,16 @@ const statusColor = [
 ];
 
 const categoryColor = ['coalesce', ['get', 'familyColor'], statusColor];
+const sponsoredColor = ['case', ['==', ['get', 'markerType'], MARKER_TYPES.sponsored], '#FFB04A', categoryColor];
+const vuvioColor = ['case', ['==', ['get', 'markerType'], MARKER_TYPES.vuvio], '#B47BFF', categoryColor];
+
+function markerStrokeColorExpression() {
+  return ['case', ['==', ['get', 'markerType'], MARKER_TYPES.sponsored], '#FFC36C', ['==', ['get', 'markerType'], MARKER_TYPES.vuvio], '#C89AFF', '#F2F7F6'];
+}
+
+function markerColorExpression() {
+  return ['case', ['==', ['get', 'markerType'], MARKER_TYPES.sponsored], sponsoredColor, ['==', ['get', 'markerType'], MARKER_TYPES.vuvio], vuvioColor, categoryColor];
+}
 
 function viewersNumber(stream) {
   if (!stream.viewers) return 0;
@@ -47,6 +60,22 @@ function pingTimestamp(stream) {
   if (typeof value === 'string') return new Date(value).getTime() || 0;
   if (value?.seconds) return value.seconds * 1000;
   return 0;
+}
+
+function matchesFilters(stream, activeFamily, activeActivities, activeStatuses) {
+  if (!activeStatuses.includes(stream.status)) return false;
+  if (activeFamily !== 'all' && stream.family !== activeFamily) return false;
+  if (activeActivities.length === 0) return true;
+  return activeActivities.some((activityId) => {
+    const activity = ACTIVITY_CATEGORIES.find((a) => a.id === activityId);
+    return activity?.subcategories.includes(stream.subcategory);
+  });
+}
+
+function getMarkerType(stream) {
+  if (stream.markerType === MARKER_TYPES.sponsored) return MARKER_TYPES.sponsored;
+  if (stream.markerType === MARKER_TYPES.vuvio) return MARKER_TYPES.vuvio;
+  return MARKER_TYPES.standard;
 }
 
 // Subtle breathing animation for live markers
@@ -70,8 +99,22 @@ function livePointRadius(clock, selectedId = '') {
   return [
     'case',
     ['==', ['get', 'id'], selectedId],
-    ['+', ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 4.2, 300, 5.0, 800, 5.9, 1500, 6.7], ['*', wave, ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 0.34, 800, 0.54, 1500, 0.70]]],
-    ['+', ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 2.45, 300, 3.25, 800, 4.4, 1500, 5.1], ['*', wave, ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 0.20, 800, 0.34, 1500, 0.44]]],
+    [
+      'case',
+      ['==', ['get', 'markerType'], MARKER_TYPES.sponsored],
+      ['+', ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 4.45, 300, 5.25, 800, 6.1, 1500, 6.9], ['*', wave, ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 0.38, 800, 0.58, 1500, 0.74]]],
+      ['==', ['get', 'markerType'], MARKER_TYPES.vuvio],
+      ['+', ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 4.55, 300, 5.35, 800, 6.2, 1500, 7.0], ['*', wave, ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 0.42, 800, 0.62, 1500, 0.78]]],
+      ['+', ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 4.2, 300, 5.0, 800, 5.9, 1500, 6.7], ['*', wave, ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 0.34, 800, 0.54, 1500, 0.70]]],
+    ],
+    [
+      'case',
+      ['==', ['get', 'markerType'], MARKER_TYPES.sponsored],
+      ['+', ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 2.8, 300, 3.6, 800, 4.75, 1500, 5.3], ['*', wave, ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 0.24, 800, 0.38, 1500, 0.5]]],
+      ['==', ['get', 'markerType'], MARKER_TYPES.vuvio],
+      ['+', ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 2.95, 300, 3.8, 800, 4.9, 1500, 5.45], ['*', wave, ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 0.28, 800, 0.42, 1500, 0.55]]],
+      ['+', ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 2.45, 300, 3.25, 800, 4.4, 1500, 5.1], ['*', wave, ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 0.20, 800, 0.34, 1500, 0.44]]],
+    ],
   ];
 }
 
@@ -79,8 +122,20 @@ function liveColorGlowRadius(clock) {
   const wave = breathingWave(clock);
   return [
     '+',
-    ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 6.0, 300, 8.5, 800, 12.5, 1500, 17.0],
-    ['*', wave, ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 1.0, 800, 3.5, 1500, 5.5]],
+    ['case',
+      ['==', ['get', 'markerType'], MARKER_TYPES.sponsored],
+      ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 6.4, 300, 9.0, 800, 12.8, 1500, 17.4],
+      ['==', ['get', 'markerType'], MARKER_TYPES.vuvio],
+      ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 6.2, 300, 8.8, 800, 12.9, 1500, 17.6],
+      ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 6.0, 300, 8.5, 800, 12.5, 1500, 17.0],
+    ],
+    ['*', wave, ['case',
+      ['==', ['get', 'markerType'], MARKER_TYPES.sponsored],
+      ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 1.15, 800, 3.8, 1500, 5.8],
+      ['==', ['get', 'markerType'], MARKER_TYPES.vuvio],
+      ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 1.2, 800, 4.0, 1500, 6.2],
+      ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 1.0, 800, 3.5, 1500, 5.5],
+    ]],
   ];
 }
 
@@ -88,8 +143,20 @@ function liveColorGlowOpacity(clock) {
   const wave = breathingWave(clock);
   return [
     '+',
-    ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 0.06, 300, 0.09, 800, 0.15, 1500, 0.20],
-    ['*', wave, ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 0.03, 800, 0.11, 1500, 0.17]],
+    ['case',
+      ['==', ['get', 'markerType'], MARKER_TYPES.sponsored],
+      ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 0.08, 300, 0.11, 800, 0.18, 1500, 0.24],
+      ['==', ['get', 'markerType'], MARKER_TYPES.vuvio],
+      ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 0.07, 300, 0.10, 800, 0.16, 1500, 0.22],
+      ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 0.06, 300, 0.09, 800, 0.15, 1500, 0.20],
+    ],
+    ['*', wave, ['case',
+      ['==', ['get', 'markerType'], MARKER_TYPES.sponsored],
+      ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 0.04, 800, 0.14, 1500, 0.18],
+      ['==', ['get', 'markerType'], MARKER_TYPES.vuvio],
+      ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 0.04, 800, 0.12, 1500, 0.16],
+      ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 0.03, 800, 0.11, 1500, 0.17],
+    ]],
   ];
 }
 
@@ -150,6 +217,27 @@ function drawAtmosphericHalo(canvas, ctx, rotation) {
   const baseRadius = Math.min(w, h) * 0.38;
 
   ctx.clearRect(0, 0, w, h);
+
+  const starCount = Math.max(120, Math.floor((w * h) / 14000));
+  for (let i = 0; i < starCount; i += 1) {
+    const seed = i * 97.37;
+    const x = (Math.sin(seed * 12.9898) * 43758.5453) % 1;
+    const y = (Math.sin((seed + 19.19) * 78.233) * 24634.6345) % 1;
+    const px = Math.abs(x) * w;
+    const py = Math.abs(y) * h;
+    const distanceFromGlobe = Math.hypot(px - cx, py - cy);
+
+    if (distanceFromGlobe < baseRadius * 1.08) continue;
+
+    const twinkle = 0.45 + Math.sin(rotation * 0.075 + seed) * 0.28 + Math.sin(rotation * 0.031 + seed * 0.43) * 0.18;
+    const size = 0.45 + Math.abs(Math.sin(seed * 0.17)) * 0.95;
+    const opacity = Math.max(0.12, Math.min(0.88, twinkle));
+
+    ctx.fillStyle = `rgba(230, 244, 255, ${opacity})`;
+    ctx.beginPath();
+    ctx.arc(px, py, size, 0, Math.PI * 2);
+    ctx.fill();
+  }
 
   // Main diffuse arc with rotation
   ctx.save();
@@ -242,6 +330,9 @@ function toFeature(stream) {
       pingSeed: pulseSeed(stream.latestPing?.id ?? `${stream.id}-ping`),
       family: stream.family,
       familyColor: stream.familyColor,
+      markerType: getMarkerType(stream),
+      sponsoredReason: stream.sponsoredReason ?? '',
+      featuredReason: stream.featuredReason ?? '',
     },
     geometry: {
       type: 'Point',
@@ -260,22 +351,22 @@ function buildCollection(streams) {
 function brightenBaseGlobe(map) {
   try {
     map.setFog?.({
-      color: 'rgba(8, 28, 52, 0.62)',
-      'high-color': 'rgba(40, 100, 158, 0.54)',
-      'horizon-blend': 0.08,
-      'space-color': '#030c16',
-      'star-intensity': 0.18,
+      color: 'rgba(2, 7, 14, 0.82)',
+      'high-color': 'rgba(18, 44, 82, 0.38)',
+      'horizon-blend': 0.06,
+      'space-color': '#010309',
+      'star-intensity': 0.95,
     });
 
     map.getStyle().layers?.forEach((layer) => {
       const id = layer.id.toLowerCase();
       const sourceLayer = String(layer['source-layer'] ?? '').toLowerCase();
       if (layer.type === 'background') {
-        map.setPaintProperty(layer.id, 'background-color', '#060f1a');
+        map.setPaintProperty(layer.id, 'background-color', '#010309');
       }
       if (layer.type === 'fill' && (id.includes('water') || sourceLayer.includes('water'))) {
-        map.setPaintProperty(layer.id, 'fill-color', '#083548');
-        map.setPaintProperty(layer.id, 'fill-opacity', 0.94);
+        map.setPaintProperty(layer.id, 'fill-color', '#0059D8');
+        map.setPaintProperty(layer.id, 'fill-opacity', 1);
       }
       if (layer.type === 'line' && (id.includes('boundary') || id.includes('admin') || sourceLayer.includes('boundary'))) {
         map.setPaintProperty(layer.id, 'line-color', 'rgba(81, 167, 218, 0.42)');
@@ -287,7 +378,7 @@ function brightenBaseGlobe(map) {
   }
 }
 
-export default function CurrentGlobe({ streams, onboarding = false, onOnboardingLiveSelect }) {
+export default function CurrentGlobe({ streams, onboarding = false, onOnboardingLiveSelect, variant = 'current' }) {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const containerRef = useRef(null);
@@ -306,6 +397,8 @@ export default function CurrentGlobe({ streams, onboarding = false, onOnboarding
   const [hoveredId, setHoveredId] = useState('');
   const [pingRefreshTick, setPingRefreshTick] = useState(0);
   const [mapError, setMapError] = useState('');
+  const [showISSCard, setShowISSCard] = useState(false);
+  const [currentZoom, setCurrentZoom] = useState(1);
 
   // Performance diagnostics
   const perfRef = useRef({
@@ -316,26 +409,44 @@ export default function CurrentGlobe({ streams, onboarding = false, onOnboarding
     lastReportTime: performance.now(),
   });
 
-  const enrichedStreams = useMemo(() => streams.map(enrichExperience), [streams]);
+  const enrichedStreams = useMemo(() => {
+    if (variant === 'test3') return decorateGlobeTest3Streams(streams);
+    return streams.map(enrichExperience);
+  }, [streams, variant]);
   const requestedLiveId = searchParams.get('live') ?? '';
   const requestedLive = useMemo(() => {
     if (!requestedLiveId) return null;
     return enrichedStreams.find((stream) => stream.id === requestedLiveId) ?? null;
   }, [enrichedStreams, requestedLiveId]);
 
-  const liveStreams = useMemo(() => {
+  const statusLiveStreams = useMemo(() => {
     void pingRefreshTick;
-    return enrichedStreams
-      .filter((stream) => activeStatuses.includes(stream.status))
-      .filter((stream) => activeFamily === 'all' || stream.family === activeFamily)
-      .filter((stream) => {
-        if (activeActivities.length === 0) return true;
-        return activeActivities.some((activityId) => {
-          const activity = ACTIVITY_CATEGORIES.find((a) => a.id === activityId);
-          return activity?.subcategories.includes(stream.subcategory);
-        });
-      });
+    return enrichedStreams.filter((stream) => activeStatuses.includes(stream.status));
   }, [activeActivities, activeFamily, activeStatuses, enrichedStreams, pingRefreshTick]);
+
+  const standardStreams = useMemo(() => {
+    return statusLiveStreams.filter((stream) => matchesFilters(stream, activeFamily, activeActivities, activeStatuses));
+  }, [activeActivities, activeFamily, activeStatuses, statusLiveStreams]);
+
+  const liveStreams = useMemo(() => {
+    if (variant !== 'test3') return standardStreams;
+
+    const userContext = { interests: activeActivities };
+    const sponsoredLives = statusLiveStreams
+      .filter((stream) => stream.markerType === MARKER_TYPES.sponsored)
+      .filter((stream) => matchesFilters(stream, activeFamily, activeActivities, activeStatuses) || isRelevantOutsideFilter(stream, userContext))
+      .slice(0, MAX_SPONSORED_VISIBLE);
+    const vuvioLives = statusLiveStreams
+      .filter((stream) => stream.markerType === MARKER_TYPES.vuvio)
+      .filter((stream) => matchesFilters(stream, activeFamily, activeActivities, activeStatuses) || shouldFeatureEditorially(stream, userContext))
+      .slice(0, MAX_VUVIO_VISIBLE);
+
+    const merged = new Map();
+    [...standardStreams, ...sponsoredLives, ...vuvioLives].forEach((stream) => {
+      merged.set(stream.id, stream);
+    });
+    return [...merged.values()];
+  }, [activeActivities, activeFamily, activeStatuses, standardStreams, statusLiveStreams, variant]);
 
   const selectedLive = enrichedStreams.find((stream) => stream.id === selectedId) ?? null;
   const watchPathForLive = (live) => {
@@ -366,8 +477,8 @@ export default function CurrentGlobe({ streams, onboarding = false, onOnboarding
         }
       });
     });
-    return { total: liveStreams.length, byFamily, byActivity };
-  }, [enrichedStreams, liveStreams.length]);
+    return { total: standardStreams.length, byFamily, byActivity };
+  }, [enrichedStreams, standardStreams.length]);
 
   const selectFamily = (nextFamily) => {
     setActiveFamily(nextFamily);
@@ -380,7 +491,7 @@ export default function CurrentGlobe({ streams, onboarding = false, onOnboarding
 
     const map = new maplibregl.Map({
       container: containerRef.current,
-      style: STYLE_URL,
+      style: variant === 'test3' ? STYLE_URL_GREEN : STYLE_URL,
       center: INITIAL_CENTER,
       zoom: 1.35,
       minZoom: 0,
@@ -456,7 +567,8 @@ export default function CurrentGlobe({ streams, onboarding = false, onOnboarding
           );
         }
 
-        map.setPadding({ top: 46, bottom: 200, left: 0, right: 0 });
+        const isMobile = window.innerHeight < 900;
+        map.setPadding({ top: isMobile ? 40 : -30, bottom: isMobile ? 80 : 180, left: 0, right: 0 });
 
         map.addSource('vuvio-test-lives', {
           type: 'geojson',
@@ -470,7 +582,7 @@ export default function CurrentGlobe({ streams, onboarding = false, onOnboarding
           source: 'vuvio-test-lives',
           filter: ['!', ['has', 'point_count']],
           paint: {
-            'circle-color': categoryColor,
+            'circle-color': markerColorExpression(),
             'circle-radius': liveColorGlowRadius(0),
             'circle-blur': 0.72,
             'circle-opacity': liveColorGlowOpacity(0),
@@ -483,7 +595,7 @@ export default function CurrentGlobe({ streams, onboarding = false, onOnboarding
           source: 'vuvio-test-lives',
           filter: ['!', ['has', 'point_count']],
           paint: {
-            'circle-color': '#F8FFFF',
+            'circle-color': ['case', ['==', ['get', 'markerType'], MARKER_TYPES.sponsored], '#FFD489', ['==', ['get', 'markerType'], MARKER_TYPES.vuvio], '#DAB2FF', '#F8FFFF'],
             'circle-radius': liveBroadcastHaloRadius(0, selectedId ?? ''),
             'circle-blur': 0.92,
             'circle-opacity': liveBroadcastHaloOpacity(0, selectedId ?? ''),
@@ -496,7 +608,7 @@ export default function CurrentGlobe({ streams, onboarding = false, onOnboarding
           source: 'vuvio-test-lives',
           filter: ['!', ['has', 'point_count']],
           paint: {
-            'circle-color': categoryColor,
+            'circle-color': markerColorExpression(),
             'circle-radius': liveCrowdHaloRadius(0),
             'circle-blur': 0.96,
             'circle-opacity': liveCrowdHaloOpacity(0),
@@ -526,7 +638,7 @@ export default function CurrentGlobe({ streams, onboarding = false, onOnboarding
           source: 'vuvio-test-lives',
           filter: ['!', ['has', 'point_count']],
           paint: {
-            'circle-color': categoryColor,
+            'circle-color': markerColorExpression(),
             'circle-radius': livePointRadius(0, selectedId ?? ''),
             'circle-stroke-color': ['case', ['==', ['get', 'id'], selectedId ?? ''], '#F2F7F6', 'rgba(242,247,246,0.34)'],
             'circle-stroke-width': ['case', ['==', ['get', 'id'], selectedId ?? ''], 1.05, 0.55],
@@ -543,7 +655,7 @@ export default function CurrentGlobe({ streams, onboarding = false, onOnboarding
           paint: {
             'circle-color': 'rgba(43,217,200,0)',
             'circle-radius': liveRingRadius(0, selectedId ?? '', hoveredId),
-            'circle-stroke-color': SELECTED_RING_COLOR,
+            'circle-stroke-color': markerStrokeColorExpression(),
             'circle-stroke-width': 0.7,
             'circle-stroke-opacity': liveRingOpacity(selectedId ?? '', hoveredId),
             'circle-opacity': 0,
@@ -802,6 +914,12 @@ export default function CurrentGlobe({ streams, onboarding = false, onOnboarding
         drawAtmosphericHalo(haloCanvas, ctx, totalRotation);
       }
 
+      // Track zoom for ISS visibility
+      const zoom = map.getZoom();
+      if (Math.abs(zoom - currentZoom) > 0.1) {
+        setCurrentZoom(zoom);
+      }
+
       // Report perf every 3 seconds
       if (time - perfRef.current.lastReportTime > 3000) {
         const elapsed = (time - perfRef.current.lastReportTime) / 1000;
@@ -910,17 +1028,23 @@ export default function CurrentGlobe({ streams, onboarding = false, onOnboarding
 
         {!onboarding ? (
         <div className="map-engine-switch test-globe-switch" role="group" aria-label="Choose globe">
-          <button type="button" className="is-active" aria-pressed="true">
+          <button type="button" className={variant === 'current' ? 'is-active' : ''} onClick={() => navigate('/globe?switch=1')} aria-pressed={variant === 'current'}>
             Current
           </button>
-          <button type="button" onClick={() => navigate('/globe-lab?switch=1')} aria-pressed="false">
+          <button type="button" className={variant === 'lab' ? 'is-active' : ''} onClick={() => navigate('/globe-lab?switch=1')} aria-pressed={variant === 'lab'}>
             Lab
           </button>
-          <button type="button" onClick={() => navigate('/globe-cesium?switch=1')} aria-pressed="false">
+          <button type="button" className={variant === 'cesium' ? 'is-active' : ''} onClick={() => navigate('/globe-cesium?switch=1')} aria-pressed={variant === 'cesium'}>
             Cesium
           </button>
-          <button type="button" onClick={() => navigate('/globe-test?switch=1')} aria-pressed="false">
+          <button type="button" className={variant === 'test' ? 'is-active' : ''} onClick={() => navigate('/globe-test?switch=1')} aria-pressed={variant === 'test'}>
             Test
+          </button>
+          <button type="button" className={variant === 'test2' ? 'is-active' : ''} onClick={() => navigate('/globe-test-2?switch=1')} aria-pressed={variant === 'test2'}>
+            Test 2
+          </button>
+          <button type="button" className={variant === 'test3' ? 'is-active' : ''} onClick={() => navigate('/globe-test-3?switch=1')} aria-pressed={variant === 'test3'}>
+            Test 3
           </button>
         </div>
         ) : null}
@@ -937,6 +1061,41 @@ export default function CurrentGlobe({ streams, onboarding = false, onOnboarding
             <LocateFixed size={19} />
           </button>
         </div>
+        ) : null}
+
+        {!onboarding && variant === 'test3' ? (
+          <div className="test-globe-legend" aria-label="Marker legend">
+            <span><i className="is-standard" /> Standard live</span>
+            <span><i className="is-sponsored" /> Sponsored</span>
+            <span><i className="is-vuvio" /> Vuvio selection</span>
+          </div>
+        ) : null}
+
+        {!onboarding && variant === 'current' && currentZoom < 3.5 ? (
+          <div className="iss-globe-orbit-container">
+            <button
+              type="button"
+              className="iss-globe-floating"
+              onClick={() => setShowISSCard(true)}
+              aria-label="International Space Station"
+              title="ISS Live"
+            >
+              <svg viewBox="0 0 60 60" xmlns="http://www.w3.org/2000/svg">
+                <rect x="8" y="22" width="3" height="16" fill="#2B7F8F" opacity="0.9"/>
+                <rect x="5" y="20" width="10" height="2" fill="#1B5F6F" opacity="1"/>
+                <rect x="5" y="38" width="10" height="2" fill="#1B5F6F" opacity="1"/>
+                <rect x="49" y="22" width="3" height="16" fill="#2B7F8F" opacity="0.9"/>
+                <rect x="45" y="20" width="10" height="2" fill="#1B5F6F" opacity="1"/>
+                <rect x="45" y="38" width="10" height="2" fill="#1B5F6F" opacity="1"/>
+                <rect x="22" y="18" width="16" height="24" rx="2" fill="#1A5F7F" stroke="#2B8FAF" strokeWidth="0.5"/>
+                <rect x="28" y="10" width="4" height="40" fill="#0F4F6F" opacity="0.8"/>
+                <circle cx="28" cy="26" r="1.5" fill="#2BD9C8" opacity="1"/>
+                <circle cx="32" cy="26" r="1.5" fill="#2BD9C8" opacity="1"/>
+                <circle cx="28" cy="34" r="1.5" fill="#2BD9C8" opacity="0.9"/>
+                <circle cx="32" cy="34" r="1.5" fill="#2BD9C8" opacity="0.9"/>
+              </svg>
+            </button>
+          </div>
         ) : null}
 
         {!onboarding && !selectedLive && (
@@ -965,6 +1124,13 @@ export default function CurrentGlobe({ streams, onboarding = false, onOnboarding
                   <i />
                   {selectedLive.subcategory}
                 </span>
+                {variant === 'test3' && selectedLive.markerType && selectedLive.markerType !== MARKER_TYPES.standard ? (
+                  <span className={`test-globe-card__marker-badge is-${selectedLive.markerType}`}>
+                    {selectedLive.markerType === MARKER_TYPES.sponsored
+                      ? (selectedLive.sponsoredReason || 'Sponsored')
+                      : (selectedLive.featuredReason || 'Vuvio selection')}
+                  </span>
+                ) : null}
                 <h2>{selectedLive.experienceTitle}</h2>
                 <p>{selectedLive.name} · {selectedLive.city}, {selectedLive.country}</p>
                 <strong>{selectedLive.viewers} viewers</strong>
@@ -995,6 +1161,10 @@ export default function CurrentGlobe({ streams, onboarding = false, onOnboarding
               </div>
             </div>
           </aside>
+        ) : null}
+
+        {!onboarding && showISSCard && variant === 'current' ? (
+          <ISSLiveCard onClose={() => setShowISSCard(false)} />
         ) : null}
       </div>
     </section>

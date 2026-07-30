@@ -1480,6 +1480,27 @@ function LiveViewer({ liveId, creatorMode = false }) {
   const isLiked = !!liked[live.id];
   const isFollowing = !!following[live.id];
 
+  const attemptVideoPlayback = (video) => {
+    if (!video) return;
+
+    video.muted = true;
+    video.defaultMuted = true;
+    video.playsInline = true;
+    video.autoplay = true;
+
+    const playWhenReady = () => {
+      if (video.readyState >= 2) {
+        video.play()?.catch?.((err) => {
+          console.warn('[HomePage] Video play error:', err.name, err.message);
+        });
+      } else {
+        video.addEventListener('canplay', playWhenReady, { once: true });
+      }
+    };
+
+    playWhenReady();
+  };
+
   const {
     videoRefCallback,
     recordGearOpened,
@@ -1741,6 +1762,12 @@ function LiveViewer({ liveId, creatorMode = false }) {
     if (!video) return;
     video.muted = videoMuted;
   }, [videoMuted]);
+
+  useEffect(() => {
+    const video = videoPlaybackRef.current;
+    if (!video) return;
+    attemptVideoPlayback(video);
+  }, [index]);
 
   const goTo = (liveion) => {
     endSession('swipe');
@@ -2008,20 +2035,23 @@ function LiveViewer({ liveId, creatorMode = false }) {
                 <CameraLiveMedia live={item} isActive={isActive} isDragging={isDragging} dragY={dragY} />
               ) : item.kind === 'video' ? (
                 <video
-                  ref={isActive ? (el) => {
-                    videoPlaybackRef.current = el;
-                    videoRefCallback(el);
-                    el?.play()?.catch?.((err) => {
-                      console.warn('[HomePage] Video play error:', err.name, err.message);
-                    });
-                  } : null}
+                  ref={(el) => {
+                    if (isActive) {
+                      videoPlaybackRef.current = el;
+                      videoRefCallback(el);
+                      attemptVideoPlayback(el);
+                    } else if (el) {
+                      el.pause();
+                    }
+                  }}
                   className="live-slide__media live-slide__media--video"
                   src={isActive ? item.video : undefined}
                   poster={item.image}
-                  muted={true}
+                  muted
+                  defaultMuted
                   loop
                   playsInline
-                  autoPlay={isActive}
+                  autoPlay
                   preload={isActive ? 'auto' : 'metadata'}
                   style={isActive && isDragging ? { transform: `scale(1.03) translateY(${dragY * 0.1}px)` } : undefined}
                 />

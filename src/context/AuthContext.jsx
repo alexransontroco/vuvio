@@ -114,7 +114,7 @@ export function AuthProvider({ children }) {
   useEffect(() => {
     const splashTimer = setTimeout(() => {
       setShowSplash(false);
-    }, 8000);
+    }, 9000);
     return () => clearTimeout(splashTimer);
   }, []);
 

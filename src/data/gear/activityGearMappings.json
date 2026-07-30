@@ -1,0 +1,233 @@
+[
+  {
+    "activityId": "cycling",
+    "suggestedCategories": [
+      { "categoryId": "bike", "priority": 1, "required": false },
+      { "categoryId": "helmet", "priority": 2, "required": false },
+      { "categoryId": "shoes", "priority": 3, "required": false },
+      { "categoryId": "clothing", "priority": 4, "required": false },
+      { "categoryId": "lights", "priority": 5, "required": false },
+      { "categoryId": "gps", "priority": 6, "required": false },
+      { "categoryId": "camera", "priority": 7, "required": false },
+      { "categoryId": "camera-mount", "priority": 8, "required": false },
+      { "categoryId": "bag", "priority": 9, "required": false },
+      { "categoryId": "tools", "priority": 10, "required": false }
+    ]
+  },
+  {
+    "activityId": "mountain-biking",
+    "suggestedCategories": [
+      { "categoryId": "bike", "priority": 1, "required": false },
+      { "categoryId": "helmet", "priority": 2, "required": false },
+      { "categoryId": "protective-gear", "priority": 3, "required": false },
+      { "categoryId": "shoes", "priority": 4, "required": false },
+      { "categoryId": "clothing", "priority": 5, "required": false },
+      { "categoryId": "lights", "priority": 6, "required": false },
+      { "categoryId": "camera", "priority": 7, "required": false },
+      { "categoryId": "camera-mount", "priority": 8, "required": false },
+      { "categoryId": "tools", "priority": 9, "required": false },
+      { "categoryId": "bag", "priority": 10, "required": false }
+    ]
+  },
+  {
+    "activityId": "hiking",
+    "suggestedCategories": [
+      { "categoryId": "shoes", "priority": 1, "required": false },
+      { "categoryId": "bag", "priority": 2, "required": false },
+      { "categoryId": "clothing", "priority": 3, "required": false },
+      { "categoryId": "hydration", "priority": 4, "required": false },
+      { "categoryId": "lights", "priority": 5, "required": false },
+      { "categoryId": "gps", "priority": 6, "required": false },
+      { "categoryId": "camera", "priority": 7, "required": false },
+      { "categoryId": "watch", "priority": 8, "required": false }
+    ]
+  },
+  {
+    "activityId": "running",
+    "suggestedCategories": [
+      { "categoryId": "shoes", "priority": 1, "required": false },
+      { "categoryId": "clothing", "priority": 2, "required": false },
+      { "categoryId": "watch", "priority": 3, "required": false },
+      { "categoryId": "hydration", "priority": 4, "required": false },
+      { "categoryId": "camera", "priority": 5, "required": false },
+      { "categoryId": "camera-mount", "priority": 6, "required": false }
+    ]
+  },
+  {
+    "activityId": "surfing",
+    "suggestedCategories": [
+      { "categoryId": "bike", "priority": 1, "required": false },
+      { "categoryId": "wetsuit", "priority": 2, "required": false },
+      { "categoryId": "leash", "priority": 3, "required": false },
+      { "categoryId": "fins", "priority": 4, "required": false },
+      { "categoryId": "wax", "priority": 5, "required": false },
+      { "categoryId": "camera", "priority": 6, "required": false },
+      { "categoryId": "camera-mount", "priority": 7, "required": false },
+      { "categoryId": "board-bag", "priority": 8, "required": false },
+      { "categoryId": "watch", "priority": 9, "required": false }
+    ]
+  },
+  {
+    "activityId": "kayaking",
+    "suggestedCategories": [
+      { "categoryId": "kayak", "priority": 1, "required": false },
+      { "categoryId": "paddle", "priority": 2, "required": false },
+      { "categoryId": "life-jacket", "priority": 3, "required": false },
+      { "categoryId": "clothing", "priority": 4, "required": false },
+      { "categoryId": "hydration", "priority": 5, "required": false },
+      { "categoryId": "camera", "priority": 6, "required": false },
+      { "categoryId": "camera-mount", "priority": 7, "required": false }
+    ]
+  },
+  {
+    "activityId": "fishing",
+    "suggestedCategories": [
+      { "categoryId": "fishing-rod", "priority": 1, "required": false },
+      { "categoryId": "reel", "priority": 2, "required": false },
+      { "categoryId": "tackle-box", "priority": 3, "required": false },
+      { "categoryId": "clothing", "priority": 4, "required": false },
+      { "categoryId": "shoes", "priority": 5, "required": false },
+      { "categoryId": "hydration", "priority": 6, "required": false },
+      { "categoryId": "camera", "priority": 7, "required": false }
+    ]
+  },
+  {
+    "activityId": "sailing",
+    "suggestedCategories": [
+      { "categoryId": "sailboat", "priority": 1, "required": false },
+      { "categoryId": "life-jacket", "priority": 2, "required": false },
+      { "categoryId": "clothing", "priority": 3, "required": false },
+      { "categoryId": "shoes", "priority": 4, "required": false },
+      { "categoryId": "watch", "priority": 5, "required": false },
+      { "categoryId": "camera", "priority": 6, "required": false }
+    ]
+  },
+  {
+    "activityId": "diving",
+    "suggestedCategories": [
+      { "categoryId": "diving-gear", "priority": 1, "required": false },
+      { "categoryId": "tank", "priority": 2, "required": false },
+      { "categoryId": "wetsuit", "priority": 3, "required": false },
+      { "categoryId": "fins", "priority": 4, "required": false },
+      { "categoryId": "camera", "priority": 5, "required": false },
+      { "categoryId": "watch", "priority": 6, "required": false }
+    ]
+  },
+  {
+    "activityId": "cooking",
+    "suggestedCategories": [
+      { "categoryId": "oven", "priority": 1, "required": false },
+      { "categoryId": "knife", "priority": 2, "required": false },
+      { "categoryId": "pot", "priority": 3, "required": false },
+      { "categoryId": "scale", "priority": 4, "required": false },
+      { "categoryId": "thermometer", "priority": 5, "required": false },
+      { "categoryId": "apron", "priority": 6, "required": false },
+      { "categoryId": "camera", "priority": 7, "required": false }
+    ]
+  },
+  {
+    "activityId": "baking",
+    "suggestedCategories": [
+      { "categoryId": "oven", "priority": 1, "required": false },
+      { "categoryId": "mixer", "priority": 2, "required": false },
+      { "categoryId": "baking-tray", "priority": 3, "required": false },
+      { "categoryId": "scale", "priority": 4, "required": false },
+      { "categoryId": "thermometer", "priority": 5, "required": false },
+      { "categoryId": "mold", "priority": 6, "required": false },
+      { "categoryId": "knife", "priority": 7, "required": false },
+      { "categoryId": "apron", "priority": 8, "required": false },
+      { "categoryId": "camera", "priority": 9, "required": false }
+    ]
+  },
+  {
+    "activityId": "coffee",
+    "suggestedCategories": [
+      { "categoryId": "coffee-maker", "priority": 1, "required": false },
+      { "categoryId": "grinder", "priority": 2, "required": false },
+      { "categoryId": "scale", "priority": 3, "required": false },
+      { "categoryId": "camera", "priority": 4, "required": false }
+    ]
+  },
+  {
+    "activityId": "photography",
+    "suggestedCategories": [
+      { "categoryId": "camera", "priority": 1, "required": false },
+      { "categoryId": "lens", "priority": 2, "required": false },
+      { "categoryId": "tripod", "priority": 3, "required": false },
+      { "categoryId": "lighting", "priority": 4, "required": false },
+      { "categoryId": "bag", "priority": 5, "required": false }
+    ]
+  },
+  {
+    "activityId": "filmmaking",
+    "suggestedCategories": [
+      { "categoryId": "camera", "priority": 1, "required": false },
+      { "categoryId": "lens", "priority": 2, "required": false },
+      { "categoryId": "microphone", "priority": 3, "required": false },
+      { "categoryId": "tripod", "priority": 4, "required": false },
+      { "categoryId": "lighting", "priority": 5, "required": false },
+      { "categoryId": "bag", "priority": 6, "required": false }
+    ]
+  },
+  {
+    "activityId": "music",
+    "suggestedCategories": [
+      { "categoryId": "instrument", "priority": 1, "required": false },
+      { "categoryId": "microphone", "priority": 2, "required": false },
+      { "categoryId": "headphones", "priority": 3, "required": false },
+      { "categoryId": "amplifier", "priority": 4, "required": false }
+    ]
+  },
+  {
+    "activityId": "driving",
+    "suggestedCategories": [
+      { "categoryId": "vehicle", "priority": 1, "required": false },
+      { "categoryId": "camera", "priority": 2, "required": false },
+      { "categoryId": "camera-mount", "priority": 3, "required": false },
+      { "categoryId": "watch", "priority": 4, "required": false }
+    ]
+  },
+  {
+    "activityId": "motorcycling",
+    "suggestedCategories": [
+      { "categoryId": "motorcycle", "priority": 1, "required": false },
+      { "categoryId": "helmet", "priority": 2, "required": false },
+      { "categoryId": "protective-gear", "priority": 3, "required": false },
+      { "categoryId": "gloves", "priority": 4, "required": false },
+      { "categoryId": "clothing", "priority": 5, "required": false },
+      { "categoryId": "camera", "priority": 6, "required": false },
+      { "categoryId": "camera-mount", "priority": 7, "required": false }
+    ]
+  },
+  {
+    "activityId": "craftsmanship",
+    "suggestedCategories": [
+      { "categoryId": "tools", "priority": 1, "required": false },
+      { "categoryId": "protective-gear", "priority": 2, "required": false },
+      { "categoryId": "camera", "priority": 3, "required": false }
+    ]
+  },
+  {
+    "activityId": "gardening",
+    "suggestedCategories": [
+      { "categoryId": "garden-tool", "priority": 1, "required": false },
+      { "categoryId": "clothing", "priority": 2, "required": false },
+      { "categoryId": "shoes", "priority": 3, "required": false },
+      { "categoryId": "gloves", "priority": 4, "required": false },
+      { "categoryId": "plant", "priority": 5, "required": false },
+      { "categoryId": "pot", "priority": 6, "required": false },
+      { "categoryId": "camera", "priority": 7, "required": false }
+    ]
+  },
+  {
+    "activityId": "urban-exploration",
+    "suggestedCategories": [
+      { "categoryId": "clothing", "priority": 1, "required": false },
+      { "categoryId": "shoes", "priority": 2, "required": false },
+      { "categoryId": "bag", "priority": 3, "required": false },
+      { "categoryId": "camera", "priority": 4, "required": false },
+      { "categoryId": "camera-mount", "priority": 5, "required": false },
+      { "categoryId": "lights", "priority": 6, "required": false }
+    ]
+  }
+]

@@ -207,21 +207,6 @@ export const lives = [
     ],
   },
   {
-    id: 'firefighter-lisbon',
-    kind: 'image',
-    image: '/assets/pov/12_firefighter.jpg',
-    streamer: 'Rafa Silva',
-    job: 'Firefighter',
-    city: 'Lisbon',
-    country: 'Portugal',
-    viewers: '1,126',
-    description: 'Training drill in the old dock warehouse.',
-    chat: [
-      { who: 'Sam', text: 'stay safe out there' },
-      { who: 'Lina', text: 'the heat through the camera' },
-    ],
-  },
-  {
     id: 'cabinetmaker-copenhagen',
     kind: 'image',
     image: '/assets/pov/11_welder.jpg',
