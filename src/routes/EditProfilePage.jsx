@@ -20,6 +20,8 @@ function buildForm(profile) {
     websiteUrl: profile.websiteUrl ?? '',
     instagramUrl: profile.instagramUrl ?? '',
     youtubeUrl: profile.youtubeUrl ?? '',
+    avatarUrl: profile.avatarUrl ?? null,
+    coverUrl: profile.coverUrl ?? null,
     languages: profile.languages ?? [],
     categories: profile.categories ?? [],
   };

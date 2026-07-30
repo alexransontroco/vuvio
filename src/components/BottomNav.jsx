@@ -285,7 +285,7 @@ export default function BottomNav({ collapsible = false, collapsed = false, onEx
                   <ChevronLeft size={18} strokeWidth={1.9} />
                 </button>
               ) : (
-                <BrandMark size={22} showName />
+                <BrandMark size={22} showName useLegacy />
               )}
               {createMode === 'launch' ? <strong>{showPreview ? 'Preview' : t('create.startLive')}</strong> : null}
               <button type="button" onClick={closeCreate} aria-label={t('common.close')}>
@@ -501,7 +501,7 @@ export default function BottomNav({ collapsible = false, collapsed = false, onEx
           onClick={() => setCreateOpen(true)}
           aria-label={t('navigation.create')}
         >
-          <BrandMark size={40} withCircle={false} style={{ marginTop: 10 }} />
+          <BrandMark size={40} withCircle={false} useLegacy style={{ marginTop: 10 }} />
           <span className="bottom-nav__create-badge" aria-hidden="true">+</span>
         </button>
         {navItems.slice(2).map(({ to, labelKey, icon: Icon }) => (
