@@ -617,7 +617,7 @@ export const streams = [
     environment: 'air',
     povType: 'pov',
     video: '/videos/mockups/Serrasolses_Brothers__Rio_Claro_100%_GoPro_2022__HDs84SRy7i0__clip.mp4',
-    image: '/assets/VuVio_10_POV/02_skydivers.jpg',
+    image: '/assets/VuVio_10_POV/04_firefighter.jpg',
     viewers: 3120,
     viewerLabel: '3,120',
     duration: '14:32',
