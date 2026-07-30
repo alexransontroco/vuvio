@@ -1071,7 +1071,7 @@ export default function CurrentGlobe({ streams, onboarding = false, onOnboarding
           </div>
         ) : null}
 
-        {!onboarding && variant === 'current' && currentZoom < 3.5 ? (
+        {false && !onboarding && variant === 'current' && currentZoom < 3.5 ? (
           <div className="iss-globe-orbit-container">
             <button
               type="button"
@@ -1163,7 +1163,7 @@ export default function CurrentGlobe({ streams, onboarding = false, onOnboarding
           </aside>
         ) : null}
 
-        {!onboarding && showISSCard && variant === 'current' ? (
+        {false && !onboarding && showISSCard && variant === 'current' ? (
           <ISSLiveCard onClose={() => setShowISSCard(false)} />
         ) : null}
       </div>
