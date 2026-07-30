@@ -558,7 +558,7 @@ function AboutTab({ profile }) {
   );
 }
 
-function EquipmentTab({ equipment, liveEquipment, isOwnProfile, onManage, onViewLive }) {
+function EquipmentTab({ equipment, liveEquipment, isOwnProfile, displayName, onManage, onViewLive }) {
   const [activeCategoryId, setActiveCategoryId] = useState(null);
   const [sponsorshipOpen, setSponsorshipOpen] = useState(false);
   const publicEquipment = equipment.filter((item) => item.isPublic);
@@ -581,8 +581,8 @@ function EquipmentTab({ equipment, liveEquipment, isOwnProfile, onManage, onView
     <section className="equipment-tab" aria-label="Creator equipment">
       <div className="equipment-tab__header">
         <div>
-          <h2>My Equipment</h2>
-          <p>The gear I use to capture and stream my POV experiences.</p>
+          <h2>{isOwnProfile ? 'My Equipment' : `${displayName}'s Equipment`}</h2>
+          <p>{isOwnProfile ? 'The gear I use to capture and stream my POV experiences.' : `The gear ${displayName} uses to capture and stream POV experiences.`}</p>
         </div>
         <button type="button" onClick={() => setSponsorshipOpen(true)}>About sponsorships</button>
       </div>
@@ -930,6 +930,7 @@ export default function ProfilePage() {
               equipment={profileEquipment}
               liveEquipment={liveEquipment}
               isOwnProfile={isOwnProfile}
+              displayName={profile.displayName}
               onManage={() => navigate('/profile/equipment')}
               onViewLive={() => navigate(`/discover?live=${encodeURIComponent(profile.currentLive?.id ?? '')}`)}
             />
