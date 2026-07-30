@@ -365,7 +365,7 @@ function brightenBaseGlobe(map) {
         map.setPaintProperty(layer.id, 'background-color', '#010309');
       }
       if (layer.type === 'fill' && (id.includes('water') || sourceLayer.includes('water'))) {
-        map.setPaintProperty(layer.id, 'fill-color', '#0a1428');
+        map.setPaintProperty(layer.id, 'fill-color', '#0059D8');
         map.setPaintProperty(layer.id, 'fill-opacity', 1);
       }
       if (layer.type === 'line' && (id.includes('boundary') || id.includes('admin') || sourceLayer.includes('boundary'))) {
