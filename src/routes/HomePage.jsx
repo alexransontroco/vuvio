@@ -2,6 +2,8 @@ import { Backpack, BatteryWarning, Bell, CalendarClock, Camera, Check, ChevronLe
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link, Navigate, useNavigate, useParams, useSearchParams } from 'react-router-dom';
+import { useStreamView } from '../hooks/useStreamView';
+import { analyticsService } from '../services/analytics';
 import BrandMark from '../components/BrandMark.jsx';
 import CreatorLink from '../components/CreatorLink.jsx';
 import { EquipmentViewerSheet } from '../components/equipment/EquipmentKit.jsx';
@@ -48,6 +50,7 @@ const demoVideoLiveIds = [
   'buggy-marrakesh',
   'glacier-guide-iceland',
 ];
+const DEFAULT_WATCH_LIVE_ID = 'runner-prague';
 const CLOCK_TICK_MS = 1000;
 const creatorComments = [
   { avatar: 'E', name: 'Emma', text: 'This looks amazing.' },
@@ -1415,7 +1418,20 @@ function LiveViewer({ liveId, creatorMode = false }) {
       .filter(Boolean);
 
     // Start with user's active lives, then mock streams
-    const combined = [...activeLives, ...baseFeed];
+    let combined = [...activeLives, ...baseFeed];
+
+    // Exclude specific creators - STRICT FILTER
+    combined = combined.filter((stream) => {
+      const streamer = (stream.streamer || stream.name || stream.displayName || '').toLowerCase().trim();
+      const creatorId = (stream.creatorId || stream.creator || '').toLowerCase().trim();
+      const streamId = (stream.id || '').toLowerCase().trim();
+
+      // Block Elin Arnadottir and StreetVibes completely
+      if (streamer.includes('elin') || streamer.includes('arnadottir')) return false;
+      if (streamer === 'streetvibes' || creatorId === 'streetvibes' || streamId.includes('streetvibes')) return false;
+
+      return true;
+    });
 
     if (!demoVideos.length) return combined;
 
@@ -1464,6 +1480,30 @@ function LiveViewer({ liveId, creatorMode = false }) {
   const isLiked = !!liked[live.id];
   const isFollowing = !!following[live.id];
 
+  const {
+    videoRefCallback,
+    recordGearOpened,
+    recordGearExternalClicked,
+    recordCreatorFollowed,
+    recordShared,
+    endSession,
+  } = useStreamView(
+    live.id ? {
+      streamId: live.id,
+      creatorId: live.creatorId || live.name || 'unknown',
+      source: 'watch',
+      sourcePosition: index,
+      category: live.category,
+      environment: live.environment,
+    } : null,
+    {
+      enabled: !!live.id && !creatorMode,
+      onSessionEnd: (metrics) => {
+        console.log('[Analytics] View session ended:', metrics);
+      },
+    }
+  );
+
   useEffect(() => {
     const requestedIndex = liveFeed.findIndex((item) => item.id === liveId);
     if (requestedIndex >= 0) {
@@ -1484,6 +1524,9 @@ function LiveViewer({ liveId, creatorMode = false }) {
         const stream = await startBroadcast(liveId, user.uid);
         if (localVideoRef.current) {
           localVideoRef.current.srcObject = stream;
+          localVideoRef.current.play()?.catch?.((err) => {
+            console.warn('[LiveViewer] Local video play error:', err.name, err.message);
+          });
         }
       } catch (err) {
         console.error('[LiveViewer] Broadcaster setup failed:', err.message);
@@ -1583,7 +1626,9 @@ function LiveViewer({ liveId, creatorMode = false }) {
             if (remoteVideoRef.current) {
               remoteVideoRef.current.srcObject = stream;
               remoteVideoRef.current.muted = true;
-              remoteVideoRef.current.play()?.catch?.(() => {});
+              remoteVideoRef.current.play()?.catch?.((err) => {
+                console.warn('[LiveViewer] Remote video play error:', err.name, err.message);
+              });
             }
             setRemoteStream(stream);
           }
@@ -1691,7 +1736,14 @@ function LiveViewer({ liveId, creatorMode = false }) {
     };
   }, []);
 
+  useEffect(() => {
+    const video = videoPlaybackRef.current;
+    if (!video) return;
+    video.muted = videoMuted;
+  }, [videoMuted]);
+
   const goTo = (liveion) => {
+    endSession('swipe');
     setIndex((current) => {
       const next = current + liveion;
       if (next < 0) return liveFeed.length - 1;
@@ -1956,11 +2008,17 @@ function LiveViewer({ liveId, creatorMode = false }) {
                 <CameraLiveMedia live={item} isActive={isActive} isDragging={isDragging} dragY={dragY} />
               ) : item.kind === 'video' ? (
                 <video
-                  ref={isActive ? videoPlaybackRef : null}
+                  ref={isActive ? (el) => {
+                    videoPlaybackRef.current = el;
+                    videoRefCallback(el);
+                    el?.play()?.catch?.((err) => {
+                      console.warn('[HomePage] Video play error:', err.name, err.message);
+                    });
+                  } : null}
                   className="live-slide__media live-slide__media--video"
                   src={isActive ? item.video : undefined}
                   poster={item.image}
-                  muted={item.hasVideoAudio && videoMuted}
+                  muted={true}
                   loop
                   playsInline
                   autoPlay={isActive}
@@ -2073,16 +2131,23 @@ function LiveViewer({ liveId, creatorMode = false }) {
         <div className="live-feed__copy">
           <CreatorLink creator={live} className="live-feed__creator" stopPropagation />
           <p>
-            {live.job} - {live.city}, {live.country}
+            <MapPin size={14} strokeWidth={2} aria-hidden="true" />
+            {live.city}, {live.country}
           </p>
-          <span>{live.description}</span>
+          <span>{live.job}{live.job && live.description ? ' • ' : ''}{live.description}</span>
         </div>
 
         <div className="live-actions" aria-label="Live actions">
           <button
             type="button"
             className={isFollowing ? 'is-active' : ''}
-            onClick={() => setFollowing((state) => ({ ...state, [live.id]: !state[live.id] }))}
+            onClick={() => {
+              const wasFollowing = isFollowing;
+              setFollowing((state) => ({ ...state, [live.id]: !state[live.id] }));
+              if (!wasFollowing) {
+                recordCreatorFollowed();
+              }
+            }}
             aria-label={isFollowing ? t('common.unfollow') : t('common.follow')}
           >
             <UserPlus size={21} strokeWidth={1.8} />
@@ -2098,11 +2163,11 @@ function LiveViewer({ liveId, creatorMode = false }) {
           <button type="button" onClick={openChatComposer} aria-label={t('live.privateMessage')}>
             <MessageCircle size={22} strokeWidth={1.8} />
           </button>
-          <button type="button" aria-label={t('common.share')}>
+          <button type="button" onClick={recordShared} aria-label={t('common.share')}>
             <Send size={21} strokeWidth={1.8} />
           </button>
-          <button type="button" onClick={() => setEquipmentSheetOpen(true)} aria-label="Open live equipment">
-            <Backpack size={21} strokeWidth={1.8} />
+          <button type="button" className="equipment-button" onClick={() => { recordGearOpened(); setEquipmentSheetOpen(true); }} aria-label="Open live equipment">
+            <Backpack size={22} strokeWidth={1.9} />
           </button>
           <button
             type="button"
@@ -2225,7 +2290,8 @@ export default function HomePageRoute() {
   const { user } = useAuth();
   const [createdLives, setCreatedLives] = useState([]);
   const homeLives = useMemo(() => streams.map(toHomeLive).filter((stream) => stream.status === 'live'), []);
-  const liveId = searchParams.get('live') ?? homeLives[0]?.id ?? '';
+  const defaultWatchLive = homeLives.find((stream) => stream.id === DEFAULT_WATCH_LIVE_ID);
+  const liveId = searchParams.get('live') ?? defaultWatchLive?.id ?? homeLives[0]?.id ?? '';
   const forcedViewerMode = searchParams.get('mode') === 'view';
 
   useEffect(() => {

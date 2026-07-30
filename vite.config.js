@@ -1,7 +1,7 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import { existsSync, readdirSync, rmSync, statSync } from 'node:fs';
-import { join, relative } from 'node:path';
+import { join, relative, resolve } from 'node:path';
 
 const excludedPublicPatterns = [
   /^assets\/videos\/.*\.(mov|webm)$/i,
@@ -48,6 +48,7 @@ export default defineConfig({
   },
   resolve: {
     alias: {
+      '@': resolve(__dirname, './src'),
       '@zip.js/zip.js/lib/zip-no-worker.js': '@zip.js/zip.js',
     },
   },
