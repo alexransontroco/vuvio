@@ -1,4 +1,4 @@
-# Analytics Documentation Index
+ # Analytics Documentation Index
 
 **Comprehensive guide to the analytics system built for Vuvio**
 
@@ -52,6 +52,30 @@ Comprehensive explanation in simple terms:
   - How to track actions (gear, social)
   - Testing examples
   - Configuration reference
+
+### Phase 2.5: Discovery Tracking
+- **[PHASE-2.5-DISCOVERY-TRACKING.md](./PHASE-2.5-DISCOVERY-TRACKING.md)** — Creator profile tracking
+  - Profile open tracking
+  - Source attribution
+  - Integration with ProfilePage
+
+### Phase 3: Statistics Aggregation
+- **[PHASE-3-COMPLETE.md](./PHASE-3-COMPLETE.md)** — Aggregation pipeline
+  - Stream stats calculation
+  - Creator stats rollup
+  - Category aggregation
+  - User affinity scoring
+  - Engagement score formula
+  - Scheduled Cloud Functions
+
+### Phase 4: Analytics Dashboard
+- **[PHASE-4-COMPLETE.md](./PHASE-4-COMPLETE.md)** — Admin dashboard
+  - AnalyticsPage component
+  - Real-time metrics display
+  - Leaderboard tables (streams, creators, categories)
+  - Admin access control
+  - Styling & responsiveness
+  - Firestore queries
 
 ### Architecture Details
 - **[analytics-architecture.md](./analytics-architecture.md)** — Deep dive
@@ -223,32 +247,31 @@ A single instance of a user watching a stream from start to end.
 
 ---
 
-## 🚀 What's Next
+## 🚀 What's Next (Future Enhancements)
 
-### Phase 1.5: Backend Endpoint
-- Implement `/api/analytics/events` POST endpoint
-- Validate events
-- Enrich with backend data
-- Deduplicate
-- Save to Firestore
-- Update stream stats
+### Immediate
+- Monitor aggregation functions in production
+- Verify data accuracy in Firestore collections
+- Test dashboard performance at scale
 
-### Phase 2.5: Discover Tracking
-- Impressions for Explore cards
-- Clicks on Globe pins
-- Profile opens from cards
+### Short-term Enhancements
+- Add time range filtering to dashboard queries
+- Implement historical trends tracking
+- Add search & filter capabilities to leaderboards
+- Export data to CSV for analysis
 
-### Phase 3: Aggregation
-- Calculate streamStats
-- Calculate creatorStats
-- Calculate categoryStats
-- Calculate userAnalytics (affinity)
+### Medium-term Features
+- Real-time WebSocket updates for dashboard
+- Alert system for unusual metrics
+- User cohort analysis
+- Recommendation engine using affinity data
+- A/B testing framework
 
-### Phase 4: Dashboard
-- `/admin/analytics` route
-- Display metrics
-- Charts & tables
-- Filters by date range
+### Long-term Vision
+- Predictive analytics (churn, growth forecasting)
+- Anomaly detection
+- Custom dashboards per creator
+- API for external tools integration
 
 ---
 
@@ -301,8 +324,12 @@ A single instance of a user watching a stream from start to end.
 - **Understand the big picture** → [ANALYTICS-GUIDE-SIMPLE.md](./ANALYTICS-GUIDE-SIMPLE.md)
 - **See what was audited** → [data-analytics-audit.md](./data-analytics-audit.md)
 - **Understand Phase 1** → [PHASE-1-COMPLETE.md](./PHASE-1-COMPLETE.md)
+- **Understand Phase 1.5** → [PHASE-1.5-COMPLETE.md](./PHASE-1.5-COMPLETE.md)
 - **Understand Phase 2** → [PHASE-2-COMPLETE.md](./PHASE-2-COMPLETE.md)
 - **Learn how to integrate** → [PHASE-2-INTEGRATION.md](./PHASE-2-INTEGRATION.md)
+- **Understand Phase 2.5** → [PHASE-2.5-DISCOVERY-TRACKING.md](./PHASE-2.5-DISCOVERY-TRACKING.md)
+- **Understand Phase 3** → [PHASE-3-COMPLETE.md](./PHASE-3-COMPLETE.md)
+- **Understand Phase 4** → [PHASE-4-COMPLETE.md](./PHASE-4-COMPLETE.md)
 - **Deep dive into architecture** → [analytics-architecture.md](./analytics-architecture.md)
 
 ---
@@ -330,15 +357,16 @@ A single instance of a user watching a stream from start to end.
 ## ✅ Current Status
 
 - ✅ Phase 1: Event queue foundation complete
+- ✅ Phase 1.5: Backend endpoint complete
 - ✅ Phase 2: View session tracking complete
+- ✅ Phase 2.5: Discovery tracking complete
+- ✅ Phase 3: Stats aggregation complete
+- ✅ Phase 4: Analytics dashboard complete
 - ✅ 60+ unit tests passing
 - ✅ TypeScript compilation clean
 - ✅ Build successful (no errors)
-- ✅ Documentation complete
-- ⏳ Phase 1.5: Backend endpoint (next)
-- ⏳ Phase 2.5: Discover tracking
-- ⏳ Phase 3: Stats aggregation
-- ⏳ Phase 4: Dashboard
+- ✅ Documentation complete (11 markdown files)
+- ✅ All phases deployed and production ready
 
 ---
 
