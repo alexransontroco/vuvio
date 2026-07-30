@@ -1334,7 +1334,7 @@
   inset: 0;
   width: 100%;
   height: 100%;
-  object-fit: contain;
+  object-fit: cover;
   object-position: center;
   opacity: 1;
 }
@@ -1380,7 +1380,7 @@
   align-items: center;
   gap: 8px;
   transform-origin: center;
-  animation: splash-logo 3000ms ease-out both;
+  animation: splash-logo 4500ms ease-out both;
 }
 
 .splash-screen__logo .brand-mark {
@@ -1477,7 +1477,7 @@
     filter: blur(8px);
   }
 
-  46% {
+  60% {
     opacity: 1;
     transform: translateY(0) scale(1);
     filter: blur(0);
