@@ -810,7 +810,7 @@
   inset: 0;
   z-index: 220;
   display: grid;
-  align-items: end;
+  align-items: start;
   pointer-events: auto;
 }
 
@@ -831,10 +831,11 @@
   max-height: min(52dvh, 520px);
   overflow-y: auto;
   border: 0.5px solid rgba(255, 255, 255, 0.1);
-  border-radius: 24px 24px 0 0;
+  border-radius: 24px;
   background: rgba(8, 17, 30, 0.98);
   box-shadow: 0 -22px 54px rgba(0, 0, 0, 0.44);
   padding: 10px 14px calc(var(--safe-bottom) + 16px);
+  margin: 33.333dvh 14px 0;
   animation: equipment-sheet-in 320ms cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
@@ -847,10 +848,11 @@
   max-height: min(70dvh, 650px);
   overflow-y: auto;
   border: 0.5px solid rgba(255, 255, 255, 0.1);
-  border-radius: 24px 24px 0 0;
+  border-radius: 24px;
   background: rgba(8, 17, 30, 0.98);
   box-shadow: 0 -22px 54px rgba(0, 0, 0, 0.44);
   padding: 10px 14px calc(var(--safe-bottom) + 16px);
+  margin: 33.333dvh 14px 0;
 }
 
 .equipment-viewer-sheet__handle {
@@ -1023,14 +1025,16 @@
 @media (min-width: 720px) {
   .equipment-viewer-sheet,
   .equipment-info-modal {
-    align-items: end;
+    align-items: start;
     padding: 24px;
   }
 
   .equipment-viewer-sheet__panel,
   .equipment-info-modal__panel {
     width: 100%;
-    border-radius: 24px 24px 0 0;
+    max-width: 500px;
+    margin: 33.333dvh 0 0 auto;
+    border-radius: 24px;
     padding-bottom: 18px;
   }
 }
