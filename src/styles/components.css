@@ -1320,6 +1320,8 @@
   z-index: 220;
   display: grid;
   place-items: center;
+  align-items: flex-start;
+  padding-top: 35vh;
   overflow: hidden;
   background:
     radial-gradient(72% 42% at 50% 38%, rgba(43, 217, 200, 0.16), transparent 64%),
@@ -1430,16 +1432,6 @@
   border: 1px solid rgba(43, 217, 200, 0.28);
   border-radius: 50%;
   animation: splash-ring 1550ms ease-out both;
-}
-
-/* Diagnostic mode: disable animations */
-.splash-screen,
-.splash-screen.is-leaving,
-.splash-screen__glow,
-.splash-screen__logo,
-.splash-screen__pulse {
-  animation: none !important;
-  transition: none !important;
 }
 
 .splash-screen__video {

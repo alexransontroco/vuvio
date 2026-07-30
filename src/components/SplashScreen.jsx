@@ -12,16 +12,28 @@ export default function SplashScreen({ leaving = false }) {
     video.defaultMuted = true;
     video.playsInline = true;
 
-    video.play()
-      .then(() => {
-        console.log('[Splash] autoplay success');
-      })
-      .catch((error) => {
-        console.error('[Splash] autoplay failed', {
-          name: error.name,
-          message: error.message,
+    const attemptPlay = () => {
+      video.play()
+        .then(() => {
+          console.log('[Splash] autoplay success');
+        })
+        .catch((error) => {
+          console.error('[Splash] autoplay failed', {
+            name: error.name,
+            message: error.message,
+          });
         });
-      });
+    };
+
+    if (video.readyState >= 2) {
+      attemptPlay();
+    } else {
+      video.addEventListener('canplay', attemptPlay, { once: true });
+    }
+
+    return () => {
+      video.removeEventListener('canplay', attemptPlay);
+    };
   }, []);
 
   return (
