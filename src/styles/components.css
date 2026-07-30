@@ -1381,7 +1381,7 @@
   gap: 8px;
   transform-origin: center;
   margin-top: -35vh;
-  animation: splash-logo 1500ms ease-out both;
+  animation: splash-logo 1000ms ease-out both;
 }
 
 .splash-screen__logo .brand-mark {
@@ -1402,7 +1402,7 @@
   font-weight: 600;
   letter-spacing: -1px;
   margin: 0;
-  animation: splash-title-fade 1000ms ease-out 100ms both;
+  animation: splash-title-fade 600ms ease-out 50ms both;
 }
 
 @keyframes splash-title-fade {
