@@ -24,7 +24,7 @@ export default function SplashScreen({ leaving = false }) {
             message: error.message,
           });
         });
-    }, 500);
+    }, 1000);
 
     return () => clearTimeout(timer);
   }, []);

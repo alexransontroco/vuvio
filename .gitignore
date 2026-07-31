@@ -36,3 +36,8 @@ vuvio-icons-pack.zip
 _asset-inbox/
 
 *.tmp
+
+# Large video files
+public/assets/videos/*.mp4
+**/*_2160_3840*.mp4
+
