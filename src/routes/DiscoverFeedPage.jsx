@@ -10,6 +10,7 @@ import WatchMiniGlobe from '../components/WatchMiniGlobe.jsx';
 import { getCreatedLives } from '../services/createdLiveService.js';
 import { mapStreams } from '../data/mapStreams.js';
 import { streams as mockStreams } from '../data/mockStreams.js';
+import { analyticsService } from '../services/analytics/analyticsService.ts';
 
 const discoverModes = [
   { labelKey: 'explore.modes.forYou', value: 'for-you' },
@@ -313,6 +314,16 @@ export default function DiscoverFeedPage() {
     screenEl.addEventListener('click', onClick, { capture: true });
     return () => screenEl.removeEventListener('click', onClick, { capture: true });
   }, [commentsOpen, feed.length]);
+
+  useEffect(() => {
+    if (current && current.id) {
+      analyticsService.trackStreamImpression(
+        current.id,
+        current.creatorId || current.id,
+        'discover'
+      );
+    }
+  }, [current?.id]);
 
   const shouldIgnoreSwipeTarget = (target) => Boolean(target?.closest?.(
     '.discover-topbar, .discover-filter-row, .discover-bottom-bar, .discover-creator-row, .discover-comments, a, input, textarea, select'

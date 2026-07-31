@@ -42,6 +42,7 @@ const TestUsersPage       = lazy(() => import('./routes/TestUsersPage.jsx'));
 const FollowingPage       = lazy(() => import('./routes/FollowingPage.jsx'));
 const AnalyticsPage       = lazy(() => import('./routes/AnalyticsPage.jsx'));
 const DesktopLayout       = lazy(() => import('./components/desktop/DesktopLayout.jsx'));
+const SplashTestPage      = lazy(() => import('./routes/SplashTestPage.jsx'));
 
 function RouteFallback() {
   const { t } = useTranslation();
@@ -76,6 +77,7 @@ export default function App() {
       <Route path="/test/live-recap" element={<Lazy component={LiveRecapPage} />} />
       <Route path="/desktop" element={<Lazy component={DesktopLayout} />} />
       <Route path="/onboarding-test" element={<Lazy component={OnboardingTestPage} />} />
+      <Route path="/test/splash" element={<SplashTestPage />} />
 
       {/* ── Auth pages (redirect if already logged in) ── */}
       <Route

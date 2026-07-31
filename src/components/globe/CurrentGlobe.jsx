@@ -6,6 +6,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { ACTIVITY_CATEGORIES } from '../../data/activityCategories.js';
 import { enrichExperience } from '../../data/experienceTaxonomy.js';
 import { MARKER_TYPES, decorateGlobeTest3Streams, isRelevantOutsideFilter, shouldFeatureEditorially } from '../../data/globeTest3Data.js';
+import { analyticsService } from '../../services/analytics/analyticsService.ts';
 import MapBottomSheet from '../map/MapBottomSheet.jsx';
 import { ISSLiveCard } from './ISSLiveCard.jsx';
 import '../../styles/components/iss-globe.css';
@@ -218,7 +219,7 @@ function drawAtmosphericHalo(canvas, ctx, rotation) {
 
   ctx.clearRect(0, 0, w, h);
 
-  const starCount = Math.max(120, Math.floor((w * h) / 14000));
+  const starCount = Math.max(60, Math.floor((w * h) / 28000));
   for (let i = 0; i < starCount; i += 1) {
     const seed = i * 97.37;
     const x = (Math.sin(seed * 12.9898) * 43758.5453) % 1;
@@ -230,7 +231,7 @@ function drawAtmosphericHalo(canvas, ctx, rotation) {
     if (distanceFromGlobe < baseRadius * 1.08) continue;
 
     const twinkle = 0.45 + Math.sin(rotation * 0.075 + seed) * 0.28 + Math.sin(rotation * 0.031 + seed * 0.43) * 0.18;
-    const size = 0.45 + Math.abs(Math.sin(seed * 0.17)) * 0.95;
+    const size = 0.35 + Math.abs(Math.sin(seed * 0.17)) * 0.65;
     const opacity = Math.max(0.12, Math.min(0.88, twinkle));
 
     ctx.fillStyle = `rgba(230, 244, 255, ${opacity})`;
@@ -239,51 +240,34 @@ function drawAtmosphericHalo(canvas, ctx, rotation) {
     ctx.fill();
   }
 
-  // Main diffuse arc with rotation
   ctx.save();
   ctx.translate(cx, cy);
   ctx.rotate((rotation * Math.PI) / 180);
 
-  // Arc 1: Primary orbital band
   const grad1 = ctx.createRadialGradient(0, -baseRadius * 0.12, baseRadius * 0.18, 0, -baseRadius * 0.12, baseRadius * 1.15);
-  grad1.addColorStop(0, 'rgba(80, 170, 230, 0.14)');
-  grad1.addColorStop(0.3, 'rgba(100, 180, 240, 0.11)');
-  grad1.addColorStop(0.6, 'rgba(90, 160, 220, 0.06)');
+  grad1.addColorStop(0, 'rgba(80, 170, 230, 0.1)');
   grad1.addColorStop(1, 'rgba(80, 140, 200, 0)');
   ctx.fillStyle = grad1;
   ctx.beginPath();
   ctx.arc(0, -baseRadius * 0.12, baseRadius * 1.08, 0, Math.PI * 2);
   ctx.fill();
 
-  // Arc 2: Secondary subtle band
-  const grad2 = ctx.createRadialGradient(baseRadius * 0.28, baseRadius * 0.38, baseRadius * 0.14, baseRadius * 0.28, baseRadius * 0.38, baseRadius * 1.38);
-  grad2.addColorStop(0, 'rgba(100, 170, 230, 0.09)');
-  grad2.addColorStop(0.4, 'rgba(110, 180, 240, 0.05)');
-  grad2.addColorStop(1, 'rgba(100, 160, 230, 0)');
-  ctx.fillStyle = grad2;
-  ctx.beginPath();
-  ctx.arc(baseRadius * 0.28, baseRadius * 0.38, baseRadius * 1.32, 0, Math.PI * 2);
-  ctx.fill();
-
   ctx.restore();
 
-  // Asymmetric haze behind globe
   const haze = ctx.createRadialGradient(cx, cy * 0.78, baseRadius * 0.48, cx, cy * 0.78, baseRadius * 1.6);
-  haze.addColorStop(0, 'rgba(70, 150, 200, 0.05)');
-  haze.addColorStop(0.5, 'rgba(60, 140, 180, 0.02)');
+  haze.addColorStop(0, 'rgba(70, 150, 200, 0.03)');
   haze.addColorStop(1, 'rgba(60, 140, 180, 0)');
   ctx.fillStyle = haze;
   ctx.fillRect(0, 0, w, h);
 
-  // Fine dust particles with parallax
-  const dustCount = Math.max(8, Math.floor((w * h) / 120000));
-  ctx.globalAlpha = 0.04;
+  const dustCount = Math.max(4, Math.floor((w * h) / 240000));
+  ctx.globalAlpha = 0.02;
   for (let i = 0; i < dustCount; i++) {
     const seed = i * 13.7;
     const x = (cx + Math.cos(rotation * 0.012 + seed) * w * 0.32) % w;
     const y = (cy + Math.sin(rotation * 0.009 + seed) * h * 0.32) % h;
-    const size = 0.5 + Math.sin(rotation * 0.006 + seed) * 0.3;
-    ctx.fillStyle = `rgba(160, 210, 255, ${0.15 + Math.sin(seed) * 0.1})`;
+    const size = 0.4 + Math.sin(rotation * 0.006 + seed) * 0.2;
+    ctx.fillStyle = `rgba(160, 210, 255, ${0.1 + Math.sin(seed) * 0.05})`;
     ctx.beginPath();
     ctx.arc(x, y, size, 0, Math.PI * 2);
     ctx.fill();
@@ -351,30 +335,34 @@ function buildCollection(streams) {
 function brightenBaseGlobe(map) {
   try {
     map.setFog?.({
-      color: 'rgba(2, 7, 14, 0.82)',
-      'high-color': 'rgba(18, 44, 82, 0.38)',
-      'horizon-blend': 0.06,
-      'space-color': '#010309',
-      'star-intensity': 0.95,
+      color: 'rgba(8, 15, 28, 0.78)',
+      'high-color': 'rgba(20, 50, 90, 0.35)',
+      'horizon-blend': 0.08,
+      'space-color': '#0a0f1a',
+      'star-intensity': 0.88,
     });
 
     map.getStyle().layers?.forEach((layer) => {
       const id = layer.id.toLowerCase();
       const sourceLayer = String(layer['source-layer'] ?? '').toLowerCase();
       if (layer.type === 'background') {
-        map.setPaintProperty(layer.id, 'background-color', '#010309');
+        map.setPaintProperty(layer.id, 'background-color', '#0a0f1a');
       }
       if (layer.type === 'fill' && (id.includes('water') || sourceLayer.includes('water'))) {
-        map.setPaintProperty(layer.id, 'fill-color', '#0059D8');
+        map.setPaintProperty(layer.id, 'fill-color', '#001a4d');
+        map.setPaintProperty(layer.id, 'fill-opacity', 1);
+      }
+      if (layer.type === 'fill' && (id.includes('land') || sourceLayer.includes('land'))) {
+        map.setPaintProperty(layer.id, 'fill-color', '#6a7a8a');
         map.setPaintProperty(layer.id, 'fill-opacity', 1);
       }
       if (layer.type === 'line' && (id.includes('boundary') || id.includes('admin') || sourceLayer.includes('boundary'))) {
-        map.setPaintProperty(layer.id, 'line-color', 'rgba(81, 167, 218, 0.42)');
-        map.setPaintProperty(layer.id, 'line-opacity', 0.52);
+        map.setPaintProperty(layer.id, 'line-color', 'rgba(100, 160, 220, 0.35)');
+        map.setPaintProperty(layer.id, 'line-opacity', 0.4);
       }
     });
   } catch {
-    // Base style support can differ between MapLibre versions/providers.
+    // Base style support can differ entre MapLibre versions/providers.
   }
 }
 
@@ -501,7 +489,7 @@ export default function CurrentGlobe({ streams, onboarding = false, onOnboarding
       logoPosition: 'bottom-left',
       renderWorldCopies: false,
       fadeDuration: 0,
-      pixelRatio: Math.min(window.devicePixelRatio || 1, 1.35),
+      pixelRatio: Math.min(window.devicePixelRatio || 1, 1.2),
     });
 
     mapRef.current = map;
@@ -687,6 +675,15 @@ export default function CurrentGlobe({ streams, onboarding = false, onOnboarding
             };
           }
           const nextSelectedId = feature.properties.id;
+          const stream = enrichedStreams.find((s) => s.id === nextSelectedId);
+          if (stream) {
+            analyticsService.trackGlobePinClicked(
+              stream.id,
+              stream.creatorId || stream.id,
+              feature.geometry.coordinates[1],
+              feature.geometry.coordinates[0]
+            );
+          }
           selectedIdRef.current = nextSelectedId;
           setSelectedId(nextSelectedId);
           onOnboardingLiveSelect?.(nextSelectedId);
@@ -853,7 +850,7 @@ export default function CurrentGlobe({ streams, onboarding = false, onOnboarding
     let lastRotationLng = initialCenter.lng;
     let lastRotationLat = initialCenter.lat;
     let totalRotation = 0;
-    const PULSE_INTERVAL = 50;
+    const PULSE_INTERVAL = 75;
 
     const tick = (time) => {
       perfRef.current.rafCalls++;

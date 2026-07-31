@@ -2089,7 +2089,6 @@ function LiveViewer({ liveId, creatorMode = false }) {
         ) : (
           <>
             <LiveBadge pulse />
-            <span className="live-feed__watching">{live.viewers} watching</span>
           </>
         )}
       </div>

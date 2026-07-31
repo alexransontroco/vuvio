@@ -765,6 +765,12 @@ export default function ProfilePage() {
   }, [searchParams]);
 
   useEffect(() => {
+    if (creatorId && state.viewedProfile) {
+      analyticsService.trackCreatorProfileOpened(creatorId, undefined, 'profile');
+    }
+  }, [creatorId]);
+
+  useEffect(() => {
     // Track profile open from stream
     const streamId = searchParams.get('stream');
     if (streamId && creatorId && state.viewedProfile) {

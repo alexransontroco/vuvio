@@ -59,13 +59,8 @@ export default function LoginPage() {
         navigate(returnTo, { replace: true });
       }
     } catch (err) {
-      const message = await new Promise((resolve) => {
-        // Import parseAuthError dynamically to avoid circular dependency
-        import('../services/authService.js').then((module) => {
-          resolve(module.parseAuthError(err));
-        });
-      });
-      if (message) {
+      const message = err?.message || 'Google Sign-In failed';
+      if (message && message !== '') {
         setError(message);
       }
       setGoogleBusy(false);

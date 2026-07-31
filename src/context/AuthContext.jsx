@@ -155,11 +155,15 @@ export function AuthProvider({ children }) {
   const googleSignIn = useCallback(async () => {
     try {
       const firebaseUser = await signInWithGoogle();
+      // For redirect flow, firebaseUser is null and redirect happens
+      if (firebaseUser === null) {
+        return null;
+      }
       await loadProfile(firebaseUser);
-      return { success: true };
+      return firebaseUser;
     } catch (err) {
       const message = parseAuthError(err);
-      return { success: false, error: message };
+      throw new Error(message);
     }
   }, [loadProfile]);
 

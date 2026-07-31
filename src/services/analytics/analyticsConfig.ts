@@ -49,7 +49,7 @@ export const ANALYTICS_CONFIG = {
     'stream_reported',
   ] as const,
 
-  API_ENDPOINT: '/api/analytics/events',
+  API_ENDPOINT: '/analytics/events',
   FALLBACK_API_ENDPOINT: 'https://api.vuvio.app/analytics/events',
 
   RETENTION_DURATION_DAYS: 90,

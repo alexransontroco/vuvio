@@ -13,7 +13,7 @@ export default function SplashScreen({ leaving = false }) {
     video.playsInline = true;
     video.playbackRate = 0.7;
 
-    const attemptPlay = () => {
+    const timer = setTimeout(() => {
       video.play()
         .then(() => {
           console.log('[Splash] autoplay success');
@@ -24,17 +24,9 @@ export default function SplashScreen({ leaving = false }) {
             message: error.message,
           });
         });
-    };
+    }, 500);
 
-    if (video.readyState >= 2) {
-      attemptPlay();
-    } else {
-      video.addEventListener('canplay', attemptPlay, { once: true });
-    }
-
-    return () => {
-      video.removeEventListener('canplay', attemptPlay);
-    };
+    return () => clearTimeout(timer);
   }, []);
 
   return (

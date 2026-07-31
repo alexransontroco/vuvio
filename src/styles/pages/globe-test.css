@@ -49,6 +49,7 @@
 .test-old-globe__canvas {
   position: absolute;
   inset: 0;
+  background: #060d16;
 }
 
 .globe-atmospheric-halo {
