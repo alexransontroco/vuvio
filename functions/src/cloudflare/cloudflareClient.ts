@@ -41,13 +41,17 @@ function normalizeLiveInput(result: Record<string, unknown>, customerCode: strin
   const name = typeof meta?.name === 'string' ? meta.name : typeof result.name === 'string' ? result.name : 'Untitled';
   const connected = (result.connected === true || result.status === 'connected');
 
+  // Construct RTMPS URL from UID if rtmps.url is not available
+  const ingestUrl = typeof rtmps?.url === 'string' ? rtmps.url : typeof srt?.url === 'string' ? srt.url : typeof webRTC?.url === 'string' ? webRTC.url : uid ? `rtmps://live.cloudflarestream.com:443/live/${uid}` : null;
+  const streamKey = typeof rtmps?.streamKey === 'string' ? rtmps.streamKey : typeof srt?.streamId === 'string' ? srt.streamId : uid ?? null;
+
   return {
     liveInputId: uid,
     uid,
     playbackUrl: playbackHls ?? hlsUrl(customerCode, uid),
     hlsManifestUrl: playbackHls ?? hlsUrl(customerCode, uid),
-    ingestUrl: typeof rtmps?.url === 'string' ? rtmps.url : typeof srt?.url === 'string' ? srt.url : typeof webRTC?.url === 'string' ? webRTC.url : null,
-    streamKey: typeof rtmps?.streamKey === 'string' ? rtmps.streamKey : typeof srt?.streamId === 'string' ? srt.streamId : null,
+    ingestUrl,
+    streamKey,
     name,
     connected,
   };
@@ -126,6 +130,10 @@ export function createCloudflareClient(): CloudflareClient {
     async listLiveInputs() {
       const result = await request('/live_inputs', { method: 'GET' });
       if (!result || !Array.isArray(result)) return [];
+      if (result[0]) {
+        console.log('[cloudflare] Keys:', Object.keys(result[0]).join(', '));
+        console.log('[cloudflare] uid:', result[0].uid, '| rtmps:', result[0].rtmps, '| srt:', result[0].srt);
+      }
       return result.map(item => normalizeLiveInput(item, env.customerCode));
     },
   };

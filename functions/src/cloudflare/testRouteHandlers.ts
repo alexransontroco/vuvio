@@ -25,6 +25,8 @@ export async function getCloudflareInputs(req: Request, res: Response) {
       return;
     }
 
+    console.log('[testRoutes] First input object:', JSON.stringify(inputs[0], null, 2));
+
     res.json({
       inputs: inputs.map((input) => ({
         name: input.name || 'Untitled',
