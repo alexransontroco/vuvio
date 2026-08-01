@@ -1,6 +1,12 @@
 import { getCloudflareEnv } from '../config/env.js';
 import { ApiError } from '../shared/errors.js';
 
+interface CloudflareApiResponse {
+  success?: boolean;
+  result?: Record<string, unknown>;
+  errors?: Array<{ code: number; message: string }>;
+}
+
 export interface CloudflareLiveInput {
   liveInputId: string | null;
   uid: string | null;
@@ -69,7 +75,7 @@ export function createCloudflareClient(): CloudflareClient {
           ...(init.headers ?? {}),
         },
       });
-      const body = await response.json().catch(() => ({}));
+      const body = await response.json().catch(() => ({})) as CloudflareApiResponse;
       if (!response.ok || body?.success === false) {
         console.error('[cloudflare] Request failed', { status: response.status, path });
         throw new ApiError('server_error', 'Cloudflare Stream request failed');

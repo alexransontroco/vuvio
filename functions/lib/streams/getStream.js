@@ -1,3 +1,4 @@
+;
 import { ApiError } from '../shared/errors.js';
 import { publicStream, streamRef } from './streamHelpers.js';
 export async function getStream(_req, res, streamId) {

@@ -17,10 +17,11 @@
  * - Image Optimization API for better thumbnail generation
  */
 
-import type { Request, Response } from 'firebase-functions/v2/https';
+import type { Request } from 'firebase-functions/v2/https';
+import type { Response } from 'express';
 import { ApiError } from '../shared/errors.js';
 import { getFirestore, FieldValue } from 'firebase-admin/firestore';
-import { getStorage, Buffer } from 'firebase-admin/storage';
+import { getStorage } from 'firebase-admin/storage';
 import fetch from 'node-fetch';
 
 interface ProcessImageRequest {

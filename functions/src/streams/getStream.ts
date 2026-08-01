@@ -1,4 +1,4 @@
-import type { Response } from 'firebase-functions/v2/https';
+import type { Response } from 'express';;
 import { ApiError } from '../shared/errors.js';
 import { publicStream, streamRef } from './streamHelpers.js';
 import type { StreamDocument } from '../types/stream.js';

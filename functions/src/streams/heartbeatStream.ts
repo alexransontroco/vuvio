@@ -1,5 +1,6 @@
 import { FieldValue } from 'firebase-admin/firestore';
-import type { Request, Response } from 'firebase-functions/v2/https';
+import type { Request } from 'firebase-functions/v2/https';
+import type { Response } from 'express';
 import { STREAM_TIMEOUTS } from '../config/env.js';
 import { authenticateUser } from '../middleware/authenticateUser.js';
 import { db } from '../shared/firestore.js';

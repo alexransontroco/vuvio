@@ -1,20 +1,21 @@
 import * as functions from 'firebase-functions';
-import { getEnvConfig } from '../config/env';
-import { createLiveInput, listLiveInputs } from '../cloudflare/cloudflareClient';
+import { getCloudflareEnv } from '../config/env.js';
+import { createCloudflareClient } from '../cloudflare/cloudflareClient.js';
 export const cloudflareConfigStatus = functions.https.onCall(async (data, context) => {
-    const env = getEnvConfig();
+    const env = getCloudflareEnv();
     return {
-        accountIdConfigured: !!env.CLOUDFLARE_ACCOUNT_ID,
-        apiTokenConfigured: !!env.CLOUDFLARE_API_TOKEN,
-        webhookSecretConfigured: !!env.CLOUDFLARE_WEBHOOK_SECRET,
-        customerCodeConfigured: !!env.CLOUDFLARE_CUSTOMER_CODE,
-        customerCode: env.CLOUDFLARE_CUSTOMER_CODE || null,
-        message: env.CLOUDFLARE_API_TOKEN ? null : '⚠️ Cloudflare API token not configured',
+        accountIdConfigured: !!env.accountId,
+        apiTokenConfigured: !!env.apiToken,
+        webhookSecretConfigured: !!env.webhookSecret,
+        customerCodeConfigured: !!env.customerCode,
+        customerCode: env.customerCode || null,
+        message: env.apiToken ? null : '⚠️ Cloudflare API token not configured',
     };
 });
 export const cloudflareListInputs = functions.https.onCall(async (data, context) => {
     try {
-        const inputs = await listLiveInputs();
+        const client = createCloudflareClient();
+        const inputs = await client.listLiveInputs();
         if (!inputs || inputs.length === 0) {
             return { inputs: [], message: 'No live inputs found' };
         }
@@ -23,10 +24,10 @@ export const cloudflareListInputs = functions.https.onCall(async (data, context)
                 name: input.name || 'Untitled',
                 uid: input.uid,
                 connected: input.connected || false,
-                ingestUrl: input.rtmps?.uri || null,
-                streamKey: input.rtmps?.streamKey || null,
-                playbackUrl: input.playback?.url || null,
-                hlsManifestUrl: input.playback?.hls || null,
+                ingestUrl: input.ingestUrl,
+                streamKey: input.streamKey,
+                playbackUrl: input.playbackUrl,
+                hlsManifestUrl: input.hlsManifestUrl,
             })),
         };
     }
@@ -39,9 +40,11 @@ export const cloudflareCreateTestInput = functions.https.onCall(async (data, con
     try {
         const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5);
         const testName = `vuvio-test-${timestamp}`;
-        const input = await createLiveInput({
-            name: testName,
-            description: 'Vuvio diagnostic test live input',
+        const testStreamId = `test-stream-${timestamp}`;
+        const client = createCloudflareClient();
+        const input = await client.createLiveInput({
+            streamId: testStreamId,
+            title: testName,
         });
         if (!input) {
             throw new Error('Failed to create live input: Cloudflare API returned null');
@@ -50,10 +53,10 @@ export const cloudflareCreateTestInput = functions.https.onCall(async (data, con
             input: {
                 name: input.name,
                 uid: input.uid,
-                ingestUrl: input.rtmps?.uri || input.ingestUrl,
-                streamKey: input.rtmps?.streamKey || input.streamKey,
-                playbackUrl: input.playback?.url || input.playbackUrl,
-                hlsManifestUrl: input.playback?.hls || input.hlsManifestUrl,
+                ingestUrl: input.ingestUrl,
+                streamKey: input.streamKey,
+                playbackUrl: input.playbackUrl,
+                hlsManifestUrl: input.hlsManifestUrl,
             },
             message: 'Live input created successfully. Copy RTMPS URL and Stream Key from Cloudflare Dashboard.',
         };

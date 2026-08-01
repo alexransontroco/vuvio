@@ -1,4 +1,5 @@
-import type { Request, Response } from 'firebase-functions/v2/https';
+import type { Request } from 'firebase-functions/v2/https';
+import type { Response } from 'express';
 import { getCloudflareEnv } from '../config/env.js';
 import { createLiveInput, listLiveInputs } from './cloudflareClient.js';
 
