@@ -2,6 +2,7 @@ import {
   createUserWithEmailAndPassword,
   GoogleAuthProvider,
   sendPasswordResetEmail,
+  sendEmailVerification,
   signInWithEmailAndPassword,
   signInWithPopup,
   signInWithRedirect,
@@ -116,6 +117,7 @@ export async function createUserProfileIfMissing(firebaseUser, extra = {}) {
     uid:                firebaseUser.uid,
     email:              firebaseUser.email,
     emailNormalized:    (firebaseUser.email || '').toLowerCase(),
+    emailVerified:      firebaseUser.emailVerified || false,
     displayName,
     username:           null,
     usernameNormalized: null,
@@ -207,6 +209,15 @@ export async function signUpWithEmail(email, password, displayName) {
     await updateProfile(credential.user, { displayName });
   }
   await createUserProfileIfMissing(credential.user, { displayName, provider: 'password' });
+
+  // Send email verification
+  try {
+    await sendEmailVerification(credential.user);
+    console.log('[authService] Verification email sent to:', email);
+  } catch (err) {
+    console.error('[authService] Failed to send verification email:', err.message);
+  }
+
   return credential.user;
 }
 
@@ -260,6 +271,14 @@ export async function signOutUser() {
 
 export async function sendPasswordReset(email) {
   await sendPasswordResetEmail(auth, email);
+}
+
+export async function resendEmailVerification() {
+  const user = auth.currentUser;
+  if (!user) throw new Error('No user logged in');
+  if (user.emailVerified) throw new Error('Email already verified');
+  await sendEmailVerification(user);
+  console.log('[authService] Verification email resent to:', user.email);
 }
 
 /* ─── Handle redirect result (for mobile sign-in) ────────────── */

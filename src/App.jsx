@@ -35,6 +35,7 @@ const ProfilePage         = lazy(() => import('./routes/ProfilePage.jsx'));
 const ReportProblemPage   = lazy(() => import('./routes/ReportProblemPage.jsx'));
 const SettingsPage        = lazy(() => import('./routes/SettingsPage.jsx'));
 const SignupPage          = lazy(() => import('./routes/SignupPage.jsx'));
+const VerifyEmailPage     = lazy(() => import('./routes/VerifyEmailPage.jsx'));
 const TermsPage           = lazy(() => import('./routes/TermsPage.jsx'));
 const VisionPage          = lazy(() => import('./routes/VisionPage.jsx'));
 const SocialDemoPage      = lazy(() => import('./routes/SocialDemoPage.jsx'));
@@ -102,6 +103,14 @@ export default function App() {
               <SignupPage />
             </Suspense>
           </PublicOnlyRoute>
+        }
+      />
+      <Route
+        path="/verify-email"
+        element={
+          <Suspense fallback={<RouteFallback />}>
+            <VerifyEmailPage />
+          </Suspense>
         }
       />
       <Route

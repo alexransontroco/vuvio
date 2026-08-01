@@ -13,9 +13,11 @@ export default function CloudflareTestPage() {
     fetchLiveInputs();
   }, []);
 
+  const API_BASE = 'https://api-4clo52m3sq-ew.a.run.app';
+
   const fetchConfig = async () => {
     try {
-      const response = await fetch('/api/cloudflare/config');
+      const response = await fetch(`${API_BASE}/api/cloudflare/config`);
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
       const data = await response.json();
       setConfig(data);
@@ -27,7 +29,7 @@ export default function CloudflareTestPage() {
   const fetchLiveInputs = async () => {
     setLoading(true);
     try {
-      const response = await fetch('/api/cloudflare/inputs');
+      const response = await fetch(`${API_BASE}/api/cloudflare/inputs`);
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
       const data = await response.json();
       setLiveInputs(data.inputs || []);
@@ -41,7 +43,7 @@ export default function CloudflareTestPage() {
   const createTestInput = async () => {
     setCreating(true);
     try {
-      const response = await fetch('/api/cloudflare/create-test-input', {
+      const response = await fetch(`${API_BASE}/api/cloudflare/create-test-input`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
       });
