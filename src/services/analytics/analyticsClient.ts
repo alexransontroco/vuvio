@@ -63,7 +63,7 @@ class AnalyticsClient {
         );
 
         if (isLastAttempt) {
-          console.error('[Analytics] Failed to submit events after retries', error);
+          console.debug('[Analytics] Failed to submit events after retries (queue saved locally)');
           return {
             success: false,
             accepted: 0,
@@ -72,9 +72,8 @@ class AnalyticsClient {
           };
         }
 
-        console.warn(
-          `[Analytics] Submission failed (attempt ${attempt}/${maxRetries}), retrying in ${delayMs}ms`,
-          error
+        console.debug(
+          `[Analytics] Submission failed (attempt ${attempt}/${maxRetries}), retrying...`
         );
 
         await new Promise((resolve) => setTimeout(resolve, delayMs));

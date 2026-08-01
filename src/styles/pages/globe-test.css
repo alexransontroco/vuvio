@@ -58,7 +58,7 @@
 }
 
 .test-old-globe .maplibregl-canvas {
-  filter: brightness(1.38) contrast(1.22) saturate(1.06);
+  filter: brightness(1.65) contrast(1.22) saturate(1.06);
 }
 
 .test-old-globe__vignette {
@@ -382,7 +382,7 @@
 }
 
 .test-globe-screen--actual .test-old-globe .maplibregl-canvas {
-  filter: brightness(1.82) contrast(1.20) saturate(1.18);
+  filter: brightness(2.1) contrast(1.20) saturate(1.18);
 }
 
 .test-globe-screen--actual .test-old-globe__vignette {

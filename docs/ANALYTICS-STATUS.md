@@ -1,8 +1,9 @@
 # Vuvio Analytics System — Current Status & Roadmap
 
-**Date:** 2026-07-30  
-**Overall Status:** 🟢 Production Ready (Phases 1 & 2 Complete)  
-**Next Phase:** 🟡 Phase 2.5 (Ready to Start)
+**Date:** 2026-08-01 (Updated)  
+**Overall Status:** 🟡 Partial Deployment (Frontend Ready, Backend Blocked)  
+**Frontend (Phases 1, 2, 2.5):** ✅ Production Ready & Deployed  
+**Backend (Phases 1.5, 3, 4):** ⏸️ Blocked by Firebase Spark Plan
 
 ---
 
@@ -22,7 +23,7 @@
 **Impact:** 5-8 KB gzipped  
 **Tests:** 60+ unit tests passing
 
-### Phase 1.5: Backend Ingestion Endpoint (COMPLETE ✓)
+### Phase 1.5: Backend Ingestion Endpoint (CODE READY, NOT DEPLOYED)
 
 **What:** Cloud Function to receive and process events
 - Endpoint: `POST /api/analytics/events`
@@ -32,10 +33,15 @@
 - Updates stream stats in real-time
 - Handles batches (1-500 events)
 
-**Status:** ✅ Production Ready  
+**Code Status:** ✅ Written, Tested & Production Ready  
 **File:** `functions/src/analytics/ingestEvents.ts`  
 **Build:** ✓ Compiles successfully  
-**Deployment:** Ready for Firebase deployment
+
+**Deployment Status:** ❌ NOT DEPLOYED (Requires Firebase Blaze Plan)
+- Current Firebase plan: Spark (free)
+- Endpoint does NOT exist in production
+- Cloud Functions cannot deploy on Spark plan
+- Need upgrade to Blaze (pay-as-you-go)
 
 ### Phase 2: View Session Tracking (COMPLETE ✓)
 
@@ -256,28 +262,43 @@ trackGearItemOpened()
 
 ## 🚀 Deployment Status
 
-### Frontend (Ready to Deploy)
+### Frontend (✅ DEPLOYED TO PRODUCTION)
 - ✅ Code compiled successfully
 - ✅ All imports resolve correctly
 - ✅ Bundle size reasonable (+5-8 KB)
 - ✅ Unit tests passing (60+)
-- ✅ Integrated into Watch page
-- ✅ Ready for production
+- ✅ Integrated into Watch, Discover, Globe, Profile pages
+- ✅ Deployed to https://vuvio-bf328.web.app
+- ✅ Events tracking in production (stored locally)
 
-### Backend (Ready to Deploy)
-- ✅ Cloud Function compiles
+**Phases Deployed:**
+- Phase 1: Event queue & session management ✅
+- Phase 2: Watch page tracking ✅
+- Phase 2.5: Discovery tracking (Globe, Discover, Profile) ✅
+
+### Backend (⏸️ BLOCKED - NOT DEPLOYED)
+- ✅ Cloud Function code compiles
 - ✅ Endpoint registered in routing
 - ✅ Error handling implemented
 - ✅ Firestore schema validated
 - ✅ Deduplication working
 - ✅ Stats updates atomic
-- ✅ Ready for production
+- ✅ Code is production-ready
+- ❌ **CANNOT DEPLOY** - Firebase on Spark plan
+- ❌ Endpoint `/api/analytics/events` **DOES NOT EXIST** in production
 
-### Next Deployment
-1. Deploy functions: `firebase deploy --only functions`
-2. Test endpoint: POST to `/api/analytics/events`
-3. Monitor error rates and latency
-4. Verify events appear in Firestore
+**Current Firebase Plan:** Spark (free tier)  
+**Required Firebase Plan:** Blaze (pay-as-you-go)
+
+### When Backend is Ready (Future)
+1. Upgrade Firebase project to Blaze plan
+2. Deploy functions: `firebase deploy --only functions`
+3. Endpoint `/api/analytics/events` becomes active
+4. Queued events begin submitting (automatic)
+5. Phase 3 aggregation scheduled functions activate
+6. Phase 4 dashboard shows real data
+
+**Note:** Events will automatically submit once backend is online. No code changes needed.
 
 ---
 

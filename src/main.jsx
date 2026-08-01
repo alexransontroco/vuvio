@@ -23,6 +23,7 @@ import './styles/pages/test-users.css';
 import './styles/pages/following.css';
 import './styles/pages/onboarding.css';
 import './styles/pages/internal-stream-admin.css';
+import './styles/pages/agents.css';
 import './components/social/social.css';
 
 createRoot(document.getElementById('root')).render(

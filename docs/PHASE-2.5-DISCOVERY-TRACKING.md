@@ -1,9 +1,11 @@
 # Phase 2.5: Discovery & Navigation Tracking — Implementation Guide
 
-**Status:** 🔜 Ready to Implement  
+**Status:** ✅ Implemented & Deployed (2026-07-31)  
 **Scope:** Add impression & click tracking to Explore, Globe, and Profile pages  
-**Effort:** 2-3 days  
+**Effort:** 2-3 days (Completed)  
 **Impact:** Track how users discover streams, not just how they watch
+
+⚠️ **Note:** This document is a planning/implementation guide. For current status, see [PHASE-2.5-COMPLETE.md](./PHASE-2.5-COMPLETE.md)
 
 ---
 

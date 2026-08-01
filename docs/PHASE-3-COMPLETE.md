@@ -1,8 +1,26 @@
-# Phase 3: Statistics Aggregation — Complete
+# Phase 3: Statistics Aggregation — Code Complete (Pending Backend Data)
 
 **Completed:** 2026-07-30  
-**Status:** ✅ Production Ready  
-**Scheduled Functions:** 2 (Stream/Creator/Category every 5min, User every 1hr)
+**Code Status:** ✅ Written & Ready  
+**Deployment Status:** ⏸️ Blocked (Waiting for Phase 1.5 Backend)  
+**Scheduled Functions:** 4 (Stream, Creator, Category every 5min; User every 1hr)
+
+---
+
+## ⚠️ Status: Code Ready, Deployment Blocked
+
+**Current Situation:**
+- ✅ All aggregation functions written and tested
+- ✅ Firestore schema designed
+- ✅ Scheduled functions configured
+- ❌ **Cannot deploy** - Requires Phase 1.5 backend to be active
+- ❌ **No data to aggregate** - Backend not deployed (Firebase Spark plan)
+
+**When Phase 1.5 Backend Deploys (Firebase → Blaze):**
+1. Run `firebase deploy --only functions`
+2. Phase 3 scheduled functions will automatically activate
+3. Every 5 minutes, aggregation runs on incoming events
+4. Aggregated data populated into streamStats, creatorStats, categoryStats collections
 
 ---
 

@@ -15,8 +15,8 @@ Date de publication : 20210406
 Durée source : 17:04 secondes
 Extrait téléchargé : 00:10 → 00:30
 Durée de l’extrait : 20 secondes
-Vues : 43898178
-Likes : 309516
+Vues : 43912771
+Likes : 309587
 Commentaires : 13000
 Orientation détectée : Horizontale ou inconnue
 Résolution : 1920x1080
@@ -214,7 +214,7 @@ display_id: IY8BHSPhv90
 duration: 1024
 duration_string: 17:04
 dynamic_range: SDR
-epoch: 1785385360
+epoch: 1785483538
 ext: webm
 extractor: youtube
 extractor_key: Youtube
@@ -239,7 +239,7 @@ formats[0].height: 27
 formats[0].http_headers.Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8
 formats[0].http_headers.Accept-Language: en-us,en;q=0.5
 formats[0].http_headers.Sec-Fetch-Mode: navigate
-formats[0].http_headers.User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36
+formats[0].http_headers.User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36
 formats[0].protocol: mhtml
 formats[0].resolution: 48x27
 formats[0].rows: 10
@@ -266,7 +266,7 @@ formats[1].height: 45
 formats[1].http_headers.Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8
 formats[1].http_headers.Accept-Language: en-us,en;q=0.5
 formats[1].http_headers.Sec-Fetch-Mode: navigate
-formats[1].http_headers.User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36
+formats[1].http_headers.User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36
 formats[1].protocol: mhtml
 formats[1].resolution: 80x45
 formats[1].rows: 10
@@ -299,7 +299,7 @@ formats[2].height: 90
 formats[2].http_headers.Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8
 formats[2].http_headers.Accept-Language: en-us,en;q=0.5
 formats[2].http_headers.Sec-Fetch-Mode: navigate
-formats[2].http_headers.User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36
+formats[2].http_headers.User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36
 formats[2].protocol: mhtml
 formats[2].resolution: 160x90
 formats[2].rows: 5
@@ -346,7 +346,7 @@ formats[3].height: 180
 formats[3].http_headers.Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8
 formats[3].http_headers.Accept-Language: en-us,en;q=0.5
 formats[3].http_headers.Sec-Fetch-Mode: navigate
-formats[3].http_headers.User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36
+formats[3].http_headers.User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36
 formats[3].protocol: mhtml
 formats[3].resolution: 320x180
 formats[3].rows: 3
@@ -360,7 +360,7 @@ formats[4].acodec: mp4a.40.5
 formats[4].asr: 22050
 formats[4].audio_channels: 2
 formats[4].audio_ext: m4a
-formats[4].available_at: 1785385360
+formats[4].available_at: 1785483536
 formats[4].container: m4a_dash
 formats[4].downloader_options.http_chunk_size: 10485760
 formats[4].ext: m4a
@@ -373,14 +373,14 @@ formats[4].has_drm: False
 formats[4].http_headers.Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8
 formats[4].http_headers.Accept-Language: en-us,en;q=0.5
 formats[4].http_headers.Sec-Fetch-Mode: navigate
-formats[4].http_headers.User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36
+formats[4].http_headers.User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36
 formats[4].language_preference: -1
 formats[4].protocol: https
 formats[4].quality: 2.0
 formats[4].resolution: audio only
 formats[4].source_preference: -1
 formats[4].tbr: 48.792
-formats[4].url: https://rr3---sn-n4g-jqbed.googlevideo.com/videoplayback?expire=1785406960&ei=kNFqavG1F4rKp-oPmOGC8A4&ip=2a02%3A842a%3A4a2%3A8101%3Aa1ab%3Aaa16%3A79bc%3A4d4d&id=o-ALLgKrDojEq5JzSMr9_3VnPwXvWYTNoXtScWmmMrJgQL&itag=139&source=youtube&requiressl=yes&xpc=EgVo2aDSNQ%3D%3D&cps=328&met=1785385360%2C&mh=qp&mm=31%2C26&mn=sn-n4g-jqbed%2Csn-aigzrnld&ms=au%2Conr&mv=m&mvi=3&pl=43&rms=au%2Cau&initcwndbps=2533750&bui=AZFlqhNLGdiu_u091Iu0yHRrKak8AXstlM7O8NoeJep6jrb3b925sxTwcAIA41XWt9_ngOzekINaBnvL&spc=KBGBcs2ezCW6XO4YBRCiAjlJIQWLwaTwHCiZo8VtfA&vprv=1&svpuc=1&mime=audio%2Fmp4&rqh=1&gir=yes&clen=6246831&dur=1024.232&lmt=1723815866431610&mt=1785384817&fvip=1&keepalive=yes&fexp=51565116%2C51946838&c=ANDROID_VR&txp=4532434&sparams=expire%2Cei%2Cip%2Cid%2Citag%2Csource%2Crequiressl%2Cxpc%2Cbui%2Cspc%2Cvprv%2Csvpuc%2Cmime%2Crqh%2Cgir%2Cclen%2Cdur%2Clmt&sig=AE0s2JYwRgIhAJ0BNl8kYqcgIeIaDJ8DJ49wxn6bNFy03mHDMRgJgjWwAiEAxndB7PgUVXsrsU4b_mUogPTOljgH_znpoWjmQZe3fXI%3D&lsparams=cps%2Cmet%2Cmh%2Cmm%2Cmn%2Cms%2Cmv%2Cmvi%2Cpl%2Crms%2Cinitcwndbps&lsig=APaTxxMwRAIgU_ndAyj4A13sCp9ZlfI4bkZj0C5pvlVVogQRTWTvWbcCICI3_OpndDKrZUPYGYNut1GEf_vFFg2mI0r_7CkFbTXy
+formats[4].url: https://rr3---sn-n4g-jqbed.googlevideo.com/videoplayback?expire=1785505136&ei=EFFsaqObJPeIvdIPhvPj8Qc&ip=2a02%3A842a%3A4a2%3A8101%3Abc5e%3A6f8a%3A38ff%3Ada6d&id=o-ANHPx4ddygcSjrZfaxdeMbAJu4nyUVStFJiQHHGJNP2P&itag=139&source=youtube&requiressl=yes&xpc=EgVo2aDSNQ%3D%3D&cps=349&met=1785483536%2C&mh=qp&mm=31%2C26&mn=sn-n4g-jqbed%2Csn-ajaig5-50&ms=au%2Conr&mv=m&mvi=3&pl=40&rms=au%2Cau&initcwndbps=2725000&bui=AZFlqhP7yrUHilEJMJiMb7z0s1dOPVNHGf74JfQn7pN9Pri3Rxx2A6kaJV8fOi66ie7ka60hI5iJJypx&spc=KBGBchD2aV8jcOModnDPahyld9Hf36PWRkMsvhm7mQYr&vprv=1&svpuc=1&mime=audio%2Fmp4&rqh=1&gir=yes&clen=6246831&dur=1024.232&lmt=1723815866431610&mt=1785483225&fvip=5&keepalive=yes&fexp=51565116&c=ANDROID_VR&txp=4532434&sparams=expire%2Cei%2Cip%2Cid%2Citag%2Csource%2Crequiressl%2Cxpc%2Cbui%2Cspc%2Cvprv%2Csvpuc%2Cmime%2Crqh%2Cgir%2Cclen%2Cdur%2Clmt&sig=AE0s2JYwRAIhAMSrsII25XcyUf8Oy_IP3dGv-_IF1nrkJEYVVa6jJ-VVAh8NNIOuA-_aknwQVlxqoOgMtCvIoQr5MeXNRyf_5oBR&lsparams=cps%2Cmet%2Cmh%2Cmm%2Cmn%2Cms%2Cmv%2Cmvi%2Cpl%2Crms%2Cinitcwndbps&lsig=APaTxxMwRQIgG8SUA53n7B0DR9VcVHipOoohQxmQHdsrfw2UCHwt0CgCIQCwRseYfSX8sslW6de2ck31VxAwsJQ-1dg-k8ieDNhrHg%3D%3D
 formats[4].vbr: 0
 formats[4].vcodec: none
 formats[4].video_ext: none
@@ -389,7 +389,7 @@ formats[5].acodec: opus
 formats[5].asr: 48000
 formats[5].audio_channels: 2
 formats[5].audio_ext: webm
-formats[5].available_at: 1785385360
+formats[5].available_at: 1785483536
 formats[5].container: webm_dash
 formats[5].downloader_options.http_chunk_size: 10485760
 formats[5].ext: webm
@@ -402,14 +402,14 @@ formats[5].has_drm: False
 formats[5].http_headers.Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8
 formats[5].http_headers.Accept-Language: en-us,en;q=0.5
 formats[5].http_headers.Sec-Fetch-Mode: navigate
-formats[5].http_headers.User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36
+formats[5].http_headers.User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36
 formats[5].language_preference: -1
 formats[5].protocol: https
 formats[5].quality: 2.0
 formats[5].resolution: audio only
 formats[5].source_preference: -1
 formats[5].tbr: 40.108
-formats[5].url: https://rr3---sn-n4g-jqbed.googlevideo.com/videoplayback?expire=1785406960&ei=kNFqavG1F4rKp-oPmOGC8A4&ip=2a02%3A842a%3A4a2%3A8101%3Aa1ab%3Aaa16%3A79bc%3A4d4d&id=o-ALLgKrDojEq5JzSMr9_3VnPwXvWYTNoXtScWmmMrJgQL&itag=249&source=youtube&requiressl=yes&xpc=EgVo2aDSNQ%3D%3D&cps=328&met=1785385360%2C&mh=qp&mm=31%2C26&mn=sn-n4g-jqbed%2Csn-aigzrnld&ms=au%2Conr&mv=m&mvi=3&pl=43&rms=au%2Cau&initcwndbps=2533750&bui=AZFlqhNLGdiu_u091Iu0yHRrKak8AXstlM7O8NoeJep6jrb3b925sxTwcAIA41XWt9_ngOzekINaBnvL&spc=KBGBcs2ezCW6XO4YBRCiAjlJIQWLwaTwHCiZo8VtfA&vprv=1&svpuc=1&mime=audio%2Fwebm&rqh=1&gir=yes&clen=5134564&dur=1024.141&lmt=1723815817358413&mt=1785384817&fvip=1&keepalive=yes&fexp=51565116%2C51946838&c=ANDROID_VR&txp=4532434&sparams=expire%2Cei%2Cip%2Cid%2Citag%2Csource%2Crequiressl%2Cxpc%2Cbui%2Cspc%2Cvprv%2Csvpuc%2Cmime%2Crqh%2Cgir%2Cclen%2Cdur%2Clmt&sig=AE0s2JYwRAIgdYYRxoagT5aJup4RFj0m3bNY4j8Km_bcQTfxeqf5yhYCIBpaa54TuXJ3BvOTh3NHHkVqIjuUj5lIpDuLljg4vfET&lsparams=cps%2Cmet%2Cmh%2Cmm%2Cmn%2Cms%2Cmv%2Cmvi%2Cpl%2Crms%2Cinitcwndbps&lsig=APaTxxMwRAIgU_ndAyj4A13sCp9ZlfI4bkZj0C5pvlVVogQRTWTvWbcCICI3_OpndDKrZUPYGYNut1GEf_vFFg2mI0r_7CkFbTXy
+formats[5].url: https://rr3---sn-n4g-jqbed.googlevideo.com/videoplayback?expire=1785505136&ei=EFFsaqObJPeIvdIPhvPj8Qc&ip=2a02%3A842a%3A4a2%3A8101%3Abc5e%3A6f8a%3A38ff%3Ada6d&id=o-ANHPx4ddygcSjrZfaxdeMbAJu4nyUVStFJiQHHGJNP2P&itag=249&source=youtube&requiressl=yes&xpc=EgVo2aDSNQ%3D%3D&cps=349&met=1785483536%2C&mh=qp&mm=31%2C26&mn=sn-n4g-jqbed%2Csn-ajaig5-50&ms=au%2Conr&mv=m&mvi=3&pl=40&rms=au%2Cau&initcwndbps=2725000&bui=AZFlqhP7yrUHilEJMJiMb7z0s1dOPVNHGf74JfQn7pN9Pri3Rxx2A6kaJV8fOi66ie7ka60hI5iJJypx&spc=KBGBchD2aV8jcOModnDPahyld9Hf36PWRkMsvhm7mQYr&vprv=1&svpuc=1&mime=audio%2Fwebm&rqh=1&gir=yes&clen=5134564&dur=1024.141&lmt=1723815817358413&mt=1785483225&fvip=5&keepalive=yes&fexp=51565116&c=ANDROID_VR&txp=4532434&sparams=expire%2Cei%2Cip%2Cid%2Citag%2Csource%2Crequiressl%2Cxpc%2Cbui%2Cspc%2Cvprv%2Csvpuc%2Cmime%2Crqh%2Cgir%2Cclen%2Cdur%2Clmt&sig=AE0s2JYwRAIgcnor2bwL-IwmnxdjzIx8qbQ5CCaZ6xCzaQewqZbTCQsCIEcRDGCHrVa5_NX519lUt4aAJS2FzmRl-ZCq472g1iwP&lsparams=cps%2Cmet%2Cmh%2Cmm%2Cmn%2Cms%2Cmv%2Cmvi%2Cpl%2Crms%2Cinitcwndbps&lsig=APaTxxMwRQIgG8SUA53n7B0DR9VcVHipOoohQxmQHdsrfw2UCHwt0CgCIQCwRseYfSX8sslW6de2ck31VxAwsJQ-1dg-k8ieDNhrHg%3D%3D
 formats[5].vbr: 0
 formats[5].vcodec: none
 formats[5].video_ext: none
@@ -418,7 +418,7 @@ formats[6].acodec: mp4a.40.2
 formats[6].asr: 44100
 formats[6].audio_channels: 2
 formats[6].audio_ext: m4a
-formats[6].available_at: 1785385360
+formats[6].available_at: 1785483536
 formats[6].container: m4a_dash
 formats[6].downloader_options.http_chunk_size: 10485760
 formats[6].ext: m4a
@@ -431,14 +431,14 @@ formats[6].has_drm: False
 formats[6].http_headers.Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8
 formats[6].http_headers.Accept-Language: en-us,en;q=0.5
 formats[6].http_headers.Sec-Fetch-Mode: navigate
-formats[6].http_headers.User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36
+formats[6].http_headers.User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36
 formats[6].language_preference: -1
 formats[6].protocol: https
 formats[6].quality: 3.0
 formats[6].resolution: audio only
 formats[6].source_preference: -1
 formats[6].tbr: 129.478
-formats[6].url: https://rr3---sn-n4g-jqbed.googlevideo.com/videoplayback?expire=1785406960&ei=kNFqavG1F4rKp-oPmOGC8A4&ip=2a02%3A842a%3A4a2%3A8101%3Aa1ab%3Aaa16%3A79bc%3A4d4d&id=o-ALLgKrDojEq5JzSMr9_3VnPwXvWYTNoXtScWmmMrJgQL&itag=140&source=youtube&requiressl=yes&xpc=EgVo2aDSNQ%3D%3D&cps=328&met=1785385360%2C&mh=qp&mm=31%2C26&mn=sn-n4g-jqbed%2Csn-aigzrnld&ms=au%2Conr&mv=m&mvi=3&pl=43&rms=au%2Cau&initcwndbps=2533750&bui=AZFlqhNLGdiu_u091Iu0yHRrKak8AXstlM7O8NoeJep6jrb3b925sxTwcAIA41XWt9_ngOzekINaBnvL&spc=KBGBcs2ezCW6XO4YBRCiAjlJIQWLwaTwHCiZo8VtfA&vprv=1&svpuc=1&mime=audio%2Fmp4&rqh=1&gir=yes&clen=16576304&dur=1024.185&lmt=1723815866347212&mt=1785384817&fvip=1&keepalive=yes&fexp=51565116%2C51946838&c=ANDROID_VR&txp=4532434&sparams=expire%2Cei%2Cip%2Cid%2Citag%2Csource%2Crequiressl%2Cxpc%2Cbui%2Cspc%2Cvprv%2Csvpuc%2Cmime%2Crqh%2Cgir%2Cclen%2Cdur%2Clmt&sig=AE0s2JYwRQIhALHOVyjwGLe8zeaNv6aIcH8UavMez9Foa5SJ_O5TitW1AiAlTcHpLa6lGtNK2Og6dehsInE5coUSDt8_veEjy9aPdA%3D%3D&lsparams=cps%2Cmet%2Cmh%2Cmm%2Cmn%2Cms%2Cmv%2Cmvi%2Cpl%2Crms%2Cinitcwndbps&lsig=APaTxxMwRAIgU_ndAyj4A13sCp9ZlfI4bkZj0C5pvlVVogQRTWTvWbcCICI3_OpndDKrZUPYGYNut1GEf_vFFg2mI0r_7CkFbTXy
+formats[6].url: https://rr3---sn-n4g-jqbed.googlevideo.com/videoplayback?expire=1785505136&ei=EFFsaqObJPeIvdIPhvPj8Qc&ip=2a02%3A842a%3A4a2%3A8101%3Abc5e%3A6f8a%3A38ff%3Ada6d&id=o-ANHPx4ddygcSjrZfaxdeMbAJu4nyUVStFJiQHHGJNP2P&itag=140&source=youtube&requiressl=yes&xpc=EgVo2aDSNQ%3D%3D&cps=349&met=1785483536%2C&mh=qp&mm=31%2C26&mn=sn-n4g-jqbed%2Csn-ajaig5-50&ms=au%2Conr&mv=m&mvi=3&pl=40&rms=au%2Cau&initcwndbps=2725000&bui=AZFlqhP7yrUHilEJMJiMb7z0s1dOPVNHGf74JfQn7pN9Pri3Rxx2A6kaJV8fOi66ie7ka60hI5iJJypx&spc=KBGBchD2aV8jcOModnDPahyld9Hf36PWRkMsvhm7mQYr&vprv=1&svpuc=1&mime=audio%2Fmp4&rqh=1&gir=yes&clen=16576304&dur=1024.185&lmt=1723815866347212&mt=1785483225&fvip=5&keepalive=yes&fexp=51565116&c=ANDROID_VR&txp=4532434&sparams=expire%2Cei%2Cip%2Cid%2Citag%2Csource%2Crequiressl%2Cxpc%2Cbui%2Cspc%2Cvprv%2Csvpuc%2Cmime%2Crqh%2Cgir%2Cclen%2Cdur%2Clmt&sig=AE0s2JYwRgIhAKfkZx9UjO1n0FbPEKOKqTrfCBynCjXmoMU4edsG2mSeAiEA54FHH-ok1rfXNJSY_N4k_tJQa1SqlcfKYNjDHzOs0D8%3D&lsparams=cps%2Cmet%2Cmh%2Cmm%2Cmn%2Cms%2Cmv%2Cmvi%2Cpl%2Crms%2Cinitcwndbps&lsig=APaTxxMwRQIgG8SUA53n7B0DR9VcVHipOoohQxmQHdsrfw2UCHwt0CgCIQCwRseYfSX8sslW6de2ck31VxAwsJQ-1dg-k8ieDNhrHg%3D%3D
 formats[6].vbr: 0
 formats[6].vcodec: none
 formats[6].video_ext: none
@@ -447,7 +447,7 @@ formats[7].acodec: opus
 formats[7].asr: 48000
 formats[7].audio_channels: 2
 formats[7].audio_ext: webm
-formats[7].available_at: 1785385360
+formats[7].available_at: 1785483536
 formats[7].container: webm_dash
 formats[7].downloader_options.http_chunk_size: 10485760
 formats[7].ext: webm
@@ -460,14 +460,14 @@ formats[7].has_drm: False
 formats[7].http_headers.Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8
 formats[7].http_headers.Accept-Language: en-us,en;q=0.5
 formats[7].http_headers.Sec-Fetch-Mode: navigate
-formats[7].http_headers.User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36
+formats[7].http_headers.User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36
 formats[7].language_preference: -1
 formats[7].protocol: https
 formats[7].quality: 3.0
 formats[7].resolution: audio only
 formats[7].source_preference: -1
 formats[7].tbr: 99.29
-formats[7].url: https://rr3---sn-n4g-jqbed.googlevideo.com/videoplayback?expire=1785406960&ei=kNFqavG1F4rKp-oPmOGC8A4&ip=2a02%3A842a%3A4a2%3A8101%3Aa1ab%3Aaa16%3A79bc%3A4d4d&id=o-ALLgKrDojEq5JzSMr9_3VnPwXvWYTNoXtScWmmMrJgQL&itag=251&source=youtube&requiressl=yes&xpc=EgVo2aDSNQ%3D%3D&cps=328&met=1785385360%2C&mh=qp&mm=31%2C26&mn=sn-n4g-jqbed%2Csn-aigzrnld&ms=au%2Conr&mv=m&mvi=3&pl=43&rms=au%2Cau&initcwndbps=2533750&bui=AZFlqhNLGdiu_u091Iu0yHRrKak8AXstlM7O8NoeJep6jrb3b925sxTwcAIA41XWt9_ngOzekINaBnvL&spc=KBGBcs2ezCW6XO4YBRCiAjlJIQWLwaTwHCiZo8VtfA&vprv=1&svpuc=1&mime=audio%2Fwebm&rqh=1&gir=yes&clen=12710932&dur=1024.141&lmt=1723815817390019&mt=1785384817&fvip=1&keepalive=yes&fexp=51565116%2C51946838&c=ANDROID_VR&txp=4532434&sparams=expire%2Cei%2Cip%2Cid%2Citag%2Csource%2Crequiressl%2Cxpc%2Cbui%2Cspc%2Cvprv%2Csvpuc%2Cmime%2Crqh%2Cgir%2Cclen%2Cdur%2Clmt&sig=AE0s2JYwRQIgXbIQOXNUvYBHB50xLIEXYMfyx0e8dCsCDH6aBYdrIuwCIQDs5y7phDPS5DWKy9JTWDGXH59H0aTTMTStoQxURxfZog%3D%3D&lsparams=cps%2Cmet%2Cmh%2Cmm%2Cmn%2Cms%2Cmv%2Cmvi%2Cpl%2Crms%2Cinitcwndbps&lsig=APaTxxMwRAIgU_ndAyj4A13sCp9ZlfI4bkZj0C5pvlVVogQRTWTvWbcCICI3_OpndDKrZUPYGYNut1GEf_vFFg2mI0r_7CkFbTXy
+formats[7].url: https://rr3---sn-n4g-jqbed.googlevideo.com/videoplayback?expire=1785505136&ei=EFFsaqObJPeIvdIPhvPj8Qc&ip=2a02%3A842a%3A4a2%3A8101%3Abc5e%3A6f8a%3A38ff%3Ada6d&id=o-ANHPx4ddygcSjrZfaxdeMbAJu4nyUVStFJiQHHGJNP2P&itag=251&source=youtube&requiressl=yes&xpc=EgVo2aDSNQ%3D%3D&cps=349&met=1785483536%2C&mh=qp&mm=31%2C26&mn=sn-n4g-jqbed%2Csn-ajaig5-50&ms=au%2Conr&mv=m&mvi=3&pl=40&rms=au%2Cau&initcwndbps=2725000&bui=AZFlqhP7yrUHilEJMJiMb7z0s1dOPVNHGf74JfQn7pN9Pri3Rxx2A6kaJV8fOi66ie7ka60hI5iJJypx&spc=KBGBchD2aV8jcOModnDPahyld9Hf36PWRkMsvhm7mQYr&vprv=1&svpuc=1&mime=audio%2Fwebm&rqh=1&gir=yes&clen=12710932&dur=1024.141&lmt=1723815817390019&mt=1785483225&fvip=5&keepalive=yes&fexp=51565116&c=ANDROID_VR&txp=4532434&sparams=expire%2Cei%2Cip%2Cid%2Citag%2Csource%2Crequiressl%2Cxpc%2Cbui%2Cspc%2Cvprv%2Csvpuc%2Cmime%2Crqh%2Cgir%2Cclen%2Cdur%2Clmt&sig=AE0s2JYwRAIgUOyvAC3EqkXOORY5pefuIW4beJYM4kj3y85r2-qoeAACICV7yJDfpk9EHdJ61KNtvbbZO13Pf1g5ZU4HNfOGJH3q&lsparams=cps%2Cmet%2Cmh%2Cmm%2Cmn%2Cms%2Cmv%2Cmvi%2Cpl%2Crms%2Cinitcwndbps&lsig=APaTxxMwRQIgG8SUA53n7B0DR9VcVHipOoohQxmQHdsrfw2UCHwt0CgCIQCwRseYfSX8sslW6de2ck31VxAwsJQ-1dg-k8ieDNhrHg%3D%3D
 formats[7].vbr: 0
 formats[7].vcodec: none
 formats[7].video_ext: none
@@ -475,7 +475,7 @@ formats[8].abr: 0
 formats[8].acodec: none
 formats[8].aspect_ratio: 1.78
 formats[8].audio_ext: none
-formats[8].available_at: 1785385360
+formats[8].available_at: 1785483536
 formats[8].container: mp4_dash
 formats[8].downloader_options.http_chunk_size: 10485760
 formats[8].dynamic_range: SDR
@@ -491,14 +491,14 @@ formats[8].height: 144
 formats[8].http_headers.Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8
 formats[8].http_headers.Accept-Language: en-us,en;q=0.5
 formats[8].http_headers.Sec-Fetch-Mode: navigate
-formats[8].http_headers.User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36
+formats[8].http_headers.User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36
 formats[8].language_preference: -1
 formats[8].protocol: https
 formats[8].quality: 0.0
 formats[8].resolution: 256x144
 formats[8].source_preference: -1
 formats[8].tbr: 69.602
-formats[8].url: https://rr3---sn-n4g-jqbed.googlevideo.com/videoplayback?expire=1785406960&ei=kNFqavG1F4rKp-oPmOGC8A4&ip=2a02%3A842a%3A4a2%3A8101%3Aa1ab%3Aaa16%3A79bc%3A4d4d&id=o-ALLgKrDojEq5JzSMr9_3VnPwXvWYTNoXtScWmmMrJgQL&itag=160&source=youtube&requiressl=yes&xpc=EgVo2aDSNQ%3D%3D&cps=328&met=1785385360%2C&mh=qp&mm=31%2C26&mn=sn-n4g-jqbed%2Csn-aigzrnld&ms=au%2Conr&mv=m&mvi=3&pl=43&rms=au%2Cau&initcwndbps=2533750&bui=AZFlqhNLGdiu_u091Iu0yHRrKak8AXstlM7O8NoeJep6jrb3b925sxTwcAIA41XWt9_ngOzekINaBnvL&spc=KBGBcs2ezCW6XO4YBRCiAjlJIQWLwaTwHCiZo8VtfA&vprv=1&svpuc=1&mime=video%2Fmp4&rqh=1&gir=yes&clen=8910191&dur=1024.124&lmt=1723832372057879&mt=1785384817&fvip=1&keepalive=yes&fexp=51565116%2C51946838&c=ANDROID_VR&txp=4535434&sparams=expire%2Cei%2Cip%2Cid%2Citag%2Csource%2Crequiressl%2Cxpc%2Cbui%2Cspc%2Cvprv%2Csvpuc%2Cmime%2Crqh%2Cgir%2Cclen%2Cdur%2Clmt&sig=AE0s2JYwRAIgVxUBNFP4Z9eVNb18qpSzLqmuLdhsxN4xhpRjIz7hzRICIH949Maf1KHoeV_op-KYAQYpIDXKpR3dbgQ1YmsmhKeu&lsparams=cps%2Cmet%2Cmh%2Cmm%2Cmn%2Cms%2Cmv%2Cmvi%2Cpl%2Crms%2Cinitcwndbps&lsig=APaTxxMwRAIgU_ndAyj4A13sCp9ZlfI4bkZj0C5pvlVVogQRTWTvWbcCICI3_OpndDKrZUPYGYNut1GEf_vFFg2mI0r_7CkFbTXy
+formats[8].url: https://rr3---sn-n4g-jqbed.googlevideo.com/videoplayback?expire=1785505136&ei=EFFsaqObJPeIvdIPhvPj8Qc&ip=2a02%3A842a%3A4a2%3A8101%3Abc5e%3A6f8a%3A38ff%3Ada6d&id=o-ANHPx4ddygcSjrZfaxdeMbAJu4nyUVStFJiQHHGJNP2P&itag=160&source=youtube&requiressl=yes&xpc=EgVo2aDSNQ%3D%3D&cps=349&met=1785483536%2C&mh=qp&mm=31%2C26&mn=sn-n4g-jqbed%2Csn-ajaig5-50&ms=au%2Conr&mv=m&mvi=3&pl=40&rms=au%2Cau&initcwndbps=2725000&bui=AZFlqhP7yrUHilEJMJiMb7z0s1dOPVNHGf74JfQn7pN9Pri3Rxx2A6kaJV8fOi66ie7ka60hI5iJJypx&spc=KBGBchD2aV8jcOModnDPahyld9Hf36PWRkMsvhm7mQYr&vprv=1&svpuc=1&mime=video%2Fmp4&rqh=1&gir=yes&clen=8910191&dur=1024.124&lmt=1723832372057879&mt=1785483225&fvip=5&keepalive=yes&fexp=51565116&c=ANDROID_VR&txp=4535434&sparams=expire%2Cei%2Cip%2Cid%2Citag%2Csource%2Crequiressl%2Cxpc%2Cbui%2Cspc%2Cvprv%2Csvpuc%2Cmime%2Crqh%2Cgir%2Cclen%2Cdur%2Clmt&sig=AE0s2JYwRQIhANg-UkgIpvyIVSMdYYOXBAfWTYbA9ohhPLLkzm5vEUI1AiB9ASVPSTdp-bGdlABdWm0ovUBTQmAfIX0qDWEd0I-bqA%3D%3D&lsparams=cps%2Cmet%2Cmh%2Cmm%2Cmn%2Cms%2Cmv%2Cmvi%2Cpl%2Crms%2Cinitcwndbps&lsig=APaTxxMwRQIgG8SUA53n7B0DR9VcVHipOoohQxmQHdsrfw2UCHwt0CgCIQCwRseYfSX8sslW6de2ck31VxAwsJQ-1dg-k8ieDNhrHg%3D%3D
 formats[8].vbr: 69.602
 formats[8].vcodec: avc1.4d400c
 formats[8].video_ext: mp4
@@ -507,7 +507,7 @@ formats[9].abr: 0
 formats[9].acodec: none
 formats[9].aspect_ratio: 1.78
 formats[9].audio_ext: none
-formats[9].available_at: 1785385360
+formats[9].available_at: 1785483536
 formats[9].container: webm_dash
 formats[9].downloader_options.http_chunk_size: 10485760
 formats[9].dynamic_range: SDR
@@ -523,14 +523,14 @@ formats[9].height: 144
 formats[9].http_headers.Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8
 formats[9].http_headers.Accept-Language: en-us,en;q=0.5
 formats[9].http_headers.Sec-Fetch-Mode: navigate
-formats[9].http_headers.User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36
+formats[9].http_headers.User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36
 formats[9].language_preference: -1
 formats[9].protocol: https
 formats[9].quality: 0.0
 formats[9].resolution: 256x144
 formats[9].source_preference: -1
 formats[9].tbr: 93.764
-formats[9].url: https://rr3---sn-n4g-jqbed.googlevideo.com/videoplayback?expire=1785406960&ei=kNFqavG1F4rKp-oPmOGC8A4&ip=2a02%3A842a%3A4a2%3A8101%3Aa1ab%3Aaa16%3A79bc%3A4d4d&id=o-ALLgKrDojEq5JzSMr9_3VnPwXvWYTNoXtScWmmMrJgQL&itag=278&source=youtube&requiressl=yes&xpc=EgVo2aDSNQ%3D%3D&cps=328&met=1785385360%2C&mh=qp&mm=31%2C26&mn=sn-n4g-jqbed%2Csn-aigzrnld&ms=au%2Conr&mv=m&mvi=3&pl=43&rms=au%2Cau&initcwndbps=2533750&bui=AZFlqhNLGdiu_u091Iu0yHRrKak8AXstlM7O8NoeJep6jrb3b925sxTwcAIA41XWt9_ngOzekINaBnvL&spc=KBGBcs2ezCW6XO4YBRCiAjlJIQWLwaTwHCiZo8VtfA&vprv=1&svpuc=1&mime=video%2Fwebm&rqh=1&gir=yes&clen=12003260&dur=1024.123&lmt=1723840569581708&mt=1785384817&fvip=1&keepalive=yes&fexp=51565116%2C51946838&c=ANDROID_VR&txp=4535434&sparams=expire%2Cei%2Cip%2Cid%2Citag%2Csource%2Crequiressl%2Cxpc%2Cbui%2Cspc%2Cvprv%2Csvpuc%2Cmime%2Crqh%2Cgir%2Cclen%2Cdur%2Clmt&sig=AE0s2JYwRAIgamH3pHc7eTniiukRU1U7UXsMoL6nKCO_Mw-2cTbGpXsCIFZh24zUZaW6jGlOJfwYCjToloxe9Q96AfSTin7X1ROj&lsparams=cps%2Cmet%2Cmh%2Cmm%2Cmn%2Cms%2Cmv%2Cmvi%2Cpl%2Crms%2Cinitcwndbps&lsig=APaTxxMwRAIgU_ndAyj4A13sCp9ZlfI4bkZj0C5pvlVVogQRTWTvWbcCICI3_OpndDKrZUPYGYNut1GEf_vFFg2mI0r_7CkFbTXy
+formats[9].url: https://rr3---sn-n4g-jqbed.googlevideo.com/videoplayback?expire=1785505136&ei=EFFsaqObJPeIvdIPhvPj8Qc&ip=2a02%3A842a%3A4a2%3A8101%3Abc5e%3A6f8a%3A38ff%3Ada6d&id=o-ANHPx4ddygcSjrZfaxdeMbAJu4nyUVStFJiQHHGJNP2P&itag=278&source=youtube&requiressl=yes&xpc=EgVo2aDSNQ%3D%3D&cps=349&met=1785483536%2C&mh=qp&mm=31%2C26&mn=sn-n4g-jqbed%2Csn-ajaig5-50&ms=au%2Conr&mv=m&mvi=3&pl=40&rms=au%2Cau&initcwndbps=2725000&bui=AZFlqhP7yrUHilEJMJiMb7z0s1dOPVNHGf74JfQn7pN9Pri3Rxx2A6kaJV8fOi66ie7ka60hI5iJJypx&spc=KBGBchD2aV8jcOModnDPahyld9Hf36PWRkMsvhm7mQYr&vprv=1&svpuc=1&mime=video%2Fwebm&rqh=1&gir=yes&clen=12003260&dur=1024.123&lmt=1723840569581708&mt=1785483225&fvip=5&keepalive=yes&fexp=51565116&c=ANDROID_VR&txp=4535434&sparams=expire%2Cei%2Cip%2Cid%2Citag%2Csource%2Crequiressl%2Cxpc%2Cbui%2Cspc%2Cvprv%2Csvpuc%2Cmime%2Crqh%2Cgir%2Cclen%2Cdur%2Clmt&sig=AE0s2JYwRQIhAL3XQXt16hRi8t8F6IOjfBh2OlDRc_mIvvFTarPhq9XcAiBv3fKiiWIIvN81MaLq22ye_XbGy0cNsJkDem2Yw2OSMw%3D%3D&lsparams=cps%2Cmet%2Cmh%2Cmm%2Cmn%2Cms%2Cmv%2Cmvi%2Cpl%2Crms%2Cinitcwndbps&lsig=APaTxxMwRQIgG8SUA53n7B0DR9VcVHipOoohQxmQHdsrfw2UCHwt0CgCIQCwRseYfSX8sslW6de2ck31VxAwsJQ-1dg-k8ieDNhrHg%3D%3D
 formats[9].vbr: 93.764
 formats[9].vcodec: vp9
 formats[9].video_ext: webm
@@ -539,7 +539,7 @@ formats[10].abr: 0
 formats[10].acodec: none
 formats[10].aspect_ratio: 1.78
 formats[10].audio_ext: none
-formats[10].available_at: 1785385360
+formats[10].available_at: 1785483536
 formats[10].container: mp4_dash
 formats[10].downloader_options.http_chunk_size: 10485760
 formats[10].dynamic_range: SDR
@@ -555,14 +555,14 @@ formats[10].height: 144
 formats[10].http_headers.Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8
 formats[10].http_headers.Accept-Language: en-us,en;q=0.5
 formats[10].http_headers.Sec-Fetch-Mode: navigate
-formats[10].http_headers.User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36
+formats[10].http_headers.User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36
 formats[10].language_preference: -1
 formats[10].protocol: https
 formats[10].quality: 0.0
 formats[10].resolution: 256x144
 formats[10].source_preference: -1
 formats[10].tbr: 68.732
-formats[10].url: https://rr3---sn-n4g-jqbed.googlevideo.com/videoplayback?expire=1785406960&ei=kNFqavG1F4rKp-oPmOGC8A4&ip=2a02%3A842a%3A4a2%3A8101%3Aa1ab%3Aaa16%3A79bc%3A4d4d&id=o-ALLgKrDojEq5JzSMr9_3VnPwXvWYTNoXtScWmmMrJgQL&itag=394&source=youtube&requiressl=yes&xpc=EgVo2aDSNQ%3D%3D&cps=328&met=1785385360%2C&mh=qp&mm=31%2C26&mn=sn-n4g-jqbed%2Csn-aigzrnld&ms=au%2Conr&mv=m&mvi=3&pl=43&rms=au%2Cau&initcwndbps=2533750&bui=AZFlqhNLGdiu_u091Iu0yHRrKak8AXstlM7O8NoeJep6jrb3b925sxTwcAIA41XWt9_ngOzekINaBnvL&spc=KBGBcs2ezCW6XO4YBRCiAjlJIQWLwaTwHCiZo8VtfA&vprv=1&svpuc=1&mime=video%2Fmp4&rqh=1&gir=yes&clen=8798859&dur=1024.124&lmt=1741815510529634&mt=1785384817&fvip=1&keepalive=yes&fexp=51565116%2C51946838&c=ANDROID_VR&txp=4537534&sparams=expire%2Cei%2Cip%2Cid%2Citag%2Csource%2Crequiressl%2Cxpc%2Cbui%2Cspc%2Cvprv%2Csvpuc%2Cmime%2Crqh%2Cgir%2Cclen%2Cdur%2Clmt&sig=AE0s2JYwRgIhANbBQJk2hyvoG8EZ1LyOHVRHPsssq87-uIoetHDttNpLAiEAkIz5SOntdgsJnJco-OYYZ3ncqlYOtajENwnn9XlQpns%3D&lsparams=cps%2Cmet%2Cmh%2Cmm%2Cmn%2Cms%2Cmv%2Cmvi%2Cpl%2Crms%2Cinitcwndbps&lsig=APaTxxMwRAIgU_ndAyj4A13sCp9ZlfI4bkZj0C5pvlVVogQRTWTvWbcCICI3_OpndDKrZUPYGYNut1GEf_vFFg2mI0r_7CkFbTXy
+formats[10].url: https://rr3---sn-n4g-jqbed.googlevideo.com/videoplayback?expire=1785505136&ei=EFFsaqObJPeIvdIPhvPj8Qc&ip=2a02%3A842a%3A4a2%3A8101%3Abc5e%3A6f8a%3A38ff%3Ada6d&id=o-ANHPx4ddygcSjrZfaxdeMbAJu4nyUVStFJiQHHGJNP2P&itag=394&source=youtube&requiressl=yes&xpc=EgVo2aDSNQ%3D%3D&cps=349&met=1785483536%2C&mh=qp&mm=31%2C26&mn=sn-n4g-jqbed%2Csn-ajaig5-50&ms=au%2Conr&mv=m&mvi=3&pl=40&rms=au%2Cau&initcwndbps=2725000&bui=AZFlqhP7yrUHilEJMJiMb7z0s1dOPVNHGf74JfQn7pN9Pri3Rxx2A6kaJV8fOi66ie7ka60hI5iJJypx&spc=KBGBchD2aV8jcOModnDPahyld9Hf36PWRkMsvhm7mQYr&vprv=1&svpuc=1&mime=video%2Fmp4&rqh=1&gir=yes&clen=8798859&dur=1024.124&lmt=1741815510529634&mt=1785483225&fvip=5&keepalive=yes&fexp=51565116&c=ANDROID_VR&txp=4537534&sparams=expire%2Cei%2Cip%2Cid%2Citag%2Csource%2Crequiressl%2Cxpc%2Cbui%2Cspc%2Cvprv%2Csvpuc%2Cmime%2Crqh%2Cgir%2Cclen%2Cdur%2Clmt&sig=AE0s2JYwRgIhAJokCsbdssSVNAlLF8RqGZ6l0wGo6XYBgSJAL3EFb3KWAiEAympyQVRSnRKZUfchXkQwxXz2cAPkIuVrtJ6XsUQzZhA%3D&lsparams=cps%2Cmet%2Cmh%2Cmm%2Cmn%2Cms%2Cmv%2Cmvi%2Cpl%2Crms%2Cinitcwndbps&lsig=APaTxxMwRQIgG8SUA53n7B0DR9VcVHipOoohQxmQHdsrfw2UCHwt0CgCIQCwRseYfSX8sslW6de2ck31VxAwsJQ-1dg-k8ieDNhrHg%3D%3D
 formats[10].vbr: 68.732
 formats[10].vcodec: av01.0.00M.08
 formats[10].video_ext: mp4
@@ -571,7 +571,7 @@ formats[11].abr: 0
 formats[11].acodec: none
 formats[11].aspect_ratio: 1.77
 formats[11].audio_ext: none
-formats[11].available_at: 1785385360
+formats[11].available_at: 1785483536
 formats[11].container: mp4_dash
 formats[11].downloader_options.http_chunk_size: 10485760
 formats[11].dynamic_range: SDR
@@ -587,14 +587,14 @@ formats[11].height: 240
 formats[11].http_headers.Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8
 formats[11].http_headers.Accept-Language: en-us,en;q=0.5
 formats[11].http_headers.Sec-Fetch-Mode: navigate
-formats[11].http_headers.User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36
+formats[11].http_headers.User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36
 formats[11].language_preference: -1
 formats[11].protocol: https
 formats[11].quality: 5.0
 formats[11].resolution: 426x240
 formats[11].source_preference: -1
 formats[11].tbr: 153.819
-formats[11].url: https://rr3---sn-n4g-jqbed.googlevideo.com/videoplayback?expire=1785406960&ei=kNFqavG1F4rKp-oPmOGC8A4&ip=2a02%3A842a%3A4a2%3A8101%3Aa1ab%3Aaa16%3A79bc%3A4d4d&id=o-ALLgKrDojEq5JzSMr9_3VnPwXvWYTNoXtScWmmMrJgQL&itag=133&source=youtube&requiressl=yes&xpc=EgVo2aDSNQ%3D%3D&cps=328&met=1785385360%2C&mh=qp&mm=31%2C26&mn=sn-n4g-jqbed%2Csn-aigzrnld&ms=au%2Conr&mv=m&mvi=3&pl=43&rms=au%2Cau&initcwndbps=2533750&bui=AZFlqhNLGdiu_u091Iu0yHRrKak8AXstlM7O8NoeJep6jrb3b925sxTwcAIA41XWt9_ngOzekINaBnvL&spc=KBGBcs2ezCW6XO4YBRCiAjlJIQWLwaTwHCiZo8VtfA&vprv=1&svpuc=1&mime=video%2Fmp4&rqh=1&gir=yes&clen=19691263&dur=1024.124&lmt=1723832353739392&mt=1785384817&fvip=1&keepalive=yes&fexp=51565116%2C51946838&c=ANDROID_VR&txp=4535434&sparams=expire%2Cei%2Cip%2Cid%2Citag%2Csource%2Crequiressl%2Cxpc%2Cbui%2Cspc%2Cvprv%2Csvpuc%2Cmime%2Crqh%2Cgir%2Cclen%2Cdur%2Clmt&sig=AE0s2JYwRgIhAIIgeKU7wW1wag1oFT55U1bBDMPLTaiqpo0xoA4I2AetAiEA1loE6D-fuHB0cIWr1RoDLlZHhvsjrPV1vtKz921SGdA%3D&lsparams=cps%2Cmet%2Cmh%2Cmm%2Cmn%2Cms%2Cmv%2Cmvi%2Cpl%2Crms%2Cinitcwndbps&lsig=APaTxxMwRAIgU_ndAyj4A13sCp9ZlfI4bkZj0C5pvlVVogQRTWTvWbcCICI3_OpndDKrZUPYGYNut1GEf_vFFg2mI0r_7CkFbTXy
+formats[11].url: https://rr3---sn-n4g-jqbed.googlevideo.com/videoplayback?expire=1785505136&ei=EFFsaqObJPeIvdIPhvPj8Qc&ip=2a02%3A842a%3A4a2%3A8101%3Abc5e%3A6f8a%3A38ff%3Ada6d&id=o-ANHPx4ddygcSjrZfaxdeMbAJu4nyUVStFJiQHHGJNP2P&itag=133&source=youtube&requiressl=yes&xpc=EgVo2aDSNQ%3D%3D&cps=349&met=1785483536%2C&mh=qp&mm=31%2C26&mn=sn-n4g-jqbed%2Csn-ajaig5-50&ms=au%2Conr&mv=m&mvi=3&pl=40&rms=au%2Cau&initcwndbps=2725000&bui=AZFlqhP7yrUHilEJMJiMb7z0s1dOPVNHGf74JfQn7pN9Pri3Rxx2A6kaJV8fOi66ie7ka60hI5iJJypx&spc=KBGBchD2aV8jcOModnDPahyld9Hf36PWRkMsvhm7mQYr&vprv=1&svpuc=1&mime=video%2Fmp4&rqh=1&gir=yes&clen=19691263&dur=1024.124&lmt=1723832353739392&mt=1785483225&fvip=5&keepalive=yes&fexp=51565116&c=ANDROID_VR&txp=4535434&sparams=expire%2Cei%2Cip%2Cid%2Citag%2Csource%2Crequiressl%2Cxpc%2Cbui%2Cspc%2Cvprv%2Csvpuc%2Cmime%2Crqh%2Cgir%2Cclen%2Cdur%2Clmt&sig=AE0s2JYwRQIhAKZJCkewvr0lD0nIJ-beDKUyJH9LPRJjSb4c38D4enmvAiB1VX23Y9xrgz27GMFCrPHFo4OgkxJORHn2rJ9ADIl7Jw%3D%3D&lsparams=cps%2Cmet%2Cmh%2Cmm%2Cmn%2Cms%2Cmv%2Cmvi%2Cpl%2Crms%2Cinitcwndbps&lsig=APaTxxMwRQIgG8SUA53n7B0DR9VcVHipOoohQxmQHdsrfw2UCHwt0CgCIQCwRseYfSX8sslW6de2ck31VxAwsJQ-1dg-k8ieDNhrHg%3D%3D
 formats[11].vbr: 153.819
 formats[11].vcodec: avc1.4d4015
 formats[11].video_ext: mp4
@@ -603,7 +603,7 @@ formats[12].abr: 0
 formats[12].acodec: none
 formats[12].aspect_ratio: 1.77
 formats[12].audio_ext: none
-formats[12].available_at: 1785385360
+formats[12].available_at: 1785483536
 formats[12].container: webm_dash
 formats[12].downloader_options.http_chunk_size: 10485760
 formats[12].dynamic_range: SDR
@@ -619,14 +619,14 @@ formats[12].height: 240
 formats[12].http_headers.Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8
 formats[12].http_headers.Accept-Language: en-us,en;q=0.5
 formats[12].http_headers.Sec-Fetch-Mode: navigate
-formats[12].http_headers.User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36
+formats[12].http_headers.User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36
 formats[12].language_preference: -1
 formats[12].protocol: https
 formats[12].quality: 5.0
 formats[12].resolution: 426x240
 formats[12].source_preference: -1
 formats[12].tbr: 183.85
-formats[12].url: https://rr3---sn-n4g-jqbed.googlevideo.com/videoplayback?expire=1785406960&ei=kNFqavG1F4rKp-oPmOGC8A4&ip=2a02%3A842a%3A4a2%3A8101%3Aa1ab%3Aaa16%3A79bc%3A4d4d&id=o-ALLgKrDojEq5JzSMr9_3VnPwXvWYTNoXtScWmmMrJgQL&itag=242&source=youtube&requiressl=yes&xpc=EgVo2aDSNQ%3D%3D&cps=328&met=1785385360%2C&mh=qp&mm=31%2C26&mn=sn-n4g-jqbed%2Csn-aigzrnld&ms=au%2Conr&mv=m&mvi=3&pl=43&rms=au%2Cau&initcwndbps=2533750&bui=AZFlqhNLGdiu_u091Iu0yHRrKak8AXstlM7O8NoeJep6jrb3b925sxTwcAIA41XWt9_ngOzekINaBnvL&spc=KBGBcs2ezCW6XO4YBRCiAjlJIQWLwaTwHCiZo8VtfA&vprv=1&svpuc=1&mime=video%2Fwebm&rqh=1&gir=yes&clen=23535735&dur=1024.123&lmt=1723840545829839&mt=1785384817&fvip=1&keepalive=yes&fexp=51565116%2C51946838&c=ANDROID_VR&txp=4535434&sparams=expire%2Cei%2Cip%2Cid%2Citag%2Csource%2Crequiressl%2Cxpc%2Cbui%2Cspc%2Cvprv%2Csvpuc%2Cmime%2Crqh%2Cgir%2Cclen%2Cdur%2Clmt&sig=AE0s2JYwRgIhAIYBDoYQik2zYWRmyjznAmkVrJWaDTsKmTupVdrnspq3AiEAlghiT9mJQqiaHQraJyWVyM9S7k1vI72c7XsxDWXO81g%3D&lsparams=cps%2Cmet%2Cmh%2Cmm%2Cmn%2Cms%2Cmv%2Cmvi%2Cpl%2Crms%2Cinitcwndbps&lsig=APaTxxMwRAIgU_ndAyj4A13sCp9ZlfI4bkZj0C5pvlVVogQRTWTvWbcCICI3_OpndDKrZUPYGYNut1GEf_vFFg2mI0r_7CkFbTXy
+formats[12].url: https://rr3---sn-n4g-jqbed.googlevideo.com/videoplayback?expire=1785505136&ei=EFFsaqObJPeIvdIPhvPj8Qc&ip=2a02%3A842a%3A4a2%3A8101%3Abc5e%3A6f8a%3A38ff%3Ada6d&id=o-ANHPx4ddygcSjrZfaxdeMbAJu4nyUVStFJiQHHGJNP2P&itag=242&source=youtube&requiressl=yes&xpc=EgVo2aDSNQ%3D%3D&cps=349&met=1785483536%2C&mh=qp&mm=31%2C26&mn=sn-n4g-jqbed%2Csn-ajaig5-50&ms=au%2Conr&mv=m&mvi=3&pl=40&rms=au%2Cau&initcwndbps=2725000&bui=AZFlqhP7yrUHilEJMJiMb7z0s1dOPVNHGf74JfQn7pN9Pri3Rxx2A6kaJV8fOi66ie7ka60hI5iJJypx&spc=KBGBchD2aV8jcOModnDPahyld9Hf36PWRkMsvhm7mQYr&vprv=1&svpuc=1&mime=video%2Fwebm&rqh=1&gir=yes&clen=23535735&dur=1024.123&lmt=1723840545829839&mt=1785483225&fvip=5&keepalive=yes&fexp=51565116&c=ANDROID_VR&txp=4535434&sparams=expire%2Cei%2Cip%2Cid%2Citag%2Csource%2Crequiressl%2Cxpc%2Cbui%2Cspc%2Cvprv%2Csvpuc%2Cmime%2Crqh%2Cgir%2Cclen%2Cdur%2Clmt&sig=AE0s2JYwRQIhAOuwBZQ9M-Z7Y7UJAYpakfdq7l7wdVvVCMHBJ6OvcODfAiAPeFn9CV8TNd_-l-CwGZ-nTrIKMrBpqE62ITBhlku0bw%3D%3D&lsparams=cps%2Cmet%2Cmh%2Cmm%2Cmn%2Cms%2Cmv%2Cmvi%2Cpl%2Crms%2Cinitcwndbps&lsig=APaTxxMwRQIgG8SUA53n7B0DR9VcVHipOoohQxmQHdsrfw2UCHwt0CgCIQCwRseYfSX8sslW6de2ck31VxAwsJQ-1dg-k8ieDNhrHg%3D%3D
 formats[12].vbr: 183.85
 formats[12].vcodec: vp9
 formats[12].video_ext: webm
@@ -635,7 +635,7 @@ formats[13].abr: 0
 formats[13].acodec: none
 formats[13].aspect_ratio: 1.77
 formats[13].audio_ext: none
-formats[13].available_at: 1785385360
+formats[13].available_at: 1785483536
 formats[13].container: mp4_dash
 formats[13].downloader_options.http_chunk_size: 10485760
 formats[13].dynamic_range: SDR
@@ -651,14 +651,14 @@ formats[13].height: 240
 formats[13].http_headers.Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8
 formats[13].http_headers.Accept-Language: en-us,en;q=0.5
 formats[13].http_headers.Sec-Fetch-Mode: navigate
-formats[13].http_headers.User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36
+formats[13].http_headers.User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36
 formats[13].language_preference: -1
 formats[13].protocol: https
 formats[13].quality: 5.0
 formats[13].resolution: 426x240
 formats[13].source_preference: -1
 formats[13].tbr: 119.355
-formats[13].url: https://rr3---sn-n4g-jqbed.googlevideo.com/videoplayback?expire=1785406960&ei=kNFqavG1F4rKp-oPmOGC8A4&ip=2a02%3A842a%3A4a2%3A8101%3Aa1ab%3Aaa16%3A79bc%3A4d4d&id=o-ALLgKrDojEq5JzSMr9_3VnPwXvWYTNoXtScWmmMrJgQL&itag=395&source=youtube&requiressl=yes&xpc=EgVo2aDSNQ%3D%3D&cps=328&met=1785385360%2C&mh=qp&mm=31%2C26&mn=sn-n4g-jqbed%2Csn-aigzrnld&ms=au%2Conr&mv=m&mvi=3&pl=43&rms=au%2Cau&initcwndbps=2533750&bui=AZFlqhNLGdiu_u091Iu0yHRrKak8AXstlM7O8NoeJep6jrb3b925sxTwcAIA41XWt9_ngOzekINaBnvL&spc=KBGBcs2ezCW6XO4YBRCiAjlJIQWLwaTwHCiZo8VtfA&vprv=1&svpuc=1&mime=video%2Fmp4&rqh=1&gir=yes&clen=15279358&dur=1024.124&lmt=1741815985157284&mt=1785384817&fvip=1&keepalive=yes&fexp=51565116%2C51946838&c=ANDROID_VR&txp=4537534&sparams=expire%2Cei%2Cip%2Cid%2Citag%2Csource%2Crequiressl%2Cxpc%2Cbui%2Cspc%2Cvprv%2Csvpuc%2Cmime%2Crqh%2Cgir%2Cclen%2Cdur%2Clmt&sig=AE0s2JYwRgIhAI2Ii5MpZVohWoqIC2hTwqcWy516coNo9GJAGKvC5dYJAiEAhghjQPY_DeXLJ0QOgRASxVJHuhJ_4zTXTg0YuV8eixI%3D&lsparams=cps%2Cmet%2Cmh%2Cmm%2Cmn%2Cms%2Cmv%2Cmvi%2Cpl%2Crms%2Cinitcwndbps&lsig=APaTxxMwRAIgU_ndAyj4A13sCp9ZlfI4bkZj0C5pvlVVogQRTWTvWbcCICI3_OpndDKrZUPYGYNut1GEf_vFFg2mI0r_7CkFbTXy
+formats[13].url: https://rr3---sn-n4g-jqbed.googlevideo.com/videoplayback?expire=1785505136&ei=EFFsaqObJPeIvdIPhvPj8Qc&ip=2a02%3A842a%3A4a2%3A8101%3Abc5e%3A6f8a%3A38ff%3Ada6d&id=o-ANHPx4ddygcSjrZfaxdeMbAJu4nyUVStFJiQHHGJNP2P&itag=395&source=youtube&requiressl=yes&xpc=EgVo2aDSNQ%3D%3D&cps=349&met=1785483536%2C&mh=qp&mm=31%2C26&mn=sn-n4g-jqbed%2Csn-ajaig5-50&ms=au%2Conr&mv=m&mvi=3&pl=40&rms=au%2Cau&initcwndbps=2725000&bui=AZFlqhP7yrUHilEJMJiMb7z0s1dOPVNHGf74JfQn7pN9Pri3Rxx2A6kaJV8fOi66ie7ka60hI5iJJypx&spc=KBGBchD2aV8jcOModnDPahyld9Hf36PWRkMsvhm7mQYr&vprv=1&svpuc=1&mime=video%2Fmp4&rqh=1&gir=yes&clen=15279358&dur=1024.124&lmt=1741815985157284&mt=1785483225&fvip=5&keepalive=yes&fexp=51565116&c=ANDROID_VR&txp=4537534&sparams=expire%2Cei%2Cip%2Cid%2Citag%2Csource%2Crequiressl%2Cxpc%2Cbui%2Cspc%2Cvprv%2Csvpuc%2Cmime%2Crqh%2Cgir%2Cclen%2Cdur%2Clmt&sig=AE0s2JYwRgIhAO7kplndDKvZvj2skw_HmL7bLAsSqn_MPI4uTNhLSwd_AiEAohY4VNwEu_nV8X0X-zzN9rS0A_Gh06jBMX5D_X7z4sM%3D&lsparams=cps%2Cmet%2Cmh%2Cmm%2Cmn%2Cms%2Cmv%2Cmvi%2Cpl%2Crms%2Cinitcwndbps&lsig=APaTxxMwRQIgG8SUA53n7B0DR9VcVHipOoohQxmQHdsrfw2UCHwt0CgCIQCwRseYfSX8sslW6de2ck31VxAwsJQ-1dg-k8ieDNhrHg%3D%3D
 formats[13].vbr: 119.355
 formats[13].vcodec: av01.0.00M.08
 formats[13].video_ext: mp4
@@ -667,7 +667,7 @@ formats[14].abr: 0
 formats[14].acodec: none
 formats[14].aspect_ratio: 1.78
 formats[14].audio_ext: none
-formats[14].available_at: 1785385360
+formats[14].available_at: 1785483536
 formats[14].container: mp4_dash
 formats[14].downloader_options.http_chunk_size: 10485760
 formats[14].dynamic_range: SDR
@@ -683,14 +683,14 @@ formats[14].height: 360
 formats[14].http_headers.Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8
 formats[14].http_headers.Accept-Language: en-us,en;q=0.5
 formats[14].http_headers.Sec-Fetch-Mode: navigate
-formats[14].http_headers.User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36
+formats[14].http_headers.User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36
 formats[14].language_preference: -1
 formats[14].protocol: https
 formats[14].quality: 6.0
 formats[14].resolution: 640x360
 formats[14].source_preference: -1
 formats[14].tbr: 317.026
-formats[14].url: https://rr3---sn-n4g-jqbed.googlevideo.com/videoplayback?expire=1785406960&ei=kNFqavG1F4rKp-oPmOGC8A4&ip=2a02%3A842a%3A4a2%3A8101%3Aa1ab%3Aaa16%3A79bc%3A4d4d&id=o-ALLgKrDojEq5JzSMr9_3VnPwXvWYTNoXtScWmmMrJgQL&itag=134&source=youtube&requiressl=yes&xpc=EgVo2aDSNQ%3D%3D&cps=328&met=1785385360%2C&mh=qp&mm=31%2C26&mn=sn-n4g-jqbed%2Csn-aigzrnld&ms=au%2Conr&mv=m&mvi=3&pl=43&rms=au%2Cau&initcwndbps=2533750&bui=AZFlqhNLGdiu_u091Iu0yHRrKak8AXstlM7O8NoeJep6jrb3b925sxTwcAIA41XWt9_ngOzekINaBnvL&spc=KBGBcs2ezCW6XO4YBRCiAjlJIQWLwaTwHCiZo8VtfA&vprv=1&svpuc=1&mime=video%2Fmp4&rqh=1&gir=yes&clen=40584298&dur=1024.124&lmt=1723832376309580&mt=1785384817&fvip=1&keepalive=yes&fexp=51565116%2C51946838&c=ANDROID_VR&txp=4535434&sparams=expire%2Cei%2Cip%2Cid%2Citag%2Csource%2Crequiressl%2Cxpc%2Cbui%2Cspc%2Cvprv%2Csvpuc%2Cmime%2Crqh%2Cgir%2Cclen%2Cdur%2Clmt&sig=AE0s2JYwRgIhALHaYnLIpB9rAqMM6OH7Lx9PSdNV-_rzfpSTBQ_NuyLwAiEA_TXidjYUT-L9Hu3Lp0NpraVHInzWvoIGKxblp3fRaBw%3D&lsparams=cps%2Cmet%2Cmh%2Cmm%2Cmn%2Cms%2Cmv%2Cmvi%2Cpl%2Crms%2Cinitcwndbps&lsig=APaTxxMwRAIgU_ndAyj4A13sCp9ZlfI4bkZj0C5pvlVVogQRTWTvWbcCICI3_OpndDKrZUPYGYNut1GEf_vFFg2mI0r_7CkFbTXy
+formats[14].url: https://rr3---sn-n4g-jqbed.googlevideo.com/videoplayback?expire=1785505136&ei=EFFsaqObJPeIvdIPhvPj8Qc&ip=2a02%3A842a%3A4a2%3A8101%3Abc5e%3A6f8a%3A38ff%3Ada6d&id=o-ANHPx4ddygcSjrZfaxdeMbAJu4nyUVStFJiQHHGJNP2P&itag=134&source=youtube&requiressl=yes&xpc=EgVo2aDSNQ%3D%3D&cps=349&met=1785483536%2C&mh=qp&mm=31%2C26&mn=sn-n4g-jqbed%2Csn-ajaig5-50&ms=au%2Conr&mv=m&mvi=3&pl=40&rms=au%2Cau&initcwndbps=2725000&bui=AZFlqhP7yrUHilEJMJiMb7z0s1dOPVNHGf74JfQn7pN9Pri3Rxx2A6kaJV8fOi66ie7ka60hI5iJJypx&spc=KBGBchD2aV8jcOModnDPahyld9Hf36PWRkMsvhm7mQYr&vprv=1&svpuc=1&mime=video%2Fmp4&rqh=1&gir=yes&clen=40584298&dur=1024.124&lmt=1723832376309580&mt=1785483225&fvip=5&keepalive=yes&fexp=51565116&c=ANDROID_VR&txp=4535434&sparams=expire%2Cei%2Cip%2Cid%2Citag%2Csource%2Crequiressl%2Cxpc%2Cbui%2Cspc%2Cvprv%2Csvpuc%2Cmime%2Crqh%2Cgir%2Cclen%2Cdur%2Clmt&sig=AE0s2JYwRgIhAIos1QCUBtVoCKakSKMl7Jl_c7IQFzP3OLJod6EmAFzsAiEAsE5kU7ZJGvsu4rqyD3faIG53PdiLr43xQV999NWIEbM%3D&lsparams=cps%2Cmet%2Cmh%2Cmm%2Cmn%2Cms%2Cmv%2Cmvi%2Cpl%2Crms%2Cinitcwndbps&lsig=APaTxxMwRQIgG8SUA53n7B0DR9VcVHipOoohQxmQHdsrfw2UCHwt0CgCIQCwRseYfSX8sslW6de2ck31VxAwsJQ-1dg-k8ieDNhrHg%3D%3D
 formats[14].vbr: 317.026
 formats[14].vcodec: avc1.4d401e
 formats[14].video_ext: mp4
@@ -700,7 +700,7 @@ formats[15].aspect_ratio: 1.78
 formats[15].asr: 44100
 formats[15].audio_channels: 2
 formats[15].audio_ext: none
-formats[15].available_at: 1785385360
+formats[15].available_at: 1785483536
 formats[15].downloader_options.http_chunk_size: 10485760
 formats[15].dynamic_range: SDR
 formats[15].ext: mp4
@@ -715,14 +715,14 @@ formats[15].height: 360
 formats[15].http_headers.Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8
 formats[15].http_headers.Accept-Language: en-us,en;q=0.5
 formats[15].http_headers.Sec-Fetch-Mode: navigate
-formats[15].http_headers.User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36
+formats[15].http_headers.User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36
 formats[15].language_preference: -1
 formats[15].protocol: https
 formats[15].quality: 6.0
 formats[15].resolution: 640x360
 formats[15].source_preference: -1
 formats[15].tbr: 688.37
-formats[15].url: https://rr3---sn-n4g-jqbed.googlevideo.com/videoplayback?expire=1785406960&ei=kNFqavG1F4rKp-oPmOGC8A4&ip=2a02%3A842a%3A4a2%3A8101%3Aa1ab%3Aaa16%3A79bc%3A4d4d&id=o-ALLgKrDojEq5JzSMr9_3VnPwXvWYTNoXtScWmmMrJgQL&itag=18&source=youtube&requiressl=yes&xpc=EgVo2aDSNQ%3D%3D&cps=328&met=1785385360%2C&mh=qp&mm=31%2C26&mn=sn-n4g-jqbed%2Csn-aigzrnld&ms=au%2Conr&mv=m&mvi=3&pl=43&rms=au%2Cau&initcwndbps=2533750&bui=AZFlqhO4dnZ7I-cF3sxUUphaWccT9DdCe2-GaE-AxwomyNgylvSwhbFULzRg_35rXh0YMQhorx7xUYHq&spc=KBGBcueX9iCIVOwgLRHgOhFUYwDr3T7wQiT7s0x0cH6jJ02DkA&vprv=1&svpuc=1&mime=video%2Fmp4&rqh=1&gir=yes&clen=88127388&ratebypass=yes&dur=1024.185&lmt=1723822727490643&mt=1785384817&fvip=1&fexp=51565116%2C51946838&c=ANDROID_VR&txp=4538434&sparams=expire%2Cei%2Cip%2Cid%2Citag%2Csource%2Crequiressl%2Cxpc%2Cbui%2Cspc%2Cvprv%2Csvpuc%2Cmime%2Crqh%2Cgir%2Cclen%2Cratebypass%2Cdur%2Clmt&sig=AE0s2JYwRQIhAMZ4i8uoH4Ha8kJkJ71_16SnJp41QFMSajySPm6FWKLlAiBKRKW7qC8tKKeQNoaxGKVMFEfDfb534kOfm6M26yyI4w%3D%3D&lsparams=cps%2Cmet%2Cmh%2Cmm%2Cmn%2Cms%2Cmv%2Cmvi%2Cpl%2Crms%2Cinitcwndbps&lsig=APaTxxMwRAIgU_ndAyj4A13sCp9ZlfI4bkZj0C5pvlVVogQRTWTvWbcCICI3_OpndDKrZUPYGYNut1GEf_vFFg2mI0r_7CkFbTXy
+formats[15].url: https://rr3---sn-n4g-jqbed.googlevideo.com/videoplayback?expire=1785505136&ei=EFFsaqObJPeIvdIPhvPj8Qc&ip=2a02%3A842a%3A4a2%3A8101%3Abc5e%3A6f8a%3A38ff%3Ada6d&id=o-ANHPx4ddygcSjrZfaxdeMbAJu4nyUVStFJiQHHGJNP2P&itag=18&source=youtube&requiressl=yes&xpc=EgVo2aDSNQ%3D%3D&cps=349&met=1785483536%2C&mh=qp&mm=31%2C26&mn=sn-n4g-jqbed%2Csn-ajaig5-50&ms=au%2Conr&mv=m&mvi=3&pl=40&rms=au%2Cau&initcwndbps=2725000&bui=AZFlqhONpHVyfyIJ3s3XP62Tw2HQdZCzFpfTCoDNShup0JC7NyuDu6XaLkGHFDG5wzTtYmVdkejSiRiI&spc=KBGBcjr_U1oReOEQXnGNUjS4NdS_wznWFk9OrpCimy4gA8ULI_yH&vprv=1&svpuc=1&mime=video%2Fmp4&rqh=1&gir=yes&clen=88127388&ratebypass=yes&dur=1024.185&lmt=1723822727490643&mt=1785483225&fvip=5&fexp=51565116&c=ANDROID_VR&txp=4538434&sparams=expire%2Cei%2Cip%2Cid%2Citag%2Csource%2Crequiressl%2Cxpc%2Cbui%2Cspc%2Cvprv%2Csvpuc%2Cmime%2Crqh%2Cgir%2Cclen%2Cratebypass%2Cdur%2Clmt&sig=AE0s2JYwRQIgWGers8LDsl2yzzYmaaoRJ3l6_aaU1_4XcSb-Y2sLqOUCIQDhkMJYfpklDMPliHbu8y1pPNBDnt4FIAU8fZ51cOppPQ%3D%3D&lsparams=cps%2Cmet%2Cmh%2Cmm%2Cmn%2Cms%2Cmv%2Cmvi%2Cpl%2Crms%2Cinitcwndbps&lsig=APaTxxMwRQIgG8SUA53n7B0DR9VcVHipOoohQxmQHdsrfw2UCHwt0CgCIQCwRseYfSX8sslW6de2ck31VxAwsJQ-1dg-k8ieDNhrHg%3D%3D
 formats[15].vcodec: avc1.42001E
 formats[15].video_ext: mp4
 formats[15].width: 640
@@ -730,7 +730,7 @@ formats[16].abr: 0
 formats[16].acodec: none
 formats[16].aspect_ratio: 1.78
 formats[16].audio_ext: none
-formats[16].available_at: 1785385360
+formats[16].available_at: 1785483536
 formats[16].container: webm_dash
 formats[16].downloader_options.http_chunk_size: 10485760
 formats[16].dynamic_range: SDR
@@ -746,14 +746,14 @@ formats[16].height: 360
 formats[16].http_headers.Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8
 formats[16].http_headers.Accept-Language: en-us,en;q=0.5
 formats[16].http_headers.Sec-Fetch-Mode: navigate
-formats[16].http_headers.User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36
+formats[16].http_headers.User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36
 formats[16].language_preference: -1
 formats[16].protocol: https
 formats[16].quality: 6.0
 formats[16].resolution: 640x360
 formats[16].source_preference: -1
 formats[16].tbr: 344.006
-formats[16].url: https://rr3---sn-n4g-jqbed.googlevideo.com/videoplayback?expire=1785406960&ei=kNFqavG1F4rKp-oPmOGC8A4&ip=2a02%3A842a%3A4a2%3A8101%3Aa1ab%3Aaa16%3A79bc%3A4d4d&id=o-ALLgKrDojEq5JzSMr9_3VnPwXvWYTNoXtScWmmMrJgQL&itag=243&source=youtube&requiressl=yes&xpc=EgVo2aDSNQ%3D%3D&cps=328&met=1785385360%2C&mh=qp&mm=31%2C26&mn=sn-n4g-jqbed%2Csn-aigzrnld&ms=au%2Conr&mv=m&mvi=3&pl=43&rms=au%2Cau&initcwndbps=2533750&bui=AZFlqhNLGdiu_u091Iu0yHRrKak8AXstlM7O8NoeJep6jrb3b925sxTwcAIA41XWt9_ngOzekINaBnvL&spc=KBGBcs2ezCW6XO4YBRCiAjlJIQWLwaTwHCiZo8VtfA&vprv=1&svpuc=1&mime=video%2Fwebm&rqh=1&gir=yes&clen=44038106&dur=1024.123&lmt=1723840542616312&mt=1785384817&fvip=1&keepalive=yes&fexp=51565116%2C51946838&c=ANDROID_VR&txp=4535434&sparams=expire%2Cei%2Cip%2Cid%2Citag%2Csource%2Crequiressl%2Cxpc%2Cbui%2Cspc%2Cvprv%2Csvpuc%2Cmime%2Crqh%2Cgir%2Cclen%2Cdur%2Clmt&sig=AE0s2JYwRQIgPaIYAdf3qnT5DzXyOQrTlnRumz3hR0nMiC1DB4xz9N0CIQCysDgAqL1wKj831Brs9LnzU5BXsF_ZvuTZUE_ilMzf_A%3D%3D&lsparams=cps%2Cmet%2Cmh%2Cmm%2Cmn%2Cms%2Cmv%2Cmvi%2Cpl%2Crms%2Cinitcwndbps&lsig=APaTxxMwRAIgU_ndAyj4A13sCp9ZlfI4bkZj0C5pvlVVogQRTWTvWbcCICI3_OpndDKrZUPYGYNut1GEf_vFFg2mI0r_7CkFbTXy
+formats[16].url: https://rr3---sn-n4g-jqbed.googlevideo.com/videoplayback?expire=1785505136&ei=EFFsaqObJPeIvdIPhvPj8Qc&ip=2a02%3A842a%3A4a2%3A8101%3Abc5e%3A6f8a%3A38ff%3Ada6d&id=o-ANHPx4ddygcSjrZfaxdeMbAJu4nyUVStFJiQHHGJNP2P&itag=243&source=youtube&requiressl=yes&xpc=EgVo2aDSNQ%3D%3D&cps=349&met=1785483536%2C&mh=qp&mm=31%2C26&mn=sn-n4g-jqbed%2Csn-ajaig5-50&ms=au%2Conr&mv=m&mvi=3&pl=40&rms=au%2Cau&initcwndbps=2725000&bui=AZFlqhP7yrUHilEJMJiMb7z0s1dOPVNHGf74JfQn7pN9Pri3Rxx2A6kaJV8fOi66ie7ka60hI5iJJypx&spc=KBGBchD2aV8jcOModnDPahyld9Hf36PWRkMsvhm7mQYr&vprv=1&svpuc=1&mime=video%2Fwebm&rqh=1&gir=yes&clen=44038106&dur=1024.123&lmt=1723840542616312&mt=1785483225&fvip=5&keepalive=yes&fexp=51565116&c=ANDROID_VR&txp=4535434&sparams=expire%2Cei%2Cip%2Cid%2Citag%2Csource%2Crequiressl%2Cxpc%2Cbui%2Cspc%2Cvprv%2Csvpuc%2Cmime%2Crqh%2Cgir%2Cclen%2Cdur%2Clmt&sig=AE0s2JYwRAIgUqyPqGx56UvFJe1-ow8OwgNRQe1GyfAxvODNk9R3ErECIB9OjgXiGaaRTEH_Ah2mkz1QYjfHMA0vIYWUcQvRDwaB&lsparams=cps%2Cmet%2Cmh%2Cmm%2Cmn%2Cms%2Cmv%2Cmvi%2Cpl%2Crms%2Cinitcwndbps&lsig=APaTxxMwRQIgG8SUA53n7B0DR9VcVHipOoohQxmQHdsrfw2UCHwt0CgCIQCwRseYfSX8sslW6de2ck31VxAwsJQ-1dg-k8ieDNhrHg%3D%3D
 formats[16].vbr: 344.006
 formats[16].vcodec: vp9
 formats[16].video_ext: webm
@@ -762,7 +762,7 @@ formats[17].abr: 0
 formats[17].acodec: none
 formats[17].aspect_ratio: 1.78
 formats[17].audio_ext: none
-formats[17].available_at: 1785385360
+formats[17].available_at: 1785483536
 formats[17].container: mp4_dash
 formats[17].downloader_options.http_chunk_size: 10485760
 formats[17].dynamic_range: SDR
@@ -778,14 +778,14 @@ formats[17].height: 360
 formats[17].http_headers.Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8
 formats[17].http_headers.Accept-Language: en-us,en;q=0.5
 formats[17].http_headers.Sec-Fetch-Mode: navigate
-formats[17].http_headers.User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36
+formats[17].http_headers.User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36
 formats[17].language_preference: -1
 formats[17].protocol: https
 formats[17].quality: 6.0
 formats[17].resolution: 640x360
 formats[17].source_preference: -1
 formats[17].tbr: 261.082
-formats[17].url: https://rr3---sn-n4g-jqbed.googlevideo.com/videoplayback?expire=1785406960&ei=kNFqavG1F4rKp-oPmOGC8A4&ip=2a02%3A842a%3A4a2%3A8101%3Aa1ab%3Aaa16%3A79bc%3A4d4d&id=o-ALLgKrDojEq5JzSMr9_3VnPwXvWYTNoXtScWmmMrJgQL&itag=396&source=youtube&requiressl=yes&xpc=EgVo2aDSNQ%3D%3D&cps=328&met=1785385360%2C&mh=qp&mm=31%2C26&mn=sn-n4g-jqbed%2Csn-aigzrnld&ms=au%2Conr&mv=m&mvi=3&pl=43&rms=au%2Cau&initcwndbps=2533750&bui=AZFlqhNLGdiu_u091Iu0yHRrKak8AXstlM7O8NoeJep6jrb3b925sxTwcAIA41XWt9_ngOzekINaBnvL&spc=KBGBcs2ezCW6XO4YBRCiAjlJIQWLwaTwHCiZo8VtfA&vprv=1&svpuc=1&mime=video%2Fmp4&rqh=1&gir=yes&clen=33422668&dur=1024.124&lmt=1741817197335652&mt=1785384817&fvip=1&keepalive=yes&fexp=51565116%2C51946838&c=ANDROID_VR&txp=4537534&sparams=expire%2Cei%2Cip%2Cid%2Citag%2Csource%2Crequiressl%2Cxpc%2Cbui%2Cspc%2Cvprv%2Csvpuc%2Cmime%2Crqh%2Cgir%2Cclen%2Cdur%2Clmt&sig=AE0s2JYwRgIhAJXbhPH4lJVoZyKJ16P8jLheXBF-p2bM4q59NEXan7w3AiEAhXCtiCmdaDS4uYkOkkV7uv2dYD3yvMTfrspu0FoEu8k%3D&lsparams=cps%2Cmet%2Cmh%2Cmm%2Cmn%2Cms%2Cmv%2Cmvi%2Cpl%2Crms%2Cinitcwndbps&lsig=APaTxxMwRAIgU_ndAyj4A13sCp9ZlfI4bkZj0C5pvlVVogQRTWTvWbcCICI3_OpndDKrZUPYGYNut1GEf_vFFg2mI0r_7CkFbTXy
+formats[17].url: https://rr3---sn-n4g-jqbed.googlevideo.com/videoplayback?expire=1785505136&ei=EFFsaqObJPeIvdIPhvPj8Qc&ip=2a02%3A842a%3A4a2%3A8101%3Abc5e%3A6f8a%3A38ff%3Ada6d&id=o-ANHPx4ddygcSjrZfaxdeMbAJu4nyUVStFJiQHHGJNP2P&itag=396&source=youtube&requiressl=yes&xpc=EgVo2aDSNQ%3D%3D&cps=349&met=1785483536%2C&mh=qp&mm=31%2C26&mn=sn-n4g-jqbed%2Csn-ajaig5-50&ms=au%2Conr&mv=m&mvi=3&pl=40&rms=au%2Cau&initcwndbps=2725000&bui=AZFlqhP7yrUHilEJMJiMb7z0s1dOPVNHGf74JfQn7pN9Pri3Rxx2A6kaJV8fOi66ie7ka60hI5iJJypx&spc=KBGBchD2aV8jcOModnDPahyld9Hf36PWRkMsvhm7mQYr&vprv=1&svpuc=1&mime=video%2Fmp4&rqh=1&gir=yes&clen=33422668&dur=1024.124&lmt=1741817197335652&mt=1785483225&fvip=5&keepalive=yes&fexp=51565116&c=ANDROID_VR&txp=4537534&sparams=expire%2Cei%2Cip%2Cid%2Citag%2Csource%2Crequiressl%2Cxpc%2Cbui%2Cspc%2Cvprv%2Csvpuc%2Cmime%2Crqh%2Cgir%2Cclen%2Cdur%2Clmt&sig=AE0s2JYwRgIhALqxFRfriWNBMlay3I4dGnPUzxZCkUp1zjKhDHaJ5vaUAiEA6OTM22RcZ9sRSSyXXTVcCyeSCaRr9KJL4Z_1rkDaRRM%3D&lsparams=cps%2Cmet%2Cmh%2Cmm%2Cmn%2Cms%2Cmv%2Cmvi%2Cpl%2Crms%2Cinitcwndbps&lsig=APaTxxMwRQIgG8SUA53n7B0DR9VcVHipOoohQxmQHdsrfw2UCHwt0CgCIQCwRseYfSX8sslW6de2ck31VxAwsJQ-1dg-k8ieDNhrHg%3D%3D
 formats[17].vbr: 261.082
 formats[17].vcodec: av01.0.01M.08
 formats[17].video_ext: mp4
@@ -794,7 +794,7 @@ formats[18].abr: 0
 formats[18].acodec: none
 formats[18].aspect_ratio: 1.78
 formats[18].audio_ext: none
-formats[18].available_at: 1785385360
+formats[18].available_at: 1785483536
 formats[18].container: mp4_dash
 formats[18].downloader_options.http_chunk_size: 10485760
 formats[18].dynamic_range: SDR
@@ -810,14 +810,14 @@ formats[18].height: 480
 formats[18].http_headers.Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8
 formats[18].http_headers.Accept-Language: en-us,en;q=0.5
 formats[18].http_headers.Sec-Fetch-Mode: navigate
-formats[18].http_headers.User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36
+formats[18].http_headers.User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36
 formats[18].language_preference: -1
 formats[18].protocol: https
 formats[18].quality: 7.0
 formats[18].resolution: 854x480
 formats[18].source_preference: -1
 formats[18].tbr: 517.103
-formats[18].url: https://rr3---sn-n4g-jqbed.googlevideo.com/videoplayback?expire=1785406960&ei=kNFqavG1F4rKp-oPmOGC8A4&ip=2a02%3A842a%3A4a2%3A8101%3Aa1ab%3Aaa16%3A79bc%3A4d4d&id=o-ALLgKrDojEq5JzSMr9_3VnPwXvWYTNoXtScWmmMrJgQL&itag=135&source=youtube&requiressl=yes&xpc=EgVo2aDSNQ%3D%3D&cps=328&met=1785385360%2C&mh=qp&mm=31%2C26&mn=sn-n4g-jqbed%2Csn-aigzrnld&ms=au%2Conr&mv=m&mvi=3&pl=43&rms=au%2Cau&initcwndbps=2533750&bui=AZFlqhNLGdiu_u091Iu0yHRrKak8AXstlM7O8NoeJep6jrb3b925sxTwcAIA41XWt9_ngOzekINaBnvL&spc=KBGBcs2ezCW6XO4YBRCiAjlJIQWLwaTwHCiZo8VtfA&vprv=1&svpuc=1&mime=video%2Fmp4&rqh=1&gir=yes&clen=66197245&dur=1024.124&lmt=1723832373888526&mt=1785384817&fvip=1&keepalive=yes&fexp=51565116%2C51946838&c=ANDROID_VR&txp=4535434&sparams=expire%2Cei%2Cip%2Cid%2Citag%2Csource%2Crequiressl%2Cxpc%2Cbui%2Cspc%2Cvprv%2Csvpuc%2Cmime%2Crqh%2Cgir%2Cclen%2Cdur%2Clmt&sig=AE0s2JYwRQIgdaSjSnZTmBDuXLhhfGcz0Pz84y3FWypNsZrXwSuvdZsCIQCjCqBoyau49-eeSEleFTJ5Ea06X_EjpdkmUuw-3C0dEg%3D%3D&lsparams=cps%2Cmet%2Cmh%2Cmm%2Cmn%2Cms%2Cmv%2Cmvi%2Cpl%2Crms%2Cinitcwndbps&lsig=APaTxxMwRAIgU_ndAyj4A13sCp9ZlfI4bkZj0C5pvlVVogQRTWTvWbcCICI3_OpndDKrZUPYGYNut1GEf_vFFg2mI0r_7CkFbTXy
+formats[18].url: https://rr3---sn-n4g-jqbed.googlevideo.com/videoplayback?expire=1785505136&ei=EFFsaqObJPeIvdIPhvPj8Qc&ip=2a02%3A842a%3A4a2%3A8101%3Abc5e%3A6f8a%3A38ff%3Ada6d&id=o-ANHPx4ddygcSjrZfaxdeMbAJu4nyUVStFJiQHHGJNP2P&itag=135&source=youtube&requiressl=yes&xpc=EgVo2aDSNQ%3D%3D&cps=349&met=1785483536%2C&mh=qp&mm=31%2C26&mn=sn-n4g-jqbed%2Csn-ajaig5-50&ms=au%2Conr&mv=m&mvi=3&pl=40&rms=au%2Cau&initcwndbps=2725000&bui=AZFlqhP7yrUHilEJMJiMb7z0s1dOPVNHGf74JfQn7pN9Pri3Rxx2A6kaJV8fOi66ie7ka60hI5iJJypx&spc=KBGBchD2aV8jcOModnDPahyld9Hf36PWRkMsvhm7mQYr&vprv=1&svpuc=1&mime=video%2Fmp4&rqh=1&gir=yes&clen=66197245&dur=1024.124&lmt=1723832373888526&mt=1785483225&fvip=5&keepalive=yes&fexp=51565116&c=ANDROID_VR&txp=4535434&sparams=expire%2Cei%2Cip%2Cid%2Citag%2Csource%2Crequiressl%2Cxpc%2Cbui%2Cspc%2Cvprv%2Csvpuc%2Cmime%2Crqh%2Cgir%2Cclen%2Cdur%2Clmt&sig=AE0s2JYwRQIhALs93nBSM32Hr_4YEn0gkiIl61pbEo9eTKxf6B21Na6BAiBGEZC6wMA5LXykF_npcYtQ45ScaAAcIxif_0I1zns8-A%3D%3D&lsparams=cps%2Cmet%2Cmh%2Cmm%2Cmn%2Cms%2Cmv%2Cmvi%2Cpl%2Crms%2Cinitcwndbps&lsig=APaTxxMwRQIgG8SUA53n7B0DR9VcVHipOoohQxmQHdsrfw2UCHwt0CgCIQCwRseYfSX8sslW6de2ck31VxAwsJQ-1dg-k8ieDNhrHg%3D%3D
 formats[18].vbr: 517.103
 formats[18].vcodec: avc1.4d401f
 formats[18].video_ext: mp4
@@ -826,7 +826,7 @@ formats[19].abr: 0
 formats[19].acodec: none
 formats[19].aspect_ratio: 1.78
 formats[19].audio_ext: none
-formats[19].available_at: 1785385360
+formats[19].available_at: 1785483536
 formats[19].container: webm_dash
 formats[19].downloader_options.http_chunk_size: 10485760
 formats[19].dynamic_range: SDR
@@ -842,14 +842,14 @@ formats[19].height: 480
 formats[19].http_headers.Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8
 formats[19].http_headers.Accept-Language: en-us,en;q=0.5
 formats[19].http_headers.Sec-Fetch-Mode: navigate
-formats[19].http_headers.User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36
+formats[19].http_headers.User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36
 formats[19].language_preference: -1
 formats[19].protocol: https
 formats[19].quality: 7.0
 formats[19].resolution: 854x480
 formats[19].source_preference: -1
 formats[19].tbr: 587.85
-formats[19].url: https://rr3---sn-n4g-jqbed.googlevideo.com/videoplayback?expire=1785406960&ei=kNFqavG1F4rKp-oPmOGC8A4&ip=2a02%3A842a%3A4a2%3A8101%3Aa1ab%3Aaa16%3A79bc%3A4d4d&id=o-ALLgKrDojEq5JzSMr9_3VnPwXvWYTNoXtScWmmMrJgQL&itag=244&source=youtube&requiressl=yes&xpc=EgVo2aDSNQ%3D%3D&cps=328&met=1785385360%2C&mh=qp&mm=31%2C26&mn=sn-n4g-jqbed%2Csn-aigzrnld&ms=au%2Conr&mv=m&mvi=3&pl=43&rms=au%2Cau&initcwndbps=2533750&bui=AZFlqhNLGdiu_u091Iu0yHRrKak8AXstlM7O8NoeJep6jrb3b925sxTwcAIA41XWt9_ngOzekINaBnvL&spc=KBGBcs2ezCW6XO4YBRCiAjlJIQWLwaTwHCiZo8VtfA&vprv=1&svpuc=1&mime=video%2Fwebm&rqh=1&gir=yes&clen=75253909&dur=1024.123&lmt=1723840569752752&mt=1785384817&fvip=1&keepalive=yes&fexp=51565116%2C51946838&c=ANDROID_VR&txp=4535434&sparams=expire%2Cei%2Cip%2Cid%2Citag%2Csource%2Crequiressl%2Cxpc%2Cbui%2Cspc%2Cvprv%2Csvpuc%2Cmime%2Crqh%2Cgir%2Cclen%2Cdur%2Clmt&sig=AE0s2JYwRQIhALofQoQXRZt7i_T8B7qWgCTTVHEeRtMJ2ftf2HAnYF6zAiBuJF-86BXdoMTZps1_HGxQYFHp4yNWi54iFBbxmosoRA%3D%3D&lsparams=cps%2Cmet%2Cmh%2Cmm%2Cmn%2Cms%2Cmv%2Cmvi%2Cpl%2Crms%2Cinitcwndbps&lsig=APaTxxMwRAIgU_ndAyj4A13sCp9ZlfI4bkZj0C5pvlVVogQRTWTvWbcCICI3_OpndDKrZUPYGYNut1GEf_vFFg2mI0r_7CkFbTXy
+formats[19].url: https://rr3---sn-n4g-jqbed.googlevideo.com/videoplayback?expire=1785505136&ei=EFFsaqObJPeIvdIPhvPj8Qc&ip=2a02%3A842a%3A4a2%3A8101%3Abc5e%3A6f8a%3A38ff%3Ada6d&id=o-ANHPx4ddygcSjrZfaxdeMbAJu4nyUVStFJiQHHGJNP2P&itag=244&source=youtube&requiressl=yes&xpc=EgVo2aDSNQ%3D%3D&cps=349&met=1785483536%2C&mh=qp&mm=31%2C26&mn=sn-n4g-jqbed%2Csn-ajaig5-50&ms=au%2Conr&mv=m&mvi=3&pl=40&rms=au%2Cau&initcwndbps=2725000&bui=AZFlqhP7yrUHilEJMJiMb7z0s1dOPVNHGf74JfQn7pN9Pri3Rxx2A6kaJV8fOi66ie7ka60hI5iJJypx&spc=KBGBchD2aV8jcOModnDPahyld9Hf36PWRkMsvhm7mQYr&vprv=1&svpuc=1&mime=video%2Fwebm&rqh=1&gir=yes&clen=75253909&dur=1024.123&lmt=1723840569752752&mt=1785483225&fvip=5&keepalive=yes&fexp=51565116&c=ANDROID_VR&txp=4535434&sparams=expire%2Cei%2Cip%2Cid%2Citag%2Csource%2Crequiressl%2Cxpc%2Cbui%2Cspc%2Cvprv%2Csvpuc%2Cmime%2Crqh%2Cgir%2Cclen%2Cdur%2Clmt&sig=AE0s2JYwRQIhAOiHOki-e9z-F0tX7Q365Vc2KAZ6h9SsqFfUIVUW3cWLAiArvNmQD3_rYeo_a7sZW85xp6tWyN0F9MpONlN3-YUzKw%3D%3D&lsparams=cps%2Cmet%2Cmh%2Cmm%2Cmn%2Cms%2Cmv%2Cmvi%2Cpl%2Crms%2Cinitcwndbps&lsig=APaTxxMwRQIgG8SUA53n7B0DR9VcVHipOoohQxmQHdsrfw2UCHwt0CgCIQCwRseYfSX8sslW6de2ck31VxAwsJQ-1dg-k8ieDNhrHg%3D%3D
 formats[19].vbr: 587.85
 formats[19].vcodec: vp9
 formats[19].video_ext: webm
@@ -858,7 +858,7 @@ formats[20].abr: 0
 formats[20].acodec: none
 formats[20].aspect_ratio: 1.78
 formats[20].audio_ext: none
-formats[20].available_at: 1785385360
+formats[20].available_at: 1785483536
 formats[20].container: mp4_dash
 formats[20].downloader_options.http_chunk_size: 10485760
 formats[20].dynamic_range: SDR
@@ -874,14 +874,14 @@ formats[20].height: 480
 formats[20].http_headers.Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8
 formats[20].http_headers.Accept-Language: en-us,en;q=0.5
 formats[20].http_headers.Sec-Fetch-Mode: navigate
-formats[20].http_headers.User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36
+formats[20].http_headers.User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36
 formats[20].language_preference: -1
 formats[20].protocol: https
 formats[20].quality: 7.0
 formats[20].resolution: 854x480
 formats[20].source_preference: -1
 formats[20].tbr: 482.834
-formats[20].url: https://rr3---sn-n4g-jqbed.googlevideo.com/videoplayback?expire=1785406960&ei=kNFqavG1F4rKp-oPmOGC8A4&ip=2a02%3A842a%3A4a2%3A8101%3Aa1ab%3Aaa16%3A79bc%3A4d4d&id=o-ALLgKrDojEq5JzSMr9_3VnPwXvWYTNoXtScWmmMrJgQL&itag=397&source=youtube&requiressl=yes&xpc=EgVo2aDSNQ%3D%3D&cps=328&met=1785385360%2C&mh=qp&mm=31%2C26&mn=sn-n4g-jqbed%2Csn-aigzrnld&ms=au%2Conr&mv=m&mvi=3&pl=43&rms=au%2Cau&initcwndbps=2533750&bui=AZFlqhNLGdiu_u091Iu0yHRrKak8AXstlM7O8NoeJep6jrb3b925sxTwcAIA41XWt9_ngOzekINaBnvL&spc=KBGBcs2ezCW6XO4YBRCiAjlJIQWLwaTwHCiZo8VtfA&vprv=1&svpuc=1&mime=video%2Fmp4&rqh=1&gir=yes&clen=61810253&dur=1024.124&lmt=1741827618303898&mt=1785384817&fvip=1&keepalive=yes&fexp=51565116%2C51946838&c=ANDROID_VR&txp=4537534&sparams=expire%2Cei%2Cip%2Cid%2Citag%2Csource%2Crequiressl%2Cxpc%2Cbui%2Cspc%2Cvprv%2Csvpuc%2Cmime%2Crqh%2Cgir%2Cclen%2Cdur%2Clmt&sig=AE0s2JYwRAIgam-RFZlgpj1JikFa1_H7B0J8PLOIFI4cwUK3DY8OxwwCICBKU73TNDEG6qaJ_l95ynEq3mAOwzMd7icwxXH_PxD6&lsparams=cps%2Cmet%2Cmh%2Cmm%2Cmn%2Cms%2Cmv%2Cmvi%2Cpl%2Crms%2Cinitcwndbps&lsig=APaTxxMwRAIgU_ndAyj4A13sCp9ZlfI4bkZj0C5pvlVVogQRTWTvWbcCICI3_OpndDKrZUPYGYNut1GEf_vFFg2mI0r_7CkFbTXy
+formats[20].url: https://rr3---sn-n4g-jqbed.googlevideo.com/videoplayback?expire=1785505136&ei=EFFsaqObJPeIvdIPhvPj8Qc&ip=2a02%3A842a%3A4a2%3A8101%3Abc5e%3A6f8a%3A38ff%3Ada6d&id=o-ANHPx4ddygcSjrZfaxdeMbAJu4nyUVStFJiQHHGJNP2P&itag=397&source=youtube&requiressl=yes&xpc=EgVo2aDSNQ%3D%3D&cps=349&met=1785483536%2C&mh=qp&mm=31%2C26&mn=sn-n4g-jqbed%2Csn-ajaig5-50&ms=au%2Conr&mv=m&mvi=3&pl=40&rms=au%2Cau&initcwndbps=2725000&bui=AZFlqhP7yrUHilEJMJiMb7z0s1dOPVNHGf74JfQn7pN9Pri3Rxx2A6kaJV8fOi66ie7ka60hI5iJJypx&spc=KBGBchD2aV8jcOModnDPahyld9Hf36PWRkMsvhm7mQYr&vprv=1&svpuc=1&mime=video%2Fmp4&rqh=1&gir=yes&clen=61810253&dur=1024.124&lmt=1741827618303898&mt=1785483225&fvip=5&keepalive=yes&fexp=51565116&c=ANDROID_VR&txp=4537534&sparams=expire%2Cei%2Cip%2Cid%2Citag%2Csource%2Crequiressl%2Cxpc%2Cbui%2Cspc%2Cvprv%2Csvpuc%2Cmime%2Crqh%2Cgir%2Cclen%2Cdur%2Clmt&sig=AE0s2JYwRQIgMHV57wRoAN8CHOTu0wJZz5P8ILzxXvgrlMJXGJ7jyGQCIQCbdtm8VL6SlaAjj5VlEGJ6nEc5fxHF8uLO58jRoBuM3Q%3D%3D&lsparams=cps%2Cmet%2Cmh%2Cmm%2Cmn%2Cms%2Cmv%2Cmvi%2Cpl%2Crms%2Cinitcwndbps&lsig=APaTxxMwRQIgG8SUA53n7B0DR9VcVHipOoohQxmQHdsrfw2UCHwt0CgCIQCwRseYfSX8sslW6de2ck31VxAwsJQ-1dg-k8ieDNhrHg%3D%3D
 formats[20].vbr: 482.834
 formats[20].vcodec: av01.0.04M.08
 formats[20].video_ext: mp4
@@ -890,7 +890,7 @@ formats[21].abr: 0
 formats[21].acodec: none
 formats[21].aspect_ratio: 1.78
 formats[21].audio_ext: none
-formats[21].available_at: 1785385360
+formats[21].available_at: 1785483536
 formats[21].container: mp4_dash
 formats[21].downloader_options.http_chunk_size: 10485760
 formats[21].dynamic_range: SDR
@@ -906,14 +906,14 @@ formats[21].height: 720
 formats[21].http_headers.Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8
 formats[21].http_headers.Accept-Language: en-us,en;q=0.5
 formats[21].http_headers.Sec-Fetch-Mode: navigate
-formats[21].http_headers.User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36
+formats[21].http_headers.User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36
 formats[21].language_preference: -1
 formats[21].protocol: https
 formats[21].quality: 8.0
 formats[21].resolution: 1280x720
 formats[21].source_preference: -1
 formats[21].tbr: 1008.535
-formats[21].url: https://rr3---sn-n4g-jqbed.googlevideo.com/videoplayback?expire=1785406960&ei=kNFqavG1F4rKp-oPmOGC8A4&ip=2a02%3A842a%3A4a2%3A8101%3Aa1ab%3Aaa16%3A79bc%3A4d4d&id=o-ALLgKrDojEq5JzSMr9_3VnPwXvWYTNoXtScWmmMrJgQL&itag=298&source=youtube&requiressl=yes&xpc=EgVo2aDSNQ%3D%3D&cps=328&met=1785385360%2C&mh=qp&mm=31%2C26&mn=sn-n4g-jqbed%2Csn-aigzrnld&ms=au%2Conr&mv=m&mvi=3&pl=43&rms=au%2Cau&initcwndbps=2533750&bui=AZFlqhNLGdiu_u091Iu0yHRrKak8AXstlM7O8NoeJep6jrb3b925sxTwcAIA41XWt9_ngOzekINaBnvL&spc=KBGBcs2ezCW6XO4YBRCiAjlJIQWLwaTwHCiZo8VtfA&vprv=1&svpuc=1&mime=video%2Fmp4&rqh=1&gir=yes&clen=129108010&dur=1024.123&lmt=1723831262438283&mt=1785384817&fvip=1&keepalive=yes&fexp=51565116%2C51946838&c=ANDROID_VR&txp=4535434&sparams=expire%2Cei%2Cip%2Cid%2Citag%2Csource%2Crequiressl%2Cxpc%2Cbui%2Cspc%2Cvprv%2Csvpuc%2Cmime%2Crqh%2Cgir%2Cclen%2Cdur%2Clmt&sig=AE0s2JYwRQIhAJLlt68xmQQBXkRXAZUSbsltauEm_wuZC5V9VDJ8iH23AiBXXfdjvCg30WafrnovDoZsL2V9L-iWC7erszsNmGFO9g%3D%3D&lsparams=cps%2Cmet%2Cmh%2Cmm%2Cmn%2Cms%2Cmv%2Cmvi%2Cpl%2Crms%2Cinitcwndbps&lsig=APaTxxMwRAIgU_ndAyj4A13sCp9ZlfI4bkZj0C5pvlVVogQRTWTvWbcCICI3_OpndDKrZUPYGYNut1GEf_vFFg2mI0r_7CkFbTXy
+formats[21].url: https://rr3---sn-n4g-jqbed.googlevideo.com/videoplayback?expire=1785505136&ei=EFFsaqObJPeIvdIPhvPj8Qc&ip=2a02%3A842a%3A4a2%3A8101%3Abc5e%3A6f8a%3A38ff%3Ada6d&id=o-ANHPx4ddygcSjrZfaxdeMbAJu4nyUVStFJiQHHGJNP2P&itag=298&source=youtube&requiressl=yes&xpc=EgVo2aDSNQ%3D%3D&cps=349&met=1785483536%2C&mh=qp&mm=31%2C26&mn=sn-n4g-jqbed%2Csn-ajaig5-50&ms=au%2Conr&mv=m&mvi=3&pl=40&rms=au%2Cau&initcwndbps=2725000&bui=AZFlqhP7yrUHilEJMJiMb7z0s1dOPVNHGf74JfQn7pN9Pri3Rxx2A6kaJV8fOi66ie7ka60hI5iJJypx&spc=KBGBchD2aV8jcOModnDPahyld9Hf36PWRkMsvhm7mQYr&vprv=1&svpuc=1&mime=video%2Fmp4&rqh=1&gir=yes&clen=129108010&dur=1024.123&lmt=1723831262438283&mt=1785483225&fvip=5&keepalive=yes&fexp=51565116&c=ANDROID_VR&txp=4535434&sparams=expire%2Cei%2Cip%2Cid%2Citag%2Csource%2Crequiressl%2Cxpc%2Cbui%2Cspc%2Cvprv%2Csvpuc%2Cmime%2Crqh%2Cgir%2Cclen%2Cdur%2Clmt&sig=AE0s2JYwRAIgKBfuRRUUcyIeXuiSu-TR6pbDO9dQwg9ApEjULLNZ-EsCIA3npHhjbJ5TTshP1nQ04jyPYetEJoJOUj-lwMecQXI8&lsparams=cps%2Cmet%2Cmh%2Cmm%2Cmn%2Cms%2Cmv%2Cmvi%2Cpl%2Crms%2Cinitcwndbps&lsig=APaTxxMwRQIgG8SUA53n7B0DR9VcVHipOoohQxmQHdsrfw2UCHwt0CgCIQCwRseYfSX8sslW6de2ck31VxAwsJQ-1dg-k8ieDNhrHg%3D%3D
 formats[21].vbr: 1008.535
 formats[21].vcodec: avc1.4d4020
 formats[21].video_ext: mp4
@@ -922,7 +922,7 @@ formats[22].abr: 0
 formats[22].acodec: none
 formats[22].aspect_ratio: 1.78
 formats[22].audio_ext: none
-formats[22].available_at: 1785385360
+formats[22].available_at: 1785483536
 formats[22].container: webm_dash
 formats[22].downloader_options.http_chunk_size: 10485760
 formats[22].dynamic_range: SDR
@@ -938,14 +938,14 @@ formats[22].height: 720
 formats[22].http_headers.Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8
 formats[22].http_headers.Accept-Language: en-us,en;q=0.5
 formats[22].http_headers.Sec-Fetch-Mode: navigate
-formats[22].http_headers.User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36
+formats[22].http_headers.User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36
 formats[22].language_preference: -1
 formats[22].protocol: https
 formats[22].quality: 8.0
 formats[22].resolution: 1280x720
 formats[22].source_preference: -1
 formats[22].tbr: 1764.39
-formats[22].url: https://rr3---sn-n4g-jqbed.googlevideo.com/videoplayback?expire=1785406960&ei=kNFqavG1F4rKp-oPmOGC8A4&ip=2a02%3A842a%3A4a2%3A8101%3Aa1ab%3Aaa16%3A79bc%3A4d4d&id=o-ALLgKrDojEq5JzSMr9_3VnPwXvWYTNoXtScWmmMrJgQL&itag=302&source=youtube&requiressl=yes&xpc=EgVo2aDSNQ%3D%3D&cps=328&met=1785385360%2C&mh=qp&mm=31%2C26&mn=sn-n4g-jqbed%2Csn-aigzrnld&ms=au%2Conr&mv=m&mvi=3&pl=43&rms=au%2Cau&initcwndbps=2533750&bui=AZFlqhNLGdiu_u091Iu0yHRrKak8AXstlM7O8NoeJep6jrb3b925sxTwcAIA41XWt9_ngOzekINaBnvL&spc=KBGBcs2ezCW6XO4YBRCiAjlJIQWLwaTwHCiZo8VtfA&vprv=1&svpuc=1&mime=video%2Fwebm&rqh=1&gir=yes&clen=225868831&dur=1024.122&lmt=1723837288461017&mt=1785384817&fvip=1&keepalive=yes&fexp=51565116%2C51946838&c=ANDROID_VR&txp=4535434&sparams=expire%2Cei%2Cip%2Cid%2Citag%2Csource%2Crequiressl%2Cxpc%2Cbui%2Cspc%2Cvprv%2Csvpuc%2Cmime%2Crqh%2Cgir%2Cclen%2Cdur%2Clmt&sig=AE0s2JYwRQIgT8baDieC1i2KtcITL-SE269SvZFb8WJGtDZB4NlqpZACIQCbadcMKlnkSxtLcN9wqlGW4X7APK54TACK3H2znoUR8A%3D%3D&lsparams=cps%2Cmet%2Cmh%2Cmm%2Cmn%2Cms%2Cmv%2Cmvi%2Cpl%2Crms%2Cinitcwndbps&lsig=APaTxxMwRAIgU_ndAyj4A13sCp9ZlfI4bkZj0C5pvlVVogQRTWTvWbcCICI3_OpndDKrZUPYGYNut1GEf_vFFg2mI0r_7CkFbTXy
+formats[22].url: https://rr3---sn-n4g-jqbed.googlevideo.com/videoplayback?expire=1785505136&ei=EFFsaqObJPeIvdIPhvPj8Qc&ip=2a02%3A842a%3A4a2%3A8101%3Abc5e%3A6f8a%3A38ff%3Ada6d&id=o-ANHPx4ddygcSjrZfaxdeMbAJu4nyUVStFJiQHHGJNP2P&itag=302&source=youtube&requiressl=yes&xpc=EgVo2aDSNQ%3D%3D&cps=349&met=1785483536%2C&mh=qp&mm=31%2C26&mn=sn-n4g-jqbed%2Csn-ajaig5-50&ms=au%2Conr&mv=m&mvi=3&pl=40&rms=au%2Cau&initcwndbps=2725000&bui=AZFlqhP7yrUHilEJMJiMb7z0s1dOPVNHGf74JfQn7pN9Pri3Rxx2A6kaJV8fOi66ie7ka60hI5iJJypx&spc=KBGBchD2aV8jcOModnDPahyld9Hf36PWRkMsvhm7mQYr&vprv=1&svpuc=1&mime=video%2Fwebm&rqh=1&gir=yes&clen=225868831&dur=1024.122&lmt=1723837288461017&mt=1785483225&fvip=5&keepalive=yes&fexp=51565116&c=ANDROID_VR&txp=4535434&sparams=expire%2Cei%2Cip%2Cid%2Citag%2Csource%2Crequiressl%2Cxpc%2Cbui%2Cspc%2Cvprv%2Csvpuc%2Cmime%2Crqh%2Cgir%2Cclen%2Cdur%2Clmt&sig=AE0s2JYwRQIgFd_l5agjwux4hqbuLCPG3mJ1W7b7tag7jgRzviLIwr0CIQCj-uAHQhdi1y7LZWRcc1GGEu3t4_DrxF0A3mpXqtsAPQ%3D%3D&lsparams=cps%2Cmet%2Cmh%2Cmm%2Cmn%2Cms%2Cmv%2Cmvi%2Cpl%2Crms%2Cinitcwndbps&lsig=APaTxxMwRQIgG8SUA53n7B0DR9VcVHipOoohQxmQHdsrfw2UCHwt0CgCIQCwRseYfSX8sslW6de2ck31VxAwsJQ-1dg-k8ieDNhrHg%3D%3D
 formats[22].vbr: 1764.39
 formats[22].vcodec: vp9
 formats[22].video_ext: webm
@@ -954,7 +954,7 @@ formats[23].abr: 0
 formats[23].acodec: none
 formats[23].aspect_ratio: 1.78
 formats[23].audio_ext: none
-formats[23].available_at: 1785385360
+formats[23].available_at: 1785483536
 formats[23].container: mp4_dash
 formats[23].downloader_options.http_chunk_size: 10485760
 formats[23].dynamic_range: SDR
@@ -970,14 +970,14 @@ formats[23].height: 720
 formats[23].http_headers.Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8
 formats[23].http_headers.Accept-Language: en-us,en;q=0.5
 formats[23].http_headers.Sec-Fetch-Mode: navigate
-formats[23].http_headers.User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36
+formats[23].http_headers.User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36
 formats[23].language_preference: -1
 formats[23].protocol: https
 formats[23].quality: 8.0
 formats[23].resolution: 1280x720
 formats[23].source_preference: -1
 formats[23].tbr: 1701.584
-formats[23].url: https://rr3---sn-n4g-jqbed.googlevideo.com/videoplayback?expire=1785406960&ei=kNFqavG1F4rKp-oPmOGC8A4&ip=2a02%3A842a%3A4a2%3A8101%3Aa1ab%3Aaa16%3A79bc%3A4d4d&id=o-ALLgKrDojEq5JzSMr9_3VnPwXvWYTNoXtScWmmMrJgQL&itag=398&source=youtube&requiressl=yes&xpc=EgVo2aDSNQ%3D%3D&cps=328&met=1785385360%2C&mh=qp&mm=31%2C26&mn=sn-n4g-jqbed%2Csn-aigzrnld&ms=au%2Conr&mv=m&mvi=3&pl=43&rms=au%2Cau&initcwndbps=2533750&bui=AZFlqhNLGdiu_u091Iu0yHRrKak8AXstlM7O8NoeJep6jrb3b925sxTwcAIA41XWt9_ngOzekINaBnvL&spc=KBGBcs2ezCW6XO4YBRCiAjlJIQWLwaTwHCiZo8VtfA&vprv=1&svpuc=1&mime=video%2Fmp4&rqh=1&gir=yes&clen=217828983&dur=1024.123&lmt=1741846651350295&mt=1785384817&fvip=1&keepalive=yes&fexp=51565116%2C51946838&c=ANDROID_VR&txp=4537534&sparams=expire%2Cei%2Cip%2Cid%2Citag%2Csource%2Crequiressl%2Cxpc%2Cbui%2Cspc%2Cvprv%2Csvpuc%2Cmime%2Crqh%2Cgir%2Cclen%2Cdur%2Clmt&sig=AE0s2JYwRAIgWjmqzZ6kCBCETXd_DDnwMfqMczxJ9Xf0QqVyQZUHF5sCIB3NVMyDaOHetyvNdIDH8MonUxFd0hloF9BYGQwQnl-J&lsparams=cps%2Cmet%2Cmh%2Cmm%2Cmn%2Cms%2Cmv%2Cmvi%2Cpl%2Crms%2Cinitcwndbps&lsig=APaTxxMwRAIgU_ndAyj4A13sCp9ZlfI4bkZj0C5pvlVVogQRTWTvWbcCICI3_OpndDKrZUPYGYNut1GEf_vFFg2mI0r_7CkFbTXy
+formats[23].url: https://rr3---sn-n4g-jqbed.googlevideo.com/videoplayback?expire=1785505136&ei=EFFsaqObJPeIvdIPhvPj8Qc&ip=2a02%3A842a%3A4a2%3A8101%3Abc5e%3A6f8a%3A38ff%3Ada6d&id=o-ANHPx4ddygcSjrZfaxdeMbAJu4nyUVStFJiQHHGJNP2P&itag=398&source=youtube&requiressl=yes&xpc=EgVo2aDSNQ%3D%3D&cps=349&met=1785483536%2C&mh=qp&mm=31%2C26&mn=sn-n4g-jqbed%2Csn-ajaig5-50&ms=au%2Conr&mv=m&mvi=3&pl=40&rms=au%2Cau&initcwndbps=2725000&bui=AZFlqhP7yrUHilEJMJiMb7z0s1dOPVNHGf74JfQn7pN9Pri3Rxx2A6kaJV8fOi66ie7ka60hI5iJJypx&spc=KBGBchD2aV8jcOModnDPahyld9Hf36PWRkMsvhm7mQYr&vprv=1&svpuc=1&mime=video%2Fmp4&rqh=1&gir=yes&clen=217828983&dur=1024.123&lmt=1741846651350295&mt=1785483225&fvip=5&keepalive=yes&fexp=51565116&c=ANDROID_VR&txp=4537534&sparams=expire%2Cei%2Cip%2Cid%2Citag%2Csource%2Crequiressl%2Cxpc%2Cbui%2Cspc%2Cvprv%2Csvpuc%2Cmime%2Crqh%2Cgir%2Cclen%2Cdur%2Clmt&sig=AE0s2JYwRQIgKG4PMkWf894ydBY6Ie22zkQd5cYj1MNVCeEZ06fYGhsCIQCA_NeJeUOYOp8gV6xZBe7H8E9vb1LAzOm9vRsfEEkUig%3D%3D&lsparams=cps%2Cmet%2Cmh%2Cmm%2Cmn%2Cms%2Cmv%2Cmvi%2Cpl%2Crms%2Cinitcwndbps&lsig=APaTxxMwRQIgG8SUA53n7B0DR9VcVHipOoohQxmQHdsrfw2UCHwt0CgCIQCwRseYfSX8sslW6de2ck31VxAwsJQ-1dg-k8ieDNhrHg%3D%3D
 formats[23].vbr: 1701.584
 formats[23].vcodec: av01.0.08M.08
 formats[23].video_ext: mp4
@@ -986,7 +986,7 @@ formats[24].abr: 0
 formats[24].acodec: none
 formats[24].aspect_ratio: 1.78
 formats[24].audio_ext: none
-formats[24].available_at: 1785385360
+formats[24].available_at: 1785483536
 formats[24].container: mp4_dash
 formats[24].downloader_options.http_chunk_size: 10485760
 formats[24].dynamic_range: SDR
@@ -1002,14 +1002,14 @@ formats[24].height: 1080
 formats[24].http_headers.Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8
 formats[24].http_headers.Accept-Language: en-us,en;q=0.5
 formats[24].http_headers.Sec-Fetch-Mode: navigate
-formats[24].http_headers.User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36
+formats[24].http_headers.User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36
 formats[24].language_preference: -1
 formats[24].protocol: https
 formats[24].quality: 9.0
 formats[24].resolution: 1920x1080
 formats[24].source_preference: -1
 formats[24].tbr: 4055.646
-formats[24].url: https://rr3---sn-n4g-jqbed.googlevideo.com/videoplayback?expire=1785406960&ei=kNFqavG1F4rKp-oPmOGC8A4&ip=2a02%3A842a%3A4a2%3A8101%3Aa1ab%3Aaa16%3A79bc%3A4d4d&id=o-ALLgKrDojEq5JzSMr9_3VnPwXvWYTNoXtScWmmMrJgQL&itag=299&source=youtube&requiressl=yes&xpc=EgVo2aDSNQ%3D%3D&cps=328&met=1785385360%2C&mh=qp&mm=31%2C26&mn=sn-n4g-jqbed%2Csn-aigzrnld&ms=au%2Conr&mv=m&mvi=3&pl=43&rms=au%2Cau&initcwndbps=2533750&bui=AZFlqhNLGdiu_u091Iu0yHRrKak8AXstlM7O8NoeJep6jrb3b925sxTwcAIA41XWt9_ngOzekINaBnvL&spc=KBGBcs2ezCW6XO4YBRCiAjlJIQWLwaTwHCiZo8VtfA&vprv=1&svpuc=1&mime=video%2Fmp4&rqh=1&gir=yes&clen=519185168&dur=1024.123&lmt=1723832288148318&mt=1785384817&fvip=1&keepalive=yes&fexp=51565116%2C51946838&c=ANDROID_VR&txp=4535434&sparams=expire%2Cei%2Cip%2Cid%2Citag%2Csource%2Crequiressl%2Cxpc%2Cbui%2Cspc%2Cvprv%2Csvpuc%2Cmime%2Crqh%2Cgir%2Cclen%2Cdur%2Clmt&sig=AE0s2JYwRgIhAIulZlcgFKKEe2xa93apEwv-NKGBgZK9a7OD46XQXDLDAiEA0kgBqEoInmu_GnUpa9hL8laXUjEXM7ewwCaVhTlAPUk%3D&lsparams=cps%2Cmet%2Cmh%2Cmm%2Cmn%2Cms%2Cmv%2Cmvi%2Cpl%2Crms%2Cinitcwndbps&lsig=APaTxxMwRAIgU_ndAyj4A13sCp9ZlfI4bkZj0C5pvlVVogQRTWTvWbcCICI3_OpndDKrZUPYGYNut1GEf_vFFg2mI0r_7CkFbTXy
+formats[24].url: https://rr3---sn-n4g-jqbed.googlevideo.com/videoplayback?expire=1785505136&ei=EFFsaqObJPeIvdIPhvPj8Qc&ip=2a02%3A842a%3A4a2%3A8101%3Abc5e%3A6f8a%3A38ff%3Ada6d&id=o-ANHPx4ddygcSjrZfaxdeMbAJu4nyUVStFJiQHHGJNP2P&itag=299&source=youtube&requiressl=yes&xpc=EgVo2aDSNQ%3D%3D&cps=349&met=1785483536%2C&mh=qp&mm=31%2C26&mn=sn-n4g-jqbed%2Csn-ajaig5-50&ms=au%2Conr&mv=m&mvi=3&pl=40&rms=au%2Cau&initcwndbps=2725000&bui=AZFlqhP7yrUHilEJMJiMb7z0s1dOPVNHGf74JfQn7pN9Pri3Rxx2A6kaJV8fOi66ie7ka60hI5iJJypx&spc=KBGBchD2aV8jcOModnDPahyld9Hf36PWRkMsvhm7mQYr&vprv=1&svpuc=1&mime=video%2Fmp4&rqh=1&gir=yes&clen=519185168&dur=1024.123&lmt=1723832288148318&mt=1785483225&fvip=5&keepalive=yes&fexp=51565116&c=ANDROID_VR&txp=4535434&sparams=expire%2Cei%2Cip%2Cid%2Citag%2Csource%2Crequiressl%2Cxpc%2Cbui%2Cspc%2Cvprv%2Csvpuc%2Cmime%2Crqh%2Cgir%2Cclen%2Cdur%2Clmt&sig=AE0s2JYwRAIgdsq4W3CibbiBSzwbTNp-iFAsQOIqiE_2CqhhsKDU2P0CIFW3JkXsSWcZF14q6aytA1qLw75HrcD6WYZ3UWDXtBRi&lsparams=cps%2Cmet%2Cmh%2Cmm%2Cmn%2Cms%2Cmv%2Cmvi%2Cpl%2Crms%2Cinitcwndbps&lsig=APaTxxMwRQIgG8SUA53n7B0DR9VcVHipOoohQxmQHdsrfw2UCHwt0CgCIQCwRseYfSX8sslW6de2ck31VxAwsJQ-1dg-k8ieDNhrHg%3D%3D
 formats[24].vbr: 4055.646
 formats[24].vcodec: avc1.64002a
 formats[24].video_ext: mp4
@@ -1018,7 +1018,7 @@ formats[25].abr: 0
 formats[25].acodec: none
 formats[25].aspect_ratio: 1.78
 formats[25].audio_ext: none
-formats[25].available_at: 1785385360
+formats[25].available_at: 1785483536
 formats[25].container: webm_dash
 formats[25].downloader_options.http_chunk_size: 10485760
 formats[25].dynamic_range: SDR
@@ -1034,14 +1034,14 @@ formats[25].height: 1080
 formats[25].http_headers.Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8
 formats[25].http_headers.Accept-Language: en-us,en;q=0.5
 formats[25].http_headers.Sec-Fetch-Mode: navigate
-formats[25].http_headers.User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36
+formats[25].http_headers.User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36
 formats[25].language_preference: -1
 formats[25].protocol: https
 formats[25].quality: 9.0
 formats[25].resolution: 1920x1080
 formats[25].source_preference: -1
 formats[25].tbr: 4077.575
-formats[25].url: https://rr3---sn-n4g-jqbed.googlevideo.com/videoplayback?expire=1785406960&ei=kNFqavG1F4rKp-oPmOGC8A4&ip=2a02%3A842a%3A4a2%3A8101%3Aa1ab%3Aaa16%3A79bc%3A4d4d&id=o-ALLgKrDojEq5JzSMr9_3VnPwXvWYTNoXtScWmmMrJgQL&itag=303&source=youtube&requiressl=yes&xpc=EgVo2aDSNQ%3D%3D&cps=328&met=1785385360%2C&mh=qp&mm=31%2C26&mn=sn-n4g-jqbed%2Csn-aigzrnld&ms=au%2Conr&mv=m&mvi=3&pl=43&rms=au%2Cau&initcwndbps=2533750&bui=AZFlqhNLGdiu_u091Iu0yHRrKak8AXstlM7O8NoeJep6jrb3b925sxTwcAIA41XWt9_ngOzekINaBnvL&spc=KBGBcs2ezCW6XO4YBRCiAjlJIQWLwaTwHCiZo8VtfA&vprv=1&svpuc=1&mime=video%2Fwebm&rqh=1&gir=yes&clen=521991794&dur=1024.122&lmt=1723839582470938&mt=1785384817&fvip=1&keepalive=yes&fexp=51565116%2C51946838&c=ANDROID_VR&txp=4535434&sparams=expire%2Cei%2Cip%2Cid%2Citag%2Csource%2Crequiressl%2Cxpc%2Cbui%2Cspc%2Cvprv%2Csvpuc%2Cmime%2Crqh%2Cgir%2Cclen%2Cdur%2Clmt&sig=AE0s2JYwRgIhANzjZcBoR6xiHWBblmFfQZZUd4gByuFDH-tX0OEPkdmCAiEA11a8a7OBGnm0ycoPP6lh0_AuDo-gt5TgaZ4HjbhB5JY%3D&lsparams=cps%2Cmet%2Cmh%2Cmm%2Cmn%2Cms%2Cmv%2Cmvi%2Cpl%2Crms%2Cinitcwndbps&lsig=APaTxxMwRAIgU_ndAyj4A13sCp9ZlfI4bkZj0C5pvlVVogQRTWTvWbcCICI3_OpndDKrZUPYGYNut1GEf_vFFg2mI0r_7CkFbTXy
+formats[25].url: https://rr3---sn-n4g-jqbed.googlevideo.com/videoplayback?expire=1785505136&ei=EFFsaqObJPeIvdIPhvPj8Qc&ip=2a02%3A842a%3A4a2%3A8101%3Abc5e%3A6f8a%3A38ff%3Ada6d&id=o-ANHPx4ddygcSjrZfaxdeMbAJu4nyUVStFJiQHHGJNP2P&itag=303&source=youtube&requiressl=yes&xpc=EgVo2aDSNQ%3D%3D&cps=349&met=1785483536%2C&mh=qp&mm=31%2C26&mn=sn-n4g-jqbed%2Csn-ajaig5-50&ms=au%2Conr&mv=m&mvi=3&pl=40&rms=au%2Cau&initcwndbps=2725000&bui=AZFlqhP7yrUHilEJMJiMb7z0s1dOPVNHGf74JfQn7pN9Pri3Rxx2A6kaJV8fOi66ie7ka60hI5iJJypx&spc=KBGBchD2aV8jcOModnDPahyld9Hf36PWRkMsvhm7mQYr&vprv=1&svpuc=1&mime=video%2Fwebm&rqh=1&gir=yes&clen=521991794&dur=1024.122&lmt=1723839582470938&mt=1785483225&fvip=5&keepalive=yes&fexp=51565116&c=ANDROID_VR&txp=4535434&sparams=expire%2Cei%2Cip%2Cid%2Citag%2Csource%2Crequiressl%2Cxpc%2Cbui%2Cspc%2Cvprv%2Csvpuc%2Cmime%2Crqh%2Cgir%2Cclen%2Cdur%2Clmt&sig=AE0s2JYwRAIgBgjPpn-TJ18pPufkU54sSQhoEb1QOAvvjpQOOTlaBbYCIAQMiyrNsCOyn4epvimViiMj0Zc4rgEWPBoQU_Wz5QCX&lsparams=cps%2Cmet%2Cmh%2Cmm%2Cmn%2Cms%2Cmv%2Cmvi%2Cpl%2Crms%2Cinitcwndbps&lsig=APaTxxMwRQIgG8SUA53n7B0DR9VcVHipOoohQxmQHdsrfw2UCHwt0CgCIQCwRseYfSX8sslW6de2ck31VxAwsJQ-1dg-k8ieDNhrHg%3D%3D
 formats[25].vbr: 4077.575
 formats[25].vcodec: vp9
 formats[25].video_ext: webm
@@ -1050,7 +1050,7 @@ formats[26].abr: 0
 formats[26].acodec: none
 formats[26].aspect_ratio: 1.78
 formats[26].audio_ext: none
-formats[26].available_at: 1785385360
+formats[26].available_at: 1785483536
 formats[26].container: mp4_dash
 formats[26].downloader_options.http_chunk_size: 10485760
 formats[26].dynamic_range: SDR
@@ -1066,14 +1066,14 @@ formats[26].height: 1080
 formats[26].http_headers.Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8
 formats[26].http_headers.Accept-Language: en-us,en;q=0.5
 formats[26].http_headers.Sec-Fetch-Mode: navigate
-formats[26].http_headers.User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36
+formats[26].http_headers.User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36
 formats[26].language_preference: -1
 formats[26].protocol: https
 formats[26].quality: 9.0
 formats[26].resolution: 1920x1080
 formats[26].source_preference: -1
 formats[26].tbr: 3372.554
-formats[26].url: https://rr3---sn-n4g-jqbed.googlevideo.com/videoplayback?expire=1785406960&ei=kNFqavG1F4rKp-oPmOGC8A4&ip=2a02%3A842a%3A4a2%3A8101%3Aa1ab%3Aaa16%3A79bc%3A4d4d&id=o-ALLgKrDojEq5JzSMr9_3VnPwXvWYTNoXtScWmmMrJgQL&itag=399&source=youtube&requiressl=yes&xpc=EgVo2aDSNQ%3D%3D&cps=328&met=1785385360%2C&mh=qp&mm=31%2C26&mn=sn-n4g-jqbed%2Csn-aigzrnld&ms=au%2Conr&mv=m&mvi=3&pl=43&rms=au%2Cau&initcwndbps=2533750&bui=AZFlqhNLGdiu_u091Iu0yHRrKak8AXstlM7O8NoeJep6jrb3b925sxTwcAIA41XWt9_ngOzekINaBnvL&spc=KBGBcs2ezCW6XO4YBRCiAjlJIQWLwaTwHCiZo8VtfA&vprv=1&svpuc=1&mime=video%2Fmp4&rqh=1&gir=yes&clen=431738854&dur=1024.123&lmt=1741879008811291&mt=1785384817&fvip=1&keepalive=yes&fexp=51565116%2C51946838&c=ANDROID_VR&txp=4537534&sparams=expire%2Cei%2Cip%2Cid%2Citag%2Csource%2Crequiressl%2Cxpc%2Cbui%2Cspc%2Cvprv%2Csvpuc%2Cmime%2Crqh%2Cgir%2Cclen%2Cdur%2Clmt&sig=AE0s2JYwRQIgQv315CNROGSmhiU3rb3El4SEG8gaqIkaGDIBVbgFIkoCIQCZLsVLLOunk3-EnWtrsymNEomiQznTnt0xyoMvo6nmRw%3D%3D&lsparams=cps%2Cmet%2Cmh%2Cmm%2Cmn%2Cms%2Cmv%2Cmvi%2Cpl%2Crms%2Cinitcwndbps&lsig=APaTxxMwRAIgU_ndAyj4A13sCp9ZlfI4bkZj0C5pvlVVogQRTWTvWbcCICI3_OpndDKrZUPYGYNut1GEf_vFFg2mI0r_7CkFbTXy
+formats[26].url: https://rr3---sn-n4g-jqbed.googlevideo.com/videoplayback?expire=1785505136&ei=EFFsaqObJPeIvdIPhvPj8Qc&ip=2a02%3A842a%3A4a2%3A8101%3Abc5e%3A6f8a%3A38ff%3Ada6d&id=o-ANHPx4ddygcSjrZfaxdeMbAJu4nyUVStFJiQHHGJNP2P&itag=399&source=youtube&requiressl=yes&xpc=EgVo2aDSNQ%3D%3D&cps=349&met=1785483536%2C&mh=qp&mm=31%2C26&mn=sn-n4g-jqbed%2Csn-ajaig5-50&ms=au%2Conr&mv=m&mvi=3&pl=40&rms=au%2Cau&initcwndbps=2725000&bui=AZFlqhP7yrUHilEJMJiMb7z0s1dOPVNHGf74JfQn7pN9Pri3Rxx2A6kaJV8fOi66ie7ka60hI5iJJypx&spc=KBGBchD2aV8jcOModnDPahyld9Hf36PWRkMsvhm7mQYr&vprv=1&svpuc=1&mime=video%2Fmp4&rqh=1&gir=yes&clen=431738854&dur=1024.123&lmt=1741879008811291&mt=1785483225&fvip=5&keepalive=yes&fexp=51565116&c=ANDROID_VR&txp=4537534&sparams=expire%2Cei%2Cip%2Cid%2Citag%2Csource%2Crequiressl%2Cxpc%2Cbui%2Cspc%2Cvprv%2Csvpuc%2Cmime%2Crqh%2Cgir%2Cclen%2Cdur%2Clmt&sig=AE0s2JYwRQIgGe7nNGfIRhfcqL3YIkQ_Arhrgf7IOmix3H-IxuNWm0cCIQCuZn9jldgDuv9SeORS5vj7dVGgh6yDY4m-6Mx2s2cG_g%3D%3D&lsparams=cps%2Cmet%2Cmh%2Cmm%2Cmn%2Cms%2Cmv%2Cmvi%2Cpl%2Crms%2Cinitcwndbps&lsig=APaTxxMwRQIgG8SUA53n7B0DR9VcVHipOoohQxmQHdsrfw2UCHwt0CgCIQCwRseYfSX8sslW6de2ck31VxAwsJQ-1dg-k8ieDNhrHg%3D%3D
 formats[26].vbr: 3372.554
 formats[26].vcodec: av01.0.09M.08
 formats[26].video_ext: mp4
@@ -1383,17 +1383,17 @@ heatmap[99].value: 0.11368493997406694
 height: 1080
 id: IY8BHSPhv90
 is_live: False
-like_count: 309516
+like_count: 309587
 live_status: not_live
 media_type: video
 n_entries: 60
 original_url: https://www.youtube.com/watch?v=IY8BHSPhv90
 playable_in_embed: True
 playlist: airplane pilot first person
-playlist_autonumber: 38
+playlist_autonumber: 51
 playlist_count: 60
 playlist_id: airplane pilot first person
-playlist_index: 38
+playlist_index: 51
 playlist_title: airplane pilot first person
 playlist_webpage_url: ytsearch60:airplane pilot first person
 protocol: https+https
@@ -1418,7 +1418,7 @@ requested_downloads[0].requested_formats[0].abr: 0
 requested_downloads[0].requested_formats[0].acodec: none
 requested_downloads[0].requested_formats[0].aspect_ratio: 1.78
 requested_downloads[0].requested_formats[0].audio_ext: none
-requested_downloads[0].requested_formats[0].available_at: 1785385360
+requested_downloads[0].requested_formats[0].available_at: 1785483536
 requested_downloads[0].requested_formats[0].container: mp4_dash
 requested_downloads[0].requested_formats[0].downloader_options.http_chunk_size: 10485760
 requested_downloads[0].requested_formats[0].dynamic_range: SDR
@@ -1434,14 +1434,14 @@ requested_downloads[0].requested_formats[0].height: 1080
 requested_downloads[0].requested_formats[0].http_headers.Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8
 requested_downloads[0].requested_formats[0].http_headers.Accept-Language: en-us,en;q=0.5
 requested_downloads[0].requested_formats[0].http_headers.Sec-Fetch-Mode: navigate
-requested_downloads[0].requested_formats[0].http_headers.User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36
+requested_downloads[0].requested_formats[0].http_headers.User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36
 requested_downloads[0].requested_formats[0].language_preference: -1
 requested_downloads[0].requested_formats[0].protocol: https
 requested_downloads[0].requested_formats[0].quality: 9.0
 requested_downloads[0].requested_formats[0].resolution: 1920x1080
 requested_downloads[0].requested_formats[0].source_preference: -1
 requested_downloads[0].requested_formats[0].tbr: 3372.554
-requested_downloads[0].requested_formats[0].url: https://rr3---sn-n4g-jqbed.googlevideo.com/videoplayback?expire=1785406960&ei=kNFqavG1F4rKp-oPmOGC8A4&ip=2a02%3A842a%3A4a2%3A8101%3Aa1ab%3Aaa16%3A79bc%3A4d4d&id=o-ALLgKrDojEq5JzSMr9_3VnPwXvWYTNoXtScWmmMrJgQL&itag=399&source=youtube&requiressl=yes&xpc=EgVo2aDSNQ%3D%3D&cps=328&met=1785385360%2C&mh=qp&mm=31%2C26&mn=sn-n4g-jqbed%2Csn-aigzrnld&ms=au%2Conr&mv=m&mvi=3&pl=43&rms=au%2Cau&initcwndbps=2533750&bui=AZFlqhNLGdiu_u091Iu0yHRrKak8AXstlM7O8NoeJep6jrb3b925sxTwcAIA41XWt9_ngOzekINaBnvL&spc=KBGBcs2ezCW6XO4YBRCiAjlJIQWLwaTwHCiZo8VtfA&vprv=1&svpuc=1&mime=video%2Fmp4&rqh=1&gir=yes&clen=431738854&dur=1024.123&lmt=1741879008811291&mt=1785384817&fvip=1&keepalive=yes&fexp=51565116%2C51946838&c=ANDROID_VR&txp=4537534&sparams=expire%2Cei%2Cip%2Cid%2Citag%2Csource%2Crequiressl%2Cxpc%2Cbui%2Cspc%2Cvprv%2Csvpuc%2Cmime%2Crqh%2Cgir%2Cclen%2Cdur%2Clmt&sig=AE0s2JYwRQIgQv315CNROGSmhiU3rb3El4SEG8gaqIkaGDIBVbgFIkoCIQCZLsVLLOunk3-EnWtrsymNEomiQznTnt0xyoMvo6nmRw%3D%3D&lsparams=cps%2Cmet%2Cmh%2Cmm%2Cmn%2Cms%2Cmv%2Cmvi%2Cpl%2Crms%2Cinitcwndbps&lsig=APaTxxMwRAIgU_ndAyj4A13sCp9ZlfI4bkZj0C5pvlVVogQRTWTvWbcCICI3_OpndDKrZUPYGYNut1GEf_vFFg2mI0r_7CkFbTXy
+requested_downloads[0].requested_formats[0].url: https://rr3---sn-n4g-jqbed.googlevideo.com/videoplayback?expire=1785505136&ei=EFFsaqObJPeIvdIPhvPj8Qc&ip=2a02%3A842a%3A4a2%3A8101%3Abc5e%3A6f8a%3A38ff%3Ada6d&id=o-ANHPx4ddygcSjrZfaxdeMbAJu4nyUVStFJiQHHGJNP2P&itag=399&source=youtube&requiressl=yes&xpc=EgVo2aDSNQ%3D%3D&cps=349&met=1785483536%2C&mh=qp&mm=31%2C26&mn=sn-n4g-jqbed%2Csn-ajaig5-50&ms=au%2Conr&mv=m&mvi=3&pl=40&rms=au%2Cau&initcwndbps=2725000&bui=AZFlqhP7yrUHilEJMJiMb7z0s1dOPVNHGf74JfQn7pN9Pri3Rxx2A6kaJV8fOi66ie7ka60hI5iJJypx&spc=KBGBchD2aV8jcOModnDPahyld9Hf36PWRkMsvhm7mQYr&vprv=1&svpuc=1&mime=video%2Fmp4&rqh=1&gir=yes&clen=431738854&dur=1024.123&lmt=1741879008811291&mt=1785483225&fvip=5&keepalive=yes&fexp=51565116&c=ANDROID_VR&txp=4537534&sparams=expire%2Cei%2Cip%2Cid%2Citag%2Csource%2Crequiressl%2Cxpc%2Cbui%2Cspc%2Cvprv%2Csvpuc%2Cmime%2Crqh%2Cgir%2Cclen%2Cdur%2Clmt&sig=AE0s2JYwRQIgGe7nNGfIRhfcqL3YIkQ_Arhrgf7IOmix3H-IxuNWm0cCIQCuZn9jldgDuv9SeORS5vj7dVGgh6yDY4m-6Mx2s2cG_g%3D%3D&lsparams=cps%2Cmet%2Cmh%2Cmm%2Cmn%2Cms%2Cmv%2Cmvi%2Cpl%2Crms%2Cinitcwndbps&lsig=APaTxxMwRQIgG8SUA53n7B0DR9VcVHipOoohQxmQHdsrfw2UCHwt0CgCIQCwRseYfSX8sslW6de2ck31VxAwsJQ-1dg-k8ieDNhrHg%3D%3D
 requested_downloads[0].requested_formats[0].vbr: 3372.554
 requested_downloads[0].requested_formats[0].vcodec: av01.0.09M.08
 requested_downloads[0].requested_formats[0].video_ext: mp4
@@ -1451,7 +1451,7 @@ requested_downloads[0].requested_formats[1].acodec: opus
 requested_downloads[0].requested_formats[1].asr: 48000
 requested_downloads[0].requested_formats[1].audio_channels: 2
 requested_downloads[0].requested_formats[1].audio_ext: webm
-requested_downloads[0].requested_formats[1].available_at: 1785385360
+requested_downloads[0].requested_formats[1].available_at: 1785483536
 requested_downloads[0].requested_formats[1].container: webm_dash
 requested_downloads[0].requested_formats[1].downloader_options.http_chunk_size: 10485760
 requested_downloads[0].requested_formats[1].ext: webm
@@ -1464,14 +1464,14 @@ requested_downloads[0].requested_formats[1].has_drm: False
 requested_downloads[0].requested_formats[1].http_headers.Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8
 requested_downloads[0].requested_formats[1].http_headers.Accept-Language: en-us,en;q=0.5
 requested_downloads[0].requested_formats[1].http_headers.Sec-Fetch-Mode: navigate
-requested_downloads[0].requested_formats[1].http_headers.User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36
+requested_downloads[0].requested_formats[1].http_headers.User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36
 requested_downloads[0].requested_formats[1].language_preference: -1
 requested_downloads[0].requested_formats[1].protocol: https
 requested_downloads[0].requested_formats[1].quality: 3.0
 requested_downloads[0].requested_formats[1].resolution: audio only
 requested_downloads[0].requested_formats[1].source_preference: -1
 requested_downloads[0].requested_formats[1].tbr: 99.29
-requested_downloads[0].requested_formats[1].url: https://rr3---sn-n4g-jqbed.googlevideo.com/videoplayback?expire=1785406960&ei=kNFqavG1F4rKp-oPmOGC8A4&ip=2a02%3A842a%3A4a2%3A8101%3Aa1ab%3Aaa16%3A79bc%3A4d4d&id=o-ALLgKrDojEq5JzSMr9_3VnPwXvWYTNoXtScWmmMrJgQL&itag=251&source=youtube&requiressl=yes&xpc=EgVo2aDSNQ%3D%3D&cps=328&met=1785385360%2C&mh=qp&mm=31%2C26&mn=sn-n4g-jqbed%2Csn-aigzrnld&ms=au%2Conr&mv=m&mvi=3&pl=43&rms=au%2Cau&initcwndbps=2533750&bui=AZFlqhNLGdiu_u091Iu0yHRrKak8AXstlM7O8NoeJep6jrb3b925sxTwcAIA41XWt9_ngOzekINaBnvL&spc=KBGBcs2ezCW6XO4YBRCiAjlJIQWLwaTwHCiZo8VtfA&vprv=1&svpuc=1&mime=audio%2Fwebm&rqh=1&gir=yes&clen=12710932&dur=1024.141&lmt=1723815817390019&mt=1785384817&fvip=1&keepalive=yes&fexp=51565116%2C51946838&c=ANDROID_VR&txp=4532434&sparams=expire%2Cei%2Cip%2Cid%2Citag%2Csource%2Crequiressl%2Cxpc%2Cbui%2Cspc%2Cvprv%2Csvpuc%2Cmime%2Crqh%2Cgir%2Cclen%2Cdur%2Clmt&sig=AE0s2JYwRQIgXbIQOXNUvYBHB50xLIEXYMfyx0e8dCsCDH6aBYdrIuwCIQDs5y7phDPS5DWKy9JTWDGXH59H0aTTMTStoQxURxfZog%3D%3D&lsparams=cps%2Cmet%2Cmh%2Cmm%2Cmn%2Cms%2Cmv%2Cmvi%2Cpl%2Crms%2Cinitcwndbps&lsig=APaTxxMwRAIgU_ndAyj4A13sCp9ZlfI4bkZj0C5pvlVVogQRTWTvWbcCICI3_OpndDKrZUPYGYNut1GEf_vFFg2mI0r_7CkFbTXy
+requested_downloads[0].requested_formats[1].url: https://rr3---sn-n4g-jqbed.googlevideo.com/videoplayback?expire=1785505136&ei=EFFsaqObJPeIvdIPhvPj8Qc&ip=2a02%3A842a%3A4a2%3A8101%3Abc5e%3A6f8a%3A38ff%3Ada6d&id=o-ANHPx4ddygcSjrZfaxdeMbAJu4nyUVStFJiQHHGJNP2P&itag=251&source=youtube&requiressl=yes&xpc=EgVo2aDSNQ%3D%3D&cps=349&met=1785483536%2C&mh=qp&mm=31%2C26&mn=sn-n4g-jqbed%2Csn-ajaig5-50&ms=au%2Conr&mv=m&mvi=3&pl=40&rms=au%2Cau&initcwndbps=2725000&bui=AZFlqhP7yrUHilEJMJiMb7z0s1dOPVNHGf74JfQn7pN9Pri3Rxx2A6kaJV8fOi66ie7ka60hI5iJJypx&spc=KBGBchD2aV8jcOModnDPahyld9Hf36PWRkMsvhm7mQYr&vprv=1&svpuc=1&mime=audio%2Fwebm&rqh=1&gir=yes&clen=12710932&dur=1024.141&lmt=1723815817390019&mt=1785483225&fvip=5&keepalive=yes&fexp=51565116&c=ANDROID_VR&txp=4532434&sparams=expire%2Cei%2Cip%2Cid%2Citag%2Csource%2Crequiressl%2Cxpc%2Cbui%2Cspc%2Cvprv%2Csvpuc%2Cmime%2Crqh%2Cgir%2Cclen%2Cdur%2Clmt&sig=AE0s2JYwRAIgUOyvAC3EqkXOORY5pefuIW4beJYM4kj3y85r2-qoeAACICV7yJDfpk9EHdJ61KNtvbbZO13Pf1g5ZU4HNfOGJH3q&lsparams=cps%2Cmet%2Cmh%2Cmm%2Cmn%2Cms%2Cmv%2Cmvi%2Cpl%2Crms%2Cinitcwndbps&lsig=APaTxxMwRQIgG8SUA53n7B0DR9VcVHipOoohQxmQHdsrfw2UCHwt0CgCIQCwRseYfSX8sslW6de2ck31VxAwsJQ-1dg-k8ieDNhrHg%3D%3D
 requested_downloads[0].requested_formats[1].vbr: 0
 requested_downloads[0].requested_formats[1].vcodec: none
 requested_downloads[0].requested_formats[1].video_ext: none
@@ -1484,7 +1484,7 @@ requested_formats[0].abr: 0
 requested_formats[0].acodec: none
 requested_formats[0].aspect_ratio: 1.78
 requested_formats[0].audio_ext: none
-requested_formats[0].available_at: 1785385360
+requested_formats[0].available_at: 1785483536
 requested_formats[0].container: mp4_dash
 requested_formats[0].downloader_options.http_chunk_size: 10485760
 requested_formats[0].dynamic_range: SDR
@@ -1500,14 +1500,14 @@ requested_formats[0].height: 1080
 requested_formats[0].http_headers.Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8
 requested_formats[0].http_headers.Accept-Language: en-us,en;q=0.5
 requested_formats[0].http_headers.Sec-Fetch-Mode: navigate
-requested_formats[0].http_headers.User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36
+requested_formats[0].http_headers.User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36
 requested_formats[0].language_preference: -1
 requested_formats[0].protocol: https
 requested_formats[0].quality: 9.0
 requested_formats[0].resolution: 1920x1080
 requested_formats[0].source_preference: -1
 requested_formats[0].tbr: 3372.554
-requested_formats[0].url: https://rr3---sn-n4g-jqbed.googlevideo.com/videoplayback?expire=1785406960&ei=kNFqavG1F4rKp-oPmOGC8A4&ip=2a02%3A842a%3A4a2%3A8101%3Aa1ab%3Aaa16%3A79bc%3A4d4d&id=o-ALLgKrDojEq5JzSMr9_3VnPwXvWYTNoXtScWmmMrJgQL&itag=399&source=youtube&requiressl=yes&xpc=EgVo2aDSNQ%3D%3D&cps=328&met=1785385360%2C&mh=qp&mm=31%2C26&mn=sn-n4g-jqbed%2Csn-aigzrnld&ms=au%2Conr&mv=m&mvi=3&pl=43&rms=au%2Cau&initcwndbps=2533750&bui=AZFlqhNLGdiu_u091Iu0yHRrKak8AXstlM7O8NoeJep6jrb3b925sxTwcAIA41XWt9_ngOzekINaBnvL&spc=KBGBcs2ezCW6XO4YBRCiAjlJIQWLwaTwHCiZo8VtfA&vprv=1&svpuc=1&mime=video%2Fmp4&rqh=1&gir=yes&clen=431738854&dur=1024.123&lmt=1741879008811291&mt=1785384817&fvip=1&keepalive=yes&fexp=51565116%2C51946838&c=ANDROID_VR&txp=4537534&sparams=expire%2Cei%2Cip%2Cid%2Citag%2Csource%2Crequiressl%2Cxpc%2Cbui%2Cspc%2Cvprv%2Csvpuc%2Cmime%2Crqh%2Cgir%2Cclen%2Cdur%2Clmt&sig=AE0s2JYwRQIgQv315CNROGSmhiU3rb3El4SEG8gaqIkaGDIBVbgFIkoCIQCZLsVLLOunk3-EnWtrsymNEomiQznTnt0xyoMvo6nmRw%3D%3D&lsparams=cps%2Cmet%2Cmh%2Cmm%2Cmn%2Cms%2Cmv%2Cmvi%2Cpl%2Crms%2Cinitcwndbps&lsig=APaTxxMwRAIgU_ndAyj4A13sCp9ZlfI4bkZj0C5pvlVVogQRTWTvWbcCICI3_OpndDKrZUPYGYNut1GEf_vFFg2mI0r_7CkFbTXy
+requested_formats[0].url: https://rr3---sn-n4g-jqbed.googlevideo.com/videoplayback?expire=1785505136&ei=EFFsaqObJPeIvdIPhvPj8Qc&ip=2a02%3A842a%3A4a2%3A8101%3Abc5e%3A6f8a%3A38ff%3Ada6d&id=o-ANHPx4ddygcSjrZfaxdeMbAJu4nyUVStFJiQHHGJNP2P&itag=399&source=youtube&requiressl=yes&xpc=EgVo2aDSNQ%3D%3D&cps=349&met=1785483536%2C&mh=qp&mm=31%2C26&mn=sn-n4g-jqbed%2Csn-ajaig5-50&ms=au%2Conr&mv=m&mvi=3&pl=40&rms=au%2Cau&initcwndbps=2725000&bui=AZFlqhP7yrUHilEJMJiMb7z0s1dOPVNHGf74JfQn7pN9Pri3Rxx2A6kaJV8fOi66ie7ka60hI5iJJypx&spc=KBGBchD2aV8jcOModnDPahyld9Hf36PWRkMsvhm7mQYr&vprv=1&svpuc=1&mime=video%2Fmp4&rqh=1&gir=yes&clen=431738854&dur=1024.123&lmt=1741879008811291&mt=1785483225&fvip=5&keepalive=yes&fexp=51565116&c=ANDROID_VR&txp=4537534&sparams=expire%2Cei%2Cip%2Cid%2Citag%2Csource%2Crequiressl%2Cxpc%2Cbui%2Cspc%2Cvprv%2Csvpuc%2Cmime%2Crqh%2Cgir%2Cclen%2Cdur%2Clmt&sig=AE0s2JYwRQIgGe7nNGfIRhfcqL3YIkQ_Arhrgf7IOmix3H-IxuNWm0cCIQCuZn9jldgDuv9SeORS5vj7dVGgh6yDY4m-6Mx2s2cG_g%3D%3D&lsparams=cps%2Cmet%2Cmh%2Cmm%2Cmn%2Cms%2Cmv%2Cmvi%2Cpl%2Crms%2Cinitcwndbps&lsig=APaTxxMwRQIgG8SUA53n7B0DR9VcVHipOoohQxmQHdsrfw2UCHwt0CgCIQCwRseYfSX8sslW6de2ck31VxAwsJQ-1dg-k8ieDNhrHg%3D%3D
 requested_formats[0].vbr: 3372.554
 requested_formats[0].vcodec: av01.0.09M.08
 requested_formats[0].video_ext: mp4
@@ -1517,7 +1517,7 @@ requested_formats[1].acodec: opus
 requested_formats[1].asr: 48000
 requested_formats[1].audio_channels: 2
 requested_formats[1].audio_ext: webm
-requested_formats[1].available_at: 1785385360
+requested_formats[1].available_at: 1785483536
 requested_formats[1].container: webm_dash
 requested_formats[1].downloader_options.http_chunk_size: 10485760
 requested_formats[1].ext: webm
@@ -1530,14 +1530,14 @@ requested_formats[1].has_drm: False
 requested_formats[1].http_headers.Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8
 requested_formats[1].http_headers.Accept-Language: en-us,en;q=0.5
 requested_formats[1].http_headers.Sec-Fetch-Mode: navigate
-requested_formats[1].http_headers.User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36
+requested_formats[1].http_headers.User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36
 requested_formats[1].language_preference: -1
 requested_formats[1].protocol: https
 requested_formats[1].quality: 3.0
 requested_formats[1].resolution: audio only
 requested_formats[1].source_preference: -1
 requested_formats[1].tbr: 99.29
-requested_formats[1].url: https://rr3---sn-n4g-jqbed.googlevideo.com/videoplayback?expire=1785406960&ei=kNFqavG1F4rKp-oPmOGC8A4&ip=2a02%3A842a%3A4a2%3A8101%3Aa1ab%3Aaa16%3A79bc%3A4d4d&id=o-ALLgKrDojEq5JzSMr9_3VnPwXvWYTNoXtScWmmMrJgQL&itag=251&source=youtube&requiressl=yes&xpc=EgVo2aDSNQ%3D%3D&cps=328&met=1785385360%2C&mh=qp&mm=31%2C26&mn=sn-n4g-jqbed%2Csn-aigzrnld&ms=au%2Conr&mv=m&mvi=3&pl=43&rms=au%2Cau&initcwndbps=2533750&bui=AZFlqhNLGdiu_u091Iu0yHRrKak8AXstlM7O8NoeJep6jrb3b925sxTwcAIA41XWt9_ngOzekINaBnvL&spc=KBGBcs2ezCW6XO4YBRCiAjlJIQWLwaTwHCiZo8VtfA&vprv=1&svpuc=1&mime=audio%2Fwebm&rqh=1&gir=yes&clen=12710932&dur=1024.141&lmt=1723815817390019&mt=1785384817&fvip=1&keepalive=yes&fexp=51565116%2C51946838&c=ANDROID_VR&txp=4532434&sparams=expire%2Cei%2Cip%2Cid%2Citag%2Csource%2Crequiressl%2Cxpc%2Cbui%2Cspc%2Cvprv%2Csvpuc%2Cmime%2Crqh%2Cgir%2Cclen%2Cdur%2Clmt&sig=AE0s2JYwRQIgXbIQOXNUvYBHB50xLIEXYMfyx0e8dCsCDH6aBYdrIuwCIQDs5y7phDPS5DWKy9JTWDGXH59H0aTTMTStoQxURxfZog%3D%3D&lsparams=cps%2Cmet%2Cmh%2Cmm%2Cmn%2Cms%2Cmv%2Cmvi%2Cpl%2Crms%2Cinitcwndbps&lsig=APaTxxMwRAIgU_ndAyj4A13sCp9ZlfI4bkZj0C5pvlVVogQRTWTvWbcCICI3_OpndDKrZUPYGYNut1GEf_vFFg2mI0r_7CkFbTXy
+requested_formats[1].url: https://rr3---sn-n4g-jqbed.googlevideo.com/videoplayback?expire=1785505136&ei=EFFsaqObJPeIvdIPhvPj8Qc&ip=2a02%3A842a%3A4a2%3A8101%3Abc5e%3A6f8a%3A38ff%3Ada6d&id=o-ANHPx4ddygcSjrZfaxdeMbAJu4nyUVStFJiQHHGJNP2P&itag=251&source=youtube&requiressl=yes&xpc=EgVo2aDSNQ%3D%3D&cps=349&met=1785483536%2C&mh=qp&mm=31%2C26&mn=sn-n4g-jqbed%2Csn-ajaig5-50&ms=au%2Conr&mv=m&mvi=3&pl=40&rms=au%2Cau&initcwndbps=2725000&bui=AZFlqhP7yrUHilEJMJiMb7z0s1dOPVNHGf74JfQn7pN9Pri3Rxx2A6kaJV8fOi66ie7ka60hI5iJJypx&spc=KBGBchD2aV8jcOModnDPahyld9Hf36PWRkMsvhm7mQYr&vprv=1&svpuc=1&mime=audio%2Fwebm&rqh=1&gir=yes&clen=12710932&dur=1024.141&lmt=1723815817390019&mt=1785483225&fvip=5&keepalive=yes&fexp=51565116&c=ANDROID_VR&txp=4532434&sparams=expire%2Cei%2Cip%2Cid%2Citag%2Csource%2Crequiressl%2Cxpc%2Cbui%2Cspc%2Cvprv%2Csvpuc%2Cmime%2Crqh%2Cgir%2Cclen%2Cdur%2Clmt&sig=AE0s2JYwRAIgUOyvAC3EqkXOORY5pefuIW4beJYM4kj3y85r2-qoeAACICV7yJDfpk9EHdJ61KNtvbbZO13Pf1g5ZU4HNfOGJH3q&lsparams=cps%2Cmet%2Cmh%2Cmm%2Cmn%2Cms%2Cmv%2Cmvi%2Cpl%2Crms%2Cinitcwndbps&lsig=APaTxxMwRQIgG8SUA53n7B0DR9VcVHipOoohQxmQHdsrfw2UCHwt0CgCIQCwRseYfSX8sslW6de2ck31VxAwsJQ-1dg-k8ieDNhrHg%3D%3D
 requested_formats[1].vbr: 0
 requested_formats[1].vcodec: none
 requested_formats[1].video_ext: none
@@ -1706,7 +1706,7 @@ uploader_id: @AfterburnDefense
 uploader_url: https://www.youtube.com/@AfterburnDefense
 vbr: 3372.554
 vcodec: av01.0.09M.08
-view_count: 43898178
+view_count: 43912771
 was_live: False
 webpage_url: https://www.youtube.com/watch?v=IY8BHSPhv90
 webpage_url_basename: watch

@@ -12,6 +12,9 @@ function normalizeLiveInput(result, customerCode) {
     const webRTC = result.webRTC;
     const playback = result.playback;
     const playbackHls = typeof playback?.hls === 'string' ? playback.hls : null;
+    const meta = result.meta;
+    const name = typeof meta?.name === 'string' ? meta.name : typeof result.name === 'string' ? result.name : 'Untitled';
+    const connected = (result.connected === true || result.status === 'connected');
     return {
         liveInputId: uid,
         uid,
@@ -19,6 +22,8 @@ function normalizeLiveInput(result, customerCode) {
         hlsManifestUrl: playbackHls ?? hlsUrl(customerCode, uid),
         ingestUrl: typeof rtmps?.url === 'string' ? rtmps.url : typeof srt?.url === 'string' ? srt.url : typeof webRTC?.url === 'string' ? webRTC.url : null,
         streamKey: typeof rtmps?.streamKey === 'string' ? rtmps.streamKey : typeof srt?.streamId === 'string' ? srt.streamId : null,
+        name,
+        connected,
     };
 }
 export function createCloudflareClient() {
@@ -88,5 +93,22 @@ export function createCloudflareClient() {
         async deleteLiveInput(liveInputId) {
             await request(`/live_inputs/${encodeURIComponent(liveInputId)}`, { method: 'DELETE' });
         },
+        async listLiveInputs() {
+            const result = await request('/live_inputs', { method: 'GET' });
+            if (!result || !Array.isArray(result))
+                return [];
+            return result.map(item => normalizeLiveInput(item, env.customerCode));
+        },
     };
+}
+export async function listLiveInputs() {
+    const client = createCloudflareClient();
+    return client.listLiveInputs();
+}
+export async function createLiveInput(input) {
+    const client = createCloudflareClient();
+    return client.createLiveInput({
+        streamId: input.name,
+        title: input.name,
+    });
 }

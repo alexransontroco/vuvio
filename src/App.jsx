@@ -43,6 +43,8 @@ const FollowingPage       = lazy(() => import('./routes/FollowingPage.jsx'));
 const AnalyticsPage       = lazy(() => import('./routes/AnalyticsPage.jsx'));
 const DesktopLayout       = lazy(() => import('./components/desktop/DesktopLayout.jsx'));
 const SplashTestPage      = lazy(() => import('./routes/SplashTestPage.jsx'));
+const CloudflareTestPage  = lazy(() => import('./routes/CloudflareTestPage.jsx'));
+const AgentsPage          = lazy(() => import('./routes/AgentsPage.jsx'));
 
 function RouteFallback() {
   const { t } = useTranslation();
@@ -73,9 +75,11 @@ export default function App() {
     <Routes>
       {/* ── Public standalone ── */}
       <Route path="/vision" element={<Lazy component={VisionPage} />} />
+      <Route path="/agents" element={<Lazy component={AgentsPage} />} />
       <Route path="/live/:liveId/recap" element={<Lazy component={LiveRecapPage} />} />
       <Route path="/test/live-recap" element={<Lazy component={LiveRecapPage} />} />
       <Route path="/desktop" element={<Lazy component={DesktopLayout} />} />
+      <Route path="/cloudflare-test" element={<Lazy component={CloudflareTestPage} />} />
       <Route path="/onboarding-test" element={<Lazy component={OnboardingTestPage} />} />
       <Route path="/test/splash" element={<SplashTestPage />} />
 

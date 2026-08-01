@@ -1,14 +1,30 @@
-# Phase 1.5: Backend Analytics Events Ingestion — Complete
+# Phase 1.5: Backend Analytics Events Ingestion — Code Complete (Not Deployed)
 
 **Completed:** 2026-07-30  
-**Status:** ✅ Production Ready  
-**Endpoint:** `POST /api/analytics/events`
+**Code Status:** ✅ Production Ready  
+**Deployment Status:** ⏸️ Blocked (Firebase Spark Plan)  
+**Endpoint:** `POST /api/analytics/events` (NOT ACTIVE IN PRODUCTION)
+
+---
+
+## ⚠️ Important: Deployment Status
+
+**This code is written and ready, but NOT DEPLOYED.**
+
+- ✅ Code is production-ready
+- ✅ Cloud Functions compiles successfully
+- ✅ Routing configured
+- ❌ **Cannot deploy to Firebase** - Project requires Blaze plan
+- ❌ **Endpoint does NOT exist in production** - Returns 404 errors
+- ⏸️ Blocked until Firebase upgrades from Spark to Blaze
+
+**Current behavior:** Frontend events queue locally and retry sending every 30 seconds, but requests fail with 404 (endpoint not found).
 
 ---
 
 ## What Was Built
 
-### Endpoint: POST /api/analytics/events
+### Endpoint: POST /api/analytics/events (Not Yet Deployed)
 
 A single Cloud Function that receives analytics event batches from the frontend and:
 1. **Validates** each event
@@ -325,6 +341,7 @@ Expected response:
 
 ## Production Checklist
 
+### Code Completeness
 - [x] Endpoint implemented
 - [x] Validation working
 - [x] Deduplication working
@@ -332,9 +349,16 @@ Expected response:
 - [x] Stats update working
 - [x] Error handling working
 - [x] TypeScript compiling
-- [ ] Deployed to production
-- [ ] Tested end-to-end with real users
-- [ ] Monitoring set up (error rate, latency)
+
+### Deployment (BLOCKED)
+- [ ] Deployed to production ⏸️ Blocked by Firebase Spark plan
+- [ ] Tested end-to-end with real users ⏸️ Can't test without backend
+- [ ] Monitoring set up (error rate, latency) ⏸️ Can't monitor without deployment
+
+### To Unblock Deployment
+1. Upgrade Firebase project to Blaze plan
+2. Run `firebase deploy --only functions`
+3. Then complete remaining checklist items
 
 ---
 

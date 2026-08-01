@@ -243,10 +243,12 @@ After implementing your choice:
 
 - [ ] Code compiles (`npm run build`)
 - [ ] No console errors
-- [ ] Network requests sent to `/api/analytics/events`
-- [ ] Events appear in Firestore
-- [ ] Data has correct eventName
-- [ ] Data has streamId and creatorId
+- [ ] Network requests sent to `/api/analytics/events` ⚠️ (will fail with 404 - backend not deployed)
+- [ ] Events queued in localStorage (`vuvio:analytics-queue`) ✅ (this works now)
+- [ ] Data in queue has correct eventName
+- [ ] Data in queue has streamId and creatorId
+
+**Note:** Events cannot reach Firestore yet because Phase 1.5 backend isn't deployed (Firebase Spark plan). Events queue locally and will submit automatically once backend goes live.
 
 ---
 
@@ -262,13 +264,21 @@ After implementing your choice:
 → Check browser console for `[Analytics]` logs
 
 ### "Events in queue but not sent"
-→ Check Network tab: is POST happening?
-→ Check `/api/analytics/events` response
-→ Might be backend issue (Phase 1.5)
+→ **This is expected!** Backend not deployed yet (Firebase Spark plan)
+→ Check DevTools → Application → Local Storage → `vuvio:analytics-queue`
+→ Should see events queued and waiting
+→ Events will send automatically once backend is deployed
+
+### "Network shows 404 on analytics endpoint"
+→ **This is expected!** The endpoint doesn't exist yet
+→ Firebase project still on Spark plan (free tier)
+→ Cloud Functions only available on Blaze (paid tier)
+→ Events queue locally and will retry automatically
 
 ### "Data missing in Firestore"
-→ Check Firestore collection: `analyticsEvents`
-→ Check if Backend received events (check `/api` logs)
+→ **Expected** - Firestore doesn't have events because endpoint not deployed
+→ Phase 1.5 backend blocked by Firebase Spark plan
+→ Once backend deployed, events will flow and Firestore will populate
 
 ---
 

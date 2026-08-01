@@ -14,6 +14,7 @@ import { trackStreamEvent } from './analytics/trackStreamEvent.js';
 import { ingestEvents } from './analytics/ingestEvents.js';
 import { aggregateStreamStats, aggregateCreatorStats, aggregateCategoryStats, aggregateUserAnalytics } from './analytics/aggregateStats.js';
 import { cloudflareWebhook } from './cloudflare/cloudflareWebhook.js';
+import { getCloudflareConfig, getCloudflareInputs, postCreateTestInput } from './cloudflare/testRouteHandlers.js';
 import { monitorStreamHeartbeats } from './streams/monitorStreamHeartbeats.js';
 import { processProductImage } from './products/processProductImage.js';
 
@@ -53,6 +54,11 @@ export const api = onRequest({
     if (req.method === 'POST' && parts[0] === 'analytics' && parts[1] === 'events') return await ingestEvents(req, res);
     if (req.method === 'POST' && parts[0] === 'webhooks' && parts[1] === 'cloudflare') return await cloudflareWebhook(req, res);
     if (req.method === 'POST' && parts[0] === 'products' && parts[1] === 'process-image') return await processProductImage(req, res);
+
+    // Cloudflare test routes
+    if (req.method === 'GET' && parts[0] === 'cloudflare' && parts[1] === 'config') return await getCloudflareConfig(req, res);
+    if (req.method === 'GET' && parts[0] === 'cloudflare' && parts[1] === 'inputs') return await getCloudflareInputs(req, res);
+    if (req.method === 'POST' && parts[0] === 'cloudflare' && parts[1] === 'create-test-input') return await postCreateTestInput(req, res);
 
     throw new ApiError('not_found', 'Route not found');
   } catch (error) {

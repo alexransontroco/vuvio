@@ -210,34 +210,44 @@ export default function OnboardingPage() {
     e.target.value = '';
   };
 
-  const next = async () => {
+  const handleContinue = async () => {
+    console.log('[Onboarding] Continue clicked, step:', step);
     setError('');
 
     if (step === 1) {
+      if (username) {
+        const err = validateUsername(username);
+        if (err) {
+          console.log('[Onboarding] Username error:', err);
+          setUsernameError(err);
+          return;
+        }
+        setUsernameError('');
+      }
+
       setBusy(true);
       try {
         if (username) {
-          const validErr = validateUsername(username);
-          if (validErr) {
-            setUsernameError(validErr);
-            return;
-          }
-          const available = await isUsernameAvailable(username);
-          if (!available) {
-            setUsernameError('This username is already taken.');
+          const avail = await isUsernameAvailable(username);
+          if (!avail) {
+            setUsernameError('Username taken');
+            setBusy(false);
             return;
           }
         }
+        console.log('[Onboarding] Step 1 OK, moving to step 2');
         setStep(2);
-      } catch (err) {
-        setError(err.message || 'Could not validate this username. Please try again.');
-      } finally {
+        setBusy(false);
+      } catch (e) {
+        console.error('[Onboarding] Step 1 error:', e);
+        setError(e.message || 'Error');
         setBusy(false);
       }
       return;
     }
 
     if (step === 2) {
+      console.log('[Onboarding] Moving to step 3');
       setStep(3);
       return;
     }
@@ -245,37 +255,37 @@ export default function OnboardingPage() {
     if (step === 3) {
       setBusy(true);
       try {
-        if (!user?.uid) {
-          throw new Error('Your session is still loading. Please try again.');
-        }
+        if (!user?.uid) throw new Error('No user session');
 
         let photoURL = userProfile?.photoURL || null;
-
-        if (avatarDataUrl && user?.uid) {
+        if (avatarDataUrl && user.uid) {
           try {
             const ext = avatarDataUrl.startsWith('data:image/png') ? 'png' : 'jpg';
             const ref = storageRef(storage, `users/${user.uid}/profile/avatar.${ext}`);
             await uploadString(ref, avatarDataUrl, 'data_url');
             photoURL = await getDownloadURL(ref);
-          } catch { /* skip avatar upload if storage fails */ }
+          } catch (e) {
+            console.warn('[Onboarding] Avatar upload failed:', e);
+          }
         }
-
-        const updates = {
-          displayName: displayName.trim() || userProfile?.displayName || '',
-          preferredCategories: selected,
-          onboardingCompleted: true,
-          photoURL,
-        };
 
         if (username) {
           await reserveUsername(user.uid, username);
         }
 
-        await updateProfile(updates);
+        await updateProfile({
+          displayName: displayName.trim() || '',
+          preferredCategories: selected,
+          onboardingCompleted: true,
+          photoURL,
+        });
+
         await refreshUserProfile();
+        console.log('[Onboarding] Complete, navigating to:', returnTo);
         navigate(returnTo, { replace: true });
-      } catch (err) {
-        setError(err.message || 'Something went wrong. Please try again.');
+      } catch (e) {
+        console.error('[Onboarding] Step 3 error:', e);
+        setError(e.message || 'Error');
         setBusy(false);
       }
     }
@@ -334,7 +344,7 @@ export default function OnboardingPage() {
         <button
           type="button"
           className="auth-submit"
-          onClick={next}
+          onClick={handleContinue}
           disabled={busy}
         >
           {busy ? <span className="auth-submit__spinner" aria-hidden="true" /> : <Sparkles size={16} strokeWidth={2} aria-hidden="true" />}

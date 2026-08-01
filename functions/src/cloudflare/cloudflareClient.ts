@@ -8,12 +8,15 @@ export interface CloudflareLiveInput {
   hlsManifestUrl: string | null;
   ingestUrl: string | null;
   streamKey: string | null;
+  name?: string;
+  connected?: boolean;
 }
 
 export interface CloudflareClient {
   createLiveInput(input: { streamId: string; title: string }): Promise<CloudflareLiveInput>;
   getLiveInput(liveInputId: string): Promise<CloudflareLiveInput>;
   deleteLiveInput(liveInputId: string): Promise<void>;
+  listLiveInputs(): Promise<CloudflareLiveInput[]>;
 }
 
 function hlsUrl(customerCode: string, uid: string | null) {
@@ -28,6 +31,9 @@ function normalizeLiveInput(result: Record<string, unknown>, customerCode: strin
   const webRTC = result.webRTC as Record<string, unknown> | undefined;
   const playback = result.playback as Record<string, unknown> | undefined;
   const playbackHls = typeof playback?.hls === 'string' ? playback.hls : null;
+  const meta = result.meta as Record<string, unknown> | undefined;
+  const name = typeof meta?.name === 'string' ? meta.name : typeof result.name === 'string' ? result.name : 'Untitled';
+  const connected = (result.connected === true || result.status === 'connected');
 
   return {
     liveInputId: uid,
@@ -36,6 +42,8 @@ function normalizeLiveInput(result: Record<string, unknown>, customerCode: strin
     hlsManifestUrl: playbackHls ?? hlsUrl(customerCode, uid),
     ingestUrl: typeof rtmps?.url === 'string' ? rtmps.url : typeof srt?.url === 'string' ? srt.url : typeof webRTC?.url === 'string' ? webRTC.url : null,
     streamKey: typeof rtmps?.streamKey === 'string' ? rtmps.streamKey : typeof srt?.streamId === 'string' ? srt.streamId : null,
+    name,
+    connected,
   };
 }
 
@@ -108,5 +116,24 @@ export function createCloudflareClient(): CloudflareClient {
     async deleteLiveInput(liveInputId) {
       await request(`/live_inputs/${encodeURIComponent(liveInputId)}`, { method: 'DELETE' });
     },
+
+    async listLiveInputs() {
+      const result = await request('/live_inputs', { method: 'GET' });
+      if (!result || !Array.isArray(result)) return [];
+      return result.map(item => normalizeLiveInput(item, env.customerCode));
+    },
   };
+}
+
+export async function listLiveInputs(): Promise<CloudflareLiveInput[]> {
+  const client = createCloudflareClient();
+  return client.listLiveInputs();
+}
+
+export async function createLiveInput(input: { name: string; description?: string }): Promise<CloudflareLiveInput> {
+  const client = createCloudflareClient();
+  return client.createLiveInput({
+    streamId: input.name,
+    title: input.name,
+  });
 }
