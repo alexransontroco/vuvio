@@ -1906,7 +1906,13 @@ function LiveViewer({ liveId, creatorMode = false }) {
     }, 220);
   };
 
-  const chat = useMemo(() => [...(live.chat ?? []), ...(localChat[live.id] ?? [])], [live, localChat]);
+  const chat = useMemo(() => {
+    const isCreatedLive = live?.creatorUid || live?.createdLocally;
+    if (isCreatedLive) {
+      return localChat[live.id] ?? [];
+    }
+    return [...(live.chat ?? []), ...(localChat[live.id] ?? [])];
+  }, [live, localChat]);
   const visibleChat = useMemo(() => chat.slice(-4), [chat]);
   const chatCount = Math.max(chat.length, viewerCount(live.viewerLabel) + 21);
   const trackStyle = {
