@@ -6,6 +6,7 @@ import { asRecord, parseApproximateLocation, parseEnvironment, parseVisibility, 
 import { assertGearOwnership } from '../gear/gearHelpers.js';
 import { addStreamEvent } from './streamHelpers.js';
 import { initializeStats } from '../analytics/stats.js';
+import { ApiError } from '../shared/errors.js';
 export async function createStream(req, res) {
     const user = await authenticateUser(req);
     const body = asRecord(req.body);
@@ -22,6 +23,13 @@ export async function createStream(req, res) {
     const countryCode = stringField(body, 'countryCode', { max: 2 })?.toUpperCase() ?? null;
     const ref = db.collection(collections.streams).doc();
     const cloudflare = await createCloudflareClient().createLiveInput({ streamId: ref.id, title });
+
+    // Ensure Cloudflare live input was created successfully
+    if (!cloudflare.liveInputId || !cloudflare.uid) {
+        console.error('[createStream] Cloudflare live input creation failed', { cloudflare });
+        throw new ApiError('server_error', 'Failed to create Cloudflare live input. Check your API credentials.');
+    }
+
     const now = FieldValue.serverTimestamp();
     const stream = {
         id: ref.id,
