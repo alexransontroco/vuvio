@@ -26,6 +26,7 @@ import {
   GearInLive,
 } from '../components/equipment/EquipmentKit.jsx';
 import { EQUIPMENT_CATEGORIES, demoLiveEquipmentIds } from '../data/equipmentModel.js';
+import PlaylistsSection from '../components/profile/PlaylistsSection.jsx';
 import {
   getCreatorProfile,
   readImageFile,
@@ -922,6 +923,7 @@ export default function ProfilePage() {
           {activeTab === 'about' ? (
             <>
               <AboutTab profile={profile} />
+              <PlaylistsSection playlists={profile.playlists} />
               <UpcomingLivesTab lives={profile.upcomingLives} isOwnProfile={isOwnProfile} notifiedIds={notifiedIds} onNotify={notifyLive} onManage={manageLive} />
             </>
           ) : null}

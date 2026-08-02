@@ -1,8 +1,9 @@
-import { Camera, ChevronLeft, X } from 'lucide-react';
+import { Camera, ChevronLeft, Plus, Trash2, X } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { readImageFile, saveOwnCreatorProfile } from '../services/profileService.js';
 import { useAuth } from '../context/AuthContext.jsx';
+import { isValidSpotifyPlaylistUrl } from '../services/spotifyService.js';
 
 const languageOptions = ['French', 'English', 'Spanish', 'Italian', 'German', 'Portuguese', 'Arabic', 'Japanese', 'Other'];
 const categoryOptions = ['Craft', 'Cooking', 'Agriculture', 'Sport', 'Transport', 'Music', 'Nature', 'Science', 'Education', 'Construction', 'Creation', 'Other'];
@@ -24,6 +25,7 @@ function buildForm(profile) {
     coverUrl: profile.coverUrl ?? null,
     languages: profile.languages ?? [],
     categories: profile.categories ?? [],
+    playlists: profile.playlists ?? [],
   };
 }
 
@@ -122,6 +124,185 @@ function ChipSelector({ title, options, value, onChange }) {
           </button>
         ))}
       </div>
+    </section>
+  );
+}
+
+function PlaylistsEditor({ playlists, onChange }) {
+  const [newPlaylistUrl, setNewPlaylistUrl] = useState('');
+  const [newPlaylistName, setNewPlaylistName] = useState('');
+  const [addError, setAddError] = useState('');
+
+  const handleAdd = () => {
+    setAddError('');
+
+    const nameError = !newPlaylistName.trim()
+      ? 'Playlist name is required'
+      : newPlaylistName.trim().length > 100
+        ? 'Name must be 100 characters or less'
+        : '';
+
+    if (nameError) {
+      setAddError(nameError);
+      return;
+    }
+
+    if (!newPlaylistUrl.trim()) {
+      setAddError('Spotify playlist URL is required');
+      return;
+    }
+
+    if (!isValidSpotifyPlaylistUrl(newPlaylistUrl)) {
+      setAddError('Enter a valid Spotify playlist URL (e.g., https://open.spotify.com/playlist/...)');
+      return;
+    }
+
+    const updated = [
+      ...playlists,
+      {
+        id: `playlist-${Date.now()}`,
+        name: newPlaylistName.trim(),
+        spotifyUrl: newPlaylistUrl.trim(),
+        platform: 'Spotify',
+      },
+    ];
+
+    onChange(updated);
+    setNewPlaylistName('');
+    setNewPlaylistUrl('');
+  };
+
+  const handleRemove = (id) => {
+    onChange(playlists.filter((p) => p.id !== id));
+  };
+
+  return (
+    <section className="edit-form-section">
+      <h2>Playlists</h2>
+      <p style={{ fontSize: '13px', color: 'rgba(242, 247, 246, 0.62)', marginBottom: '16px' }}>
+        Add Spotify playlists to your profile. We'll fetch the playlist image and song count automatically.
+      </p>
+
+      {addError && <p style={{ color: '#ff6b6b', marginBottom: '12px', fontSize: '13px' }}>{addError}</p>}
+
+      <div style={{ display: 'grid', gap: '12px', marginBottom: '20px' }}>
+        <label style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+          <span style={{ fontSize: '13px', fontWeight: '600', color: 'rgba(242, 247, 246, 0.92)' }}>Playlist name</span>
+          <input
+            type="text"
+            value={newPlaylistName}
+            onChange={(e) => setNewPlaylistName(e.target.value)}
+            placeholder="My favorite songs"
+            maxLength={100}
+            style={{
+              padding: '12px',
+              borderRadius: '8px',
+              background: 'rgba(255, 255, 255, 0.05)',
+              border: '0.5px solid rgba(43, 217, 200, 0.2)',
+              color: 'rgba(242, 247, 246, 0.92)',
+              fontSize: '14px',
+            }}
+            onKeyPress={(e) => e.key === 'Enter' && handleAdd()}
+          />
+        </label>
+        <label style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+          <span style={{ fontSize: '13px', fontWeight: '600', color: 'rgba(242, 247, 246, 0.92)' }}>Spotify playlist URL</span>
+          <input
+            type="url"
+            value={newPlaylistUrl}
+            onChange={(e) => setNewPlaylistUrl(e.target.value)}
+            placeholder="https://open.spotify.com/playlist/..."
+            style={{
+              padding: '12px',
+              borderRadius: '8px',
+              background: 'rgba(255, 255, 255, 0.05)',
+              border: '0.5px solid rgba(43, 217, 200, 0.2)',
+              color: 'rgba(242, 247, 246, 0.92)',
+              fontSize: '14px',
+            }}
+            onKeyPress={(e) => e.key === 'Enter' && handleAdd()}
+          />
+        </label>
+        <button
+          type="button"
+          onClick={handleAdd}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            justifyContent: 'center',
+            padding: '12px',
+            borderRadius: '8px',
+            background: 'rgba(43, 217, 200, 0.12)',
+            border: '0.5px solid rgba(43, 217, 200, 0.3)',
+            color: '#2bd9c8',
+            fontSize: '13px',
+            fontWeight: '600',
+            cursor: 'pointer',
+            transition: 'all 150ms ease',
+          }}
+          onMouseEnter={(e) => {
+            e.target.style.background = 'rgba(43, 217, 200, 0.18)';
+            e.target.style.borderColor = 'rgba(43, 217, 200, 0.4)';
+          }}
+          onMouseLeave={(e) => {
+            e.target.style.background = 'rgba(43, 217, 200, 0.12)';
+            e.target.style.borderColor = 'rgba(43, 217, 200, 0.3)';
+          }}
+        >
+          <Plus size={16} strokeWidth={2} />
+          Add playlist
+        </button>
+      </div>
+
+      {playlists.length > 0 && (
+        <div style={{ display: 'grid', gap: '8px' }}>
+          {playlists.map((playlist) => (
+            <div
+              key={playlist.id}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                padding: '12px',
+                borderRadius: '8px',
+                background: 'rgba(255, 255, 255, 0.03)',
+                border: '0.5px solid rgba(43, 217, 200, 0.15)',
+              }}
+            >
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <p style={{ margin: '0 0 4px 0', fontSize: '13px', fontWeight: '600', color: 'rgba(242, 247, 246, 0.92)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  {playlist.name}
+                </p>
+                <p style={{ margin: 0, fontSize: '11px', color: 'rgba(242, 247, 246, 0.52)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  {playlist.spotifyUrl}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => handleRemove(playlist.id)}
+                style={{
+                  marginLeft: '12px',
+                  padding: '8px',
+                  background: 'rgba(255, 107, 107, 0.1)',
+                  border: 'none',
+                  borderRadius: '6px',
+                  color: '#ff6b6b',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  transition: 'all 150ms ease',
+                }}
+                onMouseEnter={(e) => e.target.style.background = 'rgba(255, 107, 107, 0.15)'}
+                onMouseLeave={(e) => e.target.style.background = 'rgba(255, 107, 107, 0.1)'}
+              >
+                <Trash2 size={16} strokeWidth={2} />
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
     </section>
   );
 }
@@ -308,6 +489,7 @@ export default function EditProfilePage() {
 
       <ChipSelector title="Spoken languages" options={languageOptions} value={form.languages} onChange={(value) => update('languages', value)} />
       <ChipSelector title="Categories" options={categoryOptions} value={form.categories} onChange={(value) => update('categories', value)} />
+      <PlaylistsEditor playlists={form.playlists} onChange={(value) => update('playlists', value)} />
       <SocialLinksFields form={form} update={update} errors={errors} />
 
       {showConfirm ? <UnsavedChangesDialog onCancel={() => setShowConfirm(false)} onDiscard={() => navigate('/profile')} /> : null}

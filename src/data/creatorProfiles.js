@@ -27,6 +27,7 @@ export const ownCreatorProfile = {
   upcomingLives: [],
   recentLives: [],
   equipment: [],
+  playlists: [],
 };
 
 function profile({
@@ -49,6 +50,7 @@ function profile({
   currentLive = null,
   upcomingLives = [],
   recentLives = [],
+  playlists = [],
 }) {
   return {
     id,
@@ -77,6 +79,7 @@ function profile({
     upcomingLives,
     recentLives,
     equipment: [],
+    playlists,
   };
 }
 

@@ -66,11 +66,7 @@ export function EquipmentItemRow({ item, selectable = false, selected = false, o
   const content = (
     <>
       <span className="equipment-item-row__icon">
-        {item.imageUrl ? (
-          <img src={item.imageUrl} alt="" className="equipment-item-row__img" aria-hidden="true" />
-        ) : (
-          <span className="equipment-item-row__icon-emoji" aria-hidden="true">{getCategoryIcon(item.category)}</span>
-        )}
+        <span className="equipment-item-row__icon-emoji" aria-hidden="true">{getCategoryIcon(item.category)}</span>
       </span>
       <span className="equipment-item-row__copy">
         <strong>{equipmentLabel(item)}</strong>
