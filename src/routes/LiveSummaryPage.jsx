@@ -36,13 +36,18 @@ export default function LiveSummaryPage() {
           return;
         }
 
-        const data = liveSnap.data();
+        let data = liveSnap.data();
 
         // Verify ownership
-        if (data.creatorUid !== user.uid) {
+        if (data.creatorUid !== user.uid && data.creatorId !== user.uid) {
           setError('Unauthorized');
           setLoading(false);
           return;
+        }
+
+        // Ensure we have creator field for compatibility
+        if (!data.creatorUid && data.creatorId) {
+          data = { ...data, creatorUid: data.creatorId };
         }
 
         setLiveData(data);

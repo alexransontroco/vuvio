@@ -81,6 +81,7 @@ export function AuthProvider({ children }) {
 
     let unsubscribe = () => {};
     let mounted = true;
+    let authStateListenerReady = false;
 
     const setupAuth = async () => {
       try {
@@ -92,6 +93,10 @@ export function AuthProvider({ children }) {
           if (redirectUser && mounted) {
             console.log('[Auth] Redirect user authenticated successfully:', redirectUser.uid.slice(0, 8));
             redirectHandled = true;
+            // Process the redirect user immediately while waiting for onAuthStateChanged
+            setUser(redirectUser);
+            await loadProfile(redirectUser);
+            setAuthLoading(false);
           } else {
             console.log('[Auth] No redirect result found');
           }
@@ -109,17 +114,26 @@ export function AuthProvider({ children }) {
           if (mounted) {
             setUser(firebaseUser);
             await loadProfile(firebaseUser);
-            setAuthLoading(false);
-            const elapsed = performance.now() - startTime;
-            console.log(`[Auth] restore session: ${elapsed.toFixed(2)}ms`);
+            if (!authStateListenerReady) {
+              setAuthLoading(false);
+              const elapsed = performance.now() - startTime;
+              console.log(`[Auth] restore session: ${elapsed.toFixed(2)}ms`);
+            }
+            authStateListenerReady = true;
           }
         }, (err) => {
           console.error('[Auth] onAuthStateChanged error:', err);
-          if (mounted) setAuthLoading(false);
+          if (mounted && !authStateListenerReady) {
+            setAuthLoading(false);
+            authStateListenerReady = true;
+          }
         });
       } catch (err) {
         console.error('[Auth] setupAuth error:', err);
-        if (mounted) setAuthLoading(false);
+        if (mounted && !authStateListenerReady) {
+          setAuthLoading(false);
+          authStateListenerReady = true;
+        }
       }
     };
 

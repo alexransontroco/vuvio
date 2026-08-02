@@ -94,18 +94,20 @@ export default function LiveRecapPage() {
   const [finishingLive, setFinishingLive] = useState(false);
   const [liveData, setLiveData] = useState(null);
 
-  // Fetch real live data from Firestore
+  // Use live data from state (passed during navigation) or fetch from Firestore
   useEffect(() => {
-    const params = new URLSearchParams(location.search);
-    const liveId = params.get('id') || location.pathname.split('/')[2];
-    console.log('[LiveRecapPage] Fetching live data. URL:', window.location.href, 'liveId:', liveId);
+    if (location.state?.liveData) {
+      setLiveData(location.state.liveData);
+      return;
+    }
+
+    const liveId = location.pathname.split('/')[2];
     if (!liveId) return;
 
     (async () => {
       try {
         const liveRef = doc(db, 'activeLives', liveId);
         const liveSnap = await getDoc(liveRef);
-        console.log('[LiveRecapPage] Firestore response:', { exists: liveSnap.exists(), data: liveSnap.data() });
         if (liveSnap.exists()) {
           setLiveData(liveSnap.data());
         }
@@ -113,7 +115,7 @@ export default function LiveRecapPage() {
         console.error('[LiveRecapPage] Failed to fetch live data:', err);
       }
     })();
-  }, [location.search, location.pathname]);
+  }, [location.state?.liveData, location.pathname]);
 
   // Auto-finish live when leaving recap page
   useEffect(() => {

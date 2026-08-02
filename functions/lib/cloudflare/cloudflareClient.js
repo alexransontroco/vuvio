@@ -68,7 +68,6 @@ export function createCloudflareClient() {
     }
     return {
         async createLiveInput(input) {
-            console.log('[cloudflare] Creating live input:', { title: input.title, streamId: input.streamId });
             const result = await request('/live_inputs', {
                 method: 'POST',
                 body: JSON.stringify({
@@ -77,7 +76,6 @@ export function createCloudflareClient() {
                 }),
             });
             if (!result) {
-                console.error('[cloudflare] createLiveInput returned null result');
                 return {
                     liveInputId: null,
                     uid: null,
@@ -87,7 +85,6 @@ export function createCloudflareClient() {
                     streamKey: null,
                 };
             }
-            console.log('[cloudflare] Live input created successfully:', { uid: result.uid, id: result.id });
             return normalizeLiveInput(result, env.customerCode);
         },
         async getLiveInput(liveInputId) {

@@ -191,6 +191,9 @@ export async function startBroadcast(liveId, userId, existingStream = null) {
 
     // Save offer to Firestore
     console.log('[webrtcService] Saving offer to Firestore with', candidates.length, 'candidates');
+    if (!peerConnection?.localDescription) {
+      throw new Error('[webrtcService] Failed to create offer: localDescription is null');
+    }
     await setDoc(doc(db, 'activeLives', liveId), {
       creatorUid: userId,
       status: 'live',
