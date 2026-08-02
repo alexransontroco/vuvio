@@ -3,8 +3,11 @@ import { Play, Download, Share2, RotateCcw, Zap } from 'lucide-react';
 import { updateDoc, doc } from 'firebase/firestore';
 import { db } from '../../firebase.js';
 import { generateHighlightMock } from '../../services/highlightService.js';
-
-const MOCK_MODE = true; // Set to true for MVP testing without real Cloudflare
+import {
+  requestHighlightGeneration,
+  waitForHighlight,
+  testHighlightApi,
+} from '../../services/highlightApiService.js';
 
 export default function HighlightGenerator({ liveData, liveId }) {
   const [highlightState, setHighlightState] = useState('ready'); // ready | processing | done | error | expired
@@ -46,8 +49,12 @@ export default function HighlightGenerator({ liveData, liveId }) {
     setError(null);
 
     try {
-      if (MOCK_MODE) {
-        // Mock generation for testing
+      // Check if backend API is available
+      const apiReady = await testHighlightApi();
+
+      if (!apiReady) {
+        console.log('[HighlightGenerator] Backend not available, using mock mode');
+        // Fallback to mock mode
         await new Promise((resolve) => setTimeout(resolve, 2000));
 
         const mockHighlight = generateHighlightMock(liveData);
@@ -62,23 +69,43 @@ export default function HighlightGenerator({ liveData, liveId }) {
 
         setGeneratedHighlight(mockHighlight);
         setHighlightState('done');
-      } else {
-        // Real implementation would call backend
-        // POST /api/lives/:liveId/highlight
-        const response = await fetch(`/api/lives/${liveId}/highlight`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+        return;
+      }
+
+      // Real backend generation
+      console.log('[HighlightGenerator] Using real Cloudflare integration');
+
+      // Request job
+      const job = await requestHighlightGeneration(liveId, {
+        useCreatorMarkers: liveData?.highlightMarkers?.length > 0,
+      });
+
+      // Poll for completion
+      const result = await waitForHighlight(liveId, job.jobId, (progress) => {
+        console.log('[HighlightGenerator] Progress:', progress);
+      });
+
+      if (result.status === 'ready') {
+        // Update Firestore
+        await updateDoc(doc(db, 'activeLives', liveId), {
+          highlightStatus: 'ready',
+          highlightUrl: result.url,
+          highlightThumbnailUrl: result.thumbnailUrl,
+          highlightDurationSeconds: result.durationSeconds,
         });
 
-        if (!response.ok) throw new Error('Failed to generate highlight');
-
-        const data = await response.json();
-        setGeneratedHighlight(data);
+        setGeneratedHighlight({
+          url: result.url,
+          thumbnailUrl: result.thumbnailUrl,
+          durationSeconds: result.durationSeconds,
+        });
         setHighlightState('done');
+      } else {
+        throw new Error(result.error || 'Highlight generation failed');
       }
     } catch (err) {
       console.error('[HighlightGenerator] Failed to generate:', err);
-      setError(err.message);
+      setError(err.message || 'Failed to generate highlight');
       setHighlightState('error');
     }
   };
