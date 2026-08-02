@@ -1412,7 +1412,7 @@ function CreatorLiveSession({ live, onEndingChange }) {
 }
 
 function LiveViewer({ liveId, creatorMode = false }) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const navigate = useNavigate();
   const { user } = useAuth();
   const [createdLives, setCreatedLives] = useState([]);
@@ -2112,6 +2112,7 @@ function LiveViewer({ liveId, creatorMode = false }) {
         ) : (
           <>
             <LiveBadge pulse />
+            <span className="live-feed__viewer-count">{formatViewers(live.viewerLabel ?? live.viewers ?? '0', i18n.language)}</span>
           </>
         )}
       </div>
