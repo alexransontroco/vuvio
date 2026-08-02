@@ -95,6 +95,16 @@ function breathingWave(clock) {
   ];
 }
 
+function livePointOpacity(clock, selectedId = '') {
+  const wave = breathingWave(clock);
+  return [
+    'case',
+    ['==', ['get', 'id'], selectedId],
+    ['+', 0.88, ['*', wave, 0.12]],
+    ['+', 0.72, ['*', wave, 0.28]],
+  ];
+}
+
 // Luminous core for live markers — flashy pulsing effect with huge size contrast
 function livePointRadius(clock, selectedId = '') {
   const wave = breathingWave(clock);
@@ -881,6 +891,7 @@ export default function CurrentGlobe({ streams, onboarding = false, onOnboarding
           }
           if (map.getLayer('vuvio-test-live-points')) {
             map.setPaintProperty('vuvio-test-live-points', 'circle-radius', livePointRadius(clock, selectedId ?? ''));
+            map.setPaintProperty('vuvio-test-live-points', 'circle-opacity', livePointOpacity(clock, selectedId ?? ''));
           }
           if (map.getLayer('vuvio-test-live-selection-ring')) {
             map.setPaintProperty('vuvio-test-live-selection-ring', 'circle-radius', liveRingRadius(clock, selectedId ?? '', hoveredId));
