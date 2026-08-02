@@ -587,7 +587,7 @@ export default function CurrentGlobe({ streams, onboarding = false, onOnboarding
           paint: {
             'circle-color': markerColorExpression(),
             'circle-radius': liveColorGlowRadius(0),
-            'circle-blur': 0.72,
+            'circle-blur': 0.82,
             'circle-opacity': liveColorGlowOpacity(0),
           },
         });
@@ -600,7 +600,7 @@ export default function CurrentGlobe({ streams, onboarding = false, onOnboarding
           paint: {
             'circle-color': ['case', ['==', ['get', 'markerType'], MARKER_TYPES.sponsored], '#FFD489', ['==', ['get', 'markerType'], MARKER_TYPES.vuvio], '#DAB2FF', '#F8FFFF'],
             'circle-radius': liveBroadcastHaloRadius(0, selectedId ?? ''),
-            'circle-blur': 0.92,
+            'circle-blur': 1.0,
             'circle-opacity': liveBroadcastHaloOpacity(0, selectedId ?? ''),
           },
         });
@@ -613,7 +613,7 @@ export default function CurrentGlobe({ streams, onboarding = false, onOnboarding
           paint: {
             'circle-color': markerColorExpression(),
             'circle-radius': liveCrowdHaloRadius(0),
-            'circle-blur': 0.96,
+            'circle-blur': 1.02,
             'circle-opacity': liveCrowdHaloOpacity(0),
           },
         });
@@ -626,7 +626,7 @@ export default function CurrentGlobe({ streams, onboarding = false, onOnboarding
           paint: {
             'circle-color': PING_COLOR,
             'circle-radius': livePingRippleRadius(0),
-            'circle-blur': 0.72,
+            'circle-blur': 0.78,
             'circle-opacity': livePingRippleOpacity(0),
             'circle-stroke-color': 'rgba(255, 202, 130, 0.82)',
             'circle-stroke-width': 0.7,
@@ -643,9 +643,10 @@ export default function CurrentGlobe({ streams, onboarding = false, onOnboarding
           paint: {
             'circle-color': markerColorExpression(),
             'circle-radius': livePointRadius(0, selectedId ?? ''),
+            'circle-blur': 0.4,
             'circle-stroke-color': ['case', ['==', ['get', 'id'], selectedId ?? ''], '#F2F7F6', 'rgba(242,247,246,0.34)'],
             'circle-stroke-width': ['case', ['==', ['get', 'id'], selectedId ?? ''], 1.05, 0.55],
-            'circle-opacity': ['case', ['==', ['get', 'id'], selectedId ?? ''], 0.88, 0.72],
+            'circle-opacity': ['case', ['==', ['get', 'id'], selectedId ?? ''], 0.50, 0.35],
           },
         });
 
