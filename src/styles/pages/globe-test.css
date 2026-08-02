@@ -58,7 +58,7 @@
 }
 
 .test-old-globe .maplibregl-canvas {
-  filter: brightness(1.65) contrast(1.22) saturate(1.06);
+  filter: brightness(1.65) contrast(1.22) saturate(1.28) hue-rotate(-8deg);
   opacity: 0;
   transition: opacity 0.3s ease-in;
 }

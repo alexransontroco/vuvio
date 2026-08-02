@@ -349,9 +349,11 @@ function brightenBaseGlobe(map) {
       if (layer.type === 'background') {
         map.setPaintProperty(layer.id, 'background-color', '#0a0f1a');
       }
-      if (layer.type === 'fill' && (id.includes('water') || sourceLayer.includes('water'))) {
-        map.setPaintProperty(layer.id, 'fill-color', '#0088dd');
-        map.setPaintProperty(layer.id, 'fill-opacity', 1);
+      if ((layer.type === 'fill' || layer.type === 'line' || layer.type === 'symbol') && (id.includes('water') || sourceLayer.includes('water'))) {
+        if (layer.type === 'fill') {
+          map.setPaintProperty(layer.id, 'fill-color', '#1155ff');
+          map.setPaintProperty(layer.id, 'fill-opacity', 1);
+        }
       }
       if (layer.type === 'fill' && (id.includes('land') || sourceLayer.includes('land'))) {
         map.setPaintProperty(layer.id, 'fill-color', '#6a7a8a');
