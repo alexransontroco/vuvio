@@ -79,11 +79,15 @@ export function AuthProvider({ children }) {
     const setupAuth = async () => {
       try {
         // Handle Google Sign-In redirect result first (mobile/PWA)
+        let redirectHandled = false;
         try {
           console.log('[Auth] Checking for redirect result...');
           const redirectUser = await handleGoogleRedirectResult();
           if (redirectUser && mounted) {
             console.log('[Auth] Redirect user authenticated successfully:', redirectUser.uid.slice(0, 8));
+            redirectHandled = true;
+          } else {
+            console.log('[Auth] No redirect result found');
           }
         } catch (redirectErr) {
           console.error('[Auth] Redirect result error:', redirectErr.code || 'unknown', redirectErr.message);
@@ -95,7 +99,7 @@ export function AuthProvider({ children }) {
         // Set up auth state listener
         unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
           console.count('[Auth] onAuthStateChanged callback');
-          console.log('[Auth] auth state changed:', firebaseUser ? firebaseUser.uid.slice(0, 8) : 'null');
+          console.log('[Auth] auth state changed:', firebaseUser ? `${firebaseUser.uid.slice(0, 8)} (email: ${firebaseUser.email})` : 'null');
           if (mounted) {
             setUser(firebaseUser);
             await loadProfile(firebaseUser);

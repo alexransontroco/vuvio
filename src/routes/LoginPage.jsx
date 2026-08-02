@@ -30,7 +30,9 @@ export default function LoginPage() {
 
   // If user is authenticated (e.g., from Google redirect), redirect to home
   useEffect(() => {
+    console.log('[LoginPage] Auth state:', { authLoading, user: user?.uid, returnTo });
     if (!authLoading && user) {
+      console.log('[LoginPage] User authenticated, redirecting to:', returnTo);
       navigate(returnTo, { replace: true });
     }
   }, [user, authLoading, navigate, returnTo]);
