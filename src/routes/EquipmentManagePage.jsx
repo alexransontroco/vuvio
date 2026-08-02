@@ -201,16 +201,25 @@ export default function EquipmentManagePage() {
 
   const saveForm = () => {
     if (!form?.brand.trim() || !form?.model.trim()) return;
-    if (editingId) {
-      updateEquipmentItem(editingId, form);
-      showToast('Equipment updated');
-    } else {
-      addEquipmentItem(form);
-      showToast('Equipment added');
+    try {
+      if (editingId) {
+        updateEquipmentItem(editingId, form);
+        console.log('[EquipmentManagePage] Equipment updated:', editingId);
+        showToast('Equipment updated');
+      } else {
+        const saved = addEquipmentItem(form);
+        console.log('[EquipmentManagePage] Equipment added:', saved);
+        showToast('Equipment added');
+      }
+      const updated = getEquipmentLibrary();
+      console.log('[EquipmentManagePage] Current library:', updated.length, 'items');
+      setItems(updated);
+      setForm(null);
+      setEditingId(null);
+    } catch (err) {
+      console.error('[EquipmentManagePage] Save failed:', err);
+      showToast('Failed to save equipment');
     }
-    setItems(getEquipmentLibrary());
-    setForm(null);
-    setEditingId(null);
   };
 
   return (

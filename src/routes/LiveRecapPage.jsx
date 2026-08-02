@@ -93,13 +93,13 @@ export default function LiveRecapPage() {
   const [modal, setModal] = useState(null);
   const [finishingLive, setFinishingLive] = useState(false);
 
-  // Cleanup Cloudflare live input when leaving recap page
+  // Auto-finish live when leaving recap page
   useEffect(() => {
     const liveId = location.state?.liveId;
     if (!liveId) return;
 
     return () => {
-      // When user leaves the recap page, delete the Cloudflare live input
+      // When user leaves the recap page, auto-finish the live
       (async () => {
         try {
           const liveRef = doc(db, 'activeLives', liveId);
@@ -111,11 +111,14 @@ export default function LiveRecapPage() {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({ liveInputId }),
-            });
-            console.log('[LiveRecapPage] Cloudflare live input deleted:', liveInputId);
+            }).catch(() => {});
           }
+
+          // Mark live as ended
+          await endLive(liveId);
+          console.log('[LiveRecapPage] Live auto-finished on page leave');
         } catch (err) {
-          console.error('[LiveRecapPage] Cleanup failed:', err.message);
+          console.error('[LiveRecapPage] Auto-finish failed:', err.message);
         }
       })();
     };

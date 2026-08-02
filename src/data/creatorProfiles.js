@@ -223,6 +223,20 @@ export const creatorProfiles = {
         category: 'Cuisine',
       },
     ],
+    playlists: [
+      {
+        id: 'playlist-chef-1',
+        name: 'French Jazz Classics',
+        spotifyUrl: 'https://open.spotify.com/playlist/37i9dQZF1DWXLeA4mPAiKT',
+        platform: 'Spotify',
+      },
+      {
+        id: 'playlist-chef-2',
+        name: 'Dinner Party Ambiance',
+        spotifyUrl: 'https://open.spotify.com/playlist/37i9dQZF1DX1lVhAJiXOt9',
+        platform: 'Spotify',
+      },
+    ],
   }),
   'johannes-wingsuit': profile({
     id: 'johannes-wingsuit',
@@ -332,6 +346,26 @@ export const creatorProfiles = {
         duration: '52:15',
         views: 145600,
         category: 'Skiing',
+      },
+    ],
+    playlists: [
+      {
+        id: 'playlist-1',
+        name: 'Mountain Vibes',
+        spotifyUrl: 'https://open.spotify.com/playlist/37i9dQZF1DX5Ejj0EkURxL',
+        platform: 'Spotify',
+      },
+      {
+        id: 'playlist-2',
+        name: 'Alpine Adventure',
+        spotifyUrl: 'https://open.spotify.com/playlist/37i9dQZF1DX3yvAYDJ7n7P',
+        platform: 'Spotify',
+      },
+      {
+        id: 'playlist-3',
+        name: 'Workout Pulse',
+        spotifyUrl: 'https://open.spotify.com/playlist/37i9dQZF1DX3PFzdbtx1M7',
+        platform: 'Spotify',
       },
     ],
   }),

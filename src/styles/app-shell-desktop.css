@@ -14,7 +14,7 @@
   overflow: auto;
 }
 
-.app-canvas--desktop .phone-stage nav {
+.app-canvas--desktop .phone-stage nav.bottom-nav--floating {
   display: none;
 }
 
