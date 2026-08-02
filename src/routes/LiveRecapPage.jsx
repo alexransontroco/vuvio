@@ -176,15 +176,15 @@ export default function LiveRecapPage() {
   };
 
   const seekToSeconds = (seconds) => {
-    const closest = liveRecap.highlights.reduce((best, item) => (
+    const closest = recap.highlights.reduce((best, item) => (
       Math.abs(item.seconds - seconds) < Math.abs(best.seconds - seconds) ? item : best
-    ), liveRecap.highlights[0]);
+    ), recap.highlights[0]);
     setActiveId(closest.id);
   };
 
   const handleAction = (id) => {
     if (id === 'reply') {
-      setDrawerConversation(liveRecap.conversations[3]);
+      setDrawerConversation(recap.conversations[3]);
       return;
     }
     setModal(id);
@@ -192,7 +192,7 @@ export default function LiveRecapPage() {
 
   const handleShare = async () => {
     if (navigator.share) {
-      await navigator.share({ title: liveRecap.title, text: 'Vuvio live recap', url: window.location.href }).catch(() => {});
+      await navigator.share({ title: recap.title, text: 'Vuvio live recap', url: window.location.href }).catch(() => {});
       return;
     }
     setModal('share');
@@ -265,7 +265,7 @@ export default function LiveRecapPage() {
         </div>
 
         {/* ── Analytics ─────────────────────────────────────────── */}
-        <LiveAnalyticsBar stats={liveRecap.stats} />
+        <LiveAnalyticsBar stats={recap.stats} />
 
         {/* ── Priority: unanswered (mobile only) ────────────── */}
         <div className="live-recap-priority live-recap--mobile-only">
@@ -276,7 +276,7 @@ export default function LiveRecapPage() {
               <p>Some viewers asked similar questions during your ride.</p>
             </div>
           </div>
-          <button type="button" onClick={() => setDrawerConversation(liveRecap.conversations[3])}>
+          <button type="button" onClick={() => setDrawerConversation(recap.conversations[3])}>
             <MessageCircle size={15} />
             Review questions
           </button>
@@ -286,10 +286,10 @@ export default function LiveRecapPage() {
         <div className="live-recap-section live-recap--mobile-only">
           <div className="live-recap-section-heading">
             <h2>Messages</h2>
-            <button type="button" onClick={() => setDrawerConversation(liveRecap.conversations[0])}>View all</button>
+            <button type="button" onClick={() => setDrawerConversation(recap.conversations[0])}>View all</button>
           </div>
           <div className="live-recap-scroll-track">
-            {liveRecap.conversations.slice(0, 3).map((item) => (
+            {recap.conversations.slice(0, 3).map((item) => (
               <ConversationChip key={item.id} item={item} onOpen={setDrawerConversation} />
             ))}
           </div>
@@ -301,7 +301,7 @@ export default function LiveRecapPage() {
             <h2>Key moments</h2>
           </div>
           <div className="live-recap-scroll-track">
-            {liveRecap.highlights.map((item) => (
+            {recap.highlights.map((item) => (
               <MomentCard key={item.id} item={item} active={item.id === activeId} onSelect={selectHighlight} />
             ))}
           </div>
@@ -309,8 +309,8 @@ export default function LiveRecapPage() {
 
         {/* ── Desktop two-column insights ────────────────────── */}
         <div className="live-recap-insights live-recap--desktop-only">
-          <ConversationInsights conversations={liveRecap.conversations} onOpen={setDrawerConversation} />
-          <LiveHighlights highlights={liveRecap.highlights} activeId={activeId} onSelect={selectHighlight} />
+          <ConversationInsights conversations={recap.conversations} onOpen={setDrawerConversation} />
+          <LiveHighlights highlights={recap.highlights} activeId={activeId} onSelect={selectHighlight} />
         </div>
 
         {/* ── Replay section ────────────────────────────────────── */}
@@ -322,7 +322,7 @@ export default function LiveRecapPage() {
 
           <div className="live-recap-replay-wrap" ref={replayRef}>
             <ReplayTimeline
-              highlights={liveRecap.highlights}
+              highlights={recap.highlights}
               activeId={activeId}
               onSelect={selectHighlight}
               onOpenPlayer={() => setModal('player')}
@@ -346,7 +346,7 @@ export default function LiveRecapPage() {
 
         {/* ── Bottom section ────────────────────────────────────── */}
         <div className="live-recap-bottom-grid" style={{ marginTop: 20 }}>
-          <SmartSummary summary={liveRecap.summary} tags={liveRecap.tags} />
+          <SmartSummary summary={recap.summary} tags={recap.tags} />
           <PostLiveActions onAction={handleAction} onFeedback={() => setModal('feedback')} />
         </div>
 
@@ -390,7 +390,7 @@ export default function LiveRecapPage() {
 
       {/* ── Sticky reply CTA (mobile only) ────────────────────── */}
       <div className="live-recap-sticky-cta live-recap--mobile-only">
-        <button type="button" onClick={() => setDrawerConversation(liveRecap.conversations[3])}>
+        <button type="button" onClick={() => setDrawerConversation(recap.conversations[3])}>
           <MessageCircle size={18} />
           Reply to 12 questions
         </button>
