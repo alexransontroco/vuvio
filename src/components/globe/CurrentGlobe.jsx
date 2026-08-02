@@ -100,8 +100,8 @@ function livePointOpacity(clock, selectedId = '') {
   return [
     'case',
     ['==', ['get', 'id'], selectedId],
-    ['+', 0.88, ['*', wave, 0.12]],
-    ['+', 0.72, ['*', wave, 0.28]],
+    ['+', 0.90, ['*', wave, 0.10]],
+    ['+', 0.82, ['*', wave, 0.18]],
   ];
 }
 
@@ -136,17 +136,17 @@ function liveColorGlowRadius(clock) {
     '+',
     ['case',
       ['==', ['get', 'markerType'], MARKER_TYPES.sponsored],
-      ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 3.2, 300, 4.5, 800, 6.4, 1500, 8.7],
+      ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 4.0, 300, 5.5, 800, 8.0, 1500, 11.0],
       ['==', ['get', 'markerType'], MARKER_TYPES.vuvio],
-      ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 3.1, 300, 4.4, 800, 6.5, 1500, 8.8],
-      ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 3.0, 300, 4.2, 800, 6.2, 1500, 8.5],
+      ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 4.2, 300, 6.0, 800, 8.5, 1500, 12.0],
+      ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 3.8, 300, 5.2, 800, 7.5, 1500, 10.5],
     ],
     ['*', wave, ['case',
       ['==', ['get', 'markerType'], MARKER_TYPES.sponsored],
-      ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 0.6, 800, 1.9, 1500, 2.9],
+      ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 1.2, 800, 3.0, 1500, 5.0],
       ['==', ['get', 'markerType'], MARKER_TYPES.vuvio],
-      ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 0.9, 800, 2.6, 1500, 4.0],
-      ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 0.8, 800, 2.2, 1500, 3.5],
+      ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 1.5, 800, 3.5, 1500, 5.5],
+      ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 1.2, 800, 3.0, 1500, 5.0],
     ]],
   ];
 }
@@ -157,17 +157,17 @@ function liveColorGlowOpacity(clock) {
     '+',
     ['case',
       ['==', ['get', 'markerType'], MARKER_TYPES.sponsored],
-      ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 0.06, 300, 0.08, 800, 0.13, 1500, 0.17],
+      ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 0.10, 300, 0.14, 800, 0.22, 1500, 0.28],
       ['==', ['get', 'markerType'], MARKER_TYPES.vuvio],
-      ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 0.05, 300, 0.07, 800, 0.12, 1500, 0.16],
-      ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 0.05, 300, 0.06, 800, 0.11, 1500, 0.15],
+      ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 0.12, 300, 0.16, 800, 0.24, 1500, 0.31],
+      ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 0.09, 300, 0.12, 800, 0.20, 1500, 0.26],
     ],
     ['*', wave, ['case',
       ['==', ['get', 'markerType'], MARKER_TYPES.sponsored],
-      ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 0.04, 800, 0.11, 1500, 0.14],
+      ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 0.08, 800, 0.20, 1500, 0.26],
       ['==', ['get', 'markerType'], MARKER_TYPES.vuvio],
-      ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 0.04, 800, 0.10, 1500, 0.13],
-      ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 0.03, 800, 0.09, 1500, 0.12],
+      ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 0.10, 800, 0.22, 1500, 0.29],
+      ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 0.08, 800, 0.20, 1500, 0.26],
     ]],
   ];
 }
