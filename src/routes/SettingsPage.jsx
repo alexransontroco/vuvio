@@ -6,6 +6,7 @@ import {
   FileText,
   Globe2,
   HelpCircle,
+  Info,
   Languages,
   Lock,
   LogOut,
@@ -24,6 +25,13 @@ import { useAuth } from '../context/AuthContext.jsx';
 import { LiveActivityPrivacySettings } from '../components/social/LiveActivityPrivacySettings.jsx';
 
 const getSettingGroups = (userEmail) => [
+  {
+    id: 'about',
+    title: 'About',
+    items: [
+      { label: 'What is Vuvio?', value: 'Platform overview', icon: Info, to: '/help', state: { scrollTo: 'what-is-vuvio' } },
+    ],
+  },
   {
     id: 'account',
     title: 'Account',
@@ -94,7 +102,7 @@ export default function SettingsPage() {
     if (item.readOnly) return;
 
     if (item.to) {
-      navigate(item.to);
+      navigate(item.to, { state: item.state });
       return;
     }
 

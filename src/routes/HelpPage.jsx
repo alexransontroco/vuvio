@@ -1,6 +1,6 @@
 import { Mail, Siren } from 'lucide-react';
-import { useMemo, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useMemo, useState, useEffect } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import HelpAccordion from '../components/HelpAccordion.jsx';
 import HelpSearch from '../components/HelpSearch.jsx';
 import SettingsPageHeader from '../components/SettingsPageHeader.jsx';
@@ -200,8 +200,15 @@ const helpCategories = [
 
 export default function HelpPage() {
   const navigate = useNavigate();
+  const location = useLocation();
   const [query, setQuery] = useState('');
   const [openId, setOpenId] = useState(null);
+
+  useEffect(() => {
+    if (location.state?.scrollTo === 'what-is-vuvio') {
+      setOpenId('What is Vuvio?');
+    }
+  }, [location.state]);
 
   const filteredCategories = useMemo(() => {
     const normalized = query.trim().toLowerCase();
