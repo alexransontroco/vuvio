@@ -26,7 +26,7 @@ const CITY_COORDS = {
   Bogota:[-74.08,4.71],Lima:[-77.04,-12.05],Santiago:[-70.67,-33.45],
   Havana:[-82.38,23.13],Vienna:[16.37,48.21],Warsaw:[21.01,52.23],
   Athens:[23.73,37.98],Copenhagen:[12.57,55.68],Stockholm:[18.07,59.33],
-  Helsinki:[24.94,60.17],Budapest:[19.04,47.50],Lisbon:[-9.14,38.72],
+  Helsinki:[24.94,60.17],Budapest:[19.04,47.50],
   Dolomites:[11.87,46.41],
 };
 

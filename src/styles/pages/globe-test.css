@@ -59,6 +59,12 @@
 
 .test-old-globe .maplibregl-canvas {
   filter: brightness(1.65) contrast(1.22) saturate(1.06);
+  opacity: 0;
+  transition: opacity 0.3s ease-in;
+}
+
+.test-old-globe.is-loaded .maplibregl-canvas {
+  opacity: 1;
 }
 
 .test-old-globe__vignette {

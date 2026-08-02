@@ -1136,9 +1136,13 @@ function CreatorLiveSession({ live, onEndingChange }) {
       try {
         // Create Cloudflare live input
         try {
+          const token = await user.getIdToken();
           const cfResponse = await fetch('/api/cloudflare/live-input/create', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`,
+            },
             body: JSON.stringify({
               streamId: live.id,
               title: live.name || live.id,
@@ -1305,7 +1309,7 @@ function CreatorLiveSession({ live, onEndingChange }) {
 
     window.setTimeout(() => setPhase('processing'), 1100);
     window.setTimeout(() => {
-      navigate(`/live/${live.id}/recap`);
+      navigate('/watch', { replace: true });
       deleteLiveFromDB(live.id).catch((err) => {
         console.error('[HomePage] Failed to delete live from database:', err);
       });

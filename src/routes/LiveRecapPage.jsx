@@ -1,8 +1,9 @@
-import { ArrowLeft, BarChart3, Camera, Flame, MessageCircle, MoreHorizontal, Star } from 'lucide-react';
+import { ArrowLeft, BarChart3, Camera, Check, Flame, MessageCircle, MoreHorizontal, Star } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from '../firebase.js';
+import { endLive } from '../services/createdLiveService.js';
 import BottomNav from '../components/BottomNav.jsx';
 import ConversationInsights from '../components/live-recap/ConversationInsights.jsx';
 import LiveAnalyticsBar from '../components/live-recap/LiveAnalyticsBar.jsx';
@@ -90,6 +91,7 @@ export default function LiveRecapPage() {
   const [speedIndex, setSpeedIndex] = useState(1);
   const [drawerConversation, setDrawerConversation] = useState(null);
   const [modal, setModal] = useState(null);
+  const [finishingLive, setFinishingLive] = useState(false);
 
   // Cleanup Cloudflare live input when leaving recap page
   useEffect(() => {
@@ -166,6 +168,32 @@ export default function LiveRecapPage() {
     a.click();
     URL.revokeObjectURL(url);
     setModal(null);
+  };
+
+  const handleFinishLive = async () => {
+    const liveId = location.state?.liveId;
+    if (!liveId) return;
+
+    setFinishingLive(true);
+    try {
+      const liveRef = doc(db, 'activeLives', liveId);
+      const liveSnap = await getDoc(liveRef);
+      const liveInputId = liveSnap.data()?.liveInputId;
+
+      if (liveInputId) {
+        await fetch('/api/cloudflare/delete-input', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ liveInputId }),
+        }).catch(() => {});
+      }
+
+      await endLive(liveId);
+      navigate('/watch', { replace: true });
+    } catch (err) {
+      console.error('[LiveRecapPage] Failed to finish live:', err.message);
+      setFinishingLive(false);
+    }
   };
 
   return (
@@ -280,6 +308,37 @@ export default function LiveRecapPage() {
         <div className="live-recap-bottom-grid" style={{ marginTop: 20 }}>
           <SmartSummary summary={liveRecap.summary} tags={liveRecap.tags} />
           <PostLiveActions onAction={handleAction} onFeedback={() => setModal('feedback')} />
+        </div>
+
+        {/* ── Finish button ─────────────────────────────────────── */}
+        <div style={{ marginTop: 32, paddingBottom: 40 }}>
+          <button
+            type="button"
+            onClick={handleFinishLive}
+            disabled={finishingLive}
+            style={{
+              width: '100%',
+              padding: '16px 24px',
+              backgroundColor: '#10b981',
+              color: 'white',
+              border: 'none',
+              borderRadius: '8px',
+              fontSize: '16px',
+              fontWeight: '600',
+              cursor: finishingLive ? 'not-allowed' : 'pointer',
+              opacity: finishingLive ? 0.6 : 1,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '8px',
+              transition: 'all 0.2s ease',
+            }}
+            onMouseEnter={(e) => !finishingLive && (e.target.style.backgroundColor = '#059669')}
+            onMouseLeave={(e) => !finishingLive && (e.target.style.backgroundColor = '#10b981')}
+          >
+            <Check size={20} />
+            {finishingLive ? 'Finishing...' : 'Finish Live'}
+          </button>
         </div>
 
       </div>

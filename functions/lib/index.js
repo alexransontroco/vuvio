@@ -14,7 +14,10 @@ import { trackStreamEvent } from './analytics/trackStreamEvent.js';
 import { ingestEvents } from './analytics/ingestEvents.js';
 import { aggregateStreamStats, aggregateCreatorStats, aggregateCategoryStats, aggregateUserAnalytics } from './analytics/aggregateStats.js';
 import { cloudflareWebhook } from './cloudflare/cloudflareWebhook.js';
+import { createCloudflareClient } from './cloudflare/cloudflareClient.js';
 import { getCloudflareConfig, getCloudflareInputs, postCreateTestInput } from './cloudflare/testRouteHandlers.js';
+import { authenticateUser } from './middleware/authenticateUser.js';
+import { asRecord, stringField } from './shared/validation.js';
 import { monitorStreamHeartbeats } from './streams/monitorStreamHeartbeats.js';
 import { processProductImage } from './products/processProductImage.js';
 function pathParts(path = '') {
@@ -25,9 +28,30 @@ function sendCors(res) {
     res.set('Access-Control-Allow-Headers', 'Content-Type, Authorization, cf-webhook-signature, webhook-signature, x-cloudflare-signature');
     res.set('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
 }
+
+async function createLiveInputRoute(req, res) {
+  const user = await authenticateUser(req);
+  const body = asRecord(req.body);
+  const streamId = stringField(body, 'streamId', { required: true });
+  const title = stringField(body, 'title', { required: true, max: 120 });
+  const cloudflare = await createCloudflareClient().createLiveInput({ streamId, title });
+  if (!cloudflare.liveInputId || !cloudflare.uid) {
+    console.error('[createLiveInputRoute] Cloudflare live input creation failed', { cloudflare });
+    throw new ApiError('server_error', 'Failed to create Cloudflare live input');
+  }
+  res.status(201).json({
+    liveInputId: cloudflare.liveInputId,
+    uid: cloudflare.uid,
+    playbackUrl: cloudflare.playbackUrl,
+    hlsManifestUrl: cloudflare.hlsManifestUrl,
+    ingestUrl: cloudflare.ingestUrl,
+    streamKey: cloudflare.streamKey,
+  });
+}
 export const api = onRequest({
     region: 'europe-west1',
     secrets: [cloudflareAccountId, cloudflareApiToken, cloudflareWebhookSecret, cloudflareCustomerCode],
+    // Force rebuild - added Cloudflare live input route
 }, async (req, res) => {
     sendCors(res);
     if (req.method === 'OPTIONS') {
@@ -62,7 +86,9 @@ export const api = onRequest({
             return await cloudflareWebhook(req, res);
         if (req.method === 'POST' && parts[0] === 'products' && parts[1] === 'process-image')
             return await processProductImage(req, res);
-        // Cloudflare test routes
+        // Cloudflare routes
+        if (req.method === 'POST' && parts[0] === 'cloudflare' && parts[1] === 'live-input' && parts[2] === 'create')
+            return await createLiveInputRoute(req, res);
         if (req.method === 'GET' && parts[0] === 'cloudflare' && parts[1] === 'config')
             return await getCloudflareConfig(req, res);
         if (req.method === 'GET' && parts[0] === 'cloudflare' && parts[1] === 'inputs')

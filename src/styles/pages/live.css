@@ -1256,6 +1256,19 @@
   white-space: nowrap;
 }
 
+.live-feed__viewer-count {
+  border: 0.5px solid rgba(255, 255, 255, 0.12);
+  border-radius: 999px;
+  background: rgba(8, 20, 33, 0.55);
+  backdrop-filter: blur(16px);
+  box-shadow: 0 0 0 1px rgba(53, 227, 220, 0.08);
+  padding: 5px 12px;
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 11px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
 .live-location-globe {
   position: absolute;
   top: calc(12px + env(safe-area-inset-top));

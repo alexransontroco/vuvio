@@ -139,7 +139,7 @@ export default function App() {
         <Route index element={<Navigate to="/watch" replace />} />
         <Route path="/home" element={<Navigate to="/watch" replace />} />
         <Route path="/watch/:liveId" element={<Navigate to="/watch" replace />} />
-        <Route path="/live/:liveId" element={<ProtectedRoute><Lazy component={LivePage} /></ProtectedRoute>} />
+        <Route path="/live/:liveId" element={<ProtectedRoute requireOnboarding={false}><Lazy component={LivePage} /></ProtectedRoute>} />
         <Route path="/discover" element={<Lazy component={DiscoverFeedPage} />} />
 
         {/* Public */}

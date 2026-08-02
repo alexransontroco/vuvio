@@ -388,6 +388,7 @@ export default function CurrentGlobe({ streams, onboarding = false, onOnboarding
   const [mapError, setMapError] = useState('');
   const [showISSCard, setShowISSCard] = useState(false);
   const [currentZoom, setCurrentZoom] = useState(1);
+  const [isMapLoaded, setIsMapLoaded] = useState(false);
 
   // Performance diagnostics
   const perfRef = useRef({
@@ -543,6 +544,7 @@ export default function CurrentGlobe({ streams, onboarding = false, onOnboarding
 
     map.on('load', () => {
       try {
+        setIsMapLoaded(true);
         map.setProjection({ type: 'globe' });
         brightenBaseGlobe(map);
 
@@ -1018,7 +1020,7 @@ export default function CurrentGlobe({ streams, onboarding = false, onOnboarding
       data-sheet-state={sheetState}
       aria-label="Current Vuvio globe"
     >
-      <div className="test-old-globe">
+      <div className={`test-old-globe${isMapLoaded ? ' is-loaded' : ''}`}>
         <div ref={containerRef} className="test-old-globe__canvas" />
         <div className="test-old-globe__vignette" />
         {mapError ? <div className="test-old-globe__error">Error: {mapError}</div> : null}
