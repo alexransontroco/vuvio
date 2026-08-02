@@ -16,7 +16,7 @@ import { streams, upcomingStreams } from '../data/mockStreams.js';
 import { createLiveSoundscape } from '../services/liveSoundscape.js';
 import { getCreatedLives, getCreatedLiveStream, subscribeToCreatedLives, publishLivePing, endLive as deleteLiveFromDB } from '../services/createdLiveService.js';
 import { startBroadcast, stopBroadcast, watchBroadcast, closePeer, getLocalStream, getRemoteStream } from '../services/webrtcService.js';
-import { collection, doc, onSnapshot, query, where, updateDoc } from 'firebase/firestore';
+import { collection, doc, onSnapshot, query, where, updateDoc, addDoc, serverTimestamp, getDocs } from 'firebase/firestore';
 import { db } from '../firebase.js';
 import { useAuth } from '../context/AuthContext.jsx';
 import { getUnreadConversationCount, subscribeToMessaging } from '../services/messagingService.js';
@@ -52,11 +52,6 @@ const demoVideoLiveIds = [
 ];
 const DEFAULT_WATCH_LIVE_ID = 'runner-prague';
 const CLOCK_TICK_MS = 1000;
-const creatorComments = [
-  { avatar: 'E', name: 'Emma', text: 'This looks amazing.' },
-  { avatar: 'N', name: 'Noah', text: 'Trail view is clean.' },
-  { avatar: 'M', name: 'Maya', text: 'Audio is good.' },
-];
 
 const fallbackLocations = {
   'fisherman-lofoten': { top: '29%', left: '50%' },
@@ -1058,9 +1053,9 @@ function formatLiveDuration(totalSeconds) {
   return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
 }
 
-function CreatorCameraSurface({ live, className = '', children }) {
+function CreatorCameraSurface({ live, className = '', children, videoRef: externalVideoRef }) {
   const stream = getCreatedLiveStream(live.id);
-  const videoRef = useRef(null);
+  const videoRef = externalVideoRef || useRef(null);
 
   useEffect(() => {
     if (!videoRef.current || !stream) return undefined;
@@ -1090,7 +1085,7 @@ function CreatorLiveSession({ live, onEndingChange }) {
   const [viewerCount, setViewerCount] = useState(1);
   const [peakViewers, setPeakViewers] = useState(1);
   const [stars, setStars] = useState(0);
-  const [commentsCount, setCommentsCount] = useState(0);
+  const [commentText, setCommentText] = useState('');
   const [followers, setFollowers] = useState(0);
   const [hudVisible, setHudVisible] = useState(true);
   const [controlsVisible, setControlsVisible] = useState(false);
@@ -1105,6 +1100,27 @@ function CreatorLiveSession({ live, onEndingChange }) {
   const longPressTimer = useRef(null);
   const lastCenterTapRef = useRef({ time: 0, x: 0, y: 0 });
   const broadcastStartedRef = useRef(false);
+  const videoElementRef = useRef(null);
+
+  const captureAndSaveCoverImage = async (liveId) => {
+    try {
+      const videoEl = videoElementRef.current;
+      if (!videoEl) return;
+
+      const canvas = document.createElement('canvas');
+      canvas.width = videoEl.videoWidth || 1280;
+      canvas.height = videoEl.videoHeight || 720;
+      const ctx = canvas.getContext('2d');
+      ctx?.drawImage(videoEl, 0, 0);
+
+      const imageData = canvas.toDataURL('image/jpeg', 0.8);
+      const liveRef = doc(db, 'activeLives', liveId);
+      await updateDoc(liveRef, { image: imageData });
+      console.log('[CreatorLiveSession] Cover image captured and saved');
+    } catch (err) {
+      console.warn('[CreatorLiveSession] Failed to capture cover image:', err.message);
+    }
+  };
 
   const keepHudAwake = () => {
     if (locked || phase !== 'live') return;
@@ -1164,6 +1180,11 @@ function CreatorLiveSession({ live, onEndingChange }) {
         const stream = await startBroadcast(live.id, user.uid, getCreatedLiveStream(live.id));
         if (!active) {
           stream?.getTracks?.().forEach((track) => track.stop());
+        } else {
+          // Capture cover image after stream is stable
+          window.setTimeout(() => {
+            if (active) captureAndSaveCoverImage(live.id);
+          }, 2000);
         }
       } catch (err) {
         console.error('[CreatorLiveSession] Broadcast setup failed:', err.message);
@@ -1202,27 +1223,7 @@ function CreatorLiveSession({ live, onEndingChange }) {
     return () => window.clearInterval(timer);
   }, [phase]);
 
-  useEffect(() => {
-    if (phase !== 'live') return undefined;
-    const timer = window.setInterval(() => {
-      const next = creatorComments[commentsCount % creatorComments.length];
-      setComment(next);
-      setCommentsCount((value) => value + 1);
-      window.setTimeout(() => setComment(null), 4000);
-    }, 7200);
-    return () => window.clearInterval(timer);
-  }, [commentsCount, phase]);
 
-  useEffect(() => {
-    if (phase !== 'live') return undefined;
-    const timer = window.setInterval(() => {
-      const id = `star-${Date.now()}`;
-      setStars((value) => value + 1);
-      setStarBursts((value) => [...value.slice(-2), { id, left: 62 + Math.random() * 24 }]);
-      window.setTimeout(() => setStarBursts((value) => value.filter((item) => item.id !== id)), 1400);
-    }, 5200);
-    return () => window.clearInterval(timer);
-  }, [phase]);
 
   useEffect(() => {
     if (phase !== 'live') return undefined;
@@ -1303,6 +1304,23 @@ function CreatorLiveSession({ live, onEndingChange }) {
       console.log('[HomePage] Ending live broadcast:', live.id);
       await stopBroadcast(live.id);
       closePeer();
+
+      // Save final stats to Firestore
+      try {
+        const liveRef = doc(db, 'activeLives', live.id);
+        const commentsRef = collection(db, `activeLives/${live.id}/comments`);
+        const commentSnap = await getDocs(commentsRef);
+        await updateDoc(liveRef, {
+          status: 'ended',
+          endedAt: serverTimestamp(),
+          durationSeconds: elapsed,
+          totalUniqueViewers: Math.max(viewerCount, 128),
+          peakViewerCount: Math.max(peakViewers, viewerCount, 164),
+          commentCount: commentSnap.size,
+        });
+      } catch (updateErr) {
+        console.warn('[HomePage] Failed to save final stats:', updateErr);
+      }
     } catch (err) {
       console.error('[HomePage] Failed to stop broadcast:', err);
     }
@@ -1321,7 +1339,6 @@ function CreatorLiveSession({ live, onEndingChange }) {
     viewers: Math.max(viewerCount, 128),
     peak: Math.max(peakViewers, viewerCount, 164),
     stars: Math.max(stars, 24),
-    comments: Math.max(commentsCount, 6),
     followers: Math.max(followers, 3),
   };
 
@@ -1359,7 +1376,7 @@ function CreatorLiveSession({ live, onEndingChange }) {
       onPointerCancel={clearLongPress}
       aria-label="Creator live camera"
     >
-      <CreatorCameraSurface live={live} />
+      <CreatorCameraSurface live={live} videoRef={videoElementRef} />
       <div className="creator-live-hud">
         <div className="creator-live-hud__left">
           <LiveBadge compact pulse />
