@@ -1,0 +1,37 @@
+.app-canvas--desktop {
+  display: grid;
+  grid-template-columns: 280px 1fr 340px;
+  gap: 0;
+  height: 100dvh;
+  background: var(--vuvio-bg-deep);
+}
+
+.app-canvas--desktop .phone-stage {
+  grid-column: 2;
+  border-left: 0.5px solid var(--vuvio-border);
+  border-right: 0.5px solid var(--vuvio-border);
+  max-width: 100%;
+  overflow: auto;
+}
+
+.app-canvas--desktop .phone-stage nav {
+  display: none;
+}
+
+/* Left sidebar (navigation) */
+.app-canvas--desktop::before {
+  content: '';
+  grid-column: 1;
+  grid-row: 1;
+  background: linear-gradient(180deg, var(--vuvio-bg-elevated) 0%, var(--vuvio-bg) 100%);
+  border-right: 0.5px solid var(--vuvio-border);
+}
+
+/* Right sidebar (info panel) */
+.app-canvas--desktop::after {
+  content: '';
+  grid-column: 3;
+  grid-row: 1;
+  background: linear-gradient(180deg, var(--vuvio-bg-elevated) 0%, var(--vuvio-bg) 100%);
+  border-left: 0.5px solid var(--vuvio-border);
+}

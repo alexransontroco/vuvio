@@ -30,18 +30,14 @@ export default function AppShell() {
     localStorage.setItem('vuvio-landing-shown', 'true');
   };
 
-  if (isDesktopMode) {
-    return <Navigate to="/desktop" replace />;
-  }
-
-  if (showLanding) {
+  if (showLanding && !isDesktopMode) {
     return <MobileLandingScreen onComplete={handleLandingComplete} />;
   }
 
   return (
     <>
       <ViewModeToggle />
-      <main className={isLive ? 'app-canvas app-canvas--live' : 'app-canvas'}>
+      <main className={`${isDesktopMode ? 'app-canvas--desktop' : ''} ${isLive ? 'app-canvas app-canvas--live' : 'app-canvas'}`}>
       <section className="phone-stage" aria-label="VuVio mobile application">
         <div className="route-transition" key={location.pathname}>
           <Outlet />

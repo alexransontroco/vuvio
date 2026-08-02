@@ -8,6 +8,7 @@ import './i18n/index.js';
 import './styles/tokens.css';
 import './styles/base.css';
 import './styles/layout.css';
+import './styles/app-shell-desktop.css';
 import './styles/components.css';
 import './styles/components/notification-toast.css';
 import './styles/pages/live.css';

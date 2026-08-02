@@ -1309,7 +1309,7 @@ function CreatorLiveSession({ live, onEndingChange }) {
 
     window.setTimeout(() => setPhase('processing'), 1100);
     window.setTimeout(() => {
-      navigate('/watch', { replace: true });
+      navigate(`/live/${live.id}/recap`, { replace: true });
       deleteLiveFromDB(live.id).catch((err) => {
         console.error('[HomePage] Failed to delete live from database:', err);
       });
