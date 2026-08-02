@@ -1,7 +1,7 @@
 import { ArrowLeft, BarChart3, Camera, Check, Flame, MessageCircle, MoreHorizontal, Star } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { doc, getDoc, collection, query, getDocs, orderBy } from 'firebase/firestore';
+import { doc, getDoc } from 'firebase/firestore';
 import { db } from '../firebase.js';
 import { endLive } from '../services/createdLiveService.js';
 import BottomNav from '../components/BottomNav.jsx';
@@ -93,7 +93,6 @@ export default function LiveRecapPage() {
   const [modal, setModal] = useState(null);
   const [finishingLive, setFinishingLive] = useState(false);
   const [liveData, setLiveData] = useState(null);
-  const [comments, setComments] = useState([]);
 
   // Use live data from state (passed during navigation) or fetch from Firestore
   useEffect(() => {
@@ -117,31 +116,6 @@ export default function LiveRecapPage() {
       }
     })();
   }, [location.state?.liveData, location.pathname]);
-
-  // Load comments from Firestore
-  useEffect(() => {
-    const liveId = location.state?.liveId || location.pathname.split('/')[2];
-    if (!liveId) return;
-
-    (async () => {
-      try {
-        const commentsRef = collection(db, `activeLives/${liveId}/comments`);
-        const q = query(commentsRef, orderBy('timestamp', 'asc'));
-        const snapshot = await getDocs(q);
-        const loadedComments = snapshot.docs.map((doc) => ({
-          id: doc.id,
-          ...doc.data(),
-          who: doc.data().userDisplayName || 'Anonymous',
-          text: doc.data().text,
-          time: doc.data().timestamp ? new Date(doc.data().timestamp.toDate()).toLocaleTimeString() : '',
-        }));
-        setComments(loadedComments);
-      } catch (err) {
-        console.log('[LiveRecapPage] No comments found:', err.message);
-        setComments([]);
-      }
-    })();
-  }, [location.state?.liveId, location.pathname]);
 
   // Auto-finish live when leaving recap page
   useEffect(() => {
@@ -175,43 +149,6 @@ export default function LiveRecapPage() {
     };
   }, [location.search, location.pathname]);
 
-  // Build conversations from real Firestore comments
-  const buildConversations = () => {
-    if (!comments || comments.length === 0) return liveRecap.conversations;
-
-    const realConversations = [
-      {
-        id: 'all-chat',
-        tone: 'blue',
-        label: 'Live Chat',
-        text: `${comments.length} messages`,
-        count: `${comments.length} total messages`,
-        action: 'View all',
-        groupedText: `${comments.length} viewers participated`,
-        timestamp: comments[comments.length - 1]?.time || '00:00',
-        avatars: [],
-      },
-    ];
-
-    // Add unanswered questions if any
-    const questions = comments.filter(c => c.text?.includes('?'));
-    if (questions.length > 0) {
-      realConversations.push({
-        id: 'unanswered',
-        tone: 'orange',
-        label: 'Questions',
-        text: `${questions.length} questions`,
-        count: `from ${questions.length} people`,
-        action: 'View',
-        groupedText: `${questions.length} viewers asked questions`,
-        timestamp: questions[0]?.time || '00:00',
-        avatars: [],
-      });
-    }
-
-    return realConversations.length > 0 ? realConversations : liveRecap.conversations;
-  };
-
   // Use real data if available, otherwise fallback to mock
   const recap = useMemo(() => {
     if (!liveData) return liveRecap;
@@ -223,17 +160,12 @@ export default function LiveRecapPage() {
       stats: [
         { id: 'peak', label: 'Peak Viewers', value: liveData.peakViewerCount?.toString() || '0', trend: '', icon: 'chart' },
         { id: 'avg', label: 'Avg Viewers', value: Math.round((liveData.currentViewerCount || 0) * 0.8).toString(), trend: '', icon: 'users' },
-        { id: 'stars', label: 'Stars Received', value: liveData.starsCount?.toString() || '0', icon: 'star' },
+        { id: 'stars', label: 'Stars Received', value: '0', icon: 'star' },
         { id: 'followers', label: 'New Followers', value: '+0', icon: 'userPlus' },
-        { id: 'messages', label: 'Total Messages', value: comments.length.toString(), icon: 'message' },
+        { id: 'messages', label: 'Total Messages', value: '0', icon: 'message' },
       ],
-      conversations: buildConversations(),
-      chatByHighlight: {
-        ...liveRecap.chatByHighlight,
-        chat: comments.map(c => [c.time, c.who, c.text]),
-      },
     };
-  }, [liveData, comments]);
+  }, [liveData]);
 
   const activeHighlight = useMemo(
     () => recap.highlights.find((item) => item.id === activeId) ?? recap.highlights[0],
