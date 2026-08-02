@@ -106,7 +106,7 @@ function profileFromContent(content, creatorId) {
   const city = content.city ?? locationParts[0]?.trim() ?? '';
   const country = content.country ?? locationParts.slice(1).join(',').trim() ?? '';
   const title = content.experienceTitle ?? content.title ?? content.description ?? content.note ?? `Live: ${content.job ?? content.role ?? 'Live'}`;
-  const image = content.image ?? content.thumbnailUrl ?? '/icons/icon-192.png';
+  const image = content.image ?? content.thumbnailUrl ?? '/assets/icons/icon-192.png';
   const viewers = Number.parseInt(String(content.viewers ?? content.viewerLabel ?? 0).replace(/\D/g, ''), 10) || 0;
   const category = content.subcategory ?? content.category ?? content.job ?? content.role ?? 'Live';
 

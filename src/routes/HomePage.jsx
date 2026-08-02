@@ -38,7 +38,7 @@ const homeTabs = [
 ];
 const followedCreatorNames = ['Noah Perrin', 'Maya Afonso', 'Luka Marino'];
 const fallbackUserLocation = { latitude: 48.8566, longitude: 2.3522 };
-const fallbackCover = '/icons/icon-512.png';
+const fallbackCover = '/assets/icons/icon-512.png';
 const demoVideoLiveIds = [
   'chef-michelin-paris',
   'motorbike-srinagar',

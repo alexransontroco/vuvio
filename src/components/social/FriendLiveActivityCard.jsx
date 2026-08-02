@@ -17,7 +17,7 @@ export function FriendLiveActivityCard({
             alt={live.title}
             loading="lazy"
             onError={(e) => {
-              e.currentTarget.src = '/icons/icon-192.png';
+              e.currentTarget.src = '/assets/icons/icon-192.png';
             }}
           />
         )}

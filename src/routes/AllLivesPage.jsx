@@ -9,7 +9,7 @@ const sortOptions = [
   { id: 'recent', label: 'Most recent' },
 ];
 
-const fallbackImage = '/icons/icon-512.png';
+const fallbackImage = '/assets/icons/icon-512.png';
 
 function viewerCount(value) {
   return Number.parseInt(String(value ?? '').replace(/\D/g, ''), 10) || 0;

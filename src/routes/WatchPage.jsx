@@ -38,7 +38,7 @@ const homeTabs = [
 ];
 const followedCreatorNames = ['Noah Perrin', 'Maya Afonso', 'Luka Marino'];
 const fallbackUserLocation = { latitude: 48.8566, longitude: 2.3522 };
-const fallbackCover = '/icons/icon-512.png';
+const fallbackCover = '/assets/icons/icon-512.png';
 const demoVideoLiveIds = [
   'chef-michelin-paris',
   'motorbike-srinagar',
@@ -1309,7 +1309,7 @@ function CreatorLiveSession({ live, onEndingChange }) {
 
     window.setTimeout(() => setPhase('processing'), 1100);
     window.setTimeout(() => {
-      navigate(`/live/${live.id}/recap`, { replace: true, state: { liveId: live.id } });
+      navigate(`/live/${live.id}/recap?id=${live.id}`, { replace: true });
       deleteLiveFromDB(live.id).catch((err) => {
         console.error('[HomePage] Failed to delete live from database:', err);
       });

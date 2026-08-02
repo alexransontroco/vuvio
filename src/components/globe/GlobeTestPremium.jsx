@@ -57,7 +57,7 @@ function GlobeLiveCard({ live, onClose, onWatch }) {
         x
       </button>
       <header>
-        <img src={live.image || '/icons/icon-192.png'} alt="" />
+        <img src={live.image || '/assets/icons/icon-192.png'} alt="" />
         <div>
           <strong>{live.name}</strong>
           <small>

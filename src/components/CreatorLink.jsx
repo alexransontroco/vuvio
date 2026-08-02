@@ -27,7 +27,7 @@ export default function CreatorLink({
       aria-label={`${t('common.viewProfile')} ${profile.displayName}`}
     >
       <span className="creator-link__avatar">
-        <img src={profile.avatarUrl || '/icons/icon-192.png'} alt="" />
+        <img src={profile.avatarUrl || '/assets/icons/icon-192.png'} alt="" />
       </span>
       <span className="creator-link__copy">
         <span>

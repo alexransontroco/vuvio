@@ -64,7 +64,7 @@ export function getOtherParticipant(conversation) {
       id: 'vuvio-team',
       name: 'Vuvio Team',
       username: 'vuvio',
-      avatar: '/icons/icon-192.png',
+      avatar: '/assets/icons/icon-192.png',
       online: true,
     };
   }
@@ -74,7 +74,7 @@ export function getOtherParticipant(conversation) {
     id: 'unavailable',
     name: 'Unavailable user',
     username: 'unavailable',
-    avatar: '/icons/icon-192.png',
+    avatar: '/assets/icons/icon-192.png',
     online: false,
   };
 }

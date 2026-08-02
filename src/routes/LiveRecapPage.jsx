@@ -96,7 +96,8 @@ export default function LiveRecapPage() {
 
   // Fetch real live data from Firestore
   useEffect(() => {
-    const liveId = location.state?.liveId;
+    const params = new URLSearchParams(location.search);
+    const liveId = params.get('id') || location.pathname.split('/')[2];
     if (!liveId) return;
 
     (async () => {
@@ -110,11 +111,12 @@ export default function LiveRecapPage() {
         console.error('[LiveRecapPage] Failed to fetch live data:', err);
       }
     })();
-  }, [location.state?.liveId]);
+  }, [location.search, location.pathname]);
 
   // Auto-finish live when leaving recap page
   useEffect(() => {
-    const liveId = location.state?.liveId;
+    const params = new URLSearchParams(location.search);
+    const liveId = params.get('id') || location.pathname.split('/')[2];
     if (!liveId) return;
 
     return () => {
@@ -141,7 +143,7 @@ export default function LiveRecapPage() {
         }
       })();
     };
-  }, [location.state?.liveId]);
+  }, [location.search, location.pathname]);
 
   // Use real data if available, otherwise fallback to mock
   const recap = useMemo(() => {

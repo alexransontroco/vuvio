@@ -96,7 +96,7 @@ const locationOptions = [
   { id: 'worldwide', label: 'Worldwide' },
 ];
 
-const fallbackImage = '/icons/icon-512.png';
+const fallbackImage = '/assets/icons/icon-512.png';
 
 function viewerCount(value) {
   return Number.parseInt(String(value ?? '').replace(/\D/g, ''), 10) || 0;

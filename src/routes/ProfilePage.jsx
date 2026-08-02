@@ -133,7 +133,7 @@ function ProfileCover({ profile, isOwnProfile, onShare, onEditCover }) {
 function ProfileIdentity({ profile, isOwnProfile, onEditAvatar }) {
   const [expanded, setExpanded] = useState(false);
   const bioNeedsToggle = profile.bio.length > 145;
-  const avatarUrl = profile.avatarUrl || '/icons/icon-192.png';
+  const avatarUrl = profile.avatarUrl || '/assets/icons/icon-192.png';
 
   return (
     <section className="creator-identity" aria-label="Creator identity">
@@ -973,7 +973,7 @@ export default function ProfilePage() {
           onRemove={() => {
             setImageSheet((current) => ({
               ...current,
-              previewUrl: current.type === 'avatar' ? '/icons/icon-192.png' : null,
+              previewUrl: current.type === 'avatar' ? '/assets/icons/icon-192.png' : null,
               error: '',
             }));
           }}

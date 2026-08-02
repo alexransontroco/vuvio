@@ -72,7 +72,7 @@ function ProfileImagesEditor({ form, onImageChange, onError }) {
         </button>
       </div>
       <div className="edit-image-editor__avatar">
-        <img src={form.avatarUrl || '/icons/icon-192.png'} alt="Avatar preview" />
+        <img src={form.avatarUrl || '/assets/icons/icon-192.png'} alt="Avatar preview" />
         <button type="button" onClick={() => avatarInputRef.current?.click()} aria-label="Edit avatar">
           <Camera size={15} strokeWidth={2} />
         </button>

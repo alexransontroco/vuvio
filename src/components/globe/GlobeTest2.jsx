@@ -440,7 +440,7 @@ function selectedLiveCard(live, closeSelectedLive, navigate) {
       <button type="button" className="globe-test2-card__close" onClick={closeSelectedLive} aria-label="Close">
         <X size={14} strokeWidth={2} />
       </button>
-      <img src={live.image || '/icons/icon-192.png'} alt="" loading="lazy" />
+      <img src={live.image || '/assets/icons/icon-192.png'} alt="" loading="lazy" />
       <div className="globe-test2-card__body">
         <div className="globe-test2-card__badges">
           <span className="globe-test2-live-badge">Live</span>
