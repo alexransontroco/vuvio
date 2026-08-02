@@ -1,5 +1,5 @@
 import { Eye, EyeOff, LogIn } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import BrandMark from '../components/BrandMark.jsx';
 import { useAuth } from '../context/AuthContext.jsx';
@@ -18,7 +18,7 @@ function GoogleIcon() {
 export default function LoginPage() {
   const navigate   = useNavigate();
   const location   = useLocation();
-  const { signIn, signInWithGoogle } = useAuth();
+  const { user, authLoading, signIn, signInWithGoogle } = useAuth();
   const returnTo   = location.state?.returnTo || '/watch';
 
   const [email,       setEmail]       = useState('');
@@ -27,6 +27,13 @@ export default function LoginPage() {
   const [error,       setError]       = useState('');
   const [submitting,  setSubmitting]  = useState(false);
   const [googleBusy,  setGoogleBusy]  = useState(false);
+
+  // If user is authenticated (e.g., from Google redirect), redirect to home
+  useEffect(() => {
+    if (!authLoading && user) {
+      navigate(returnTo, { replace: true });
+    }
+  }, [user, authLoading, navigate, returnTo]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -51,12 +58,15 @@ export default function LoginPage() {
       // For mobile redirect flow, result is null and redirect happens
       if (result === null) {
         console.log('[LoginPage] Redirect initiated, awaiting Google...');
+        // Don't reset googleBusy - redirect will reload the page
         return;
       }
       // For desktop popup flow, result is user object
       if (result?.uid) {
         console.log('[LoginPage] Google Sign-In successful');
         navigate(returnTo, { replace: true });
+      } else {
+        setGoogleBusy(false);
       }
     } catch (err) {
       const message = err?.message || 'Google Sign-In failed';

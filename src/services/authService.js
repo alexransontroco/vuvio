@@ -130,12 +130,7 @@ export async function createUserProfileIfMissing(firebaseUser, extra = {}) {
     activities:         [],
     preferredCategories: [],
     equipment:          [],
-    followerCount:      0,
-    followingCount:     0,
-    liveCount:          0,
     followedCreators:   [],
-    role:               'user',
-    accountStatus:      'active',
     onboardingCompleted: false,
     authProvider:       extra.provider || 'password',
     createdAt:          serverTimestamp(),
@@ -292,7 +287,13 @@ export async function handleGoogleRedirectResult() {
       return null;
     }
     console.log('[authService] Redirect successful for user:', result.user.uid.slice(0, 8));
-    await createUserProfileIfMissing(result.user, { provider: 'google' });
+    try {
+      await createUserProfileIfMissing(result.user, { provider: 'google' });
+      console.log('[authService] User profile created/updated for:', result.user.uid.slice(0, 8));
+    } catch (profileErr) {
+      console.error('[authService] Failed to create user profile:', profileErr.message);
+      // Still return the user even if profile creation fails - they're authenticated in Firebase
+    }
     return result.user;
   } catch (err) {
     console.error('[authService] handleGoogleRedirectResult error:', err.code, err.message);

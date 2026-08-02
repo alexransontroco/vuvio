@@ -83,11 +83,11 @@ export function AuthProvider({ children }) {
           console.log('[Auth] Checking for redirect result...');
           const redirectUser = await handleGoogleRedirectResult();
           if (redirectUser && mounted) {
-            console.log('[Auth] Redirect user found, setting up auth state listener');
+            console.log('[Auth] Redirect user authenticated successfully:', redirectUser.uid.slice(0, 8));
           }
         } catch (redirectErr) {
-          console.error('[Auth] Redirect result error:', redirectErr.code, redirectErr.message);
-          if (mounted) setAuthLoading(false);
+          console.error('[Auth] Redirect result error:', redirectErr.code || 'unknown', redirectErr.message);
+          // Don't stop auth flow - just log and continue
         }
 
         if (!mounted) return;
@@ -124,7 +124,7 @@ export function AuthProvider({ children }) {
   useEffect(() => {
     const splashTimer = setTimeout(() => {
       setShowSplash(false);
-    }, 9000);
+    }, 4000);
     return () => clearTimeout(splashTimer);
   }, []);
 
