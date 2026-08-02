@@ -110,7 +110,7 @@ export const aggregateUserAnalyticsScheduled = onSchedule({
 
 export const processHighlightsScheduled = onSchedule({
   region: 'europe-west1',
-  schedule: 'every 30 seconds',
+  schedule: '* * * * *', // Every minute
 }, async () => {
   await processHighlights();
 });
