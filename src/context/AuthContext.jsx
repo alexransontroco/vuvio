@@ -43,8 +43,14 @@ export function AuthProvider({ children }) {
     try {
       if (isDemoAccount(firebaseUser.email)) {
         console.log('[Auth] Loading demo account profile for Thomas Mercier');
-        const demoProfile = creatorProfiles['thomas-mercier'];
-        setUserProfile({ id: uid, ...demoProfile });
+        const { getOwnCreatorProfile } = await import('../services/profileService.js');
+        const savedProfile = getOwnCreatorProfile();
+        if (savedProfile && savedProfile.id) {
+          setUserProfile(savedProfile);
+        } else {
+          const demoProfile = creatorProfiles['thomas-mercier'];
+          setUserProfile({ id: uid, ...demoProfile });
+        }
         console.timeEnd('[Auth] profile Firestore read');
         return;
       }
