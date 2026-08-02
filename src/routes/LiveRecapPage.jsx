@@ -92,6 +92,25 @@ export default function LiveRecapPage() {
   const [drawerConversation, setDrawerConversation] = useState(null);
   const [modal, setModal] = useState(null);
   const [finishingLive, setFinishingLive] = useState(false);
+  const [liveData, setLiveData] = useState(null);
+
+  // Fetch real live data from Firestore
+  useEffect(() => {
+    const liveId = location.state?.liveId;
+    if (!liveId) return;
+
+    (async () => {
+      try {
+        const liveRef = doc(db, 'activeLives', liveId);
+        const liveSnap = await getDoc(liveRef);
+        if (liveSnap.exists()) {
+          setLiveData(liveSnap.data());
+        }
+      } catch (err) {
+        console.error('[LiveRecapPage] Failed to fetch live data:', err);
+      }
+    })();
+  }, [location.state?.liveId]);
 
   // Auto-finish live when leaving recap page
   useEffect(() => {
@@ -124,11 +143,29 @@ export default function LiveRecapPage() {
     };
   }, [location.state?.liveId]);
 
+  // Use real data if available, otherwise fallback to mock
+  const recap = useMemo(() => {
+    if (!liveData) return liveRecap;
+    return {
+      ...liveRecap,
+      id: liveData.id,
+      title: liveData.title || liveRecap.title,
+      duration: liveData.durationSeconds || liveRecap.duration,
+      stats: [
+        { id: 'peak', label: 'Peak Viewers', value: liveData.peakViewerCount?.toString() || '0', trend: '', icon: 'chart' },
+        { id: 'avg', label: 'Avg Viewers', value: Math.round((liveData.currentViewerCount || 0) * 0.8).toString(), trend: '', icon: 'users' },
+        { id: 'stars', label: 'Stars Received', value: '0', icon: 'star' },
+        { id: 'followers', label: 'New Followers', value: '+0', icon: 'userPlus' },
+        { id: 'messages', label: 'Total Messages', value: '0', icon: 'message' },
+      ],
+    };
+  }, [liveData]);
+
   const activeHighlight = useMemo(
-    () => liveRecap.highlights.find((item) => item.id === activeId) ?? liveRecap.highlights[0],
-    [activeId],
+    () => recap.highlights.find((item) => item.id === activeId) ?? recap.highlights[0],
+    [activeId, recap],
   );
-  const chatMessages = liveRecap.chatByHighlight[activeHighlight.id] ?? liveRecap.chatByHighlight.chat;
+  const chatMessages = recap.chatByHighlight[activeHighlight.id] ?? recap.chatByHighlight.chat;
 
   const selectHighlight = (highlight) => {
     setActiveId(highlight.id);

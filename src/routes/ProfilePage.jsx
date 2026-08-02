@@ -52,6 +52,20 @@ function formatCompact(value = 0) {
   return String(value);
 }
 
+function formatCreatedAt(createdAt) {
+  if (!createdAt) return '';
+  if (typeof createdAt === 'string') return createdAt;
+  if (createdAt.toDate && typeof createdAt.toDate === 'function') {
+    try {
+      return createdAt.toDate().getFullYear().toString();
+    } catch {
+      return '';
+    }
+  }
+  if (createdAt instanceof Date) return createdAt.getFullYear().toString();
+  return '';
+}
+
 function ProfileSkeleton() {
   return (
     <section className="screen-scroll creator-profile-screen" aria-label="Loading profile">
@@ -533,10 +547,10 @@ function AboutTab({ profile }) {
           <strong>{profile.categories.join(' · ')}</strong>
         </article>
       ) : null}
-      {profile.createdAt ? (
+      {formatCreatedAt(profile.createdAt) ? (
         <article>
           <span>Member since</span>
-          <strong>{typeof profile.createdAt === 'string' ? profile.createdAt : profile.createdAt?.toDate?.().getFullYear?.() || ''}</strong>
+          <strong>{formatCreatedAt(profile.createdAt)}</strong>
         </article>
       ) : null}
       {links.length ? (
