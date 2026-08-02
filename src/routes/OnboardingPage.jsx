@@ -343,7 +343,7 @@ export default function OnboardingPage() {
         {error ? <p className="auth-error" role="alert">{error}</p> : null}
         <button
           type="button"
-          className="auth-submit"
+          className="onboarding-secondary-button"
           onClick={handleContinue}
           disabled={busy}
         >
