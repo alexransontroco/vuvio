@@ -1134,6 +1134,29 @@ function CreatorLiveSession({ live, onEndingChange }) {
 
     const setupBroadcast = async () => {
       try {
+        // Create Cloudflare live input
+        try {
+          const cfResponse = await fetch('/api/cloudflare/live-input/create', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              streamId: live.id,
+              title: live.name || live.id,
+            }),
+          });
+          if (cfResponse.ok) {
+            const cfData = await cfResponse.json();
+            console.log('[CreatorLiveSession] Cloudflare live input created:', cfData.liveInputId);
+            // Store liveInputId in Firestore
+            if (active && cfData.liveInputId) {
+              const liveRef = doc(db, 'activeLives', live.id);
+              await updateDoc(liveRef, { liveInputId: cfData.liveInputId });
+            }
+          }
+        } catch (cfErr) {
+          console.warn('[CreatorLiveSession] Cloudflare setup failed:', cfErr.message);
+        }
+
         const stream = await startBroadcast(live.id, user.uid, getCreatedLiveStream(live.id));
         if (!active) {
           stream?.getTracks?.().forEach((track) => track.stop());
@@ -1181,8 +1204,8 @@ function CreatorLiveSession({ live, onEndingChange }) {
       const next = creatorComments[commentsCount % creatorComments.length];
       setComment(next);
       setCommentsCount((value) => value + 1);
-      window.setTimeout(() => setComment(null), 2000);
-    }, 9200);
+      window.setTimeout(() => setComment(null), 4000);
+    }, 7200);
     return () => window.clearInterval(timer);
   }, [commentsCount, phase]);
 
