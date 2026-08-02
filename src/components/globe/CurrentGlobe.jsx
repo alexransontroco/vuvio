@@ -17,11 +17,12 @@ const STYLE_URL_GREEN = 'https://basemaps.cartocdn.com/gl/voyager-nolabels-gl-st
 const LIVE_COLOR = '#2BD9C8';
 const UPCOMING_COLOR = '#3B82E6';
 const ROTATE_DEGREES_PER_SECOND = 3.5;
-const ACTUAL_ROTATION_INTERVAL = 16;
+const ACTUAL_ROTATION_INTERVAL = 24;
 const SELECTED_LIVE_ZOOM = 4.05;
 const REQUESTED_LIVE_ZOOM = 4.2;
 const PING_COLOR = '#ff8a1f';
 const PING_TTL_MS = 12000;
+const PULSE_INTERVAL = 100;
 
 const statusColor = [
   'case',
@@ -219,7 +220,7 @@ function drawAtmosphericHalo(canvas, ctx, rotation) {
 
   ctx.clearRect(0, 0, w, h);
 
-  const starCount = Math.max(60, Math.floor((w * h) / 28000));
+  const starCount = Math.max(40, Math.floor((w * h) / 42000));
   for (let i = 0; i < starCount; i += 1) {
     const seed = i * 97.37;
     const x = (Math.sin(seed * 12.9898) * 43758.5453) % 1;
@@ -230,8 +231,8 @@ function drawAtmosphericHalo(canvas, ctx, rotation) {
 
     if (distanceFromGlobe < baseRadius * 1.08) continue;
 
-    const twinkle = 0.45 + Math.sin(rotation * 0.075 + seed) * 0.28 + Math.sin(rotation * 0.031 + seed * 0.43) * 0.18;
-    const size = 0.35 + Math.abs(Math.sin(seed * 0.17)) * 0.65;
+    const twinkle = 0.45 + Math.sin(rotation * 0.075 + seed) * 0.28;
+    const size = 0.3 + Math.abs(Math.sin(seed * 0.17)) * 0.5;
     const opacity = Math.max(0.12, Math.min(0.88, twinkle));
 
     ctx.fillStyle = `rgba(230, 244, 255, ${opacity})`;
@@ -245,7 +246,7 @@ function drawAtmosphericHalo(canvas, ctx, rotation) {
   ctx.rotate((rotation * Math.PI) / 180);
 
   const grad1 = ctx.createRadialGradient(0, -baseRadius * 0.12, baseRadius * 0.18, 0, -baseRadius * 0.12, baseRadius * 1.15);
-  grad1.addColorStop(0, 'rgba(80, 170, 230, 0.1)');
+  grad1.addColorStop(0, 'rgba(80, 170, 230, 0.08)');
   grad1.addColorStop(1, 'rgba(80, 140, 200, 0)');
   ctx.fillStyle = grad1;
   ctx.beginPath();
@@ -255,19 +256,19 @@ function drawAtmosphericHalo(canvas, ctx, rotation) {
   ctx.restore();
 
   const haze = ctx.createRadialGradient(cx, cy * 0.78, baseRadius * 0.48, cx, cy * 0.78, baseRadius * 1.6);
-  haze.addColorStop(0, 'rgba(70, 150, 200, 0.03)');
+  haze.addColorStop(0, 'rgba(70, 150, 200, 0.02)');
   haze.addColorStop(1, 'rgba(60, 140, 180, 0)');
   ctx.fillStyle = haze;
   ctx.fillRect(0, 0, w, h);
 
-  const dustCount = Math.max(4, Math.floor((w * h) / 240000));
-  ctx.globalAlpha = 0.02;
+  const dustCount = Math.max(2, Math.floor((w * h) / 480000));
+  ctx.globalAlpha = 0.015;
   for (let i = 0; i < dustCount; i++) {
     const seed = i * 13.7;
     const x = (cx + Math.cos(rotation * 0.012 + seed) * w * 0.32) % w;
     const y = (cy + Math.sin(rotation * 0.009 + seed) * h * 0.32) % h;
-    const size = 0.4 + Math.sin(rotation * 0.006 + seed) * 0.2;
-    ctx.fillStyle = `rgba(160, 210, 255, ${0.1 + Math.sin(seed) * 0.05})`;
+    const size = 0.3 + Math.sin(rotation * 0.006 + seed) * 0.15;
+    ctx.fillStyle = `rgba(160, 210, 255, ${0.08 + Math.sin(seed) * 0.04})`;
     ctx.beginPath();
     ctx.arc(x, y, size, 0, Math.PI * 2);
     ctx.fill();
@@ -489,7 +490,7 @@ export default function CurrentGlobe({ streams, onboarding = false, onOnboarding
       logoPosition: 'bottom-left',
       renderWorldCopies: false,
       fadeDuration: 0,
-      pixelRatio: Math.min(window.devicePixelRatio || 1, 1.2),
+      pixelRatio: Math.min(window.devicePixelRatio || 1, 1.0),
     });
 
     mapRef.current = map;
@@ -850,7 +851,6 @@ export default function CurrentGlobe({ streams, onboarding = false, onOnboarding
     let lastRotationLng = initialCenter.lng;
     let lastRotationLat = initialCenter.lat;
     let totalRotation = 0;
-    const PULSE_INTERVAL = 75;
 
     const tick = (time) => {
       perfRef.current.rafCalls++;
