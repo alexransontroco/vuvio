@@ -2025,6 +2025,77 @@ function LiveViewer({ liveId, creatorMode = false }) {
       onPointerCancel={endPointer}
       onWheel={onWheel}
     >
+      {/* ── Desktop sidebar left ────────────────────────────── */}
+      <div className="live-feed__sidebar-left live-feed--desktop-only">
+        <div className="live-feed__status">
+          {broadcastEnded ? (
+            <span className="live-feed__watching">{live.streamer ?? live.name} has ended their live. Next live...</span>
+          ) : (
+            <>
+              <LiveBadge pulse />
+              <span className="live-feed__viewer-count">{formatViewers(live.viewerLabel ?? live.viewers ?? '0', i18n.language)}</span>
+            </>
+          )}
+        </div>
+
+        <div className="live-feed__copy">
+          <CreatorLink creator={live} className="live-feed__creator" stopPropagation />
+          <p>
+            <MapPin size={14} strokeWidth={2} aria-hidden="true" />
+            {live.city}, {live.country}
+          </p>
+          <span>{live.job}{live.job && live.description ? ' • ' : ''}{live.description}</span>
+        </div>
+
+        <LiveLocationGlobe live={live} onOpen={() => navigate(`/globe?live=${live.id}`)} />
+
+        <div className="live-actions" aria-label="Live actions" style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, justifyContent: 'center' }}>
+          <button
+            type="button"
+            className={isFollowing ? 'is-active' : ''}
+            onClick={() => {
+              const wasFollowing = isFollowing;
+              setFollowing((state) => ({ ...state, [live.id]: !state[live.id] }));
+              if (!wasFollowing) {
+                recordCreatorFollowed();
+              }
+            }}
+            aria-label={isFollowing ? t('common.unfollow') : t('common.follow')}
+            title="Follow"
+          >
+            <UserPlus size={20} strokeWidth={1.8} />
+          </button>
+          <button
+            type="button"
+            className={`${isLiked ? 'is-liked' : ''}${starPulse ? ' is-pulsing' : ''}`}
+            onClick={reactWithStar}
+            aria-label={t('live.sendStar')}
+            title="Star"
+          >
+            <Star size={20} strokeWidth={1.8} fill={isLiked ? 'currentColor' : 'none'} />
+          </button>
+          <button type="button" onClick={() => setUserSheetOpen(true)} aria-label="User info" title="User">
+            <UserRound size={20} strokeWidth={1.8} />
+          </button>
+          <button type="button" onClick={recordShared} aria-label={t('common.share')} title="Share">
+            <Share2 size={20} strokeWidth={1.8} />
+          </button>
+          <button type="button" className="equipment-button" onClick={() => { recordGearOpened(); setEquipmentSheetOpen(true); }} aria-label="Open live equipment" title="Equipment">
+            <Backpack size={20} strokeWidth={1.9} />
+          </button>
+          <button
+            type="button"
+            className={live.hasVideoAudio ? (videoMuted ? 'live-sound-button' : 'is-active live-sound-button') : (soundEnabled ? 'is-active live-sound-button' : 'live-sound-button')}
+            onClick={toggleSound}
+            aria-label={live.hasVideoAudio ? (videoMuted ? 'Unmute video' : 'Mute video') : (soundEnabled ? 'Mute POV sound' : 'Enable POV sound')}
+            title={live.hasVideoAudio ? (videoMuted ? 'Unmute' : 'Mute') : (soundEnabled ? 'Sound off' : 'Sound on')}
+          >
+            {live.hasVideoAudio ? (videoMuted ? <VolumeX size={20} strokeWidth={1.8} /> : <Volume2 size={20} strokeWidth={1.8} />) : (soundEnabled ? <Volume2 size={20} strokeWidth={1.8} /> : <VolumeX size={20} strokeWidth={1.8} />)}
+          </button>
+        </div>
+      </div>
+
+      {/* ── Video center ────────────────────────────────────── */}
       <div className={isDragging ? 'live-feed__track is-dragging' : 'live-feed__track'} style={trackStyle}>
         {liveFeed.map((item, itemIndex) => {
           const isActive = itemIndex === index;
@@ -2208,16 +2279,16 @@ function LiveViewer({ liveId, creatorMode = false }) {
         </div>
       </div>
 
-      <button type="button" className="next-live" onClick={() => goTo(1)} aria-label={t('live.next')}>
+      <button type="button" className="next-live live-feed--mobile-only" onClick={() => goTo(1)} aria-label={t('live.next')}>
         <ChevronUp size={18} strokeWidth={2} aria-hidden="true" />
       </button>
 
-      {chatComposerOpen ? (
-        <button type="button" className="live-chat-dismiss" aria-label="Close message composer" onClick={closeChatComposer} />
+      {chatComposerOpen && !chatPanelOpen ? (
+        <button type="button" className="live-chat-dismiss live-feed--mobile-only" aria-label="Close message composer" onClick={closeChatComposer} />
       ) : null}
 
-      {chatComposerOpen ? (
-        <form className="live-floating-composer" onSubmit={sendLiveMessage}>
+      {chatComposerOpen && !chatPanelOpen ? (
+        <form className="live-floating-composer live-feed--mobile-only" onSubmit={sendLiveMessage}>
           <input
             ref={chatInputRef}
             type="text"
@@ -2237,8 +2308,47 @@ function LiveViewer({ liveId, creatorMode = false }) {
         </form>
       ) : null}
 
+      {/* ── Desktop chat sidebar ────────────────────────────── */}
+      <div className="live-feed__sidebar-right live-feed--desktop-only">
+        <section className="live-chat-panel" aria-label="Live chat history" style={{ position: 'static', inset: 'auto', zIndex: 1, display: 'flex', flexDirection: 'column', alignItems: 'stretch', height: '100%', pointerEvents: 'auto' }}>
+          <div className="live-chat-panel__sheet" style={{ position: 'static', display: 'grid', gridTemplateRows: 'auto auto minmax(0, 1fr) auto', height: '100%', borderRadius: 0, borderLeft: 'none' }}>
+            <header>
+              <div>
+                <strong>{chatCount} live messages</strong>
+                <span>{live.title ?? live.description}</span>
+              </div>
+              <button type="button" onClick={() => setChatPanelOpen(false)} aria-label="Close chat">
+                <X size={18} strokeWidth={2} />
+              </button>
+            </header>
+            <div className="live-chat-panel__list">
+              {chat.slice(-20).map((message, messageIndex) => (
+                <article key={`${live.id}-${messageIndex}`}>
+                  <time>{message.time ?? `${Math.max(1, chat.length - messageIndex)}m`}</time>
+                  <p><strong>{message.who}</strong> {message.text}</p>
+                </article>
+              ))}
+            </div>
+            <form className="live-chat-panel__composer" onSubmit={sendLiveMessage}>
+              <input
+                ref={chatInputRef}
+                type="text"
+                value={chatDraft}
+                onChange={(event) => setChatDraft(event.target.value)}
+                placeholder="Write a message..."
+                aria-label="Write a message"
+              />
+              <button type="submit" className={chatDraft.trim() ? 'is-active' : ''} disabled={!chatDraft.trim()}>
+                <Send size={16} strokeWidth={2} />
+              </button>
+            </form>
+          </div>
+        </section>
+      </div>
+
+      {/* ── Mobile chat panel (conditional) ────────────────── */}
       {chatPanelOpen ? (
-        <section className="live-chat-panel" aria-label="Live chat history">
+        <section className="live-chat-panel live-feed--mobile-only" aria-label="Live chat history">
           <button type="button" className="live-chat-panel__backdrop" aria-label="Close chat" onClick={() => setChatPanelOpen(false)} />
           <div className="live-chat-panel__sheet">
             <span className="live-chat-panel__handle" aria-hidden="true" />
