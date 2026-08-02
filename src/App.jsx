@@ -27,6 +27,7 @@ const GlobeCesiumPage     = lazy(() => import('./routes/GlobeCesiumPage.jsx'));
 const IconsPreviewPage    = lazy(() => import('./routes/IconsPreviewPage.jsx'));
 const LoginPage           = lazy(() => import('./routes/LoginPage.jsx'));
 const LiveRecapPage       = lazy(() => import('./routes/LiveRecapPage.jsx'));
+const LiveSummaryPage     = lazy(() => import('./routes/LiveSummaryPage.jsx'));
 const MessagesPage        = lazy(() => import('./routes/MessagesPage.jsx'));
 const OnboardingPage      = lazy(() => import('./routes/OnboardingPage.jsx'));
 const OnboardingTestPage  = lazy(() => import('./routes/OnboardingTestPage.jsx'));
@@ -77,6 +78,7 @@ export default function App() {
       {/* ── Public standalone ── */}
       <Route path="/vision" element={<Lazy component={VisionPage} />} />
       <Route path="/agents" element={<Lazy component={AgentsPage} />} />
+      <Route path="/live/:liveId/summary" element={<Lazy component={LiveSummaryPage} />} />
       <Route path="/live/:liveId/recap" element={<Lazy component={LiveRecapPage} />} />
       <Route path="/test/live-recap" element={<Lazy component={LiveRecapPage} />} />
       <Route path="/desktop" element={<Lazy component={DesktopLayout} />} />

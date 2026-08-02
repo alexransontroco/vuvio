@@ -98,12 +98,14 @@ export default function LiveRecapPage() {
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     const liveId = params.get('id') || location.pathname.split('/')[2];
+    console.log('[LiveRecapPage] Fetching live data. URL:', window.location.href, 'liveId:', liveId);
     if (!liveId) return;
 
     (async () => {
       try {
         const liveRef = doc(db, 'activeLives', liveId);
         const liveSnap = await getDoc(liveRef);
+        console.log('[LiveRecapPage] Firestore response:', { exists: liveSnap.exists(), data: liveSnap.data() });
         if (liveSnap.exists()) {
           setLiveData(liveSnap.data());
         }
