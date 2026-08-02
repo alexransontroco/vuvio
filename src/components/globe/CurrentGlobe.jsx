@@ -95,7 +95,7 @@ function breathingWave(clock) {
   ];
 }
 
-// Luminous core for live markers — subtle pulsing effect
+// Luminous core for live markers — flashy pulsing effect
 function livePointRadius(clock, selectedId = '') {
   const wave = breathingWave(clock);
   return [
@@ -104,18 +104,18 @@ function livePointRadius(clock, selectedId = '') {
     [
       'case',
       ['==', ['get', 'markerType'], MARKER_TYPES.sponsored],
-      ['+', ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 5.0, 300, 6.0, 800, 7.0, 1500, 8.0], ['*', wave, ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 0.50, 800, 0.75, 1500, 0.95]]],
+      ['+', ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 5.0, 300, 6.0, 800, 7.0, 1500, 8.0], ['*', wave, ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 1.0, 800, 1.5, 1500, 1.9]]],
       ['==', ['get', 'markerType'], MARKER_TYPES.vuvio],
-      ['+', ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 5.1, 300, 6.1, 800, 7.1, 1500, 8.1], ['*', wave, ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 0.55, 800, 0.80, 1500, 1.0]]],
-      ['+', ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 4.8, 300, 5.8, 800, 6.8, 1500, 7.8], ['*', wave, ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 0.45, 800, 0.70, 1500, 0.90]]],
+      ['+', ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 5.1, 300, 6.1, 800, 7.1, 1500, 8.1], ['*', wave, ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 1.1, 800, 1.6, 1500, 2.0]]],
+      ['+', ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 4.8, 300, 5.8, 800, 6.8, 1500, 7.8], ['*', wave, ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 0.9, 800, 1.4, 1500, 1.8]]],
     ],
     [
       'case',
       ['==', ['get', 'markerType'], MARKER_TYPES.sponsored],
-      ['+', ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 3.4, 300, 4.3, 800, 5.6, 1500, 6.3], ['*', wave, ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 0.35, 800, 0.50, 1500, 0.65]]],
+      ['+', ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 3.4, 300, 4.3, 800, 5.6, 1500, 6.3], ['*', wave, ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 0.7, 800, 1.0, 1500, 1.3]]],
       ['==', ['get', 'markerType'], MARKER_TYPES.vuvio],
-      ['+', ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 3.5, 300, 4.5, 800, 5.8, 1500, 6.5], ['*', wave, ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 0.38, 800, 0.55, 1500, 0.70]]],
-      ['+', ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 3.1, 300, 3.9, 800, 5.2, 1500, 6.1], ['*', wave, ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 0.30, 800, 0.45, 1500, 0.60]]],
+      ['+', ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 3.5, 300, 4.5, 800, 5.8, 1500, 6.5], ['*', wave, ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 0.76, 800, 1.1, 1500, 1.4]]],
+      ['+', ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 3.1, 300, 3.9, 800, 5.2, 1500, 6.1], ['*', wave, ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 0.6, 800, 0.9, 1500, 1.2]]],
     ],
   ];
 }
