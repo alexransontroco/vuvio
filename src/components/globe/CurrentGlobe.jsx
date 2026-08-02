@@ -366,7 +366,7 @@ function brightenBaseGlobe(map) {
         }
       }
       if (layer.type === 'fill' && (id.includes('land') || sourceLayer.includes('land'))) {
-        map.setPaintProperty(layer.id, 'fill-color', '#6a7a8a');
+        map.setPaintProperty(layer.id, 'fill-color', '#ff9933');
         map.setPaintProperty(layer.id, 'fill-opacity', 1);
       }
       if (layer.type === 'line' && (id.includes('boundary') || id.includes('admin') || sourceLayer.includes('boundary'))) {
