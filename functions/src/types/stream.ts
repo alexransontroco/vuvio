@@ -49,6 +49,13 @@ export interface StreamDocument {
   moderationStatus: 'pending' | 'approved' | 'restricted' | 'blocked';
   recommendationStatus: 'eligible' | 'limited' | 'blocked';
   endReason?: string | null;
+  highlightStatus?: 'ready' | 'processing' | 'failed' | null;
+  highlightUrl?: string | null;
+  highlightThumbnailUrl?: string | null;
+  highlightDurationSeconds?: number | null;
+  highlightMarkers?: Array<{ timestamp: number; source: string; score: number }>;
+  recordingStatus?: 'processing' | 'available' | 'expired' | null;
+  recordingExpiresAt?: Timestamp | null;
   createdAt: Timestamp;
   updatedAt: Timestamp;
 }

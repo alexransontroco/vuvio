@@ -17,6 +17,11 @@ import { cloudflareWebhook } from './cloudflare/cloudflareWebhook.js';
 import { getCloudflareConfig, getCloudflareInputs, postCreateTestInput } from './cloudflare/testRouteHandlers.js';
 import { monitorStreamHeartbeats } from './streams/monitorStreamHeartbeats.js';
 import { processProductImage } from './products/processProductImage.js';
+import { requestHighlight } from './highlights/requestHighlight.js';
+import { getHighlightStatus } from './highlights/getHighlightStatus.js';
+import { cancelHighlight } from './highlights/cancelHighlight.js';
+import { highlightConfig } from './highlights/highlightConfig.js';
+import { processHighlights } from './highlights/processHighlights.js';
 
 function pathParts(path = '') {
   return path.replace(/^\/api\/?/, '/').split('/').filter(Boolean);
@@ -54,6 +59,12 @@ export const api = onRequest({
     if (req.method === 'POST' && parts[0] === 'analytics' && parts[1] === 'events') return await ingestEvents(req, res);
     if (req.method === 'POST' && parts[0] === 'webhooks' && parts[1] === 'cloudflare') return await cloudflareWebhook(req, res);
     if (req.method === 'POST' && parts[0] === 'products' && parts[1] === 'process-image') return await processProductImage(req, res);
+
+    // Highlight generation routes
+    if (req.method === 'POST' && parts[0] === 'lives' && parts[2] === 'highlight') return await requestHighlight(req, res, parts[1]);
+    if (req.method === 'GET' && parts[0] === 'lives' && parts[2] === 'highlight-status') return await getHighlightStatus(req, res, parts[1]);
+    if (req.method === 'DELETE' && parts[0] === 'lives' && parts[2] === 'highlight') return await cancelHighlight(req, res, parts[1], parts[3]);
+    if (req.method === 'GET' && parts[0] === 'highlight-config') return await highlightConfig(req, res);
 
     // Cloudflare test routes
     if (req.method === 'GET' && parts[0] === 'cloudflare' && parts[1] === 'config') return await getCloudflareConfig(req, res);
@@ -95,4 +106,11 @@ export const aggregateUserAnalyticsScheduled = onSchedule({
   } catch (error) {
     console.error('[UserAnalytics] Failed:', error);
   }
+});
+
+export const processHighlightsScheduled = onSchedule({
+  region: 'europe-west1',
+  schedule: 'every 30 seconds',
+}, async () => {
+  await processHighlights();
 });
