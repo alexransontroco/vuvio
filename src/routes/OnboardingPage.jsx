@@ -126,15 +126,21 @@ function StepInterests({ selected, onToggle }) {
       <div className="onboarding-categories">
         {ACTIVITY_CATEGORIES.map((cat) => {
           const Icon = cat.icon;
+          const isSelected = selected.includes(cat.id);
           return (
             <button
               key={cat.id}
               type="button"
-              className={`onboarding-category${selected.includes(cat.id) ? ' is-selected' : ''}`}
+              className={`onboarding-category${isSelected ? ' is-selected' : ''}`}
               onClick={() => onToggle(cat.id)}
-              aria-pressed={selected.includes(cat.id)}
+              aria-pressed={isSelected}
+              style={isSelected ? {
+                borderColor: `${cat.color}60`,
+                backgroundColor: `${cat.color}18`,
+                color: cat.color,
+              } : {}}
             >
-              <Icon size={22} strokeWidth={1.7} aria-hidden="true" />
+              <Icon size={22} strokeWidth={1.7} aria-hidden="true" style={isSelected ? { color: cat.color } : {}} />
               {cat.label}
             </button>
           );
@@ -343,7 +349,7 @@ export default function OnboardingPage() {
         {error ? <p className="auth-error" role="alert">{error}</p> : null}
         <button
           type="button"
-          className="onboarding-secondary-button"
+          className="onboarding-cta-button"
           onClick={handleContinue}
           disabled={busy}
         >

@@ -601,6 +601,37 @@
   align-self: center;
 }
 
+.onboarding-cta-button {
+  width: 100%;
+  min-height: 50px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border: none;
+  border-radius: 999px;
+  background: rgba(22, 135, 255, 0.9);
+  color: #fff;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 140ms, opacity 140ms;
+}
+
+.onboarding-cta-button:hover:not(:disabled) {
+  background: rgba(22, 135, 255, 1);
+}
+
+.onboarding-cta-button:active:not(:disabled) {
+  transform: scale(0.98);
+}
+
+.onboarding-cta-button:disabled {
+  background: rgba(22, 135, 255, 0.5);
+  cursor: not-allowed;
+}
+
 @media (max-width: 380px) {
   .onboarding-categories {
     grid-template-columns: repeat(2, 1fr);
