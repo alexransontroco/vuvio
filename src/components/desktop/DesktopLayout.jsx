@@ -1,19 +1,22 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import LandingScreen from './LandingScreen';
-import ViewModeToggle from './ViewModeToggle';
+import DesktopViewModeToggle from './ViewModeToggle';
 import ControlPanel from './ControlPanel';
 import DesktopExplorePage from './DesktopExplorePage';
 import DesktopGlobePage from './DesktopGlobePage';
 import InfoPanel from './InfoPanel';
+import GlobalViewModeToggle from '../ViewModeToggle.jsx';
+import { useViewMode } from '../../context/ViewModeContext.jsx';
 import { lives } from '../../data/lives.js';
 import './desktop.css';
 
 export default function DesktopLayout() {
   const navigate = useNavigate();
+  const { toggleDesktopMode } = useViewMode();
   const [showLanding, setShowLanding] = useState(true);
   const [streams] = useState(lives);
-  const [viewMode, setViewMode] = useState('mobile');
+  const [viewMode, setViewMode] = useState('grid');
   const [activePage, setActivePage] = useState('explore');
   const [selectedStream, setSelectedStream] = useState(null);
 
@@ -23,7 +26,7 @@ export default function DesktopLayout() {
 
   const handleModeChange = (mode) => {
     if (mode === 'mobile') {
-      navigate('/watch', { replace: true });
+      toggleDesktopMode();
     } else {
       setViewMode(mode);
     }
@@ -36,10 +39,12 @@ export default function DesktopLayout() {
   // MODE GRID
   if (viewMode === 'grid') {
     return (
-      <div className="desktop-layout-grid">
+      <>
+        <GlobalViewModeToggle />
+        <div className="desktop-layout-grid">
         <div className="grid-top-bar">
           <div className="grid-title">Vuvio — Grid View</div>
-          <ViewModeToggle mode={viewMode} onModeChange={handleModeChange} />
+          <DesktopViewModeToggle mode={viewMode} onModeChange={handleModeChange} />
         </div>
 
         <div className="grid-nav">
@@ -76,14 +81,17 @@ export default function DesktopLayout() {
           </div>
         )}
       </div>
+      </>
     );
   }
 
   // MODE DASHBOARD (default after landing)
   return (
-    <div className="desktop-layout">
+    <>
+      <GlobalViewModeToggle />
+      <div className="desktop-layout">
       <div className="mode-toggle-float">
-        <ViewModeToggle mode={viewMode} onModeChange={handleModeChange} />
+        <DesktopViewModeToggle mode={viewMode} onModeChange={handleModeChange} />
       </div>
 
       <ControlPanel
@@ -106,5 +114,6 @@ export default function DesktopLayout() {
         />
       )}
     </div>
+    </>
   );
 }
