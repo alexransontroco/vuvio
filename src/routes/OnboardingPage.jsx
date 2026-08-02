@@ -10,7 +10,7 @@ import { getStorage, ref as storageRef, uploadString, getDownloadURL } from 'fir
 import { storage } from '../firebase.js';
 import { validateUsername } from '../services/authService.js';
 
-const TOTAL_STEPS = 3;
+const TOTAL_STEPS = 4;
 
 function ProgressDots({ step }) {
   return (
@@ -150,7 +150,38 @@ function StepInterests({ selected, onToggle }) {
   );
 }
 
-/* ─── Step 3 — Welcome ───────────────────────────── */
+/* ─── Step 3 — Bio & Gear ────────────────────────── */
+function StepBioGear({ bio, setBio }) {
+  return (
+    <div className="onboarding-step">
+      <div>
+        <p className="onboarding-step__eyebrow">Step 3</p>
+        <h2 className="onboarding-step__title">Tell your story</h2>
+        <p className="onboarding-step__sub">Add a bio so creators know what you're about.</p>
+      </div>
+
+      <div className="auth-field">
+        <label className="auth-field__label" htmlFor="ob-bio">Bio (optional)</label>
+        <div className="auth-field__control">
+          <textarea
+            id="ob-bio"
+            className="auth-field__input"
+            style={{ minHeight: '100px', resize: 'vertical' }}
+            placeholder="I love cycling and exploring new routes..."
+            value={bio}
+            onChange={(e) => setBio(e.target.value.slice(0, 160))}
+            maxLength={160}
+          />
+        </div>
+        <span style={{ fontSize: '12px', color: 'rgba(111, 130, 148, 0.8)', marginTop: '4px' }}>
+          {bio.length}/160
+        </span>
+      </div>
+    </div>
+  );
+}
+
+/* ─── Step 4 — Welcome ───────────────────────────── */
 function StepWelcome({ displayName, selected }) {
   const selectedCategories = ACTIVITY_CATEGORIES.filter((c) => selected.includes(c.id));
 
@@ -196,6 +227,7 @@ export default function OnboardingPage() {
   const [avatarPreview,setAvatarPreview]= useState(userProfile?.photoURL || '');
   const [avatarDataUrl,setAvatarDataUrl]= useState('');
   const [selected,     setSelected]     = useState([]);
+  const [bio,          setBio]          = useState(userProfile?.bio || '');
   const [busy,         setBusy]         = useState(false);
   const [error,        setError]        = useState('');
 
@@ -259,6 +291,12 @@ export default function OnboardingPage() {
     }
 
     if (step === 3) {
+      console.log('[Onboarding] Moving to step 4');
+      setStep(4);
+      return;
+    }
+
+    if (step === 4) {
       setBusy(true);
       try {
         if (!user?.uid) throw new Error('No user session');
@@ -282,6 +320,7 @@ export default function OnboardingPage() {
         await updateProfile({
           displayName: displayName.trim() || '',
           preferredCategories: selected,
+          bio: bio.trim() || '',
           onboardingCompleted: true,
           photoURL,
         });
@@ -290,7 +329,7 @@ export default function OnboardingPage() {
         console.log('[Onboarding] Complete, navigating to:', returnTo);
         navigate(returnTo, { replace: true });
       } catch (e) {
-        console.error('[Onboarding] Step 3 error:', e);
+        console.error('[Onboarding] Step 4 error:', e);
         setError(e.message || 'Error');
         setBusy(false);
       }
@@ -312,7 +351,7 @@ export default function OnboardingPage() {
     }
   };
 
-  const ctaLabel = step === 3 ? 'Explore Vuvio' : 'Continue';
+  const ctaLabel = step === 4 ? 'Explore Vuvio' : 'Continue';
 
   return (
     <div className="onboarding-screen">
@@ -341,6 +380,9 @@ export default function OnboardingPage() {
           <StepInterests selected={selected} onToggle={toggleCategory} />
         ) : null}
         {step === 3 ? (
+          <StepBioGear bio={bio} setBio={setBio} />
+        ) : null}
+        {step === 4 ? (
           <StepWelcome displayName={displayName} selected={selected} />
         ) : null}
       </div>
