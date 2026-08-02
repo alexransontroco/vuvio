@@ -15,6 +15,7 @@ import { ingestEvents } from './analytics/ingestEvents.js';
 import { aggregateStreamStats, aggregateCreatorStats, aggregateCategoryStats, aggregateUserAnalytics } from './analytics/aggregateStats.js';
 import { cloudflareWebhook } from './cloudflare/cloudflareWebhook.js';
 import { getCloudflareConfig, getCloudflareInputs, postCreateTestInput } from './cloudflare/testRouteHandlers.js';
+import { createLiveInputHandler } from './cloudflare/createLiveInputHandler.js';
 import { monitorStreamHeartbeats } from './streams/monitorStreamHeartbeats.js';
 import { processProductImage } from './products/processProductImage.js';
 import { requestHighlight } from './highlights/requestHighlight.js';
@@ -66,7 +67,8 @@ export const api = onRequest({
     if (req.method === 'DELETE' && parts[0] === 'lives' && parts[2] === 'highlight') return await cancelHighlight(req, res, parts[1], parts[3]);
     if (req.method === 'GET' && parts[0] === 'highlight-config') return await highlightConfig(req, res);
 
-    // Cloudflare test routes
+    // Cloudflare routes
+    if (req.method === 'POST' && parts[0] === 'cloudflare' && parts[1] === 'live-input' && parts[2] === 'create') return await createLiveInputHandler(req, res);
     if (req.method === 'GET' && parts[0] === 'cloudflare' && parts[1] === 'config') return await getCloudflareConfig(req, res);
     if (req.method === 'GET' && parts[0] === 'cloudflare' && parts[1] === 'inputs') return await getCloudflareInputs(req, res);
     if (req.method === 'POST' && parts[0] === 'cloudflare' && parts[1] === 'create-test-input') return await postCreateTestInput(req, res);
