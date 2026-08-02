@@ -1507,6 +1507,7 @@ function LiveViewer({ liveId, creatorMode = false }) {
   const [chatDraft, setChatDraft] = useState('');
   const [localChat, setLocalChat] = useState({});
   const [videoMuted, setVideoMuted] = useState(true);
+  const [liveComments, setLiveComments] = useState({});
   const feedRef = useRef(null);
   const chatInputRef = useRef(null);
   const chatScrollRef = useRef({ x: 0, y: 0 });
@@ -1906,9 +1907,15 @@ function LiveViewer({ liveId, creatorMode = false }) {
     }, 220);
   };
 
-  const chat = useMemo(() => [...(live.chat ?? []), ...(localChat[live.id] ?? [])], [live, localChat]);
+  const chat = useMemo(() => {
+    const isCreatedLive = live?.creatorUid || live?.createdLocally;
+    if (isCreatedLive) {
+      return [...(liveComments[live.id] ?? []), ...(localChat[live.id] ?? [])];
+    }
+    return [...(live.chat ?? []), ...(localChat[live.id] ?? [])];
+  }, [live, localChat, liveComments]);
   const visibleChat = useMemo(() => chat.slice(-4), [chat]);
-  const chatCount = Math.max(chat.length, viewerCount(live.viewerLabel) + 21);
+  const chatCount = chat.length > 0 ? chat.length : viewerCount(live.viewerLabel) + 21;
   const trackStyle = {
     transform: `translate3d(0, calc(${-index * 100}% + ${dragY}px), 0)`,
   };
@@ -1925,6 +1932,28 @@ function LiveViewer({ liveId, creatorMode = false }) {
     setImmersive(false);
     lastLiveTap.current = { time: 0, x: 0, y: 0 };
   }, [live.id]);
+
+  useEffect(() => {
+    if (!live?.id) return undefined;
+    try {
+      const commentsRef = collection(db, `activeLives/${live.id}/comments`);
+      const q = query(commentsRef, orderBy('timestamp', 'asc'));
+      const unsubscribe = onSnapshot(q, (snapshot) => {
+        const comments = snapshot.docs.map((doc) => ({
+          who: doc.data().userDisplayName || 'Anonymous',
+          text: doc.data().text,
+          time: doc.data().timestamp ? new Date(doc.data().timestamp.toDate()).toLocaleTimeString() : '',
+        }));
+        setLiveComments((state) => ({ ...state, [live.id]: comments }));
+      }, (err) => {
+        console.log('[LiveViewer] Comments not available yet for', live.id);
+      });
+      return unsubscribe;
+    } catch (err) {
+      console.log('[LiveViewer] Skipping comments for non-Firestore live');
+      return undefined;
+    }
+  }, [live?.id]);
 
   useEffect(() => {
     document.body.classList.toggle('vuvio-live-immersive', immersive);
