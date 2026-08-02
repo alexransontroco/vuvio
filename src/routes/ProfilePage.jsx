@@ -536,7 +536,7 @@ function AboutTab({ profile }) {
       {profile.createdAt ? (
         <article>
           <span>Member since</span>
-          <strong>{profile.createdAt}</strong>
+          <strong>{typeof profile.createdAt === 'string' ? profile.createdAt : profile.createdAt?.toDate?.().getFullYear?.() || ''}</strong>
         </article>
       ) : null}
       {links.length ? (
