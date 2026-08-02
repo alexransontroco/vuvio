@@ -170,6 +170,23 @@ export default function CloudflareTestPage() {
     }
   };
 
+  const deleteInput = async (uid) => {
+    if (!window.confirm('Delete this live input?')) return;
+    try {
+      const response = await fetch(`${API_BASE}/api/cloudflare/delete-input`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ liveInputId: uid }),
+      });
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      alert('✅ Deleted');
+      setSelectedInput(null);
+      await fetchLiveInputs();
+    } catch (err) {
+      alert(`❌ Delete failed: ${err.message}`);
+    }
+  };
+
   return (
     <div style={styles.container}>
       <div style={styles.header}>
@@ -220,21 +237,46 @@ export default function CloudflareTestPage() {
             {liveInputs.map((input) => (
               <div
                 key={input.uid}
-                onClick={() => setSelectedInput(input)}
                 style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
                   ...styles.inputCard,
                   ...(selectedInput?.uid === input.uid ? styles.inputCardHovered : {}),
                 }}
               >
-                <div style={{ fontSize: '16px', fontWeight: '600', marginBottom: '8px' }}>
-                  {input.name}
+                <div onClick={() => setSelectedInput(input)} style={{ flex: 1, cursor: 'pointer' }}>
+                  <div style={{ fontSize: '16px', fontWeight: '600', marginBottom: '8px' }}>
+                    {input.name}
+                  </div>
+                  <div style={{ fontSize: '13px', color: '#666', marginBottom: '6px' }}>
+                    <strong>UID:</strong> {input.uid.substring(0, 16)}...
+                  </div>
+                  <div style={{ fontSize: '13px', color: '#666' }}>
+                    <strong>Status:</strong> {input.connected ? '🟢 Connected' : '⚪ Idle'}
+                  </div>
                 </div>
-                <div style={{ fontSize: '13px', color: '#666', marginBottom: '6px' }}>
-                  <strong>UID:</strong> {input.uid.substring(0, 16)}...
-                </div>
-                <div style={{ fontSize: '13px', color: '#666' }}>
-                  <strong>Status:</strong> {input.connected ? '🟢 Connected' : '⚪ Idle'}
-                </div>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    deleteInput(input.uid);
+                  }}
+                  style={{
+                    padding: '8px 12px',
+                    backgroundColor: '#ef4444',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '4px',
+                    cursor: 'pointer',
+                    fontSize: '12px',
+                    marginLeft: '12px',
+                    whiteSpace: 'nowrap',
+                  }}
+                  onMouseEnter={(e) => (e.target.style.backgroundColor = '#dc2626')}
+                  onMouseLeave={(e) => (e.target.style.backgroundColor = '#ef4444')}
+                >
+                  Delete
+                </button>
               </div>
             ))}
           </div>
@@ -273,6 +315,19 @@ export default function CloudflareTestPage() {
               ℹ️ HLS stream is ready at: <code>{selectedInput.hlsManifestUrl}</code>
             </div>
           )}
+
+          <button
+            onClick={() => deleteInput(selectedInput.uid)}
+            style={{
+              ...styles.button,
+              backgroundColor: '#dc2626',
+              marginTop: '20px',
+            }}
+            onMouseEnter={(e) => (e.target.style.backgroundColor = '#991b1b')}
+            onMouseLeave={(e) => (e.target.style.backgroundColor = '#dc2626')}
+          >
+            🗑️ Delete This Input
+          </button>
         </section>
       )}
 

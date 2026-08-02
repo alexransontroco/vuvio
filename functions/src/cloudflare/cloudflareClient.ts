@@ -41,9 +41,9 @@ function normalizeLiveInput(result: Record<string, unknown>, customerCode: strin
   const name = typeof meta?.name === 'string' ? meta.name : typeof result.name === 'string' ? result.name : 'Untitled';
   const connected = (result.connected === true || result.status === 'connected');
 
-  // Construct RTMPS URL from UID if rtmps.url is not available
-  const ingestUrl = typeof rtmps?.url === 'string' ? rtmps.url : typeof srt?.url === 'string' ? srt.url : typeof webRTC?.url === 'string' ? webRTC.url : uid ? `rtmps://live.cloudflarestream.com:443/live/${uid}` : null;
-  const streamKey = typeof rtmps?.streamKey === 'string' ? rtmps.streamKey : typeof srt?.streamId === 'string' ? srt.streamId : uid ?? null;
+  // Stream credentials are only returned on creation, not in list/get responses
+  const ingestUrl = typeof rtmps?.url === 'string' ? rtmps.url : typeof srt?.url === 'string' ? srt.url : typeof webRTC?.url === 'string' ? webRTC.url : null;
+  const streamKey = typeof rtmps?.streamKey === 'string' ? rtmps.streamKey : typeof srt?.streamId === 'string' ? srt.streamId : null;
 
   return {
     liveInputId: uid,

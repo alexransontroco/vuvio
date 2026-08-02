@@ -1,7 +1,7 @@
 import type { Request } from 'firebase-functions/v2/https';
 import type { Response } from 'express';
 import { getCloudflareEnv } from '../config/env.js';
-import { createLiveInput, listLiveInputs } from './cloudflareClient.js';
+import { createLiveInput, listLiveInputs, createCloudflareClient } from './cloudflareClient.js';
 
 export async function getCloudflareConfig(req: Request, res: Response) {
   const env = getCloudflareEnv();
@@ -18,14 +18,28 @@ export async function getCloudflareConfig(req: Request, res: Response) {
 
 export async function getCloudflareInputs(req: Request, res: Response) {
   try {
-    const inputs = await listLiveInputs();
+    const rawInputs = await listLiveInputs();
 
-    if (!inputs || inputs.length === 0) {
+    if (!rawInputs || rawInputs.length === 0) {
       res.json({ inputs: [], message: 'No live inputs found' });
       return;
     }
 
-    console.log('[testRoutes] First input object:', JSON.stringify(inputs[0], null, 2));
+    const client = createCloudflareClient();
+    const inputs: any[] = [];
+
+    for (const input of rawInputs) {
+      try {
+        if (input.uid) {
+          const fullInput = await client.getLiveInput(input.uid);
+          inputs.push(fullInput);
+        } else {
+          inputs.push(input);
+        }
+      } catch (err) {
+        inputs.push(input);
+      }
+    }
 
     res.json({
       inputs: inputs.map((input) => ({

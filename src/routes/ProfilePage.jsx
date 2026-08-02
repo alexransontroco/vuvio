@@ -111,12 +111,6 @@ function ProfileCover({ profile, isOwnProfile, onShare, onEditCover }) {
           ) : null}
         </div>
       </div>
-      {isOwnProfile ? (
-        <button type="button" className="creator-cover__edit" onClick={onEditCover} aria-label="Edit cover">
-          <Camera size={15} strokeWidth={1.9} />
-          <span>Edit cover</span>
-        </button>
-      ) : null}
     </header>
   );
 }

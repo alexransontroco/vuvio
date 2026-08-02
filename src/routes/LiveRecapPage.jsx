@@ -1,6 +1,8 @@
 import { ArrowLeft, BarChart3, Camera, Flame, MessageCircle, MoreHorizontal, Star } from 'lucide-react';
-import { useMemo, useRef, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { doc, getDoc } from 'firebase/firestore';
+import { db } from '../firebase.js';
 import BottomNav from '../components/BottomNav.jsx';
 import ConversationInsights from '../components/live-recap/ConversationInsights.jsx';
 import LiveAnalyticsBar from '../components/live-recap/LiveAnalyticsBar.jsx';
@@ -81,12 +83,41 @@ function MomentCard({ item, active, onSelect }) {
 
 export default function LiveRecapPage() {
   const navigate = useNavigate();
+  const location = useLocation();
   const replayRef = useRef(null);
   const [activeId, setActiveId] = useState('chat');
   const [playing, setPlaying] = useState(false);
   const [speedIndex, setSpeedIndex] = useState(1);
   const [drawerConversation, setDrawerConversation] = useState(null);
   const [modal, setModal] = useState(null);
+
+  // Cleanup Cloudflare live input when leaving recap page
+  useEffect(() => {
+    const liveId = location.state?.liveId;
+    if (!liveId) return;
+
+    return () => {
+      // When user leaves the recap page, delete the Cloudflare live input
+      (async () => {
+        try {
+          const liveRef = doc(db, 'activeLives', liveId);
+          const liveSnap = await getDoc(liveRef);
+          const liveInputId = liveSnap.data()?.liveInputId;
+
+          if (liveInputId) {
+            await fetch('/api/cloudflare/delete-input', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ liveInputId }),
+            });
+            console.log('[LiveRecapPage] Cloudflare live input deleted:', liveInputId);
+          }
+        } catch (err) {
+          console.error('[LiveRecapPage] Cleanup failed:', err.message);
+        }
+      })();
+    };
+  }, [location.state?.liveId]);
 
   const activeHighlight = useMemo(
     () => liveRecap.highlights.find((item) => item.id === activeId) ?? liveRecap.highlights[0],

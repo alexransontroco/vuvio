@@ -29,7 +29,7 @@ export default function VerifyEmailPage() {
         if (user?.emailVerified) {
           setSuccess('✓ Email verified successfully!');
           setTimeout(() => {
-            navigate('/profile', { replace: true });
+            navigate('/onboarding', { replace: true });
           }, 1500);
         }
       } catch (err) {
@@ -53,7 +53,7 @@ export default function VerifyEmailPage() {
       await user?.reload();
       if (user?.emailVerified) {
         setSuccess('✓ Email verified! Redirecting...');
-        setTimeout(() => navigate('/profile', { replace: true }), 1500);
+        setTimeout(() => navigate('/onboarding', { replace: true }), 1500);
       } else {
         setError('Email not verified yet. Check your inbox.');
       }

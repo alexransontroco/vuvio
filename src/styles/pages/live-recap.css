@@ -5,11 +5,12 @@
 /* ── Visibility helpers ─────────────────────────────────── */
 .live-recap--mobile-only { display: block; }
 .live-recap--desktop-only { display: none !important; }
+.live-recap-sidebar { display: none; }
 
 /* ── Page shell ─────────────────────────────────────────── */
 .live-recap-page {
   min-height: 100vh;
-  padding-bottom: calc(var(--nav-height) + var(--safe-bottom) + 68px);
+  padding-bottom: calc(var(--nav-height) + var(--safe-bottom) + 48px);
   color: var(--vuvio-text-primary, #f5fbff);
   background:
     radial-gradient(ellipse 90% 32% at 52% 0%, rgba(49, 122, 201, 0.16), transparent 58%),
@@ -338,7 +339,7 @@
 .live-recap-scroll-track {
   display: flex;
   gap: 10px;
-  padding: 0 8px;
+  padding: 0 16px;
   overflow-x: auto;
   scroll-snap-type: x mandatory;
   scrollbar-width: none;
@@ -349,7 +350,7 @@
 
 /* ── Conversation chips (mobile carousel) ───────────────── */
 .conversation-chip {
-  flex: 0 0 270px;
+  flex: 0 0 260px;
   scroll-snap-align: start;
   display: grid;
   gap: 10px;
@@ -407,7 +408,7 @@
 
 /* ── Moment cards (mobile carousel) ─────────────────────── */
 .moment-card {
-  flex: 0 0 148px;
+  flex: 0 0 138px;
   scroll-snap-align: start;
   display: grid;
   gap: 8px;

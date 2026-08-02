@@ -13,17 +13,17 @@ service cloud.firestore {
         && request.auth.uid == uid
         && request.resource.data.uid == uid
         && !('role' in request.resource.data)       // role set server-side
-        && !('followerCount' in request.resource.data || request.resource.data.followerCount == 0);
+        && (!('followerCount' in request.resource.data) || request.resource.data.followerCount == 0);
 
-      // Owner can update their own document (restricted fields)
+      // Owner can update their own document (restricted fields cannot be changed)
       allow update: if request.auth != null
         && request.auth.uid == uid
         && request.resource.data.uid == uid
-        && request.resource.data.role == resource.data.role
-        && request.resource.data.accountStatus == resource.data.accountStatus
-        && request.resource.data.followerCount == resource.data.followerCount
-        && request.resource.data.followingCount == resource.data.followingCount
-        && request.resource.data.liveCount == resource.data.liveCount;
+        && (!('role' in request.resource.data) || request.resource.data.role == resource.data.role)
+        && (!('accountStatus' in request.resource.data) || request.resource.data.accountStatus == resource.data.accountStatus)
+        && (!('followerCount' in request.resource.data) || request.resource.data.followerCount == resource.data.followerCount)
+        && (!('followingCount' in request.resource.data) || request.resource.data.followingCount == resource.data.followingCount)
+        && (!('liveCount' in request.resource.data) || request.resource.data.liveCount == resource.data.liveCount);
 
       // No deletes
       allow delete: if false;

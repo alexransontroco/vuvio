@@ -1,5 +1,5 @@
 import { getCloudflareEnv } from '../config/env.js';
-import { createLiveInput, listLiveInputs } from './cloudflareClient.js';
+import { createLiveInput, listLiveInputs, createCloudflareClient } from './cloudflareClient.js';
 export async function getCloudflareConfig(req, res) {
     const env = getCloudflareEnv();
     res.json({
@@ -13,10 +13,26 @@ export async function getCloudflareConfig(req, res) {
 }
 export async function getCloudflareInputs(req, res) {
     try {
-        const inputs = await listLiveInputs();
-        if (!inputs || inputs.length === 0) {
+        const rawInputs = await listLiveInputs();
+        if (!rawInputs || rawInputs.length === 0) {
             res.json({ inputs: [], message: 'No live inputs found' });
             return;
+        }
+        const client = createCloudflareClient();
+        const inputs = [];
+        for (const input of rawInputs) {
+            try {
+                if (input.uid) {
+                    const fullInput = await client.getLiveInput(input.uid);
+                    inputs.push(fullInput);
+                }
+                else {
+                    inputs.push(input);
+                }
+            }
+            catch (err) {
+                inputs.push(input);
+            }
         }
         res.json({
             inputs: inputs.map((input) => ({
