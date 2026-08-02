@@ -57,13 +57,16 @@ export default function LiveSummaryPage() {
           const commentsRef = collection(db, `activeLives/${liveId}/comments`);
           const q = query(commentsRef, orderBy('timestamp', 'asc'), limit(100));
           const commentsSnap = await getDocs(q);
-          const commentsData = commentsSnap.docs.map(doc => ({
-            id: doc.id,
-            ...doc.data(),
-          }));
-          setComments(commentsData);
+          if (commentsSnap.size > 0) {
+            const commentsData = commentsSnap.docs.map(doc => ({
+              id: doc.id,
+              ...doc.data(),
+            }));
+            setComments(commentsData);
+          }
         } catch (commentsErr) {
-          console.warn('[LiveSummaryPage] Failed to load comments:', commentsErr);
+          // Comments collection may not exist yet, which is fine
+          console.log('[LiveSummaryPage] No comments found (collection may not exist)');
         }
 
         setLoading(false);
