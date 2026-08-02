@@ -126,17 +126,17 @@ function liveColorGlowRadius(clock) {
     '+',
     ['case',
       ['==', ['get', 'markerType'], MARKER_TYPES.sponsored],
-      ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 6.4, 300, 9.0, 800, 12.8, 1500, 17.4],
+      ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 3.2, 300, 4.5, 800, 6.4, 1500, 8.7],
       ['==', ['get', 'markerType'], MARKER_TYPES.vuvio],
-      ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 6.2, 300, 8.8, 800, 12.9, 1500, 17.6],
-      ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 6.0, 300, 8.5, 800, 12.5, 1500, 17.0],
+      ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 3.1, 300, 4.4, 800, 6.5, 1500, 8.8],
+      ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 3.0, 300, 4.2, 800, 6.2, 1500, 8.5],
     ],
     ['*', wave, ['case',
       ['==', ['get', 'markerType'], MARKER_TYPES.sponsored],
-      ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 1.15, 800, 3.8, 1500, 5.8],
+      ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 0.6, 800, 1.9, 1500, 2.9],
       ['==', ['get', 'markerType'], MARKER_TYPES.vuvio],
-      ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 1.8, 800, 5.2, 1500, 8.0],
-      ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 1.5, 800, 4.5, 1500, 7.0],
+      ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 0.9, 800, 2.6, 1500, 4.0],
+      ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 0.8, 800, 2.2, 1500, 3.5],
     ]],
   ];
 }
@@ -147,17 +147,17 @@ function liveColorGlowOpacity(clock) {
     '+',
     ['case',
       ['==', ['get', 'markerType'], MARKER_TYPES.sponsored],
-      ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 0.12, 300, 0.16, 800, 0.26, 1500, 0.35],
+      ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 0.06, 300, 0.08, 800, 0.13, 1500, 0.17],
       ['==', ['get', 'markerType'], MARKER_TYPES.vuvio],
-      ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 0.11, 300, 0.15, 800, 0.24, 1500, 0.32],
-      ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 0.10, 300, 0.13, 800, 0.22, 1500, 0.30],
+      ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 0.05, 300, 0.07, 800, 0.12, 1500, 0.16],
+      ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 0.05, 300, 0.06, 800, 0.11, 1500, 0.15],
     ],
     ['*', wave, ['case',
       ['==', ['get', 'markerType'], MARKER_TYPES.sponsored],
-      ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 0.08, 800, 0.22, 1500, 0.28],
+      ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 0.04, 800, 0.11, 1500, 0.14],
       ['==', ['get', 'markerType'], MARKER_TYPES.vuvio],
-      ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 0.08, 800, 0.20, 1500, 0.26],
-      ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 0.06, 800, 0.18, 1500, 0.24],
+      ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 0.04, 800, 0.10, 1500, 0.13],
+      ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 0.03, 800, 0.09, 1500, 0.12],
     ]],
   ];
 }
@@ -166,8 +166,8 @@ function liveCrowdHaloRadius(clock) {
   const wave = breathingWave((clock * 1.35) % 1);
   return [
     '+',
-    ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 0, 500, 0, 800, 14, 1500, 20],
-    ['*', wave, ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 0, 500, 0, 800, 9, 1500, 17]],
+    ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 0, 500, 0, 800, 7, 1500, 10],
+    ['*', wave, ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 0, 500, 0, 800, 4.5, 1500, 8.5]],
   ];
 }
 
@@ -176,18 +176,18 @@ function liveCrowdHaloOpacity(clock) {
   return [
     '*',
     ['-', 1, wave],
-    ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 0, 500, 0, 800, 0.09, 1500, 0.16],
+    ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 0, 500, 0, 800, 0.04, 1500, 0.08],
   ];
 }
 
 function livePingRippleRadius(clock) {
   const wave = breathingWave(clock);
-  return ['+', ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 15, 800, 21, 1500, 27], ['*', wave, 38]];
+  return ['+', ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 8, 800, 11, 1500, 14], ['*', wave, 19]];
 }
 
 function livePingRippleOpacity(clock) {
   const wave = breathingWave(clock);
-  return ['*', ['-', 1, wave], ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 0.34, 800, 0.42, 1500, 0.52]];
+  return ['*', ['-', 1, wave], ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 0.17, 800, 0.21, 1500, 0.26]];
 }
 
 function liveBroadcastHaloRadius(clock, selectedId = '') {
@@ -195,8 +195,8 @@ function liveBroadcastHaloRadius(clock, selectedId = '') {
   return [
     'case',
     ['==', ['get', 'id'], selectedId],
-    ['+', ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 5.4, 300, 6.4, 800, 8.0, 1500, 9.0], ['*', wave, ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 5.2, 800, 8.2, 1500, 10.4]]],
-    ['+', ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 3.9, 300, 4.8, 800, 6.3, 1500, 7.2], ['*', wave, ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 4.0, 800, 6.8, 1500, 8.8]]],
+    ['+', ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 2.7, 300, 3.2, 800, 4.0, 1500, 4.5], ['*', wave, ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 2.6, 800, 4.1, 1500, 5.2]]],
+    ['+', ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 2.0, 300, 2.4, 800, 3.2, 1500, 3.6], ['*', wave, ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 2.0, 800, 3.4, 1500, 4.4]]],
   ];
 }
 
@@ -205,8 +205,8 @@ function liveBroadcastHaloOpacity(clock, selectedId = '') {
   return [
     'case',
     ['==', ['get', 'id'], selectedId],
-    ['*', ['-', 1, wave], ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 0.24, 800, 0.32, 1500, 0.39]],
-    ['*', ['-', 1, wave], ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 0.14, 800, 0.21, 1500, 0.29]],
+    ['*', ['-', 1, wave], ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 0.12, 800, 0.16, 1500, 0.19]],
+    ['*', ['-', 1, wave], ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 0.07, 800, 0.10, 1500, 0.14]],
   ];
 }
 
