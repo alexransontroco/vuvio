@@ -15,6 +15,7 @@ import {
   updateUserProfile,
   isDemoAccount,
 } from '../services/authService.js';
+import { seedProductsCollection } from '../services/seedProducts.js';
 
 const AuthContext = createContext(null);
 
@@ -114,6 +115,14 @@ export function AuthProvider({ children }) {
           if (mounted) {
             setUser(firebaseUser);
             await loadProfile(firebaseUser);
+
+            // Seed products collection on first auth (background, non-blocking)
+            if (firebaseUser) {
+              seedProductsCollection().catch(err => {
+                console.error('[Auth] Product seeding error:', err);
+              });
+            }
+
             if (!authStateListenerReady) {
               setAuthLoading(false);
               const elapsed = performance.now() - startTime;
