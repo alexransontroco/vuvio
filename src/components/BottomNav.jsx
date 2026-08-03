@@ -74,6 +74,7 @@ function LivePreview({ draft, selectedFamily, equipmentLibrary, onEditGear, onLa
     }
 
     navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 } }, audio: false })
+      .catch(() => navigator.mediaDevices.getUserMedia({ video: { width: { ideal: 1280 } }, audio: false }))
       .catch(() => navigator.mediaDevices.getUserMedia({ video: true, audio: false }))
       .then((stream) => {
         if (!active) { stream.getTracks().forEach((t) => t.stop()); return; }
