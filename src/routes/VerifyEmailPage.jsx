@@ -28,9 +28,10 @@ export default function VerifyEmailPage() {
         await user?.reload();
         if (user?.emailVerified) {
           setSuccess('✓ Email verified successfully!');
+          // Ensure navigation happens after state updates
           setTimeout(() => {
             navigate('/onboarding', { replace: true });
-          }, 1500);
+          }, 1000);
         }
       } catch (err) {
         console.error('Error checking verification:', err);
