@@ -1,5 +1,5 @@
 import { Backpack, BatteryWarning, Bell, CalendarClock, Camera, Check, ChevronLeft, ChevronRight, ChevronUp, Clock, Eye, Flag, Flashlight, Lock, MapPin, MessageCircle, Mic, MicOff, Play, RotateCcw, Search, Send, Settings, Share2, ShieldBan, Square, Star, Trash2, UnlockKeyhole, UserPlus, UserRound, UsersRound, Volume2, VolumeX, WifiOff, X } from 'lucide-react';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link, Navigate, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { useStreamView } from '../hooks/useStreamView';
@@ -16,7 +16,7 @@ import { streams, upcomingStreams } from '../data/mockStreams.js';
 import { createLiveSoundscape } from '../services/liveSoundscape.js';
 import { getCreatedLives, getCreatedLiveStream, subscribeToCreatedLives, publishLivePing, endLive as deleteLiveFromDB } from '../services/createdLiveService.js';
 import { startBroadcast, stopBroadcast, watchBroadcast, closePeer, getLocalStream, getRemoteStream } from '../services/webrtcService.js';
-import { collection, doc, onSnapshot, query, where, updateDoc, addDoc, serverTimestamp, getDocs } from 'firebase/firestore';
+import { collection, doc, onSnapshot, query, where } from 'firebase/firestore';
 import { db } from '../firebase.js';
 import { useAuth } from '../context/AuthContext.jsx';
 import { getUnreadConversationCount, subscribeToMessaging } from '../services/messagingService.js';
@@ -38,7 +38,7 @@ const homeTabs = [
 ];
 const followedCreatorNames = ['Noah Perrin', 'Maya Afonso', 'Luka Marino'];
 const fallbackUserLocation = { latitude: 48.8566, longitude: 2.3522 };
-const fallbackCover = '/assets/icons/icon-512.png';
+const fallbackCover = '/icons/icon-512.png';
 const demoVideoLiveIds = [
   'chef-michelin-paris',
   'motorbike-srinagar',
@@ -52,6 +52,11 @@ const demoVideoLiveIds = [
 ];
 const DEFAULT_WATCH_LIVE_ID = 'runner-prague';
 const CLOCK_TICK_MS = 1000;
+const creatorComments = [
+  { avatar: 'E', name: 'Emma', text: 'This looks amazing.' },
+  { avatar: 'N', name: 'Noah', text: 'Trail view is clean.' },
+  { avatar: 'M', name: 'Maya', text: 'Audio is good.' },
+];
 
 const fallbackLocations = {
   'fisherman-lofoten': { top: '29%', left: '50%' },
@@ -1053,28 +1058,17 @@ function formatLiveDuration(totalSeconds) {
   return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
 }
 
-function CreatorCameraSurface({ live, className = '', children, videoRef: externalVideoRef, onVideoReady }) {
+function CreatorCameraSurface({ live, className = '', children }) {
   const stream = getCreatedLiveStream(live.id);
-  const internalVideoRef = useRef(null);
-  const videoRef = externalVideoRef || internalVideoRef;
+  const videoRef = useRef(null);
 
   useEffect(() => {
     if (!videoRef.current || !stream) return undefined;
     videoRef.current.srcObject = stream;
-
-    const handleLoadedMetadata = () => {
-      onVideoReady?.();
-    };
-
-    videoRef.current.addEventListener('loadedmetadata', handleLoadedMetadata);
-
     return () => {
-      if (videoRef.current) {
-        videoRef.current.removeEventListener('loadedmetadata', handleLoadedMetadata);
-        videoRef.current.srcObject = null;
-      }
+      if (videoRef.current) videoRef.current.srcObject = null;
     };
-  }, [stream, videoRef, onVideoReady]);
+  }, [stream]);
 
   return (
     <div className={`creator-live-camera ${className}`}>
@@ -1096,7 +1090,7 @@ function CreatorLiveSession({ live, onEndingChange }) {
   const [viewerCount, setViewerCount] = useState(1);
   const [peakViewers, setPeakViewers] = useState(1);
   const [stars, setStars] = useState(0);
-  const [commentText, setCommentText] = useState('');
+  const [commentsCount, setCommentsCount] = useState(0);
   const [followers, setFollowers] = useState(0);
   const [hudVisible, setHudVisible] = useState(true);
   const [controlsVisible, setControlsVisible] = useState(false);
@@ -1111,26 +1105,6 @@ function CreatorLiveSession({ live, onEndingChange }) {
   const longPressTimer = useRef(null);
   const lastCenterTapRef = useRef({ time: 0, x: 0, y: 0 });
   const broadcastStartedRef = useRef(false);
-  const videoElementRef = useRef(null);
-
-  const captureAndSaveCoverImage = useCallback(async (liveId) => {
-    try {
-      const videoEl = videoElementRef.current;
-      if (!videoEl || videoEl.readyState < 2) return;
-
-      const canvas = document.createElement('canvas');
-      canvas.width = videoEl.videoWidth || 1280;
-      canvas.height = videoEl.videoHeight || 720;
-      const ctx = canvas.getContext('2d');
-      ctx?.drawImage(videoEl, 0, 0);
-
-      const imageData = canvas.toDataURL('image/jpeg', 0.8);
-      const liveRef = doc(db, 'activeLives', liveId);
-      await updateDoc(liveRef, { image: imageData });
-    } catch (err) {
-      console.warn('[CreatorLiveSession] Failed to capture cover image:', err.message);
-    }
-  }, []);
 
   const keepHudAwake = () => {
     if (locked || phase !== 'live') return;
@@ -1149,15 +1123,9 @@ function CreatorLiveSession({ live, onEndingChange }) {
   };
 
   useEffect(() => {
-    if (locked || phase !== 'live') return undefined;
-    setHudVisible(true);
-    window.clearTimeout(hideTimer.current);
-    hideTimer.current = window.setTimeout(() => {
-      setHudVisible(false);
-      setControlsVisible(false);
-    }, 3000);
+    keepHudAwake();
     return () => window.clearTimeout(hideTimer.current);
-  }, [locked, phase]);
+  }, []);
 
   useEffect(() => {
     if (!live?.id || !user?.uid || broadcastStartedRef.current) return undefined;
@@ -1234,7 +1202,27 @@ function CreatorLiveSession({ live, onEndingChange }) {
     return () => window.clearInterval(timer);
   }, [phase]);
 
+  useEffect(() => {
+    if (phase !== 'live') return undefined;
+    const timer = window.setInterval(() => {
+      const next = creatorComments[commentsCount % creatorComments.length];
+      setComment(next);
+      setCommentsCount((value) => value + 1);
+      window.setTimeout(() => setComment(null), 4000);
+    }, 7200);
+    return () => window.clearInterval(timer);
+  }, [commentsCount, phase]);
 
+  useEffect(() => {
+    if (phase !== 'live') return undefined;
+    const timer = window.setInterval(() => {
+      const id = `star-${Date.now()}`;
+      setStars((value) => value + 1);
+      setStarBursts((value) => [...value.slice(-2), { id, left: 62 + Math.random() * 24 }]);
+      window.setTimeout(() => setStarBursts((value) => value.filter((item) => item.id !== id)), 1400);
+    }, 5200);
+    return () => window.clearInterval(timer);
+  }, [phase]);
 
   useEffect(() => {
     if (phase !== 'live') return undefined;
@@ -1254,37 +1242,6 @@ function CreatorLiveSession({ live, onEndingChange }) {
     }, 13000);
     return () => window.clearTimeout(timer);
   }, [phase]);
-
-  useEffect(() => {
-    if (!live?.id || phase !== 'live') return undefined;
-
-    console.log('[CreatorLiveSession] Setting up comments listener for:', live.id);
-    const commentsRef = collection(db, `activeLives/${live.id}/comments`);
-    const unsubscribe = onSnapshot(
-      query(commentsRef),
-      (snapshot) => {
-        console.log('[CreatorLiveSession] Snapshot received, changes:', snapshot.docChanges().length);
-        snapshot.docChanges().forEach((change) => {
-          console.log('[CreatorLiveSession] Change type:', change.type, 'data:', change.doc.data());
-          if (change.type === 'added') {
-            const data = change.doc.data();
-            console.log('[CreatorLiveSession] Displaying comment from:', data.userDisplayName);
-            setComment({
-              name: data.userDisplayName || 'Anonymous',
-              text: ` ${data.text}`,
-              avatar: '👤',
-            });
-            window.setTimeout(() => setComment(null), 3000);
-          }
-        });
-      },
-      (error) => {
-        console.warn('[CreatorLiveSession] Comments listener error:', error.message);
-      }
-    );
-
-    return () => unsubscribe();
-  }, [live?.id, phase]);
 
   const onLockedPointerDown = () => {
     if (!locked) return;
@@ -1341,37 +1298,21 @@ function CreatorLiveSession({ live, onEndingChange }) {
     setPhase('ending');
     onEndingChange?.(true, live.id);
 
+    // Stop broadcast and close peer connection immediately
     try {
       console.log('[HomePage] Ending live broadcast:', live.id);
       await stopBroadcast(live.id);
       closePeer();
-
-      // Save final stats to Firestore
-      try {
-        const liveRef = doc(db, 'activeLives', live.id);
-        const commentsRef = collection(db, `activeLives/${live.id}/comments`);
-        const commentSnap = await getDocs(commentsRef);
-        const stats = {
-          status: 'ended',
-          endedAt: serverTimestamp(),
-          durationSeconds: elapsed,
-          totalUniqueViewers: viewerCount,
-          peakViewerCount: peakViewers,
-          commentCount: commentSnap.size,
-        };
-        console.log('[HomePage] Saving stats to Firestore:', stats);
-        await updateDoc(liveRef, stats);
-        console.log('[HomePage] Stats saved successfully');
-      } catch (updateErr) {
-        console.warn('[HomePage] Failed to save final stats:', updateErr);
-      }
     } catch (err) {
       console.error('[HomePage] Failed to stop broadcast:', err);
     }
 
     window.setTimeout(() => setPhase('processing'), 1100);
     window.setTimeout(() => {
-      navigate(`/live/${live.id}/recap`, { replace: true, state: { liveData: live } });
+      navigate(`/live/${live.id}/recap`, { replace: true });
+      deleteLiveFromDB(live.id).catch((err) => {
+        console.error('[HomePage] Failed to delete live from database:', err);
+      });
     }, 2900);
   };
 
@@ -1380,6 +1321,7 @@ function CreatorLiveSession({ live, onEndingChange }) {
     viewers: Math.max(viewerCount, 128),
     peak: Math.max(peakViewers, viewerCount, 164),
     stars: Math.max(stars, 24),
+    comments: Math.max(commentsCount, 6),
     followers: Math.max(followers, 3),
   };
 
@@ -1417,7 +1359,7 @@ function CreatorLiveSession({ live, onEndingChange }) {
       onPointerCancel={clearLongPress}
       aria-label="Creator live camera"
     >
-      <CreatorCameraSurface live={live} videoRef={videoElementRef} onVideoReady={() => captureAndSaveCoverImage(live.id)} />
+      <CreatorCameraSurface live={live} />
       <div className="creator-live-hud">
         <div className="creator-live-hud__left">
           <LiveBadge compact pulse />
@@ -1599,19 +1541,6 @@ function LiveViewer({ liveId, creatorMode = false }) {
 
   useEffect(() => subscribeToCreatedLives(setCreatedLives), []);
 
-  // Use ResizeObserver to detect viewport/container changes and trigger re-render
-  useEffect(() => {
-    if (!feedRef.current) return;
-
-    const resizeObserver = new ResizeObserver(() => {
-      // Force React to re-render by updating a state
-      setDragY(prev => prev);
-    });
-
-    resizeObserver.observe(feedRef.current);
-    return () => resizeObserver.disconnect();
-  }, []);
-
   // WebRTC streaming for broadcaster
   useEffect(() => {
     if (!creatorMode || !liveId || !user || live.createdLocally) return;
@@ -1636,7 +1565,7 @@ function LiveViewer({ liveId, creatorMode = false }) {
     return () => {
       closePeer();
     };
-  }, [creatorMode, liveId, user, live?.createdLocally]);
+  }, [creatorMode, liveId, user, live.createdLocally]);
 
   // Watch for broadcaster ending their live (only for real broadcasts)
   useEffect(() => {
@@ -1672,7 +1601,7 @@ function LiveViewer({ liveId, creatorMode = false }) {
       isMounted = false;
       unsubscribe();
     };
-  }, [creatorMode, activeLiveId, live?.creatorUid]);
+  }, [creatorMode, activeLiveId, live.creatorUid]);
 
   // WebRTC streaming for watchers (only for real active broadcasts)
   useEffect(() => {
@@ -1749,7 +1678,7 @@ function LiveViewer({ liveId, creatorMode = false }) {
       watcherIdRef.current = null;
       closePeer();
     };
-  }, [creatorMode, activeLiveId, live?.creatorUid, live?.createdLocally, user?.uid, watchRetry]);
+  }, [creatorMode, activeLiveId, live.creatorUid, live.createdLocally, user?.uid, watchRetry]);
 
   const stopSound = () => {
     const current = soundRef.current;
@@ -1960,7 +1889,7 @@ function LiveViewer({ liveId, creatorMode = false }) {
     }, 220);
   };
 
-  const chat = useMemo(() => [...(live?.chat ?? []), ...(localChat[live?.id] ?? [])], [live?.id, live?.chat, localChat]);
+  const chat = useMemo(() => [...(live.chat ?? []), ...(localChat[live.id] ?? [])], [live, localChat]);
   const visibleChat = useMemo(() => chat.slice(-4), [chat]);
   const chatCount = Math.max(chat.length, viewerCount(live.viewerLabel) + 21);
   const trackStyle = {
@@ -1978,7 +1907,7 @@ function LiveViewer({ liveId, creatorMode = false }) {
     setChatDraft('');
     setImmersive(false);
     lastLiveTap.current = { time: 0, x: 0, y: 0 };
-  }, [live?.id]);
+  }, [live.id]);
 
   useEffect(() => {
     document.body.classList.toggle('vuvio-live-immersive', immersive);
@@ -1988,11 +1917,8 @@ function LiveViewer({ liveId, creatorMode = false }) {
   }, [immersive]);
 
   useEffect(() => {
-    // Cleanup timer on unmount
     return () => {
-      if (tapSheetTimer.current) {
-        window.clearTimeout(tapSheetTimer.current);
-      }
+      if (tapSheetTimer.current) window.clearTimeout(tapSheetTimer.current);
     };
   }, []);
 
@@ -2009,7 +1935,7 @@ function LiveViewer({ liveId, creatorMode = false }) {
 
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
-  }, [goTo]);
+  }, []);
 
   const openChatComposer = () => {
     chatScrollRef.current = {
@@ -2033,11 +1959,11 @@ function LiveViewer({ liveId, creatorMode = false }) {
     });
   };
 
-  const sendLiveMessage = async (event) => {
+  const sendLiveMessage = (event) => {
     event?.preventDefault();
     event?.stopPropagation();
     const text = chatDraft.trim();
-    if (!text || !liveId || !user?.uid) return;
+    if (!text) return;
 
     chatInputRef.current?.blur();
     pointerStart.current = null;
@@ -2045,28 +1971,14 @@ function LiveViewer({ liveId, creatorMode = false }) {
     setDragY(0);
     setLocalChat((state) => ({
       ...state,
-      [liveId]: [
-        ...(state[liveId] ?? []),
+      [live.id]: [
+        ...(state[live.id] ?? []),
         { who: 'You', text, time: new Intl.DateTimeFormat(undefined, { hour: '2-digit', minute: '2-digit' }).format(new Date()) },
       ],
     }));
     setChatDraft('');
     setChatComposerOpen(false);
     setChatPanelOpen(false);
-
-    // Save comment to Firestore
-    try {
-      const commentsRef = collection(db, `activeLives/${liveId}/comments`);
-      await addDoc(commentsRef, {
-        text,
-        userId: user.uid,
-        userDisplayName: user.displayName || 'Anonymous',
-        userPhotoURL: user.photoURL || null,
-        timestamp: serverTimestamp(),
-      });
-    } catch (err) {
-      console.warn('[LiveViewer] Failed to save comment:', err.message);
-    }
 
     [0, 80, 220].forEach((delay) => {
       window.setTimeout(() => {
@@ -2113,77 +2025,6 @@ function LiveViewer({ liveId, creatorMode = false }) {
       onPointerCancel={endPointer}
       onWheel={onWheel}
     >
-      {/* ── Desktop sidebar left ────────────────────────────── */}
-      <div className="live-feed__sidebar-left live-feed--desktop-only">
-        <div className="live-feed__status">
-          {broadcastEnded ? (
-            <span className="live-feed__watching">{live.streamer ?? live.name} has ended their live. Next live...</span>
-          ) : (
-            <>
-              <LiveBadge pulse />
-              <span className="live-feed__viewer-count">{formatViewers(live.viewerLabel ?? live.viewers ?? '0', i18n.language)}</span>
-            </>
-          )}
-        </div>
-
-        <div className="live-feed__copy">
-          <CreatorLink creator={live} className="live-feed__creator" stopPropagation />
-          <p>
-            <MapPin size={14} strokeWidth={2} aria-hidden="true" />
-            {live.city}, {live.country}
-          </p>
-          <span>{live.job}{live.job && live.description ? ' • ' : ''}{live.description}</span>
-        </div>
-
-        <LiveLocationGlobe live={live} onOpen={() => navigate(`/globe?live=${live.id}`)} />
-
-        <div className="live-actions" aria-label="Live actions" style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, justifyContent: 'center' }}>
-          <button
-            type="button"
-            className={isFollowing ? 'is-active' : ''}
-            onClick={() => {
-              const wasFollowing = isFollowing;
-              setFollowing((state) => ({ ...state, [live.id]: !state[live.id] }));
-              if (!wasFollowing) {
-                recordCreatorFollowed();
-              }
-            }}
-            aria-label={isFollowing ? t('common.unfollow') : t('common.follow')}
-            title="Follow"
-          >
-            <UserPlus size={20} strokeWidth={1.8} />
-          </button>
-          <button
-            type="button"
-            className={`${isLiked ? 'is-liked' : ''}${starPulse ? ' is-pulsing' : ''}`}
-            onClick={reactWithStar}
-            aria-label={t('live.sendStar')}
-            title="Star"
-          >
-            <Star size={20} strokeWidth={1.8} fill={isLiked ? 'currentColor' : 'none'} />
-          </button>
-          <button type="button" onClick={() => setUserSheetOpen(true)} aria-label="User info" title="User">
-            <UserRound size={20} strokeWidth={1.8} />
-          </button>
-          <button type="button" onClick={recordShared} aria-label={t('common.share')} title="Share">
-            <Share2 size={20} strokeWidth={1.8} />
-          </button>
-          <button type="button" className="equipment-button" onClick={() => { recordGearOpened(); setEquipmentSheetOpen(true); }} aria-label="Open live equipment" title="Equipment">
-            <Backpack size={20} strokeWidth={1.9} />
-          </button>
-          <button
-            type="button"
-            className={live.hasVideoAudio ? (videoMuted ? 'live-sound-button' : 'is-active live-sound-button') : (soundEnabled ? 'is-active live-sound-button' : 'live-sound-button')}
-            onClick={toggleSound}
-            aria-label={live.hasVideoAudio ? (videoMuted ? 'Unmute video' : 'Mute video') : (soundEnabled ? 'Mute POV sound' : 'Enable POV sound')}
-            title={live.hasVideoAudio ? (videoMuted ? 'Unmute' : 'Mute') : (soundEnabled ? 'Sound off' : 'Sound on')}
-          >
-            {live.hasVideoAudio ? (videoMuted ? <VolumeX size={20} strokeWidth={1.8} /> : <Volume2 size={20} strokeWidth={1.8} />) : (soundEnabled ? <Volume2 size={20} strokeWidth={1.8} /> : <VolumeX size={20} strokeWidth={1.8} />)}
-          </button>
-        </div>
-      </div>
-
-      {/* ── Video center ────────────────────────────────────── */}
       <div className={isDragging ? 'live-feed__track is-dragging' : 'live-feed__track'} style={trackStyle}>
         {liveFeed.map((item, itemIndex) => {
           const isActive = itemIndex === index;
@@ -2367,16 +2208,16 @@ function LiveViewer({ liveId, creatorMode = false }) {
         </div>
       </div>
 
-      <button type="button" className="next-live live-feed--mobile-only" onClick={() => goTo(1)} aria-label={t('live.next')}>
+      <button type="button" className="next-live" onClick={() => goTo(1)} aria-label={t('live.next')}>
         <ChevronUp size={18} strokeWidth={2} aria-hidden="true" />
       </button>
 
-      {chatComposerOpen && !chatPanelOpen ? (
-        <button type="button" className="live-chat-dismiss live-feed--mobile-only" aria-label="Close message composer" onClick={closeChatComposer} />
+      {chatComposerOpen ? (
+        <button type="button" className="live-chat-dismiss" aria-label="Close message composer" onClick={closeChatComposer} />
       ) : null}
 
-      {chatComposerOpen && !chatPanelOpen ? (
-        <form className="live-floating-composer live-feed--mobile-only" onSubmit={sendLiveMessage}>
+      {chatComposerOpen ? (
+        <form className="live-floating-composer" onSubmit={sendLiveMessage}>
           <input
             ref={chatInputRef}
             type="text"
@@ -2396,47 +2237,8 @@ function LiveViewer({ liveId, creatorMode = false }) {
         </form>
       ) : null}
 
-      {/* ── Desktop chat sidebar ────────────────────────────── */}
-      <div className="live-feed__sidebar-right live-feed--desktop-only">
-        <section className="live-chat-panel" aria-label="Live chat history" style={{ position: 'static', inset: 'auto', zIndex: 1, display: 'flex', flexDirection: 'column', alignItems: 'stretch', height: '100%', pointerEvents: 'auto' }}>
-          <div className="live-chat-panel__sheet" style={{ position: 'static', display: 'grid', gridTemplateRows: 'auto auto minmax(0, 1fr) auto', height: '100%', borderRadius: 0, borderLeft: 'none' }}>
-            <header>
-              <div>
-                <strong>{chatCount} live messages</strong>
-                <span>{live.title ?? live.description}</span>
-              </div>
-              <button type="button" onClick={() => setChatPanelOpen(false)} aria-label="Close chat">
-                <X size={18} strokeWidth={2} />
-              </button>
-            </header>
-            <div className="live-chat-panel__list">
-              {chat.slice(-20).map((message, messageIndex) => (
-                <article key={`${live.id}-${messageIndex}`}>
-                  <time>{message.time ?? `${Math.max(1, chat.length - messageIndex)}m`}</time>
-                  <p><strong>{message.who}</strong> {message.text}</p>
-                </article>
-              ))}
-            </div>
-            <form className="live-chat-panel__composer" onSubmit={sendLiveMessage}>
-              <input
-                ref={chatInputRef}
-                type="text"
-                value={chatDraft}
-                onChange={(event) => setChatDraft(event.target.value)}
-                placeholder="Write a message..."
-                aria-label="Write a message"
-              />
-              <button type="submit" className={chatDraft.trim() ? 'is-active' : ''} disabled={!chatDraft.trim()}>
-                <Send size={16} strokeWidth={2} />
-              </button>
-            </form>
-          </div>
-        </section>
-      </div>
-
-      {/* ── Mobile chat panel (conditional) ────────────────── */}
       {chatPanelOpen ? (
-        <section className="live-chat-panel live-feed--mobile-only" aria-label="Live chat history">
+        <section className="live-chat-panel" aria-label="Live chat history">
           <button type="button" className="live-chat-panel__backdrop" aria-label="Close chat" onClick={() => setChatPanelOpen(false)} />
           <div className="live-chat-panel__sheet">
             <span className="live-chat-panel__handle" aria-hidden="true" />
