@@ -106,10 +106,3 @@
   width: 100%;
   height: 100%;
 }
-
-/* Fix video display in desktop mode */
-.app-canvas--desktop .screen.live-feed {
-  min-height: 100% !important;
-  height: 100% !important;
-  max-height: 100vh;
-}
