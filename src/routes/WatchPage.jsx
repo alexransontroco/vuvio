@@ -1058,17 +1058,25 @@ function formatLiveDuration(totalSeconds) {
   return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
 }
 
-function CreatorCameraSurface({ live, className = '', children }) {
+function CreatorCameraSurface({ live, className = '', children, videoRef: externalVideoRef, onVideoReady }) {
   const stream = getCreatedLiveStream(live.id);
-  const videoRef = useRef(null);
+  const internalRef = useRef(null);
+  const videoRef = externalVideoRef || internalRef;
 
   useEffect(() => {
     if (!videoRef.current || !stream) return undefined;
     videoRef.current.srcObject = stream;
-    return () => {
-      if (videoRef.current) videoRef.current.srcObject = null;
+    const handleLoadedMetadata = () => {
+      onVideoReady?.();
     };
-  }, [stream]);
+    videoRef.current.addEventListener('loadedmetadata', handleLoadedMetadata);
+    return () => {
+      if (videoRef.current) {
+        videoRef.current.removeEventListener('loadedmetadata', handleLoadedMetadata);
+        videoRef.current.srcObject = null;
+      }
+    };
+  }, [stream, videoRef, onVideoReady]);
 
   return (
     <div className={`creator-live-camera ${className}`}>
@@ -1105,6 +1113,24 @@ function CreatorLiveSession({ live, onEndingChange }) {
   const longPressTimer = useRef(null);
   const lastCenterTapRef = useRef({ time: 0, x: 0, y: 0 });
   const broadcastStartedRef = useRef(false);
+  const videoElementRef = useRef(null);
+
+  const captureAndSaveCoverImage = useCallback(async (liveId) => {
+    try {
+      const videoEl = videoElementRef.current;
+      if (!videoEl || videoEl.readyState < 2) return;
+      const canvas = document.createElement('canvas');
+      canvas.width = videoEl.videoWidth || 1280;
+      canvas.height = videoEl.videoHeight || 720;
+      const ctx = canvas.getContext('2d');
+      ctx?.drawImage(videoEl, 0, 0);
+      const imageData = canvas.toDataURL('image/jpeg', 0.8);
+      const liveRef = doc(db, 'activeLives', liveId);
+      await updateDoc(liveRef, { image: imageData });
+    } catch (err) {
+      console.warn('[CreatorLiveSession] Failed to capture image:', err.message);
+    }
+  }, []);
 
   const keepHudAwake = () => {
     if (locked || phase !== 'live') return;
@@ -1375,7 +1401,7 @@ function CreatorLiveSession({ live, onEndingChange }) {
       onPointerCancel={clearLongPress}
       aria-label="Creator live camera"
     >
-      <CreatorCameraSurface live={live} />
+      <CreatorCameraSurface live={live} videoRef={videoElementRef} onVideoReady={() => captureAndSaveCoverImage(live.id)} />
       <div className="creator-live-hud">
         <div className="creator-live-hud__left">
           <LiveBadge compact pulse />
