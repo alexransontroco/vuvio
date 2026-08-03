@@ -1140,7 +1140,13 @@ function CreatorLiveSession({ live, onEndingChange }) {
   };
 
   useEffect(() => {
-    keepHudAwake();
+    if (locked || phase !== 'live') return undefined;
+    setHudVisible(true);
+    window.clearTimeout(hideTimer.current);
+    hideTimer.current = window.setTimeout(() => {
+      setHudVisible(false);
+      setControlsVisible(false);
+    }, 3000);
     return () => window.clearTimeout(hideTimer.current);
   }, [locked, phase]);
 
