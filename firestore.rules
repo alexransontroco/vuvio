@@ -47,7 +47,7 @@ service cloud.firestore {
         && request.resource.data.status == 'live';
       allow update: if request.auth != null
         && resource.data.creatorUid == request.auth.uid
-        && (!('creatorUid' in request.resource.data) || request.resource.data.creatorUid == resource.data.creatorUid);
+        && request.resource.data.creatorUid == resource.data.creatorUid;
       allow delete: if request.auth != null
         && resource.data.creatorUid == request.auth.uid;
 
