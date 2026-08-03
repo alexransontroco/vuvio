@@ -1347,7 +1347,24 @@ function CreatorLiveSession({ live, onEndingChange }) {
       const starsRef = collection(db, `activeLives/${live.id}/stars`);
       const commentSnap = await getDocs(commentsRef);
       const starSnap = await getDocs(starsRef);
-      await updateDoc(liveRef, {
+
+      let replayUrl = null;
+      if (live.liveInputId) {
+        try {
+          const token = await user.getIdToken();
+          const cfResponse = await fetch(`/api/cloudflare/stream/${live.liveInputId}`, {
+            headers: { 'Authorization': `Bearer ${token}` },
+          });
+          if (cfResponse.ok) {
+            const cfData = await cfResponse.json();
+            replayUrl = cfData.playbackUrl;
+          }
+        } catch (cfErr) {
+          console.warn('[HomePage] Failed to fetch Cloudflare replay:', cfErr.message);
+        }
+      }
+
+      const stats = {
         status: 'ended',
         endedAt: serverTimestamp(),
         durationSeconds: elapsed,
@@ -1355,7 +1372,10 @@ function CreatorLiveSession({ live, onEndingChange }) {
         peakViewerCount: peakViewers,
         commentCount: commentSnap.size,
         starCount: starSnap.size,
-      });
+      };
+      if (replayUrl) stats.replayUrl = replayUrl;
+
+      await updateDoc(liveRef, stats);
     } catch (err) {
       console.warn('[HomePage] Failed to save stats:', err);
     }

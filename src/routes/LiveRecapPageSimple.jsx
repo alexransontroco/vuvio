@@ -93,8 +93,18 @@ export default function LiveRecapPageSimple() {
       </header>
 
       <div className="live-recap-simple__content">
-        {/* Cover Image */}
-        {liveData.image && (
+        {/* Replay Video */}
+        {liveData.replayUrl && (
+          <div className="live-recap-simple__video-container">
+            <video controls className="live-recap-simple__video" poster={liveData.image}>
+              <source src={liveData.replayUrl} type="video/mp4" />
+              Your browser doesn't support video playback.
+            </video>
+          </div>
+        )}
+
+        {/* Cover Image (fallback if no replay) */}
+        {!liveData.replayUrl && liveData.image && (
           <div className="live-recap-simple__image-container">
             <img src={liveData.image} alt="Live cover" className="live-recap-simple__image" />
           </div>
@@ -197,12 +207,29 @@ export default function LiveRecapPageSimple() {
           font-size: 18px;
         }
 
+        .live-recap-simple__video-container,
         .live-recap-simple__image-container {
           margin: 0 0 24px 0;
           border-radius: 12px;
           overflow: hidden;
-          aspect-ratio: 9 / 16;
+          aspect-ratio: 16 / 9;
           max-height: 60vh;
+        }
+
+        .live-recap-simple__video-container {
+          aspect-ratio: 16 / 9;
+        }
+
+        .live-recap-simple__video {
+          width: 100%;
+          height: 100%;
+          object-fit: contain;
+          display: block;
+          background: #000;
+        }
+
+        .live-recap-simple__image-container {
+          aspect-ratio: 9 / 16;
         }
 
         .live-recap-simple__image {
