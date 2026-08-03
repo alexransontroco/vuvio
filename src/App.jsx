@@ -69,10 +69,6 @@ export default function App() {
   const { showSplash } = useAuth();
   const location = useLocation();
 
-  if (showSplash && location.pathname === '/') {
-    return <SplashScreen />;
-  }
-
   return (
     <Routes>
       {/* ── Public standalone ── */}
