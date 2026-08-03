@@ -904,7 +904,10 @@ export default function CurrentGlobe({ streams, onboarding = false, onOnboarding
         }
       }
 
-      if (document.visibilityState === 'hidden' || Date.now() <= pauseUntilRef.current || selectedId) {
+      const zoom = map.getZoom();
+      const isZoomed = Math.abs(zoom - 1.35) > 0.15;
+
+      if (document.visibilityState === 'hidden' || Date.now() <= pauseUntilRef.current || selectedId || isZoomed) {
         lastRotationTime = time;
         const center = map.getCenter();
         lastRotationLng = center.lng;
@@ -928,7 +931,6 @@ export default function CurrentGlobe({ streams, onboarding = false, onOnboarding
       }
 
       // Track zoom for ISS visibility
-      const zoom = map.getZoom();
       if (Math.abs(zoom - currentZoom) > 0.1) {
         setCurrentZoom(zoom);
       }
