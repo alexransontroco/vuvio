@@ -1582,7 +1582,7 @@ function LiveViewer({ liveId, creatorMode = false }) {
     return () => {
       closePeer();
     };
-  }, [creatorMode, liveId, user, live.createdLocally]);
+  }, [creatorMode, liveId, user, live?.createdLocally]);
 
   // Watch for broadcaster ending their live (only for real broadcasts)
   useEffect(() => {
@@ -1618,7 +1618,7 @@ function LiveViewer({ liveId, creatorMode = false }) {
       isMounted = false;
       unsubscribe();
     };
-  }, [creatorMode, activeLiveId, live.creatorUid]);
+  }, [creatorMode, activeLiveId, live?.creatorUid]);
 
   // WebRTC streaming for watchers (only for real active broadcasts)
   useEffect(() => {
@@ -1695,7 +1695,7 @@ function LiveViewer({ liveId, creatorMode = false }) {
       watcherIdRef.current = null;
       closePeer();
     };
-  }, [creatorMode, activeLiveId, live.creatorUid, live.createdLocally, user?.uid, watchRetry]);
+  }, [creatorMode, activeLiveId, live?.creatorUid, live?.createdLocally, user?.uid, watchRetry]);
 
   const stopSound = () => {
     const current = soundRef.current;
@@ -1935,9 +1935,11 @@ function LiveViewer({ liveId, creatorMode = false }) {
 
   useEffect(() => {
     return () => {
-      if (tapSheetTimer.current) window.clearTimeout(tapSheetTimer.current);
+      if (tapSheetTimer.current) {
+        window.clearTimeout(tapSheetTimer.current);
+      }
     };
-  }, []);
+  }, [tapSheetTimer]);
 
   useEffect(() => {
     const onKeyDown = (event) => {
