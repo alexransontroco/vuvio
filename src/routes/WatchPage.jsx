@@ -1921,6 +1921,8 @@ function LiveViewer({ liveId, creatorMode = false }) {
   }, [broadcastEnded, liveFeed.length]);
 
   const reactWithStar = async (event) => {
+    if (isLiked) return;
+
     const bounds = feedRef.current?.getBoundingClientRect();
     const x = bounds ? event.clientX - bounds.left : event.clientX;
     const y = bounds ? event.clientY - bounds.top : event.clientY;
