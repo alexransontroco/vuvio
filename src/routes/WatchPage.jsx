@@ -1203,15 +1203,31 @@ function CreatorLiveSession({ live, onEndingChange }) {
   }, [phase]);
 
   useEffect(() => {
-    if (phase !== 'live') return undefined;
-    const timer = window.setInterval(() => {
-      const next = creatorComments[commentsCount % creatorComments.length];
-      setComment(next);
-      setCommentsCount((value) => value + 1);
-      window.setTimeout(() => setComment(null), 4000);
-    }, 7200);
-    return () => window.clearInterval(timer);
-  }, [commentsCount, phase]);
+    if (!live?.id || phase !== 'live') return undefined;
+
+    const commentsRef = collection(db, `activeLives/${live.id}/comments`);
+    const unsubscribe = onSnapshot(
+      query(commentsRef),
+      (snapshot) => {
+        snapshot.docChanges().forEach((change) => {
+          if (change.type === 'added') {
+            const data = change.doc.data();
+            setComment({
+              name: data.userDisplayName || 'Anonymous',
+              text: ` ${data.text}`,
+              avatar: '👤',
+            });
+            window.setTimeout(() => setComment(null), 4000);
+          }
+        });
+      },
+      (error) => {
+        console.warn('[CreatorLiveSession] Comments listener error:', error.message);
+      }
+    );
+
+    return () => unsubscribe();
+  }, [live?.id, phase]);
 
   useEffect(() => {
     if (phase !== 'live') return undefined;
