@@ -1237,6 +1237,7 @@ function CreatorLiveSession({ live, onEndingChange }) {
           const data = change.doc.data();
           setComment({ name: data.userDisplayName || 'Anonymous', text: ` ${data.text}`, avatar: '👤' });
           window.setTimeout(() => setComment(null), 4000);
+          setCommentsCount((count) => count + 1);
         }
       });
     });
