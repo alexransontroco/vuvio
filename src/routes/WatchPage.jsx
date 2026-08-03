@@ -1193,13 +1193,13 @@ function CreatorLiveSession({ live, onEndingChange }) {
         if (!active) {
           stream?.getTracks?.().forEach((track) => track.stop());
         } else {
-          // Capture cover image after stream is stable
+          // Capture cover image after stream is stable (5s for video to load data)
           window.setTimeout(() => {
+            console.log('[CreatorLiveSession] Capture timer fired, active:', active, 'videoRef:', !!videoElementRef.current);
             if (active) {
-              console.log('[CreatorLiveSession] Capturing image at 2s mark');
               captureAndSaveCoverImage(live.id);
             }
-          }, 2000);
+          }, 5000);
         }
       } catch (err) {
         console.error('[CreatorLiveSession] Broadcast setup failed:', err.message);
@@ -1569,6 +1569,12 @@ function LiveViewer({ liveId, creatorMode = false }) {
       setDragY(0);
     }
   }, [liveFeed, liveId]);
+
+  useEffect(() => {
+    window.requestAnimationFrame(() => {
+      window.dispatchEvent(new Event('resize'));
+    });
+  }, []);
 
   useEffect(() => subscribeToCreatedLives(setCreatedLives), []);
 

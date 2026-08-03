@@ -87,8 +87,8 @@
   position: relative;
   width: 100% !important;
   max-width: 100% !important;
-  height: 100dvh !important;
-  min-height: 100dvh !important;
+  height: 100vh !important;
+  min-height: 100vh !important;
   border: none !important;
   border-radius: 0 !important;
   box-shadow: none !important;
