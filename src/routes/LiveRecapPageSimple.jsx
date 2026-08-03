@@ -14,25 +14,39 @@ export default function LiveRecapPageSimple() {
 
   useEffect(() => {
     const liveId = location.pathname.split('/')[2];
-    if (!liveId) return;
+    console.log('[LiveRecapSimple] Path:', location.pathname, 'ID:', liveId);
+    if (!liveId) {
+      setLoading(false);
+      return;
+    }
 
     const fetchLiveData = async () => {
       try {
         const liveRef = doc(db, 'activeLives', liveId);
         const liveSnap = await getDoc(liveRef);
+        console.log('[LiveRecapSimple] Firestore fetch - exists:', liveSnap.exists(), 'data:', liveSnap.data());
         if (liveSnap.exists()) {
           setLiveData(liveSnap.data());
-          console.log('[LiveRecapSimple] Loaded:', liveSnap.data());
+        } else {
+          // Try with fallback from location state
+          if (location.state?.liveData) {
+            console.log('[LiveRecapSimple] Using location.state data');
+            setLiveData(location.state.liveData);
+          }
         }
       } catch (err) {
         console.error('[LiveRecapSimple] Failed to fetch:', err);
+        // Fallback to location state on error
+        if (location.state?.liveData) {
+          setLiveData(location.state.liveData);
+        }
       } finally {
         setLoading(false);
       }
     };
 
     fetchLiveData();
-  }, [location.pathname]);
+  }, [location.pathname, location.state?.liveData]);
 
   const handleFinish = async () => {
     const liveId = location.pathname.split('/')[2];

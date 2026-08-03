@@ -30,17 +30,6 @@
   display: grid;
   width: 100%;
   gap: 18px;
-  flex: 0 0 auto;
-}
-
-.sidebar-menu--bottom {
-  flex: 0 0 auto;
-}
-
-.sidebar-live-btn {
-  flex: 0 0 auto;
-  margin-top: auto;
-  margin-bottom: auto;
 }
 
 .sidebar-nav-btn,

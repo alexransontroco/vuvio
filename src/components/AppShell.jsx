@@ -42,7 +42,19 @@ export default function AppShell() {
       <ViewModeToggle />
       {isDesktopMode && (
         <aside className="desktop-sidebar-nav">
+          <div className="sidebar-brand">
+            <BrandMark size={40} />
+            <span>VUVIO</span>
+          </div>
           <nav className="sidebar-menu">
+            <button
+              className={`sidebar-nav-btn ${location.pathname.startsWith('/watch') ? 'is-active' : ''}`}
+              onClick={() => navigate('/watch')}
+              title="Watch"
+            >
+              <Tv2 size={24} strokeWidth={1.8} />
+              <span>Watch</span>
+            </button>
             <button
               className={`sidebar-nav-btn ${location.pathname.startsWith('/explore') ? 'is-active' : ''}`}
               onClick={() => navigate('/explore')}
@@ -52,30 +64,20 @@ export default function AppShell() {
               <span>Explore</span>
             </button>
             <button
-              className="sidebar-nav-btn"
-              onClick={() => navigate('/messages')}
-              title="Messages"
-            >
-              <Send size={24} strokeWidth={1.8} />
-              <span>Messages</span>
-            </button>
-          </nav>
-          <button
-            className={`sidebar-nav-btn sidebar-live-btn ${location.pathname.startsWith('/watch') ? 'is-active' : ''}`}
-            onClick={() => navigate('/watch')}
-            title="Watch"
-          >
-            <BrandMark size={32} />
-            <span>Watch</span>
-          </button>
-          <nav className="sidebar-menu sidebar-menu--bottom">
-            <button
               className={`sidebar-nav-btn ${location.pathname.startsWith('/globe') ? 'is-active' : ''}`}
               onClick={() => navigate('/globe')}
               title="Globe"
             >
               <Globe2 size={24} strokeWidth={1.8} />
               <span>Globe</span>
+            </button>
+            <button
+              className="sidebar-nav-btn"
+              onClick={() => navigate('/messages')}
+              title="Messages"
+            >
+              <Send size={24} strokeWidth={1.8} />
+              <span>Messages</span>
             </button>
           </nav>
           <button
