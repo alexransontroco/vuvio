@@ -254,7 +254,9 @@ export async function startBroadcast(liveId, userId, existingStream = null) {
     }, (err) => {
       console.error('[webrtcService] Watcher answer listener failed:', err.message);
     });
-    peerConnection._vuvioUnsubscribe = unsubscribeWatchers;
+    if (peerConnection) {
+      peerConnection._vuvioUnsubscribe = unsubscribeWatchers;
+    }
 
     return localStream;
   } catch (err) {

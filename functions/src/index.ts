@@ -18,6 +18,7 @@ import { getCloudflareConfig, getCloudflareInputs, postCreateTestInput } from '.
 import { createLiveInputHandler } from './cloudflare/createLiveInputHandler.js';
 import { monitorStreamHeartbeats } from './streams/monitorStreamHeartbeats.js';
 import { processProductImage } from './products/processProductImage.js';
+import { searchIcecatHandler, importIcecatHandler } from './products/icecatRoutes.js';
 import { requestHighlight } from './highlights/requestHighlight.js';
 import { getHighlightStatus } from './highlights/getHighlightStatus.js';
 import { cancelHighlight } from './highlights/cancelHighlight.js';
@@ -60,6 +61,8 @@ export const api = onRequest({
     if (req.method === 'POST' && parts[0] === 'analytics' && parts[1] === 'events') return await ingestEvents(req, res);
     if (req.method === 'POST' && parts[0] === 'webhooks' && parts[1] === 'cloudflare') return await cloudflareWebhook(req, res);
     if (req.method === 'POST' && parts[0] === 'products' && parts[1] === 'process-image') return await processProductImage(req, res);
+    if (req.method === 'POST' && parts[0] === 'products' && parts[1] === 'search-icecat') return await searchIcecatHandler(req, res);
+    if (req.method === 'POST' && parts[0] === 'products' && parts[1] === 'import-icecat') return await importIcecatHandler(req, res);
 
     // Highlight generation routes
     if (req.method === 'POST' && parts[0] === 'lives' && parts[2] === 'highlight') return await requestHighlight(req, res, parts[1]);
