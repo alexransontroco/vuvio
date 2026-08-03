@@ -84,7 +84,7 @@ export default function App() {
       <Route path="/desktop" element={<Lazy component={DesktopLayout} />} />
       <Route path="/cloudflare-test" element={<Lazy component={CloudflareTestPage} />} />
       <Route path="/onboarding-test" element={<Lazy component={OnboardingTestPage} />} />
-      <Route path="/test/splash" element={<SplashTestPage />} />
+      <Route path="/splash-test" element={<Lazy component={SplashTestPage} />} />
 
       {/* ── Auth pages (redirect if already logged in) ── */}
       <Route
