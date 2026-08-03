@@ -1106,7 +1106,11 @@ function CreatorLiveSession({ live, onEndingChange }) {
   const captureAndSaveCoverImage = async (liveId) => {
     try {
       const videoEl = videoElementRef.current;
-      if (!videoEl) return;
+      console.log('[CreatorLiveSession] Attempting capture - videoEl:', !!videoEl, 'width:', videoEl?.videoWidth, 'height:', videoEl?.videoHeight);
+      if (!videoEl) {
+        console.warn('[CreatorLiveSession] No video element to capture from');
+        return;
+      }
 
       const canvas = document.createElement('canvas');
       canvas.width = videoEl.videoWidth || 1280;
@@ -1115,9 +1119,10 @@ function CreatorLiveSession({ live, onEndingChange }) {
       ctx?.drawImage(videoEl, 0, 0);
 
       const imageData = canvas.toDataURL('image/jpeg', 0.8);
+      console.log('[CreatorLiveSession] Image captured, size:', imageData.length);
       const liveRef = doc(db, 'activeLives', liveId);
       await updateDoc(liveRef, { image: imageData });
-      console.log('[CreatorLiveSession] Cover image captured and saved');
+      console.log('[CreatorLiveSession] Cover image captured and saved to Firestore');
     } catch (err) {
       console.warn('[CreatorLiveSession] Failed to capture cover image:', err.message);
     }
@@ -1319,14 +1324,17 @@ function CreatorLiveSession({ live, onEndingChange }) {
         const liveRef = doc(db, 'activeLives', live.id);
         const commentsRef = collection(db, `activeLives/${live.id}/comments`);
         const commentSnap = await getDocs(commentsRef);
-        await updateDoc(liveRef, {
+        const stats = {
           status: 'ended',
           endedAt: serverTimestamp(),
           durationSeconds: elapsed,
           totalUniqueViewers: Math.max(viewerCount, 128),
           peakViewerCount: Math.max(peakViewers, viewerCount, 164),
           commentCount: commentSnap.size,
-        });
+        };
+        console.log('[HomePage] Saving stats to Firestore:', stats);
+        await updateDoc(liveRef, stats);
+        console.log('[HomePage] Stats saved successfully');
       } catch (updateErr) {
         console.warn('[HomePage] Failed to save final stats:', updateErr);
       }
