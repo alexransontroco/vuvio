@@ -1258,13 +1258,17 @@ function CreatorLiveSession({ live, onEndingChange }) {
   useEffect(() => {
     if (!live?.id || phase !== 'live') return undefined;
 
+    console.log('[CreatorLiveSession] Setting up comments listener for:', live.id);
     const commentsRef = collection(db, `activeLives/${live.id}/comments`);
     const unsubscribe = onSnapshot(
       query(commentsRef),
       (snapshot) => {
+        console.log('[CreatorLiveSession] Snapshot received, changes:', snapshot.docChanges().length);
         snapshot.docChanges().forEach((change) => {
+          console.log('[CreatorLiveSession] Change type:', change.type, 'data:', change.doc.data());
           if (change.type === 'added') {
             const data = change.doc.data();
+            console.log('[CreatorLiveSession] Displaying comment from:', data.userDisplayName);
             setComment({
               name: data.userDisplayName || 'Anonymous',
               text: ` ${data.text}`,
@@ -2039,16 +2043,18 @@ function LiveViewer({ liveId, creatorMode = false }) {
 
     // Save comment to Firestore
     try {
+      console.log('[LiveViewer] Saving comment to:', `activeLives/${live.id}/comments`);
       const commentsRef = collection(db, `activeLives/${live.id}/comments`);
-      await addDoc(commentsRef, {
+      const docRef = await addDoc(commentsRef, {
         text,
         userId: user.uid,
         userDisplayName: user.displayName || 'Anonymous',
         userPhotoURL: user.photoURL || null,
         timestamp: serverTimestamp(),
       });
+      console.log('[LiveViewer] Comment saved with ID:', docRef.id);
     } catch (err) {
-      console.warn('[LiveViewer] Failed to save comment:', err.message);
+      console.error('[LiveViewer] Failed to save comment:', err.message);
     }
 
     [0, 80, 220].forEach((delay) => {
