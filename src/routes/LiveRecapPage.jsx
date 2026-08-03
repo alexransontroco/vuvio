@@ -157,6 +157,7 @@ export default function LiveRecapPage() {
       id: liveData.id,
       title: liveData.title || liveRecap.title,
       duration: liveData.durationSeconds || liveRecap.duration,
+      image: liveData.image || liveRecap.image,
       stats: [
         { id: 'peak', label: 'Peak Viewers', value: liveData.peakViewerCount?.toString() || '0', trend: '', icon: 'chart' },
         { id: 'avg', label: 'Avg Viewers', value: Math.round((liveData.currentViewerCount || 0) * 0.8).toString(), trend: '', icon: 'users' },
