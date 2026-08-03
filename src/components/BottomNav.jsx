@@ -73,16 +73,34 @@ function LivePreview({ draft, selectedFamily, equipmentLibrary, onEditGear, onLa
       return undefined;
     }
 
-    navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 } }, audio: false })
-      .catch(() => navigator.mediaDevices.getUserMedia({ video: { width: { ideal: 1280 } }, audio: false }))
-      .catch(() => navigator.mediaDevices.getUserMedia({ video: true, audio: false }))
-      .then((stream) => {
-        if (!active) { stream.getTracks().forEach((t) => t.stop()); return; }
-        streamRef.current = stream;
-        if (videoRef.current) videoRef.current.srcObject = stream;
-        setCameraState('active');
-      })
-      .catch(() => { if (active) setCameraState('denied'); });
+    const requestCamera = async () => {
+      const attempts = [
+        { video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 } }, audio: false },
+        { video: { width: { ideal: 1280 } }, audio: false },
+        { video: true, audio: false },
+      ];
+
+      for (const constraints of attempts) {
+        try {
+          const stream = await navigator.mediaDevices.getUserMedia(constraints);
+          if (!active) {
+            stream.getTracks().forEach((t) => t.stop());
+            return;
+          }
+          streamRef.current = stream;
+          if (videoRef.current) videoRef.current.srcObject = stream;
+          setCameraState('active');
+          return;
+        } catch (err) {
+          console.warn('[LivePreview] Camera attempt failed:', err.message);
+        }
+      }
+
+      if (active) setCameraState('denied');
+    };
+
+    requestCamera();
+
     return () => {
       active = false;
       if (!launchedRef.current) {
