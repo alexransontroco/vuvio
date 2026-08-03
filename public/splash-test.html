@@ -60,16 +60,24 @@
       currentSrc: video.currentSrc
     });
 
-    video.play()
-      .then(() => {
-        console.log('[RawTest] autoplay success');
-      })
-      .catch((error) => {
-        console.error('[RawTest] autoplay failed', {
-          name: error.name,
-          message: error.message
+    const attemptPlay = () => {
+      video.play()
+        .then(() => {
+          console.log('[RawTest] autoplay success');
+        })
+        .catch((error) => {
+          console.error('[RawTest] autoplay failed', {
+            name: error.name,
+            message: error.message
+          });
+          // Fallback: wait for user gesture
+          console.log('[RawTest] waiting for user gesture to play');
+          document.addEventListener('touchstart', attemptPlay, { once: true });
+          document.addEventListener('click', attemptPlay, { once: true });
         });
-      });
+    };
+
+    attemptPlay();
   </script>
 </body>
 </html>
