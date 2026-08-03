@@ -1323,6 +1323,24 @@ function CreatorLiveSession({ live, onEndingChange }) {
       console.error('[HomePage] Failed to stop broadcast:', err);
     }
 
+    // Save stats to Firestore before navigating
+    try {
+      const liveRef = doc(db, 'activeLives', live.id);
+      const commentsRef = collection(db, `activeLives/${live.id}/comments`);
+      const commentSnap = await getDocs(commentsRef);
+      const stats = {
+        status: 'ended',
+        endedAt: serverTimestamp(),
+        durationSeconds: elapsed,
+        totalUniqueViewers: viewerCount,
+        peakViewerCount: peakViewers,
+        commentCount: commentSnap.size,
+      };
+      await updateDoc(liveRef, stats);
+    } catch (updateErr) {
+      console.warn('[HomePage] Failed to save final stats:', updateErr);
+    }
+
     window.setTimeout(() => setPhase('processing'), 1100);
     window.setTimeout(() => {
       navigate(`/live/${live.id}/recap`, { replace: true });
