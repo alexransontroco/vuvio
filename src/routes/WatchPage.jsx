@@ -1573,12 +1573,6 @@ function LiveViewer({ liveId, creatorMode = false }) {
     }
   }, [liveFeed, liveId]);
 
-  useEffect(() => {
-    window.requestAnimationFrame(() => {
-      window.dispatchEvent(new Event('resize'));
-    });
-  }, []);
-
   useEffect(() => subscribeToCreatedLives(setCreatedLives), []);
 
   // WebRTC streaming for broadcaster
