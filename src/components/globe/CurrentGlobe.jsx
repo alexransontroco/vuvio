@@ -22,7 +22,7 @@ const SELECTED_LIVE_ZOOM = 4.05;
 const REQUESTED_LIVE_ZOOM = 4.2;
 const PING_COLOR = '#ff8a1f';
 const PING_TTL_MS = 12000;
-const PULSE_INTERVAL = 100;
+const PULSE_INTERVAL = 160;
 
 const statusColor = [
   'case',
@@ -100,8 +100,8 @@ function livePointOpacity(clock, selectedId = '') {
   return [
     'case',
     ['==', ['get', 'id'], selectedId],
-    ['+', 0.90, ['*', wave, 0.10]],
-    ['+', 0.82, ['*', wave, 0.18]],
+    ['+', 0.90, ['*', wave, 0.05]],
+    ['+', 0.82, ['*', wave, 0.10]],
   ];
 }
 
@@ -164,10 +164,10 @@ function liveColorGlowOpacity(clock) {
     ],
     ['*', wave, ['case',
       ['==', ['get', 'markerType'], MARKER_TYPES.sponsored],
-      ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 0.06, 800, 0.14, 1500, 0.18],
+      ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 0.03, 800, 0.07, 1500, 0.09],
       ['==', ['get', 'markerType'], MARKER_TYPES.vuvio],
-      ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 0.08, 800, 0.16, 1500, 0.20],
-      ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 0.06, 800, 0.14, 1500, 0.18],
+      ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 0.04, 800, 0.08, 1500, 0.10],
+      ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 0.03, 800, 0.07, 1500, 0.09],
     ]],
   ];
 }
@@ -186,7 +186,7 @@ function liveCrowdHaloOpacity(clock) {
   return [
     '*',
     ['-', 1, wave],
-    ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 0, 500, 0, 800, 0.04, 1500, 0.08],
+    ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 0, 500, 0, 800, 0.02, 1500, 0.04],
   ];
 }
 
@@ -197,7 +197,7 @@ function livePingRippleRadius(clock) {
 
 function livePingRippleOpacity(clock) {
   const wave = breathingWave(clock);
-  return ['*', ['-', 1, wave], ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 0.17, 800, 0.21, 1500, 0.26]];
+  return ['*', ['-', 1, wave], ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 0.10, 800, 0.13, 1500, 0.16]];
 }
 
 function liveBroadcastHaloRadius(clock, selectedId = '') {
@@ -215,8 +215,8 @@ function liveBroadcastHaloOpacity(clock, selectedId = '') {
   return [
     'case',
     ['==', ['get', 'id'], selectedId],
-    ['*', ['-', 1, wave], ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 0.12, 800, 0.16, 1500, 0.19]],
-    ['*', ['-', 1, wave], ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 0.07, 800, 0.10, 1500, 0.14]],
+    ['*', ['-', 1, wave], ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 0.06, 800, 0.09, 1500, 0.11]],
+    ['*', ['-', 1, wave], ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 0.04, 800, 0.06, 1500, 0.08]],
   ];
 }
 
@@ -871,7 +871,7 @@ export default function CurrentGlobe({ streams, onboarding = false, onOnboarding
       perfRef.current.rafCalls++;
       if (time - lastPulseTime >= PULSE_INTERVAL) {
         lastPulseTime = time;
-        const clock = (time % 1550) / 1550;
+        const clock = (time % 2400) / 2400;
         try {
           if (map.getLayer('vuvio-test-live-glow')) {
             map.setPaintProperty('vuvio-test-live-glow', 'circle-radius', liveColorGlowRadius(clock));

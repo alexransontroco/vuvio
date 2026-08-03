@@ -1599,6 +1599,19 @@ function LiveViewer({ liveId, creatorMode = false }) {
 
   useEffect(() => subscribeToCreatedLives(setCreatedLives), []);
 
+  // Use ResizeObserver to detect viewport/container changes and trigger re-render
+  useEffect(() => {
+    if (!feedRef.current) return;
+
+    const resizeObserver = new ResizeObserver(() => {
+      // Force React to re-render by updating a state
+      setDragY(prev => prev);
+    });
+
+    resizeObserver.observe(feedRef.current);
+    return () => resizeObserver.disconnect();
+  }, []);
+
   // WebRTC streaming for broadcaster
   useEffect(() => {
     if (!creatorMode || !liveId || !user || live.createdLocally) return;
