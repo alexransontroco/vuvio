@@ -1889,7 +1889,7 @@ function LiveViewer({ liveId, creatorMode = false }) {
     }, 220);
   };
 
-  const chat = useMemo(() => [...(live.chat ?? []), ...(localChat[live.id] ?? [])], [live, localChat]);
+  const chat = useMemo(() => [...(live.chat ?? []), ...(localChat[liveId] ?? [])], [live.chat, localChat, liveId]);
   const visibleChat = useMemo(() => chat.slice(-4), [chat]);
   const chatCount = Math.max(chat.length, viewerCount(live.viewerLabel) + 21);
   const trackStyle = {
