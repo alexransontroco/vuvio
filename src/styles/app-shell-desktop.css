@@ -107,14 +107,8 @@
   height: 100%;
 }
 
-/* Ensure video displays at proper aspect ratio in desktop mode */
-.app-canvas--desktop .live-feed {
-  min-height: 100% !important;
-  height: 100% !important;
-}
-
-.app-canvas--desktop .live-feed__track {
-  position: absolute !important;
-  inset: 0 !important;
-  height: auto;
+/* Disable desktop mode constraints specifically for watch page */
+.app-canvas--desktop .screen.live-feed {
+  height: 100vh !important;
+  width: 100% !important;
 }
