@@ -1244,15 +1244,20 @@ function CreatorLiveSession({ live, onEndingChange }) {
   }, [live?.id, phase]);
 
   useEffect(() => {
-    if (phase !== 'live') return undefined;
-    const timer = window.setInterval(() => {
-      const id = `star-${Date.now()}`;
-      setStars((value) => value + 1);
-      setStarBursts((value) => [...value.slice(-2), { id, left: 62 + Math.random() * 24 }]);
-      window.setTimeout(() => setStarBursts((value) => value.filter((item) => item.id !== id)), 1400);
-    }, 5200);
-    return () => window.clearInterval(timer);
-  }, [phase]);
+    if (!live?.id || phase !== 'live') return undefined;
+    const starsRef = collection(db, `activeLives/${live.id}/stars`);
+    const unsubscribe = onSnapshot(query(starsRef), (snapshot) => {
+      snapshot.docChanges().forEach((change) => {
+        if (change.type === 'added') {
+          const id = `star-${Date.now()}`;
+          setStars((value) => value + 1);
+          setStarBursts((value) => [...value.slice(-2), { id, left: 62 + Math.random() * 24 }]);
+          window.setTimeout(() => setStarBursts((value) => value.filter((item) => item.id !== id)), 1400);
+        }
+      });
+    });
+    return () => unsubscribe();
+  }, [live?.id, phase]);
 
   useEffect(() => {
     if (phase !== 'live') return undefined;
@@ -1339,7 +1344,9 @@ function CreatorLiveSession({ live, onEndingChange }) {
     try {
       const liveRef = doc(db, 'activeLives', live.id);
       const commentsRef = collection(db, `activeLives/${live.id}/comments`);
+      const starsRef = collection(db, `activeLives/${live.id}/stars`);
       const commentSnap = await getDocs(commentsRef);
+      const starSnap = await getDocs(starsRef);
       await updateDoc(liveRef, {
         status: 'ended',
         endedAt: serverTimestamp(),
@@ -1347,6 +1354,7 @@ function CreatorLiveSession({ live, onEndingChange }) {
         totalUniqueViewers: viewerCount,
         peakViewerCount: peakViewers,
         commentCount: commentSnap.size,
+        starCount: starSnap.size,
       });
     } catch (err) {
       console.warn('[HomePage] Failed to save stats:', err);
@@ -1912,7 +1920,7 @@ function LiveViewer({ liveId, creatorMode = false }) {
     return () => window.clearTimeout(timer);
   }, [broadcastEnded, liveFeed.length]);
 
-  const reactWithStar = (event) => {
+  const reactWithStar = async (event) => {
     const bounds = feedRef.current?.getBoundingClientRect();
     const x = bounds ? event.clientX - bounds.left : event.clientX;
     const y = bounds ? event.clientY - bounds.top : event.clientY;
@@ -1922,6 +1930,17 @@ function LiveViewer({ liveId, creatorMode = false }) {
     setReactionCounts((state) => ({ ...state, [live.id]: (state[live.id] ?? 0) + 1 }));
     setStarBursts((state) => [...state, { id, x, y }]);
     setStarPulse(true);
+
+    try {
+      const starsRef = collection(db, `activeLives/${liveId}/stars`);
+      await addDoc(starsRef, {
+        userId: user.uid,
+        userDisplayName: user.displayName || 'Anonymous',
+        timestamp: serverTimestamp(),
+      });
+    } catch (err) {
+      console.warn('[LiveViewer] Failed to save star:', err.message);
+    }
 
     window.setTimeout(() => {
       setStarBursts((state) => state.filter((item) => item.id !== id));

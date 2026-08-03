@@ -117,6 +117,10 @@ export default function LiveRecapPageSimple() {
             <span className="stat__label">Messages</span>
             <strong className="stat__value">{liveData.commentCount || 0}</strong>
           </div>
+          <div className="stat">
+            <span className="stat__label">Stars</span>
+            <strong className="stat__value">{liveData.starCount || 0}</strong>
+          </div>
         </div>
 
         {/* Raw Data (for debugging) */}
