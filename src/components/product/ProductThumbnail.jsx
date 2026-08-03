@@ -7,7 +7,6 @@
 
 import { useState, useEffect } from 'react';
 import { AlertCircle, Loader } from 'lucide-react';
-import { GearThumbnail } from '../gear/GearThumbnail.jsx';
 import { getCategoryIcon } from '../../data/equipmentModel.js';
 import '../gear/gear-thumbnail.css';
 
@@ -81,28 +80,55 @@ export function ProductThumbnail({
   const isProcessing = imageStatus?.status === 'processing';
   const isFailed = imageStatus?.status === 'failed';
 
+  const handleImageLoad = () => setImageLoading(false);
+
   const handleImageError = (error) => {
     setImageError(true);
     setImageLoading(false);
     onError?.(error);
   };
 
+  const sizeClass = `gear-thumbnail--${size}`;
+  const containerClass = `gear-thumbnail ${sizeClass} ${selected ? 'is-selected' : ''} ${isFailed || imageError ? 'has-error' : ''} is-rounded`;
+
   return (
-    <div
-      className={`product-thumbnail ${isProcessing ? 'is-processing' : ''} ${
-        isFailed ? 'is-error' : ''
-      }`}
-    >
-      <GearThumbnail
-        imageUrl={imageUrl}
-        category={category}
-        displayName={name}
-        size={size}
-        selected={selected}
-        loading={isProcessing}
-        error={isFailed || imageError}
-        onClick={onClick}
-      />
+    <div className={`product-thumbnail`}>
+      <div className={containerClass}>
+        <div className="gear-thumbnail__inner">
+          {isProcessing ? (
+            <div className="gear-thumbnail__loader">
+              <Loader size={size === 'sm' ? 12 : size === 'md' ? 16 : 20} className="gear-thumbnail__spinner" />
+            </div>
+          ) : imageUrl && !imageError && !isFailed ? (
+            <>
+              {imageLoading && (
+                <div className="gear-thumbnail__skeleton">
+                  <Loader size={size === 'sm' ? 12 : size === 'md' ? 16 : 20} className="gear-thumbnail__spinner" />
+                </div>
+              )}
+              <img
+                src={imageUrl}
+                alt={name}
+                className={`gear-thumbnail__image ${imageLoading ? 'is-loading' : ''}`}
+                onLoad={handleImageLoad}
+                onError={handleImageError}
+              />
+            </>
+          ) : (
+            <div className="gear-thumbnail__fallback">
+              {isFailed || imageError ? (
+                <AlertCircle size={size === 'sm' ? 12 : size === 'md' ? 16 : 20} />
+              ) : (
+                <span style={{ fontSize: size === 'sm' ? '14px' : size === 'md' ? '18px' : '24px' }}>
+                  {getCategoryIcon(category)}
+                </span>
+              )}
+            </div>
+          )}
+
+          {selected && <div className="gear-thumbnail__checkmark">✓</div>}
+        </div>
+      </div>
 
       {/* Status indicator */}
       {isProcessing && (
