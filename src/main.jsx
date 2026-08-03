@@ -29,15 +29,13 @@ import './styles/pages/agents.css';
 import './components/social/social.css';
 
 createRoot(document.getElementById('root')).render(
-  <StrictMode>
-    <BrowserRouter future={{ v7_relativeSplatPath: true }}>
-      <AuthProvider>
-        <ViewModeProvider>
-          <App />
-        </ViewModeProvider>
-      </AuthProvider>
-    </BrowserRouter>
-  </StrictMode>,
+  <BrowserRouter future={{ v7_relativeSplatPath: true }}>
+    <AuthProvider>
+      <ViewModeProvider>
+        <App />
+      </ViewModeProvider>
+    </AuthProvider>
+  </BrowserRouter>,
 );
 
 if ('serviceWorker' in navigator) {
