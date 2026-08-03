@@ -3,7 +3,9 @@ import { useViewMode } from '../context/ViewModeContext.jsx';
 import './view-mode-toggle.css';
 
 export default function ViewModeToggle() {
-  const { isDesktopMode, toggleDesktopMode } = useViewMode();
+  const { isDesktopMode, toggleDesktopMode, canToggleDesktop } = useViewMode();
+
+  if (!canToggleDesktop) return null;
 
   return (
     <div className="view-mode-toggle" role="group" aria-label="Display mode">
