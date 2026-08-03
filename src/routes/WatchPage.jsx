@@ -1378,9 +1378,12 @@ function CreatorLiveSession({ live, onEndingChange }) {
       };
       if (replayUrl) stats.replayUrl = replayUrl;
 
+      console.log('[endLive] Stats object to save:', stats);
       await updateDoc(liveRef, stats);
+      console.log('[endLive] Stats saved successfully');
     } catch (err) {
-      console.warn('[endLive] Stats save error (broadcast still ends):', err.message);
+      console.error('[endLive] Stats save error:', err.code, err.message);
+      console.error('[endLive] Error details:', err);
     }
 
     window.setTimeout(() => setPhase('processing'), 1100);
