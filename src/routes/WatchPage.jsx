@@ -1053,7 +1053,7 @@ function formatLiveDuration(totalSeconds) {
   return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
 }
 
-function CreatorCameraSurface({ live, className = '', children, videoRef: externalVideoRef }) {
+function CreatorCameraSurface({ live, className = '', children, videoRef: externalVideoRef, onVideoReady }) {
   const stream = getCreatedLiveStream(live.id);
   const internalVideoRef = useRef(null);
   const videoRef = externalVideoRef || internalVideoRef;
@@ -1061,10 +1061,21 @@ function CreatorCameraSurface({ live, className = '', children, videoRef: extern
   useEffect(() => {
     if (!videoRef.current || !stream) return undefined;
     videoRef.current.srcObject = stream;
-    return () => {
-      if (videoRef.current) videoRef.current.srcObject = null;
+
+    // Capture when video starts playing
+    const handleCanPlay = () => {
+      console.log('[CreatorCameraSurface] Video can play - ready to capture');
+      onVideoReady?.();
     };
-  }, [stream, videoRef]);
+
+    videoRef.current.addEventListener('canplay', handleCanPlay);
+    return () => {
+      if (videoRef.current) {
+        videoRef.current.removeEventListener('canplay', handleCanPlay);
+        videoRef.current.srcObject = null;
+      }
+    };
+  }, [stream, videoRef, onVideoReady]);
 
   return (
     <div className={`creator-live-camera ${className}`}>
@@ -1103,12 +1114,12 @@ function CreatorLiveSession({ live, onEndingChange }) {
   const broadcastStartedRef = useRef(false);
   const videoElementRef = useRef(null);
 
-  const captureAndSaveCoverImage = async (liveId) => {
+  const captureAndSaveCoverImage = useCallback(async (liveId) => {
     try {
       const videoEl = videoElementRef.current;
-      console.log('[CreatorLiveSession] Attempting capture - videoEl:', !!videoEl, 'width:', videoEl?.videoWidth, 'height:', videoEl?.videoHeight);
-      if (!videoEl) {
-        console.warn('[CreatorLiveSession] No video element to capture from');
+      console.log('[CreatorLiveSession] Capture attempt - videoEl:', !!videoEl, 'width:', videoEl?.videoWidth, 'height:', videoEl?.videoHeight, 'readyState:', videoEl?.readyState);
+      if (!videoEl || videoEl.readyState < 2) {
+        console.warn('[CreatorLiveSession] Video not ready for capture');
         return;
       }
 
@@ -1122,11 +1133,11 @@ function CreatorLiveSession({ live, onEndingChange }) {
       console.log('[CreatorLiveSession] Image captured, size:', imageData.length);
       const liveRef = doc(db, 'activeLives', liveId);
       await updateDoc(liveRef, { image: imageData });
-      console.log('[CreatorLiveSession] Cover image captured and saved to Firestore');
+      console.log('[CreatorLiveSession] Cover image saved to Firestore');
     } catch (err) {
       console.warn('[CreatorLiveSession] Failed to capture cover image:', err.message);
     }
-  };
+  }, []);
 
   const keepHudAwake = () => {
     if (locked || phase !== 'live') return;
@@ -1192,14 +1203,6 @@ function CreatorLiveSession({ live, onEndingChange }) {
         const stream = await startBroadcast(live.id, user.uid, getCreatedLiveStream(live.id));
         if (!active) {
           stream?.getTracks?.().forEach((track) => track.stop());
-        } else {
-          // Capture cover image after stream is stable (5s for video to load data)
-          window.setTimeout(() => {
-            console.log('[CreatorLiveSession] Capture timer fired, active:', active, 'videoRef:', !!videoElementRef.current);
-            if (active) {
-              captureAndSaveCoverImage(live.id);
-            }
-          }, 5000);
         }
       } catch (err) {
         console.error('[CreatorLiveSession] Broadcast setup failed:', err.message);
@@ -1390,7 +1393,7 @@ function CreatorLiveSession({ live, onEndingChange }) {
       onPointerCancel={clearLongPress}
       aria-label="Creator live camera"
     >
-      <CreatorCameraSurface live={live} videoRef={videoElementRef} />
+      <CreatorCameraSurface live={live} videoRef={videoElementRef} onVideoReady={() => captureAndSaveCoverImage(live.id)} />
       <div className="creator-live-hud">
         <div className="creator-live-hud__left">
           <LiveBadge compact pulse />
