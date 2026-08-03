@@ -1959,11 +1959,11 @@ function LiveViewer({ liveId, creatorMode = false }) {
     });
   };
 
-  const sendLiveMessage = async (event) => {
+  const sendLiveMessage = (event) => {
     event?.preventDefault();
     event?.stopPropagation();
     const text = chatDraft.trim();
-    if (!text || !liveId) return;
+    if (!text) return;
 
     chatInputRef.current?.blur();
     pointerStart.current = null;
@@ -1971,28 +1971,14 @@ function LiveViewer({ liveId, creatorMode = false }) {
     setDragY(0);
     setLocalChat((state) => ({
       ...state,
-      [liveId]: [
-        ...(state[liveId] ?? []),
+      [live.id]: [
+        ...(state[live.id] ?? []),
         { who: 'You', text, time: new Intl.DateTimeFormat(undefined, { hour: '2-digit', minute: '2-digit' }).format(new Date()) },
       ],
     }));
     setChatDraft('');
     setChatComposerOpen(false);
     setChatPanelOpen(false);
-
-    // Save comment to Firestore
-    try {
-      const commentsRef = collection(db, `activeLives/${liveId}/comments`);
-      await addDoc(commentsRef, {
-        text,
-        userId: user.uid,
-        userDisplayName: user.displayName || 'Anonymous',
-        userPhotoURL: user.photoURL || null,
-        timestamp: serverTimestamp(),
-      });
-    } catch (err) {
-      console.warn('[LiveViewer] Failed to save comment:', err.message);
-    }
 
     [0, 80, 220].forEach((delay) => {
       window.setTimeout(() => {
