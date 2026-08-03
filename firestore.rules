@@ -98,8 +98,10 @@ service cloud.firestore {
       // Authenticated users can read products
       allow read: if request.auth != null;
 
-      // Only backend/admin can write (via backend service)
-      allow create, update, delete: if false;
+      // Authenticated users can create/update products (for seeding and management)
+      // In production, restrict to admins only via backend
+      allow create, update: if request.auth != null;
+      allow delete: if false;
     }
   }
 }
