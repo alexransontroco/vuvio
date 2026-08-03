@@ -43,10 +43,10 @@ export default function SplashScreen({ leaving = false }) {
         controls={false}
         disablePictureInPicture
       >
-        <source src="/assets/videos/vuvland.mp4?v=1" type="video/mp4" />
+        <source src="/assets/videos/landing-verti.mp4" type="video/mp4" />
       </video>
       <div className="splash-screen__logo">
-        <BrandMark size={72} />
+        <BrandMark size={140} />
         <h1 className="splash-screen__title">vuvio</h1>
       </div>
     </div>
