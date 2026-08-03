@@ -30,7 +30,8 @@ export function ViewModeProvider({ children }) {
     });
   };
 
-  const isDesktopMode = forceDesktopMode || !isMobileDevice;
+  // isDesktopMode only true when forceDesktopMode is true AND not on real mobile device
+  const isDesktopMode = forceDesktopMode && !isMobileDevice;
   const canToggleDesktop = !isMobileDevice;
 
   const value = {

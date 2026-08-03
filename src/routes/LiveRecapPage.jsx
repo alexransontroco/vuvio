@@ -94,13 +94,8 @@ export default function LiveRecapPage() {
   const [finishingLive, setFinishingLive] = useState(false);
   const [liveData, setLiveData] = useState(null);
 
-  // Use live data from state (passed during navigation) or fetch from Firestore
+  // Always fetch fresh data from Firestore to ensure image and stats are up-to-date
   useEffect(() => {
-    if (location.state?.liveData) {
-      setLiveData(location.state.liveData);
-      return;
-    }
-
     const liveId = location.pathname.split('/')[2];
     if (!liveId) return;
 
@@ -115,7 +110,7 @@ export default function LiveRecapPage() {
         console.error('[LiveRecapPage] Failed to fetch live data:', err);
       }
     })();
-  }, [location.state?.liveData, location.pathname]);
+  }, [location.pathname]);
 
   // Auto-finish live when leaving recap page
   useEffect(() => {
@@ -152,6 +147,7 @@ export default function LiveRecapPage() {
   // Use real data if available, otherwise fallback to mock
   const recap = useMemo(() => {
     if (!liveData) return liveRecap;
+    console.log('[LiveRecapPage] liveData:', { id: liveData.id, title: liveData.title, image: liveData.image, durationSeconds: liveData.durationSeconds, peakViewerCount: liveData.peakViewerCount });
     return {
       ...liveRecap,
       id: liveData.id,

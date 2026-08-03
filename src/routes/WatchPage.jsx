@@ -1306,11 +1306,13 @@ function CreatorLiveSession({ live, onEndingChange }) {
     setPhase('ending');
     onEndingChange?.(true, live.id);
 
-    // Stop broadcast and close peer connection immediately
     try {
       console.log('[HomePage] Ending live broadcast:', live.id);
       await stopBroadcast(live.id);
       closePeer();
+
+      // Capture final cover image before navigating away
+      await captureAndSaveCoverImage(live.id);
 
       // Save final stats to Firestore
       try {
