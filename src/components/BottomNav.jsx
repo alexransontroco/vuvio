@@ -160,7 +160,7 @@ function LivePreview({ draft, selectedFamily, equipmentLibrary, onEditGear, onLa
           Edit gear
         </button>
       </div>
-      <button type="button" className="create-live-launch" onClick={handleLaunch} disabled={locationStatus !== 'ready'} title={locationStatus !== 'ready' ? 'Enable location to start a live' : ''}>
+      <button type="button" className="create-live-launch" onClick={handleLaunch}>
         <Play size={17} fill="currentColor" strokeWidth={1.8} />
         Start live
       </button>
@@ -222,7 +222,7 @@ export default function BottomNav({ collapsible = false, collapsed = false, onEx
   };
 
   const launchLive = (cameraStream = null) => {
-    if (!canLaunch || locationStatus !== 'ready') return;
+    if (!canLaunch) return;
     const selectedIds = draft.equipmentIds ?? [];
     const live = createLocalLive({
       ...draft,
@@ -477,7 +477,7 @@ export default function BottomNav({ collapsible = false, collapsed = false, onEx
                     locationStatus={locationStatus}
                   />
                 ) : (
-                  <button type="button" className="create-live-launch" disabled={!canLaunch || locationStatus !== 'ready'} onClick={() => setShowPreview(true)} title={locationStatus !== 'ready' ? 'Enable location to start a live' : ''}>
+                  <button type="button" className="create-live-launch" disabled={!canLaunch} onClick={() => setShowPreview(true)}>
                     <Play size={17} fill="currentColor" strokeWidth={1.8} />
                     Preview
                   </button>
