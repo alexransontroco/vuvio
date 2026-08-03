@@ -1906,7 +1906,7 @@ function LiveViewer({ liveId, creatorMode = false }) {
     }, 220);
   };
 
-  const chat = useMemo(() => [...(live.chat ?? []), ...(localChat[live.id] ?? [])], [live, localChat]);
+  const chat = useMemo(() => [...(live?.chat ?? []), ...(localChat[live?.id] ?? [])], [live?.id, live?.chat, localChat]);
   const visibleChat = useMemo(() => chat.slice(-4), [chat]);
   const chatCount = Math.max(chat.length, viewerCount(live.viewerLabel) + 21);
   const trackStyle = {
@@ -1934,12 +1934,13 @@ function LiveViewer({ liveId, creatorMode = false }) {
   }, [immersive]);
 
   useEffect(() => {
+    // Cleanup timer on unmount
     return () => {
       if (tapSheetTimer.current) {
         window.clearTimeout(tapSheetTimer.current);
       }
     };
-  }, [tapSheetTimer]);
+  }, []);
 
   useEffect(() => {
     const onKeyDown = (event) => {
