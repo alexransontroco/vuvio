@@ -37,6 +37,20 @@ export default function AppShell() {
     return <MobileLandingScreen onComplete={handleLandingComplete} />;
   }
 
+  const updateBodyClass = () => {
+    if (isDesktopMode) {
+      document.documentElement.classList.remove('vuvio-mobile-view');
+      document.documentElement.classList.add('vuvio-desktop-view');
+    } else {
+      document.documentElement.classList.remove('vuvio-desktop-view');
+      document.documentElement.classList.add('vuvio-mobile-view');
+    }
+  };
+
+  useEffect(() => {
+    updateBodyClass();
+  }, [isDesktopMode]);
+
   return (
     <>
       <ViewModeToggle />

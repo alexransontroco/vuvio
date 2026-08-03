@@ -1060,35 +1060,17 @@ function CreatorCameraSurface({ live, className = '', children, videoRef: extern
 
   useEffect(() => {
     if (!videoRef.current || !stream) return undefined;
-    console.log('[CreatorCameraSurface] Setting up video - stream:', !!stream, 'videoRef:', !!videoRef.current);
     videoRef.current.srcObject = stream;
 
-    // Try multiple events for better capture timing
-    const handleCanPlay = () => {
-      console.log('[CreatorCameraSurface] canplay fired');
-      onVideoReady?.();
-    };
-
     const handleLoadedMetadata = () => {
-      console.log('[CreatorCameraSurface] loadedmetadata fired');
       onVideoReady?.();
     };
 
-    const handlePlaying = () => {
-      console.log('[CreatorCameraSurface] playing fired');
-      onVideoReady?.();
-    };
-
-    videoRef.current.addEventListener('canplay', handleCanPlay);
     videoRef.current.addEventListener('loadedmetadata', handleLoadedMetadata);
-    videoRef.current.addEventListener('playing', handlePlaying);
-    console.log('[CreatorCameraSurface] Event listeners attached');
 
     return () => {
       if (videoRef.current) {
-        videoRef.current.removeEventListener('canplay', handleCanPlay);
         videoRef.current.removeEventListener('loadedmetadata', handleLoadedMetadata);
-        videoRef.current.removeEventListener('playing', handlePlaying);
         videoRef.current.srcObject = null;
       }
     };
@@ -1134,11 +1116,7 @@ function CreatorLiveSession({ live, onEndingChange }) {
   const captureAndSaveCoverImage = useCallback(async (liveId) => {
     try {
       const videoEl = videoElementRef.current;
-      console.log('[CreatorLiveSession] Capture attempt - videoEl:', !!videoEl, 'width:', videoEl?.videoWidth, 'height:', videoEl?.videoHeight, 'readyState:', videoEl?.readyState);
-      if (!videoEl || videoEl.readyState < 2) {
-        console.warn('[CreatorLiveSession] Video not ready for capture');
-        return;
-      }
+      if (!videoEl || videoEl.readyState < 2) return;
 
       const canvas = document.createElement('canvas');
       canvas.width = videoEl.videoWidth || 1280;
@@ -1147,10 +1125,8 @@ function CreatorLiveSession({ live, onEndingChange }) {
       ctx?.drawImage(videoEl, 0, 0);
 
       const imageData = canvas.toDataURL('image/jpeg', 0.8);
-      console.log('[CreatorLiveSession] Image captured, size:', imageData.length);
       const liveRef = doc(db, 'activeLives', liveId);
       await updateDoc(liveRef, { image: imageData });
-      console.log('[CreatorLiveSession] Cover image saved to Firestore');
     } catch (err) {
       console.warn('[CreatorLiveSession] Failed to capture cover image:', err.message);
     }
