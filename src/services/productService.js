@@ -131,8 +131,10 @@ export async function getProductsByCategory(categoryId) {
 
 /**
  * Search products by name or brand
+ * Tries Firestore first, then falls back to demo data only if permission/network error
  * @param {string} query - Search term
  * @returns {Promise<Array>}
+ * @throws {Error} Firebase permission or network errors
  */
 export async function searchProducts(searchQuery) {
   if (!searchQuery || searchQuery.length < 2) {
@@ -158,19 +160,39 @@ export async function searchProducts(searchQuery) {
     // Combine with demo products
     const allProducts = [...firestoreProducts, ...demoProducts];
 
-    // Filter by name or brand
+    // Filter by name, brand, or searchTerms
     return allProducts.filter(product => {
       const name = (product.name || '').toLowerCase();
       const brand = (product.brand || '').toLowerCase();
-      return name.includes(normalizedQuery) || brand.includes(normalizedQuery);
+      const searchTerms = (product.searchTerms || []).map(t => t.toLowerCase());
+
+      return name.includes(normalizedQuery) ||
+             brand.includes(normalizedQuery) ||
+             searchTerms.some(term => term.includes(normalizedQuery));
     });
   } catch (error) {
-    console.warn('Error searching products:', error);
-    // Fallback to demo data search
+    // Log the actual error for debugging
+    console.error('Product search error:', error.code || error.message, error);
+
+    // Re-throw permission and network errors to let UI handle them
+    if (error.code === 'permission-denied' ||
+        error.code === 'unavailable' ||
+        error.code === 'network-error' ||
+        error.message?.includes('Failed to get document') ||
+        error.message?.includes('permission')) {
+      throw error;
+    }
+
+    // For other errors, fallback to demo data search
+    console.warn('Falling back to demo products due to:', error.code);
     return demoProducts.filter(product => {
       const name = (product.name || '').toLowerCase();
       const brand = (product.brand || '').toLowerCase();
-      return name.includes(normalizedQuery) || brand.includes(normalizedQuery);
+      const searchTerms = (product.searchTerms || []).map(t => t.toLowerCase());
+
+      return name.includes(normalizedQuery) ||
+             brand.includes(normalizedQuery) ||
+             searchTerms.some(term => term.includes(normalizedQuery));
     });
   }
 }
