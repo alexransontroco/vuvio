@@ -1380,7 +1380,7 @@ function CreatorLiveSession({ live, onEndingChange }) {
 
       await updateDoc(liveRef, stats);
     } catch (err) {
-      console.warn('[HomePage] Failed to save stats:', err);
+      console.warn('[endLive] Stats save error (broadcast still ends):', err.message);
     }
 
     window.setTimeout(() => setPhase('processing'), 1100);
