@@ -73,8 +73,8 @@
 
   .phone-stage {
     width: min(402px, 100%);
-    min-height: min(874px, calc(100dvh - 72px));
-    height: min(874px, calc(100dvh - 72px));
+    min-height: calc(100dvh - 72px);
+    height: calc(100dvh - 72px);
     border: 1px solid rgba(255, 255, 255, 0.08);
     border-radius: 40px;
     box-shadow: 0 30px 90px rgba(0, 0, 0, 0.45);
