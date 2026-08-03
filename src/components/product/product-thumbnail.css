@@ -14,6 +14,13 @@
   opacity: 0.6;
 }
 
+/* Development indicator for placeholder images */
+.gear-thumbnail.is-placeholder {
+  opacity: 0.85;
+  border-color: rgba(142, 172, 190, 0.3) !important;
+  border-style: dashed !important;
+}
+
 .product-thumbnail__status {
   position: absolute;
   bottom: -18px;

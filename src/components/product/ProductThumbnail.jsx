@@ -49,6 +49,7 @@ export function ProductThumbnail({
     category,
     imageStatus,
     thumbnailUrl,
+    imageSource,
   } = product;
 
   // Determine image URL based on processing status
@@ -89,7 +90,8 @@ export function ProductThumbnail({
   };
 
   const sizeClass = `gear-thumbnail--${size}`;
-  const containerClass = `gear-thumbnail ${sizeClass} ${selected ? 'is-selected' : ''} ${isFailed || imageError ? 'has-error' : ''} is-rounded`;
+  const isPlaceholder = imageSource === 'placeholder';
+  const containerClass = `gear-thumbnail ${sizeClass} ${selected ? 'is-selected' : ''} ${isFailed || imageError ? 'has-error' : ''} ${isPlaceholder ? 'is-placeholder' : ''} is-rounded`;
 
   return (
     <div className={`product-thumbnail`}>

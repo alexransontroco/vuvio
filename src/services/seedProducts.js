@@ -17,7 +17,8 @@ const seedProducts = [
     category: 'recording',
     description: 'Latest GoPro action camera with advanced stabilization',
     searchTerms: ['gopro', 'hero13', 'hero13 black', 'gopro hero13', 'action camera'],
-    thumbnailUrl: '/products/gopro-hero13.svg',
+    thumbnailUrl: '/products/placeholders/camera-placeholder.svg',
+    imageSource: 'placeholder',
     imageStatus: { status: 'ready' },
   },
   {
@@ -27,7 +28,8 @@ const seedProducts = [
     category: 'recording',
     description: 'Professional action camera with advanced features',
     searchTerms: ['dji', 'osmo', 'osmo action', 'action camera', 'dji osmo'],
-    thumbnailUrl: '/products/dji-osmo.svg',
+    thumbnailUrl: '/products/placeholders/camera-placeholder.svg',
+    imageSource: 'placeholder',
     imageStatus: { status: 'ready' },
   },
   {
@@ -37,7 +39,8 @@ const seedProducts = [
     category: 'recording',
     description: '360-degree action camera',
     searchTerms: ['insta360', 'x3', '360 camera', 'insta360 x3'],
-    thumbnailUrl: '/products/insta360-x3.svg',
+    thumbnailUrl: '/products/placeholders/camera-placeholder.svg',
+    imageSource: 'placeholder',
     imageStatus: { status: 'ready' },
   },
 
@@ -49,7 +52,8 @@ const seedProducts = [
     category: 'audio',
     description: 'Wireless microphone system for content creators',
     searchTerms: ['dji', 'mic', 'microphone', 'wireless mic', 'dji mic 2'],
-    thumbnailUrl: '/products/dji-mic.svg',
+    thumbnailUrl: '/products/placeholders/microphone-placeholder.svg',
+    imageSource: 'placeholder',
     imageStatus: { status: 'ready' },
   },
   {
@@ -59,7 +63,8 @@ const seedProducts = [
     category: 'audio',
     description: 'Ultra-compact wireless microphone system',
     searchTerms: ['rode', 'wireless', 'microphone', 'rode wireless', 'wireless go'],
-    thumbnailUrl: '/products/rode-wireless.svg',
+    thumbnailUrl: '/products/placeholders/microphone-placeholder.svg',
+    imageSource: 'placeholder',
     imageStatus: { status: 'ready' },
   },
 
@@ -71,7 +76,8 @@ const seedProducts = [
     category: 'power_accessories',
     description: 'Chest mount for hands-free POV recording',
     searchTerms: ['gopro', 'mount', 'chest mount', 'chesty', 'pov mount'],
-    thumbnailUrl: '/products/gopro-mount.svg',
+    thumbnailUrl: '/products/placeholders/accessory-placeholder.svg',
+    imageSource: 'placeholder',
     imageStatus: { status: 'ready' },
   },
   {
@@ -81,7 +87,8 @@ const seedProducts = [
     category: 'power_accessories',
     description: 'Universal camera clip for any camera',
     searchTerms: ['peak design', 'capture', 'clip', 'mount'],
-    thumbnailUrl: '/products/peak-clip.svg',
+    thumbnailUrl: '/products/placeholders/accessory-placeholder.svg',
+    imageSource: 'placeholder',
     imageStatus: { status: 'ready' },
   },
 
@@ -93,7 +100,8 @@ const seedProducts = [
     category: 'activity',
     description: 'High-performance gravel bike',
     searchTerms: ['canyon', 'bike', 'grail', 'gravel bike'],
-    thumbnailUrl: '/products/canyon-bike.svg',
+    thumbnailUrl: '/products/placeholders/bike-placeholder.svg',
+    imageSource: 'placeholder',
     imageStatus: { status: 'ready' },
   },
   {
@@ -103,7 +111,8 @@ const seedProducts = [
     category: 'activity',
     description: 'Premium road bike',
     searchTerms: ['trek', 'bike', 'domane', 'road bike', 'cycling'],
-    thumbnailUrl: '/products/trek-bike.svg',
+    thumbnailUrl: '/products/placeholders/bike-placeholder.svg',
+    imageSource: 'placeholder',
     imageStatus: { status: 'ready' },
   },
   {
@@ -113,7 +122,8 @@ const seedProducts = [
     category: 'activity',
     description: 'Lightweight racing bike',
     searchTerms: ['specialized', 'bike', 'tarmac', 'racing bike'],
-    thumbnailUrl: '/products/specialized-bike.svg',
+    thumbnailUrl: '/products/placeholders/bike-placeholder.svg',
+    imageSource: 'placeholder',
     imageStatus: { status: 'ready' },
   },
   {
@@ -123,7 +133,8 @@ const seedProducts = [
     category: 'activity',
     description: 'Ventilated cycling helmet',
     searchTerms: ['poc', 'helmet', 'cycling helmet', 'safety gear'],
-    thumbnailUrl: '/products/poc-helmet.svg',
+    thumbnailUrl: '/products/placeholders/activity-placeholder.svg',
+    imageSource: 'placeholder',
     imageStatus: { status: 'ready' },
   },
   {
@@ -133,7 +144,8 @@ const seedProducts = [
     category: 'activity',
     description: 'Flat pedal mountain biking shoes',
     searchTerms: ['five ten', 'shoes', 'mtb', 'cycling shoes'],
-    thumbnailUrl: '/products/five-ten-shoes.svg',
+    thumbnailUrl: '/products/placeholders/activity-placeholder.svg',
+    imageSource: 'placeholder',
     imageStatus: { status: 'ready' },
   },
   {
@@ -143,7 +155,8 @@ const seedProducts = [
     category: 'activity',
     description: 'Premium mountain bike suspension fork',
     searchTerms: ['fox', 'suspension', 'fork', 'mtb', 'mountain bike'],
-    thumbnailUrl: '/products/fox-fork.svg',
+    thumbnailUrl: '/products/placeholders/activity-placeholder.svg',
+    imageSource: 'placeholder',
     imageStatus: { status: 'ready' },
   },
 ];
