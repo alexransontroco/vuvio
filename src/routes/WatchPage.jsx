@@ -16,7 +16,7 @@ import { streams, upcomingStreams } from '../data/mockStreams.js';
 import { createLiveSoundscape } from '../services/liveSoundscape.js';
 import { getCreatedLives, getCreatedLiveStream, subscribeToCreatedLives, publishLivePing, endLive as deleteLiveFromDB } from '../services/createdLiveService.js';
 import { startBroadcast, stopBroadcast, watchBroadcast, closePeer, getLocalStream, getRemoteStream } from '../services/webrtcService.js';
-import { collection, doc, onSnapshot, query, where } from 'firebase/firestore';
+import { collection, doc, onSnapshot, query, where, getDocs, addDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../firebase.js';
 import { useAuth } from '../context/AuthContext.jsx';
 import { getUnreadConversationCount, subscribeToMessaging } from '../services/messagingService.js';
@@ -1203,15 +1203,19 @@ function CreatorLiveSession({ live, onEndingChange }) {
   }, [phase]);
 
   useEffect(() => {
-    if (phase !== 'live') return undefined;
-    const timer = window.setInterval(() => {
-      const next = creatorComments[commentsCount % creatorComments.length];
-      setComment(next);
-      setCommentsCount((value) => value + 1);
-      window.setTimeout(() => setComment(null), 4000);
-    }, 7200);
-    return () => window.clearInterval(timer);
-  }, [commentsCount, phase]);
+    if (!live?.id || phase !== 'live') return undefined;
+    const commentsRef = collection(db, `activeLives/${live.id}/comments`);
+    const unsubscribe = onSnapshot(query(commentsRef), (snapshot) => {
+      snapshot.docChanges().forEach((change) => {
+        if (change.type === 'added') {
+          const data = change.doc.data();
+          setComment({ name: data.userDisplayName || 'Anonymous', text: ` ${data.text}`, avatar: '👤' });
+          window.setTimeout(() => setComment(null), 4000);
+        }
+      });
+    });
+    return () => unsubscribe();
+  }, [live?.id, phase]);
 
   useEffect(() => {
     if (phase !== 'live') return undefined;
@@ -1298,7 +1302,6 @@ function CreatorLiveSession({ live, onEndingChange }) {
     setPhase('ending');
     onEndingChange?.(true, live.id);
 
-    // Stop broadcast and close peer connection immediately
     try {
       console.log('[HomePage] Ending live broadcast:', live.id);
       await stopBroadcast(live.id);
@@ -1307,12 +1310,25 @@ function CreatorLiveSession({ live, onEndingChange }) {
       console.error('[HomePage] Failed to stop broadcast:', err);
     }
 
+    try {
+      const liveRef = doc(db, 'activeLives', live.id);
+      const commentsRef = collection(db, `activeLives/${live.id}/comments`);
+      const commentSnap = await getDocs(commentsRef);
+      await updateDoc(liveRef, {
+        status: 'ended',
+        endedAt: serverTimestamp(),
+        durationSeconds: elapsed,
+        totalUniqueViewers: viewerCount,
+        peakViewerCount: peakViewers,
+        commentCount: commentSnap.size,
+      });
+    } catch (err) {
+      console.warn('[HomePage] Failed to save stats:', err);
+    }
+
     window.setTimeout(() => setPhase('processing'), 1100);
     window.setTimeout(() => {
       navigate(`/live/${live.id}/recap`, { replace: true });
-      deleteLiveFromDB(live.id).catch((err) => {
-        console.error('[HomePage] Failed to delete live from database:', err);
-      });
     }, 2900);
   };
 
@@ -1889,7 +1905,7 @@ function LiveViewer({ liveId, creatorMode = false }) {
     }, 220);
   };
 
-  const chat = useMemo(() => [...(live.chat ?? []), ...(localChat[live.id] ?? [])], [live, localChat]);
+  const chat = useMemo(() => [...(live.chat ?? []), ...(localChat[liveId] ?? [])], [live.chat, localChat, liveId]);
   const visibleChat = useMemo(() => chat.slice(-4), [chat]);
   const chatCount = Math.max(chat.length, viewerCount(live.viewerLabel) + 21);
   const trackStyle = {
@@ -1959,11 +1975,11 @@ function LiveViewer({ liveId, creatorMode = false }) {
     });
   };
 
-  const sendLiveMessage = (event) => {
+  const sendLiveMessage = async (event) => {
     event?.preventDefault();
     event?.stopPropagation();
     const text = chatDraft.trim();
-    if (!text) return;
+    if (!text || !liveId) return;
 
     chatInputRef.current?.blur();
     pointerStart.current = null;
@@ -1971,14 +1987,27 @@ function LiveViewer({ liveId, creatorMode = false }) {
     setDragY(0);
     setLocalChat((state) => ({
       ...state,
-      [live.id]: [
-        ...(state[live.id] ?? []),
+      [liveId]: [
+        ...(state[liveId] ?? []),
         { who: 'You', text, time: new Intl.DateTimeFormat(undefined, { hour: '2-digit', minute: '2-digit' }).format(new Date()) },
       ],
     }));
     setChatDraft('');
     setChatComposerOpen(false);
     setChatPanelOpen(false);
+
+    try {
+      const commentsRef = collection(db, `activeLives/${liveId}/comments`);
+      await addDoc(commentsRef, {
+        text,
+        userId: user.uid,
+        userDisplayName: user.displayName || 'Anonymous',
+        userPhotoURL: user.photoURL || null,
+        timestamp: serverTimestamp(),
+      });
+    } catch (err) {
+      console.error('[LiveViewer] Failed to save comment:', err);
+    }
 
     [0, 80, 220].forEach((delay) => {
       window.setTimeout(() => {
