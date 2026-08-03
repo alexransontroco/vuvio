@@ -1328,8 +1328,8 @@ function CreatorLiveSession({ live, onEndingChange }) {
           status: 'ended',
           endedAt: serverTimestamp(),
           durationSeconds: elapsed,
-          totalUniqueViewers: Math.max(viewerCount, 128),
-          peakViewerCount: Math.max(peakViewers, viewerCount, 164),
+          totalUniqueViewers: viewerCount,
+          peakViewerCount: peakViewers,
           commentCount: commentSnap.size,
         };
         console.log('[HomePage] Saving stats to Firestore:', stats);
