@@ -15,18 +15,10 @@ export default function AppShell() {
   const navigate = useNavigate();
   const { userProfile } = useAuth();
   const { isDesktopMode } = useViewMode();
-  const { notifications, dismissNotification } = useFollowedCreatorNotifications(userProfile);
-  // When on /live/:liveId, hide bottom nav (broadcaster page)
-  const isBroadcast = location.pathname.startsWith('/live/');
-  const isLive = location.pathname.startsWith('/watch/');
   const [liveNavCollapsed, setLiveNavCollapsed] = useState(false);
   const [showLanding, setShowLanding] = useState(() => {
     return !localStorage.getItem('vuvio-landing-shown');
   });
-
-  useEffect(() => {
-    setLiveNavCollapsed(false);
-  }, [location.pathname]);
 
   const handleLandingComplete = () => {
     setShowLanding(false);
@@ -36,6 +28,15 @@ export default function AppShell() {
   if (showLanding && !isDesktopMode) {
     return <MobileLandingScreen onComplete={handleLandingComplete} />;
   }
+
+  const { notifications, dismissNotification } = useFollowedCreatorNotifications(userProfile);
+  // When on /live/:liveId, hide bottom nav (broadcaster page)
+  const isBroadcast = location.pathname.startsWith('/live/');
+  const isLive = location.pathname.startsWith('/watch/');
+
+  useEffect(() => {
+    setLiveNavCollapsed(false);
+  }, [location.pathname]);
 
   const updateBodyClass = () => {
     if (isDesktopMode) {
