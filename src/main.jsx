@@ -28,6 +28,16 @@ import './styles/pages/internal-stream-admin.css';
 import './styles/pages/agents.css';
 import './components/social/social.css';
 
+// Initialize view mode class before render to prevent layout flash
+const isMobileDevice = /iPhone|iPad|iPod|Android|Windows Phone|BlackBerry|Opera Mini/i.test(navigator.userAgent);
+const forceDesktopMode = localStorage.getItem('vuvio-force-desktop-mode') === 'true';
+const isDesktopMode = forceDesktopMode && !isMobileDevice;
+if (isDesktopMode) {
+  document.documentElement.classList.add('vuvio-desktop-view');
+} else {
+  document.documentElement.classList.add('vuvio-mobile-view');
+}
+
 createRoot(document.getElementById('root')).render(
   <StrictMode>
     <BrowserRouter future={{ v7_relativeSplatPath: true }}>
