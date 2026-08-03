@@ -1195,7 +1195,10 @@ function CreatorLiveSession({ live, onEndingChange }) {
         } else {
           // Capture cover image after stream is stable
           window.setTimeout(() => {
-            if (active) captureAndSaveCoverImage(live.id);
+            if (active) {
+              console.log('[CreatorLiveSession] Capturing image at 2s mark');
+              captureAndSaveCoverImage(live.id);
+            }
           }, 2000);
         }
       } catch (err) {
@@ -1315,9 +1318,6 @@ function CreatorLiveSession({ live, onEndingChange }) {
       console.log('[HomePage] Ending live broadcast:', live.id);
       await stopBroadcast(live.id);
       closePeer();
-
-      // Capture final cover image before navigating away
-      await captureAndSaveCoverImage(live.id);
 
       // Save final stats to Firestore
       try {
