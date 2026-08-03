@@ -2024,7 +2024,12 @@ function LiveViewer({ liveId, creatorMode = false }) {
     event?.preventDefault();
     event?.stopPropagation();
     const text = chatDraft.trim();
-    if (!text || !live?.id || !user?.uid) return;
+    console.log('[LiveViewer] Send clicked - text:', text, 'live.id:', live?.id, 'user.uid:', user?.uid);
+    if (!text || !live?.id || !user?.uid) {
+      console.log('[LiveViewer] Send aborted - missing:', { text: !text, liveId: !live?.id, userId: !user?.uid });
+      return;
+    }
+    console.log('[LiveViewer] Send proceeding');
 
     chatInputRef.current?.blur();
     pointerStart.current = null;
