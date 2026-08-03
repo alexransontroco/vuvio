@@ -93,25 +93,13 @@
     linear-gradient(180deg, #07192a 0%, #04111d 52%, #03101b 100%);
 }
 
-/* Override all media queries for desktop mode */
-@media (min-width: 760px) {
-  .app-canvas--desktop .phone-stage {
-    width: 100% !important;
-    max-width: 100% !important;
-    min-height: 100dvh !important;
-    height: 100dvh !important;
-    border: none !important;
-    border-radius: 0 !important;
-    box-shadow: none !important;
-  }
-}
-
+/* Desktop mode layout overrides */
 .app-canvas--desktop .phone-stage {
   position: relative;
   width: 100% !important;
   max-width: 100% !important;
   height: 100dvh !important;
-  min-height: auto !important;
+  min-height: 100dvh !important;
   border: none !important;
   border-radius: 0 !important;
   box-shadow: none !important;

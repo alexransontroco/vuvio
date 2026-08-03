@@ -26,7 +26,7 @@ const GlobeTest3Page      = lazy(() => import('./routes/GlobeTest3Page.jsx'));
 const GlobeCesiumPage     = lazy(() => import('./routes/GlobeCesiumPage.jsx'));
 const IconsPreviewPage    = lazy(() => import('./routes/IconsPreviewPage.jsx'));
 const LoginPage           = lazy(() => import('./routes/LoginPage.jsx'));
-const LiveRecapPage       = lazy(() => import('./routes/LiveRecapPage.jsx'));
+const LiveRecapPage       = lazy(() => import('./routes/LiveRecapPageSimple.jsx'));
 const LiveSummaryPage     = lazy(() => import('./routes/LiveSummaryPage.jsx'));
 const MessagesPage        = lazy(() => import('./routes/MessagesPage.jsx'));
 const OnboardingPage      = lazy(() => import('./routes/OnboardingPage.jsx'));
