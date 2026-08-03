@@ -3,7 +3,6 @@ import { useTranslation } from 'react-i18next';
 import { Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import AppShell from './components/AppShell.jsx';
 import ProtectedRoute, { PublicOnlyRoute } from './components/ProtectedRoute.jsx';
-import SplashScreen from './components/SplashScreen.jsx';
 import { useAuth } from './context/AuthContext.jsx';
 
 const ConversationPage    = lazy(() => import('./routes/ConversationPage.jsx'));
@@ -66,13 +65,6 @@ function Lazy({ component: Component }) {
 }
 
 export default function App() {
-  const { showSplash } = useAuth();
-  const location = useLocation();
-
-  if (showSplash && location.pathname === '/') {
-    return <SplashScreen />;
-  }
-
   return (
     <Routes>
       {/* ── Public standalone ── */}
