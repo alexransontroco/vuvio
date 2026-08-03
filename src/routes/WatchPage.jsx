@@ -1255,6 +1255,33 @@ function CreatorLiveSession({ live, onEndingChange }) {
     return () => window.clearTimeout(timer);
   }, [phase]);
 
+  useEffect(() => {
+    if (!live?.id || phase !== 'live') return undefined;
+
+    const commentsRef = collection(db, `activeLives/${live.id}/comments`);
+    const unsubscribe = onSnapshot(
+      query(commentsRef),
+      (snapshot) => {
+        snapshot.docChanges().forEach((change) => {
+          if (change.type === 'added') {
+            const data = change.doc.data();
+            setComment({
+              name: data.userDisplayName || 'Anonymous',
+              text: ` ${data.text}`,
+              avatar: '👤',
+            });
+            window.setTimeout(() => setComment(null), 3000);
+          }
+        });
+      },
+      (error) => {
+        console.warn('[CreatorLiveSession] Comments listener error:', error.message);
+      }
+    );
+
+    return () => unsubscribe();
+  }, [live?.id, phase]);
+
   const onLockedPointerDown = () => {
     if (!locked) return;
     longPressTimer.current = window.setTimeout(() => {
