@@ -12,6 +12,7 @@ export function ProductSearch({ categoryId, onSelectProduct, disabled = false })
   const [results, setResults] = useState([]);
   const [isOpen, setIsOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [searchError, setSearchError] = useState(null);
   const searchInputRef = useRef(null);
   const debounceTimer = useRef(null);
 
@@ -19,17 +20,31 @@ export function ProductSearch({ categoryId, onSelectProduct, disabled = false })
     if (debounceTimer.current) clearTimeout(debounceTimer.current);
     if (!query || query.length < 2) {
       setResults([]);
+      setSearchError(null);
       return;
     }
 
     setIsLoading(true);
+    setSearchError(null);
     debounceTimer.current = setTimeout(async () => {
       try {
         const products = await searchProducts(query, categoryId);
         setResults(products);
         setIsOpen(true);
       } catch (err) {
-        console.error('[ProductSearch] Error:', err);
+        console.error('[ProductSearch] Search failed:', err);
+
+        // Determine error type
+        if (err.code === 'permission-denied') {
+          setSearchError('permission');
+        } else if (err.code === 'unavailable') {
+          setSearchError('unavailable');
+        } else if (err.message?.includes('network') || err.code === 'network-error') {
+          setSearchError('network');
+        } else {
+          setSearchError('unknown');
+        }
+        setResults([]);
       } finally {
         setIsLoading(false);
       }
@@ -77,13 +92,28 @@ export function ProductSearch({ categoryId, onSelectProduct, disabled = false })
                 <div className="spinner" />
                 <span>Searching...</span>
               </div>
+            ) : searchError ? (
+              <div className="product-search__state product-search__error">
+                {searchError === 'permission' && (
+                  <span>Unable to search products. Please try again.</span>
+                )}
+                {searchError === 'unavailable' && (
+                  <span>Service temporarily unavailable. Please try again later.</span>
+                )}
+                {searchError === 'network' && (
+                  <span>Connection error. Please check your internet.</span>
+                )}
+                {searchError === 'unknown' && (
+                  <span>Unable to search products. Please try again.</span>
+                )}
+              </div>
             ) : results.length === 0 ? (
               <div className="product-search__state">
                 {query.length < 2 ? (
                   <span>Type at least 2 characters</span>
                 ) : (
                   <>
-                    <span>No products found for "{query}"</span>
+                    <span>No matching products found.</span>
                     <button type="button" className="product-search__not-found-action">
                       Can't find your equipment?
                       <ChevronRight size={16} />
