@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1, viewport-fit=cover"
+  />
+  <title>Splash autoplay test</title>
+
+  <style>
+    html,
+    body {
+      width: 100%;
+      height: 100%;
+      margin: 0;
+      background: black;
+      overflow: hidden;
+    }
+
+    video {
+      display: block;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+  </style>
+</head>
+
+<body>
+  <video
+    id="test-video"
+    autoplay
+    muted
+    playsinline
+    webkit-playsinline
+    loop
+    preload="auto"
+  >
+    <source
+      src="/assets/videos/landing-loop-mobile.mp4?v=raw-test-1"
+      type="video/mp4"
+    />
+  </video>
+
+  <script>
+    const video = document.getElementById('test-video');
+
+    video.muted = true;
+    video.defaultMuted = true;
+    video.playsInline = true;
+
+    console.log('[RawTest] initial state', {
+      muted: video.muted,
+      defaultMuted: video.defaultMuted,
+      autoplay: video.autoplay,
+      playsInline: video.playsInline,
+      paused: video.paused,
+      readyState: video.readyState,
+      currentSrc: video.currentSrc
+    });
+
+    video.play()
+      .then(() => {
+        console.log('[RawTest] autoplay success');
+      })
+      .catch((error) => {
+        console.error('[RawTest] autoplay failed', {
+          name: error.name,
+          message: error.message
+        });
+      });
+  </script>
+</body>
+</html>
