@@ -1924,7 +1924,7 @@ function LiveViewer({ liveId, creatorMode = false }) {
     setChatDraft('');
     setImmersive(false);
     lastLiveTap.current = { time: 0, x: 0, y: 0 };
-  }, [live.id]);
+  }, [live?.id]);
 
   useEffect(() => {
     document.body.classList.toggle('vuvio-live-immersive', immersive);
@@ -1952,7 +1952,7 @@ function LiveViewer({ liveId, creatorMode = false }) {
 
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
-  }, []);
+  }, [goTo]);
 
   const openChatComposer = () => {
     chatScrollRef.current = {
