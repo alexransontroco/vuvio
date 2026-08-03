@@ -1376,8 +1376,12 @@ function CreatorLiveSession({ live, onEndingChange }) {
         try {
           const freshLive = await getDoc(doc(db, 'activeLives', live.id));
           if (freshLive.exists()) {
-            replayUrl = freshLive.data().playbackUrl || null;
+            const freshData = freshLive.data();
+            console.log('[endLive] Fresh live data:', freshData);
+            replayUrl = freshData.playbackUrl || freshData.hlsManifestUrl || null;
             console.log('[endLive] Fetched fresh playbackUrl:', replayUrl);
+          } else {
+            console.log('[endLive] Live document not found');
           }
         } catch (err) {
           console.warn('[endLive] Failed to fetch fresh live data:', err.message);
@@ -1386,7 +1390,7 @@ function CreatorLiveSession({ live, onEndingChange }) {
       if (replayUrl) {
         console.log('[endLive] Using replay URL:', replayUrl);
       } else {
-        console.log('[endLive] No playbackUrl available');
+        console.log('[endLive] No playbackUrl or hlsManifestUrl available');
       }
 
       const stats = {
