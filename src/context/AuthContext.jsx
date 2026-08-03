@@ -154,13 +154,6 @@ export function AuthProvider({ children }) {
     };
   }, [loadProfile]);
 
-  useEffect(() => {
-    const splashTimer = setTimeout(() => {
-      setShowSplash(false);
-    }, 6000);
-    return () => clearTimeout(splashTimer);
-  }, []);
-
   const refreshUserProfile = useCallback(async () => {
     if (user) await loadProfile(user);
   }, [user, loadProfile]);
