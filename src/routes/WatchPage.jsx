@@ -1060,18 +1060,35 @@ function CreatorCameraSurface({ live, className = '', children, videoRef: extern
 
   useEffect(() => {
     if (!videoRef.current || !stream) return undefined;
+    console.log('[CreatorCameraSurface] Setting up video - stream:', !!stream, 'videoRef:', !!videoRef.current);
     videoRef.current.srcObject = stream;
 
-    // Capture when video starts playing
+    // Try multiple events for better capture timing
     const handleCanPlay = () => {
-      console.log('[CreatorCameraSurface] Video can play - ready to capture');
+      console.log('[CreatorCameraSurface] canplay fired');
+      onVideoReady?.();
+    };
+
+    const handleLoadedMetadata = () => {
+      console.log('[CreatorCameraSurface] loadedmetadata fired');
+      onVideoReady?.();
+    };
+
+    const handlePlaying = () => {
+      console.log('[CreatorCameraSurface] playing fired');
       onVideoReady?.();
     };
 
     videoRef.current.addEventListener('canplay', handleCanPlay);
+    videoRef.current.addEventListener('loadedmetadata', handleLoadedMetadata);
+    videoRef.current.addEventListener('playing', handlePlaying);
+    console.log('[CreatorCameraSurface] Event listeners attached');
+
     return () => {
       if (videoRef.current) {
         videoRef.current.removeEventListener('canplay', handleCanPlay);
+        videoRef.current.removeEventListener('loadedmetadata', handleLoadedMetadata);
+        videoRef.current.removeEventListener('playing', handlePlaying);
         videoRef.current.srcObject = null;
       }
     };
