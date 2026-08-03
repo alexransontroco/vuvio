@@ -2024,12 +2024,7 @@ function LiveViewer({ liveId, creatorMode = false }) {
     event?.preventDefault();
     event?.stopPropagation();
     const text = chatDraft.trim();
-    console.log('[LiveViewer] Send clicked - text:', text, 'live.id:', live?.id, 'user.uid:', user?.uid);
-    if (!text || !live?.id || !user?.uid) {
-      console.log('[LiveViewer] Send aborted - missing:', { text: !text, liveId: !live?.id, userId: !user?.uid });
-      return;
-    }
-    console.log('[LiveViewer] Send proceeding');
+    if (!text || !liveId || !user?.uid) return;
 
     chatInputRef.current?.blur();
     pointerStart.current = null;
@@ -2037,8 +2032,8 @@ function LiveViewer({ liveId, creatorMode = false }) {
     setDragY(0);
     setLocalChat((state) => ({
       ...state,
-      [live.id]: [
-        ...(state[live.id] ?? []),
+      [liveId]: [
+        ...(state[liveId] ?? []),
         { who: 'You', text, time: new Intl.DateTimeFormat(undefined, { hour: '2-digit', minute: '2-digit' }).format(new Date()) },
       ],
     }));
@@ -2048,18 +2043,16 @@ function LiveViewer({ liveId, creatorMode = false }) {
 
     // Save comment to Firestore
     try {
-      console.log('[LiveViewer] Saving comment to:', `activeLives/${live.id}/comments`);
-      const commentsRef = collection(db, `activeLives/${live.id}/comments`);
-      const docRef = await addDoc(commentsRef, {
+      const commentsRef = collection(db, `activeLives/${liveId}/comments`);
+      await addDoc(commentsRef, {
         text,
         userId: user.uid,
         userDisplayName: user.displayName || 'Anonymous',
         userPhotoURL: user.photoURL || null,
         timestamp: serverTimestamp(),
       });
-      console.log('[LiveViewer] Comment saved with ID:', docRef.id);
     } catch (err) {
-      console.error('[LiveViewer] Failed to save comment:', err.message);
+      console.warn('[LiveViewer] Failed to save comment:', err.message);
     }
 
     [0, 80, 220].forEach((delay) => {
