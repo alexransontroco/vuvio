@@ -1231,8 +1231,11 @@ function CreatorLiveSession({ live, onEndingChange }) {
   useEffect(() => {
     if (!live?.id || phase !== 'live') return undefined;
     const commentsRef = collection(db, `activeLives/${live.id}/comments`);
+    console.log('[CreatorLiveSession] Setting up comments listener for:', live.id);
     const unsubscribe = onSnapshot(query(commentsRef), (snapshot) => {
+      console.log('[CreatorLiveSession] Comments snapshot:', snapshot.size, 'documents');
       snapshot.docChanges().forEach((change) => {
+        console.log('[CreatorLiveSession] Comment change:', change.type, change.doc.data());
         if (change.type === 'added') {
           const data = change.doc.data();
           setComment({ name: data.userDisplayName || 'Anonymous', text: ` ${data.text}`, avatar: '👤' });
@@ -2049,6 +2052,8 @@ function LiveViewer({ liveId, creatorMode = false }) {
     const text = chatDraft.trim();
     if (!text || !liveId) return;
 
+    console.log('[LiveViewer] Sending message to liveId:', liveId, 'text:', text);
+
     chatInputRef.current?.blur();
     pointerStart.current = null;
     setIsDragging(false);
@@ -2066,6 +2071,7 @@ function LiveViewer({ liveId, creatorMode = false }) {
 
     try {
       const commentsRef = collection(db, `activeLives/${liveId}/comments`);
+      console.log('[LiveViewer] Saving to collection:', `activeLives/${liveId}/comments`);
       await addDoc(commentsRef, {
         text,
         userId: user.uid,
@@ -2073,6 +2079,7 @@ function LiveViewer({ liveId, creatorMode = false }) {
         userPhotoURL: user.photoURL || null,
         timestamp: serverTimestamp(),
       });
+      console.log('[LiveViewer] Message saved successfully');
     } catch (err) {
       console.error('[LiveViewer] Failed to save comment:', err);
     }
