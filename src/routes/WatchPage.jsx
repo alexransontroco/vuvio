@@ -1343,6 +1343,7 @@ function CreatorLiveSession({ live, onEndingChange }) {
     }
 
     try {
+      console.log('[endLive] Updating live document:', live.id, 'user UID:', user?.uid, 'live creatorUid:', live.creatorUid);
       const liveRef = doc(db, 'activeLives', live.id);
       const commentsRef = collection(db, `activeLives/${live.id}/comments`);
       const starsRef = collection(db, `activeLives/${live.id}/stars`);
