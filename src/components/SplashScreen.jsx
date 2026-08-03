@@ -7,26 +7,9 @@ export default function SplashScreen({ leaving = false }) {
   useEffect(() => {
     const video = videoRef.current;
     if (!video) return;
-
-    video.muted = true;
-    video.defaultMuted = true;
-    video.playsInline = true;
     video.playbackRate = 0.7;
-
-    const timer = setTimeout(() => {
-      video.play()
-        .then(() => {
-          console.log('[Splash] autoplay success');
-        })
-        .catch((error) => {
-          console.error('[Splash] autoplay failed', {
-            name: error.name,
-            message: error.message,
-          });
-        });
-    }, 1000);
-
-    return () => clearTimeout(timer);
+    const playPromise = video.play();
+    if (playPromise?.catch) playPromise.catch(() => {});
   }, []);
 
   return (
