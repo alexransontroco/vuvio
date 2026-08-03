@@ -1055,7 +1055,8 @@ function formatLiveDuration(totalSeconds) {
 
 function CreatorCameraSurface({ live, className = '', children, videoRef: externalVideoRef }) {
   const stream = getCreatedLiveStream(live.id);
-  const videoRef = externalVideoRef || useRef(null);
+  const internalVideoRef = useRef(null);
+  const videoRef = externalVideoRef || internalVideoRef;
 
   useEffect(() => {
     if (!videoRef.current || !stream) return undefined;
@@ -1063,7 +1064,7 @@ function CreatorCameraSurface({ live, className = '', children, videoRef: extern
     return () => {
       if (videoRef.current) videoRef.current.srcObject = null;
     };
-  }, [stream]);
+  }, [stream, videoRef]);
 
   return (
     <div className={`creator-live-camera ${className}`}>
