@@ -157,8 +157,10 @@ export async function searchProducts(searchQuery) {
       ...doc.data(),
     }));
 
-    // Combine with demo products
-    const allProducts = [...firestoreProducts, ...demoProducts];
+    // Combine with demo products, avoiding duplicates
+    const firestoreIds = new Set(firestoreProducts.map(p => p.id));
+    const newDemoProducts = demoProducts.filter(p => !firestoreIds.has(p.id));
+    const allProducts = [...firestoreProducts, ...newDemoProducts];
 
     // Filter by name, brand, or searchTerms
     return allProducts.filter(product => {

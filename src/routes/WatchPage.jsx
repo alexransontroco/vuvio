@@ -1231,32 +1231,40 @@ function CreatorLiveSession({ live, onEndingChange }) {
   useEffect(() => {
     if (!live?.id || phase !== 'live') return undefined;
     const commentsRef = collection(db, `activeLives/${live.id}/comments`);
-    const unsubscribe = onSnapshot(query(commentsRef), (snapshot) => {
-      snapshot.docChanges().forEach((change) => {
-        if (change.type === 'added') {
-          const data = change.doc.data();
-          setComment({ name: data.userDisplayName || 'Anonymous', text: ` ${data.text}`, avatar: '👤' });
-          window.setTimeout(() => setComment(null), 4000);
-          setCommentsCount((count) => count + 1);
-        }
-      });
-    });
+    const unsubscribe = onSnapshot(
+      query(commentsRef),
+      (snapshot) => {
+        snapshot.docChanges().forEach((change) => {
+          if (change.type === 'added') {
+            const data = change.doc.data();
+            setComment({ name: data.userDisplayName || 'Anonymous', text: ` ${data.text}`, avatar: '👤' });
+            window.setTimeout(() => setComment(null), 4000);
+            setCommentsCount((count) => count + 1);
+          }
+        });
+      },
+      (err) => console.warn('[CreatorLiveSession] Comments listener error:', err.message)
+    );
     return () => unsubscribe();
   }, [live?.id, phase]);
 
   useEffect(() => {
     if (!live?.id || phase !== 'live') return undefined;
     const starsRef = collection(db, `activeLives/${live.id}/stars`);
-    const unsubscribe = onSnapshot(query(starsRef), (snapshot) => {
-      snapshot.docChanges().forEach((change) => {
-        if (change.type === 'added') {
-          const id = `star-${Date.now()}`;
-          setStars((value) => value + 1);
-          setStarBursts((value) => [...value.slice(-2), { id, left: 62 + Math.random() * 24 }]);
-          window.setTimeout(() => setStarBursts((value) => value.filter((item) => item.id !== id)), 1400);
-        }
-      });
-    });
+    const unsubscribe = onSnapshot(
+      query(starsRef),
+      (snapshot) => {
+        snapshot.docChanges().forEach((change) => {
+          if (change.type === 'added') {
+            const id = `star-${Date.now()}`;
+            setStars((value) => value + 1);
+            setStarBursts((value) => [...value.slice(-2), { id, left: 62 + Math.random() * 24 }]);
+            window.setTimeout(() => setStarBursts((value) => value.filter((item) => item.id !== id)), 1400);
+          }
+        });
+      },
+      (err) => console.warn('[CreatorLiveSession] Stars listener error:', err.message)
+    );
     return () => unsubscribe();
   }, [live?.id, phase]);
 
@@ -1346,25 +1354,39 @@ function CreatorLiveSession({ live, onEndingChange }) {
       console.log('[endLive] Stats - elapsed:', elapsed, 'viewers:', viewerCount, 'peak:', peakViewers, 'comments:', commentsCount, 'stars:', stars);
       console.log('[endLive] Updating live document:', live.id, 'user UID:', user?.uid, 'live creatorUid:', live.creatorUid);
       const liveRef = doc(db, 'activeLives', live.id);
-      const commentsRef = collection(db, `activeLives/${live.id}/comments`);
-      const starsRef = collection(db, `activeLives/${live.id}/stars`);
-      const commentSnap = await getDocs(commentsRef);
-      const starSnap = await getDocs(starsRef);
 
-      let replayUrl = null;
-      if (live.liveInputId) {
+      let commentCount = commentsCount;
+      let starCount = stars;
+
+      try {
+        const commentsRef = collection(db, `activeLives/${live.id}/comments`);
+        const starsRef = collection(db, `activeLives/${live.id}/stars`);
+        const commentSnap = await getDocs(commentsRef);
+        const starSnap = await getDocs(starsRef);
+        commentCount = commentSnap.size;
+        starCount = starSnap.size;
+        console.log('[endLive] Subcollections read successfully - comments:', commentCount, 'stars:', starCount);
+      } catch (readErr) {
+        console.warn('[endLive] Failed to read subcollections, using state counts:', readErr.message);
+        console.log('[endLive] Using state counts - comments:', commentsCount, 'stars:', stars);
+      }
+
+      let replayUrl = live.playbackUrl || null;
+      if (!replayUrl) {
         try {
-          const token = await user.getIdToken();
-          const cfResponse = await fetch(`/api/cloudflare/stream/${live.liveInputId}`, {
-            headers: { 'Authorization': `Bearer ${token}` },
-          });
-          if (cfResponse.ok) {
-            const cfData = await cfResponse.json();
-            replayUrl = cfData.playbackUrl;
+          const freshLive = await getDoc(doc(db, 'activeLives', live.id));
+          if (freshLive.exists()) {
+            replayUrl = freshLive.data().playbackUrl || null;
+            console.log('[endLive] Fetched fresh playbackUrl:', replayUrl);
           }
-        } catch (cfErr) {
-          console.warn('[HomePage] Failed to fetch Cloudflare replay:', cfErr.message);
+        } catch (err) {
+          console.warn('[endLive] Failed to fetch fresh live data:', err.message);
         }
+      }
+      if (replayUrl) {
+        console.log('[endLive] Using replay URL:', replayUrl);
+      } else {
+        console.log('[endLive] No playbackUrl available');
       }
 
       const stats = {
@@ -1373,8 +1395,8 @@ function CreatorLiveSession({ live, onEndingChange }) {
         durationSeconds: elapsed,
         totalUniqueViewers: viewerCount,
         peakViewerCount: peakViewers,
-        commentCount: commentSnap.size,
-        starCount: starSnap.size,
+        commentCount: commentCount,
+        starCount: starCount,
       };
       if (replayUrl) stats.replayUrl = replayUrl;
 

@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import { useState } from 'react';
 import { GearThumbnail, GearItemRow } from '../gear/index.js';
+import { AlertCircle } from 'lucide-react';
 import { EQUIPMENT_CATEGORIES, EQUIPMENT_OWNERSHIP, SUBCATEGORY_EQUIPMENT_TYPES, getCategoryIcon } from '../../data/equipmentModel.js';
 import { equipmentLabel, groupEquipmentByCategory } from '../../services/equipmentService.js';
 
@@ -32,6 +33,27 @@ export const categoryIcons = {
 export function EquipmentIcon({ category, size = 19 }) {
   const Icon = categoryIcons[category] ?? Camera;
   return <Icon size={size} strokeWidth={1.8} />;
+}
+
+function EquipmentThumbnail({ imageUrl, category, label }) {
+  const [imageError, setImageError] = useState(false);
+
+  return (
+    <div className="equipment-item-row__icon">
+      {imageUrl && !imageError ? (
+        <img
+          src={imageUrl}
+          alt={label}
+          className="equipment-item-row__img"
+          onError={() => setImageError(true)}
+        />
+      ) : (
+        <span className="equipment-item-row__icon-emoji" aria-hidden="true">
+          {getCategoryIcon(category)}
+        </span>
+      )}
+    </div>
+  );
 }
 
 export function ownershipLabel(value) {
@@ -65,9 +87,11 @@ export function EquipmentCategoryCard({ category, count, onClick }) {
 export function EquipmentItemRow({ item, selectable = false, selected = false, onToggle, onOpen, actions, compact = false }) {
   const content = (
     <>
-      <span className="equipment-item-row__icon">
-        <span className="equipment-item-row__icon-emoji" aria-hidden="true">{getCategoryIcon(item.category)}</span>
-      </span>
+      <EquipmentThumbnail
+        imageUrl={item.imageUrl}
+        category={item.category}
+        label={equipmentLabel(item)}
+      />
       <span className="equipment-item-row__copy">
         <strong>{equipmentLabel(item)}</strong>
         <small>{item.equipmentType || 'Equipment'}</small>
@@ -83,6 +107,15 @@ export function EquipmentItemRow({ item, selectable = false, selected = false, o
       <button type="button" className={selected ? 'equipment-item-row is-selected' : 'equipment-item-row'} onClick={() => onToggle?.(item.id)} aria-pressed={selected}>
         {content}
       </button>
+    );
+  }
+
+  // Use div instead of button when actions are present to avoid nested buttons
+  if (actions) {
+    return (
+      <div className={compact ? 'equipment-item-row is-compact' : 'equipment-item-row'}>
+        {content}
+      </div>
     );
   }
 

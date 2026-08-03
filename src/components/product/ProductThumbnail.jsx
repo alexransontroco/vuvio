@@ -49,25 +49,29 @@ export function ProductThumbnail({
     name,
     category,
     imageStatus,
+    thumbnailUrl,
   } = product;
 
   // Determine image URL based on processing status
   const getImageUrl = () => {
-    // Processing status check
-    if (!imageStatus) {
-      return null; // No image data yet
+    // If processing, show skeleton
+    if (imageStatus?.status === 'processing') {
+      return null;
     }
 
-    if (imageStatus.status === 'ready' && imageStatus.urls?.medium) {
+    // If failed, show fallback
+    if (imageStatus?.status === 'failed') {
+      return null;
+    }
+
+    // Processed image URL (from image processing pipeline)
+    if (imageStatus?.status === 'ready' && imageStatus.urls?.medium) {
       return imageStatus.urls.medium;
     }
 
-    if (imageStatus.status === 'pending' || imageStatus.status === 'processing') {
-      return null; // Show skeleton
-    }
-
-    if (imageStatus.status === 'failed') {
-      return null; // Show fallback icon
+    // Fallback to simple thumbnailUrl field (for seeded products)
+    if (thumbnailUrl) {
+      return thumbnailUrl;
     }
 
     return null;

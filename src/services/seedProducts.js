@@ -17,7 +17,7 @@ const seedProducts = [
     category: 'recording',
     description: 'Latest GoPro action camera with advanced stabilization',
     searchTerms: ['gopro', 'hero13', 'hero13 black', 'gopro hero13', 'action camera'],
-    thumbnailUrl: 'https://images.unsplash.com/photo-1595428774223-ef52624120d2?w=320&h=320&fit=crop',
+    thumbnailUrl: '/products/gopro-hero13.svg',
     imageStatus: { status: 'ready' },
   },
   {
@@ -27,7 +27,7 @@ const seedProducts = [
     category: 'recording',
     description: 'Professional action camera with advanced features',
     searchTerms: ['dji', 'osmo', 'osmo action', 'action camera', 'dji osmo'],
-    thumbnailUrl: 'https://images.unsplash.com/photo-1612198188060-c7c2a3b66eae?w=320&h=320&fit=crop',
+    thumbnailUrl: '/products/dji-osmo.svg',
     imageStatus: { status: 'ready' },
   },
   {
@@ -37,6 +37,7 @@ const seedProducts = [
     category: 'recording',
     description: '360-degree action camera',
     searchTerms: ['insta360', 'x3', '360 camera', 'insta360 x3'],
+    thumbnailUrl: '/products/insta360-x3.svg',
     imageStatus: { status: 'ready' },
   },
 
@@ -48,7 +49,7 @@ const seedProducts = [
     category: 'audio',
     description: 'Wireless microphone system for content creators',
     searchTerms: ['dji', 'mic', 'microphone', 'wireless mic', 'dji mic 2'],
-    thumbnailUrl: 'https://images.unsplash.com/photo-1608043152269-423dbba4e7e1?w=320&h=320&fit=crop',
+    thumbnailUrl: '/products/dji-mic.svg',
     imageStatus: { status: 'ready' },
   },
   {
@@ -58,6 +59,7 @@ const seedProducts = [
     category: 'audio',
     description: 'Ultra-compact wireless microphone system',
     searchTerms: ['rode', 'wireless', 'microphone', 'rode wireless', 'wireless go'],
+    thumbnailUrl: '/products/rode-wireless.svg',
     imageStatus: { status: 'ready' },
   },
 
@@ -69,6 +71,7 @@ const seedProducts = [
     category: 'power_accessories',
     description: 'Chest mount for hands-free POV recording',
     searchTerms: ['gopro', 'mount', 'chest mount', 'chesty', 'pov mount'],
+    thumbnailUrl: '/products/gopro-mount.svg',
     imageStatus: { status: 'ready' },
   },
   {
@@ -78,6 +81,7 @@ const seedProducts = [
     category: 'power_accessories',
     description: 'Universal camera clip for any camera',
     searchTerms: ['peak design', 'capture', 'clip', 'mount'],
+    thumbnailUrl: '/products/peak-clip.svg',
     imageStatus: { status: 'ready' },
   },
 
@@ -89,6 +93,7 @@ const seedProducts = [
     category: 'activity',
     description: 'High-performance gravel bike',
     searchTerms: ['canyon', 'bike', 'grail', 'gravel bike'],
+    thumbnailUrl: '/products/canyon-bike.svg',
     imageStatus: { status: 'ready' },
   },
   {
@@ -98,6 +103,7 @@ const seedProducts = [
     category: 'activity',
     description: 'Premium road bike',
     searchTerms: ['trek', 'bike', 'domane', 'road bike', 'cycling'],
+    thumbnailUrl: '/products/trek-bike.svg',
     imageStatus: { status: 'ready' },
   },
   {
@@ -107,6 +113,7 @@ const seedProducts = [
     category: 'activity',
     description: 'Lightweight racing bike',
     searchTerms: ['specialized', 'bike', 'tarmac', 'racing bike'],
+    thumbnailUrl: '/products/specialized-bike.svg',
     imageStatus: { status: 'ready' },
   },
   {
@@ -116,6 +123,7 @@ const seedProducts = [
     category: 'activity',
     description: 'Ventilated cycling helmet',
     searchTerms: ['poc', 'helmet', 'cycling helmet', 'safety gear'],
+    thumbnailUrl: '/products/poc-helmet.svg',
     imageStatus: { status: 'ready' },
   },
   {
@@ -125,6 +133,7 @@ const seedProducts = [
     category: 'activity',
     description: 'Flat pedal mountain biking shoes',
     searchTerms: ['five ten', 'shoes', 'mtb', 'cycling shoes'],
+    thumbnailUrl: '/products/five-ten-shoes.svg',
     imageStatus: { status: 'ready' },
   },
   {
@@ -134,6 +143,7 @@ const seedProducts = [
     category: 'activity',
     description: 'Premium mountain bike suspension fork',
     searchTerms: ['fox', 'suspension', 'fork', 'mtb', 'mountain bike'],
+    thumbnailUrl: '/products/fox-fork.svg',
     imageStatus: { status: 'ready' },
   },
 ];

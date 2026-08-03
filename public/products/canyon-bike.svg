@@ -1,0 +1,11 @@
+<svg width="320" height="320" viewBox="0 0 320 320" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="320" height="320" fill="#081828"/>
+  <circle cx="160" cy="160" r="50" fill="#35e3dc" opacity="0.2"/>
+  <g transform="translate(110, 110)">
+    <circle cx="25" cy="60" r="15" fill="none" stroke="#35e3dc" stroke-width="2"/>
+    <circle cx="75" cy="60" r="15" fill="none" stroke="#35e3dc" stroke-width="2"/>
+    <path d="M 40 45 L 30 60 M 40 45 L 50 60 M 40 45 L 60 50" stroke="#35e3dc" stroke-width="2" stroke-linecap="round"/>
+    <circle cx="40" cy="45" r="4" fill="#35e3dc" opacity="0.5"/>
+  </g>
+  <text x="160" y="280" font-size="14" fill="#8eacbe" text-anchor="middle" font-family="system-ui">Bike</text>
+</svg>
