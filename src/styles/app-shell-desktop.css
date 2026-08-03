@@ -107,8 +107,9 @@
   height: 100%;
 }
 
-/* Disable desktop mode constraints specifically for watch page */
+/* Fix video display in desktop mode */
 .app-canvas--desktop .screen.live-feed {
-  height: 100vh !important;
-  width: 100% !important;
+  min-height: 100% !important;
+  height: 100% !important;
+  max-height: 100vh;
 }
