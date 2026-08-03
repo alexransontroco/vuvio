@@ -1141,7 +1141,7 @@ function CreatorLiveSession({ live, onEndingChange }) {
   useEffect(() => {
     keepHudAwake();
     return () => window.clearTimeout(hideTimer.current);
-  }, []);
+  }, [locked, phase]);
 
   useEffect(() => {
     if (!live?.id || !user?.uid || broadcastStartedRef.current) return undefined;
