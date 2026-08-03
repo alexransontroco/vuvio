@@ -7,7 +7,6 @@ export default function SplashScreen({ leaving = false }) {
   useEffect(() => {
     const video = videoRef.current;
     if (!video) return;
-    video.playbackRate = 0.8;
     const playPromise = video.play();
     if (playPromise?.catch) playPromise.catch(() => {});
   }, []);
