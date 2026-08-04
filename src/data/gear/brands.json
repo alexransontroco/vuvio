@@ -1,0 +1,1460 @@
+[
+  {
+    "id": "canyon",
+    "label": "Canyon",
+    "categories": ["bike"],
+    "enabled": true
+  },
+  {
+    "id": "specialized",
+    "label": "Specialized",
+    "categories": ["bike", "helmet", "shoes"],
+    "enabled": true
+  },
+  {
+    "id": "trek",
+    "label": "Trek",
+    "categories": ["bike"],
+    "enabled": true
+  },
+  {
+    "id": "giant",
+    "label": "Giant",
+    "categories": ["bike"],
+    "enabled": true
+  },
+  {
+    "id": "scott",
+    "label": "Scott",
+    "categories": ["bike", "helmet"],
+    "enabled": true
+  },
+  {
+    "id": "cube",
+    "label": "Cube",
+    "categories": ["bike"],
+    "enabled": true
+  },
+  {
+    "id": "merida",
+    "label": "Merida",
+    "categories": ["bike"],
+    "enabled": true
+  },
+  {
+    "id": "focus",
+    "label": "Focus",
+    "categories": ["bike"],
+    "enabled": true
+  },
+  {
+    "id": "santa-cruz",
+    "label": "Santa Cruz",
+    "categories": ["bike"],
+    "enabled": true
+  },
+  {
+    "id": "yeti",
+    "label": "Yeti",
+    "categories": ["bike"],
+    "enabled": true
+  },
+  {
+    "id": "gt",
+    "label": "GT",
+    "categories": ["bike"],
+    "enabled": true
+  },
+  {
+    "id": "kona",
+    "label": "Kona",
+    "categories": ["bike"],
+    "enabled": true
+  },
+  {
+    "id": "commencal",
+    "label": "Commencal",
+    "categories": ["bike"],
+    "enabled": true
+  },
+  {
+    "id": "whyte",
+    "label": "Whyte",
+    "categories": ["bike"],
+    "enabled": true
+  },
+  {
+    "id": "vitus",
+    "label": "Vitus",
+    "categories": ["bike"],
+    "enabled": true
+  },
+  {
+    "id": "bianchi",
+    "label": "Bianchi",
+    "categories": ["bike"],
+    "enabled": true
+  },
+  {
+    "id": "colnago",
+    "label": "Colnago",
+    "categories": ["bike"],
+    "enabled": true
+  },
+  {
+    "id": "wilier",
+    "label": "Wilier",
+    "categories": ["bike"],
+    "enabled": true
+  },
+  {
+    "id": "van-nicholas",
+    "label": "Van Nicholas",
+    "categories": ["bike"],
+    "enabled": true
+  },
+  {
+    "id": "bossi",
+    "label": "Bossi",
+    "categories": ["bike"],
+    "enabled": true
+  },
+  {
+    "id": "aist",
+    "label": "AIST",
+    "categories": ["bike"],
+    "enabled": true
+  },
+  {
+    "id": "gios",
+    "label": "Gios",
+    "categories": ["bike"],
+    "enabled": true
+  },
+  {
+    "id": "argon-18",
+    "label": "Argon 18",
+    "categories": ["bike"],
+    "enabled": true
+  },
+  {
+    "id": "pinarello",
+    "label": "Pinarello",
+    "categories": ["bike"],
+    "enabled": true
+  },
+  {
+    "id": "look",
+    "label": "Look",
+    "categories": ["bike", "shoes"],
+    "enabled": true
+  },
+  {
+    "id": "orbea",
+    "label": "Orbea",
+    "categories": ["bike"],
+    "enabled": true
+  },
+  {
+    "id": "felt",
+    "label": "Felt",
+    "categories": ["bike"],
+    "enabled": true
+  },
+  {
+    "id": "cinelli",
+    "label": "Cinelli",
+    "categories": ["bike"],
+    "enabled": true
+  },
+  {
+    "id": "fuji",
+    "label": "Fuji",
+    "categories": ["bike"],
+    "enabled": true
+  },
+  {
+    "id": "cannondale",
+    "label": "Cannondale",
+    "categories": ["bike"],
+    "enabled": true
+  },
+  {
+    "id": "gopro",
+    "label": "GoPro",
+    "categories": ["camera", "camera-mount"],
+    "enabled": true
+  },
+  {
+    "id": "dji",
+    "label": "DJI",
+    "categories": ["camera", "camera-mount", "drone"],
+    "enabled": true
+  },
+  {
+    "id": "insta360",
+    "label": "Insta360",
+    "categories": ["camera"],
+    "enabled": true
+  },
+  {
+    "id": "sony",
+    "label": "Sony",
+    "categories": ["camera", "microphone"],
+    "enabled": true
+  },
+  {
+    "id": "canon",
+    "label": "Canon",
+    "categories": ["camera", "lens"],
+    "enabled": true
+  },
+  {
+    "id": "nikon",
+    "label": "Nikon",
+    "categories": ["camera", "lens"],
+    "enabled": true
+  },
+  {
+    "id": "fujifilm",
+    "label": "Fujifilm",
+    "categories": ["camera", "lens"],
+    "enabled": true
+  },
+  {
+    "id": "panasonic",
+    "label": "Panasonic",
+    "categories": ["camera"],
+    "enabled": true
+  },
+  {
+    "id": "red",
+    "label": "RED",
+    "categories": ["camera"],
+    "enabled": true
+  },
+  {
+    "id": "blackmagic",
+    "label": "Blackmagic",
+    "categories": ["camera"],
+    "enabled": true
+  },
+  {
+    "id": "rode",
+    "label": "Rode",
+    "categories": ["microphone"],
+    "enabled": true
+  },
+  {
+    "id": "shure",
+    "label": "Shure",
+    "categories": ["microphone", "headphones"],
+    "enabled": true
+  },
+  {
+    "id": "sennheiser",
+    "label": "Sennheiser",
+    "categories": ["microphone", "headphones"],
+    "enabled": true
+  },
+  {
+    "id": "audio-technica",
+    "label": "Audio-Technica",
+    "categories": ["microphone", "headphones"],
+    "enabled": true
+  },
+  {
+    "id": "beyerdynamic",
+    "label": "Beyerdynamic",
+    "categories": ["microphone", "headphones"],
+    "enabled": true
+  },
+  {
+    "id": "grado",
+    "label": "Grado",
+    "categories": ["headphones"],
+    "enabled": true
+  },
+  {
+    "id": "akg",
+    "label": "AKG",
+    "categories": ["microphone", "headphones"],
+    "enabled": true
+  },
+  {
+    "id": "electro-voice",
+    "label": "Electro-Voice",
+    "categories": ["microphone"],
+    "enabled": true
+  },
+  {
+    "id": "bose",
+    "label": "Bose",
+    "categories": ["headphones", "speaker"],
+    "enabled": true
+  },
+  {
+    "id": "jbl",
+    "label": "JBL",
+    "categories": ["headphones", "speaker"],
+    "enabled": true
+  },
+  {
+    "id": "beats",
+    "label": "Beats",
+    "categories": ["headphones"],
+    "enabled": true
+  },
+  {
+    "id": "sennheiser-momentum",
+    "label": "Sennheiser Momentum",
+    "categories": ["headphones"],
+    "enabled": true
+  },
+  {
+    "id": "apple",
+    "label": "Apple",
+    "categories": ["camera", "headphones"],
+    "enabled": true
+  },
+  {
+    "id": "samsung",
+    "label": "Samsung",
+    "categories": ["camera"],
+    "enabled": true
+  },
+  {
+    "id": "google",
+    "label": "Google",
+    "categories": ["camera"],
+    "enabled": true
+  },
+  {
+    "id": "oneplus",
+    "label": "OnePlus",
+    "categories": ["camera"],
+    "enabled": true
+  },
+  {
+    "id": "poc",
+    "label": "POC",
+    "categories": ["helmet", "protective-gear"],
+    "enabled": true
+  },
+  {
+    "id": "bell",
+    "label": "Bell",
+    "categories": ["helmet"],
+    "enabled": true
+  },
+  {
+    "id": "giro",
+    "label": "Giro",
+    "categories": ["helmet", "shoes"],
+    "enabled": true
+  },
+  {
+    "id": "lazer",
+    "label": "Lazer",
+    "categories": ["helmet"],
+    "enabled": true
+  },
+  {
+    "id": "abus",
+    "label": "Abus",
+    "categories": ["helmet"],
+    "enabled": true
+  },
+  {
+    "id": "uvex",
+    "label": "Uvex",
+    "categories": ["helmet"],
+    "enabled": true
+  },
+  {
+    "id": "met",
+    "label": "MET",
+    "categories": ["helmet"],
+    "enabled": true
+  },
+  {
+    "id": "kask",
+    "label": "Kask",
+    "categories": ["helmet"],
+    "enabled": true
+  },
+  {
+    "id": "bontrager",
+    "label": "Bontrager",
+    "categories": ["tires", "helmet"],
+    "enabled": true
+  },
+  {
+    "id": "continental",
+    "label": "Continental",
+    "categories": ["tires"],
+    "enabled": true
+  },
+  {
+    "id": "michelin",
+    "label": "Michelin",
+    "categories": ["tires"],
+    "enabled": true
+  },
+  {
+    "id": "pirelli",
+    "label": "Pirelli",
+    "categories": ["tires"],
+    "enabled": true
+  },
+  {
+    "id": "goodyear",
+    "label": "Goodyear",
+    "categories": ["tires"],
+    "enabled": true
+  },
+  {
+    "id": "schwalbe",
+    "label": "Schwalbe",
+    "categories": ["tires"],
+    "enabled": true
+  },
+  {
+    "id": "maxxis",
+    "label": "Maxxis",
+    "categories": ["tires"],
+    "enabled": true
+  },
+  {
+    "id": "kenda",
+    "label": "Kenda",
+    "categories": ["tires"],
+    "enabled": true
+  },
+  {
+    "id": "vittoria",
+    "label": "Vittoria",
+    "categories": ["tires"],
+    "enabled": true
+  },
+  {
+    "id": "shimano",
+    "label": "Shimano",
+    "categories": ["shoes", "tools", "bike-components"],
+    "enabled": true
+  },
+  {
+    "id": "sram",
+    "label": "SRAM",
+    "categories": ["bike-components"],
+    "enabled": true
+  },
+  {
+    "id": "campagnolo",
+    "label": "Campagnolo",
+    "categories": ["bike-components"],
+    "enabled": true
+  },
+  {
+    "id": "fizik",
+    "label": "Fizik",
+    "categories": ["bike-components"],
+    "enabled": true
+  },
+  {
+    "id": "deda",
+    "label": "Deda",
+    "categories": ["bike-components"],
+    "enabled": true
+  },
+  {
+    "id": "profile-racing",
+    "label": "Profile Racing",
+    "categories": ["bike-components"],
+    "enabled": true
+  },
+  {
+    "id": "chromag",
+    "label": "Chromag",
+    "categories": ["bike-components"],
+    "enabled": true
+  },
+  {
+    "id": "race-face",
+    "label": "Race Face",
+    "categories": ["bike-components", "protective-gear"],
+    "enabled": true
+  },
+  {
+    "id": "oneup-components",
+    "label": "OneUp Components",
+    "categories": ["bike-components"],
+    "enabled": true
+  },
+  {
+    "id": "wolftooth",
+    "label": "Wolf Tooth",
+    "categories": ["bike-components"],
+    "enabled": true
+  },
+  {
+    "id": "crank-brothers",
+    "label": "Crank Brothers",
+    "categories": ["bike-components", "pedals"],
+    "enabled": true
+  },
+  {
+    "id": "speedplay",
+    "label": "Speedplay",
+    "categories": ["pedals"],
+    "enabled": true
+  },
+  {
+    "id": "time-sport",
+    "label": "Time Sport",
+    "categories": ["pedals", "shoes"],
+    "enabled": true
+  },
+  {
+    "id": "garmin",
+    "label": "Garmin",
+    "categories": ["gps", "watch"],
+    "enabled": true
+  },
+  {
+    "id": "wahoo",
+    "label": "Wahoo",
+    "categories": ["gps"],
+    "enabled": true
+  },
+  {
+    "id": "cateye",
+    "label": "Cateye",
+    "categories": ["gps", "lights"],
+    "enabled": true
+  },
+  {
+    "id": "hammerhead",
+    "label": "Hammerhead",
+    "categories": ["gps"],
+    "enabled": true
+  },
+  {
+    "id": "lezyne",
+    "label": "Lezyne",
+    "categories": ["lights", "tools"],
+    "enabled": true
+  },
+  {
+    "id": "nite-ize",
+    "label": "Nite Ize",
+    "categories": ["lights"],
+    "enabled": true
+  },
+  {
+    "id": "topeak",
+    "label": "Topeak",
+    "categories": ["tools", "bag", "pump"],
+    "enabled": true
+  },
+  {
+    "id": "park-tool",
+    "label": "Park Tool",
+    "categories": ["tools"],
+    "enabled": true
+  },
+  {
+    "id": "pedro",
+    "label": "Pedro's",
+    "categories": ["tools", "lubricant"],
+    "enabled": true
+  },
+  {
+    "id": "specialized-tools",
+    "label": "Specialized Tools",
+    "categories": ["tools"],
+    "enabled": true
+  },
+  {
+    "id": "camelbak",
+    "label": "Camelbak",
+    "categories": ["hydration", "bag"],
+    "enabled": true
+  },
+  {
+    "id": "osprey",
+    "label": "Osprey",
+    "categories": ["bag"],
+    "enabled": true
+  },
+  {
+    "id": "evoc",
+    "label": "Evoc",
+    "categories": ["bag"],
+    "enabled": true
+  },
+  {
+    "id": "ortlieb",
+    "label": "Ortlieb",
+    "categories": ["bag"],
+    "enabled": true
+  },
+  {
+    "id": "chrome",
+    "label": "Chrome",
+    "categories": ["bag"],
+    "enabled": true
+  },
+  {
+    "id": "rapha",
+    "label": "Rapha",
+    "categories": ["clothing"],
+    "enabled": true
+  },
+  {
+    "id": "castelli",
+    "label": "Castelli",
+    "categories": ["clothing"],
+    "enabled": true
+  },
+  {
+    "id": "assos",
+    "label": "Assos",
+    "categories": ["clothing"],
+    "enabled": true
+  },
+  {
+    "id": "pearl-izumi",
+    "label": "Pearl Izumi",
+    "categories": ["clothing", "shoes"],
+    "enabled": true
+  },
+  {
+    "id": "fox",
+    "label": "Fox",
+    "categories": ["protective-gear", "clothing"],
+    "enabled": true
+  },
+  {
+    "id": "alpinestars",
+    "label": "Alpinestars",
+    "categories": ["protective-gear", "clothing"],
+    "enabled": true
+  },
+  {
+    "id": "klim",
+    "label": "Klim",
+    "categories": ["clothing", "protective-gear"],
+    "enabled": true
+  },
+  {
+    "id": "leatt",
+    "label": "Leatt",
+    "categories": ["protective-gear"],
+    "enabled": true
+  },
+  {
+    "id": "dainese",
+    "label": "Dainese",
+    "categories": ["protective-gear"],
+    "enabled": true
+  },
+  {
+    "id": "661",
+    "label": "661",
+    "categories": ["protective-gear"],
+    "enabled": true
+  },
+  {
+    "id": "fox-racing",
+    "label": "Fox Racing",
+    "categories": ["protective-gear", "clothing"],
+    "enabled": true
+  },
+  {
+    "id": "oakley",
+    "label": "Oakley",
+    "categories": ["eyewear"],
+    "enabled": true
+  },
+  {
+    "id": "smith-optics",
+    "label": "Smith Optics",
+    "categories": ["eyewear"],
+    "enabled": true
+  },
+  {
+    "id": "100percent",
+    "label": "100%",
+    "categories": ["eyewear"],
+    "enabled": true
+  },
+  {
+    "id": "scott-eyewear",
+    "label": "Scott Eyewear",
+    "categories": ["eyewear"],
+    "enabled": true
+  },
+  {
+    "id": "shimano-shoes",
+    "label": "Shimano Shoes",
+    "categories": ["shoes"],
+    "enabled": true
+  },
+  {
+    "id": "sidi",
+    "label": "Sidi",
+    "categories": ["shoes"],
+    "enabled": true
+  },
+  {
+    "id": "mavic",
+    "label": "Mavic",
+    "categories": ["shoes"],
+    "enabled": true
+  },
+  {
+    "id": "crankbrothers-shoes",
+    "label": "Crank Brothers Shoes",
+    "categories": ["shoes"],
+    "enabled": true
+  },
+  {
+    "id": "lake",
+    "label": "Lake",
+    "categories": ["shoes"],
+    "enabled": true
+  },
+  {
+    "id": "nike",
+    "label": "Nike",
+    "categories": ["shoes", "clothing"],
+    "enabled": true
+  },
+  {
+    "id": "adidas",
+    "label": "Adidas",
+    "categories": ["shoes", "clothing"],
+    "enabled": true
+  },
+  {
+    "id": "new-balance",
+    "label": "New Balance",
+    "categories": ["shoes", "clothing"],
+    "enabled": true
+  },
+  {
+    "id": "asics",
+    "label": "ASICS",
+    "categories": ["shoes"],
+    "enabled": true
+  },
+  {
+    "id": "brooks",
+    "label": "Brooks",
+    "categories": ["shoes"],
+    "enabled": true
+  },
+  {
+    "id": "salomon",
+    "label": "Salomon",
+    "categories": ["shoes", "protective-gear"],
+    "enabled": true
+  },
+  {
+    "id": "la-sportiva",
+    "label": "La Sportiva",
+    "categories": ["shoes"],
+    "enabled": true
+  },
+  {
+    "id": "scarpa",
+    "label": "Scarpa",
+    "categories": ["shoes"],
+    "enabled": true
+  },
+  {
+    "id": "merrell",
+    "label": "Merrell",
+    "categories": ["shoes"],
+    "enabled": true
+  },
+  {
+    "id": "columbia",
+    "label": "Columbia",
+    "categories": ["clothing", "shoes"],
+    "enabled": true
+  },
+  {
+    "id": "arc-teryx",
+    "label": "Arc'teryx",
+    "categories": ["clothing"],
+    "enabled": true
+  },
+  {
+    "id": "patagonia",
+    "label": "Patagonia",
+    "categories": ["clothing"],
+    "enabled": true
+  },
+  {
+    "id": "the-north-face",
+    "label": "The North Face",
+    "categories": ["clothing", "shoes"],
+    "enabled": true
+  },
+  {
+    "id": "mountain-hardwear",
+    "label": "Mountain Hardwear",
+    "categories": ["clothing"],
+    "enabled": true
+  },
+  {
+    "id": "marmot",
+    "label": "Marmot",
+    "categories": ["clothing"],
+    "enabled": true
+  },
+  {
+    "id": "fjallraven",
+    "label": "Fjallraven",
+    "categories": ["clothing", "bag"],
+    "enabled": true
+  },
+  {
+    "id": "jack-wolfskin",
+    "label": "Jack Wolfskin",
+    "categories": ["clothing"],
+    "enabled": true
+  },
+  {
+    "id": "decathlon",
+    "label": "Decathlon",
+    "categories": ["bike", "clothing", "shoes"],
+    "enabled": true
+  },
+  {
+    "id": "quiksilver",
+    "label": "Quiksilver",
+    "categories": ["clothing", "wetsuit"],
+    "enabled": true
+  },
+  {
+    "id": "rip-curl",
+    "label": "Rip Curl",
+    "categories": ["clothing", "wetsuit"],
+    "enabled": true
+  },
+  {
+    "id": "oneill",
+    "label": "O'Neill",
+    "categories": ["clothing", "wetsuit"],
+    "enabled": true
+  },
+  {
+    "id": "billabong",
+    "label": "Billabong",
+    "categories": ["clothing", "wetsuit"],
+    "enabled": true
+  },
+  {
+    "id": "xcel",
+    "label": "Xcel",
+    "categories": ["wetsuit"],
+    "enabled": true
+  },
+  {
+    "id": "fourth-element",
+    "label": "Fourth Element",
+    "categories": ["wetsuit", "diving-gear"],
+    "enabled": true
+  },
+  {
+    "id": "mares",
+    "label": "Mares",
+    "categories": ["diving-gear", "fins"],
+    "enabled": true
+  },
+  {
+    "id": "aqualung",
+    "label": "Aqualung",
+    "categories": ["diving-gear"],
+    "enabled": true
+  },
+  {
+    "id": "scubapro",
+    "label": "Scubapro",
+    "categories": ["diving-gear"],
+    "enabled": true
+  },
+  {
+    "id": "suunto",
+    "label": "Suunto",
+    "categories": ["watch", "gps"],
+    "enabled": true
+  },
+  {
+    "id": "apple-watch",
+    "label": "Apple Watch",
+    "categories": ["watch"],
+    "enabled": true
+  },
+  {
+    "id": "garmin-watch",
+    "label": "Garmin Watch",
+    "categories": ["watch"],
+    "enabled": true
+  },
+  {
+    "id": "polar",
+    "label": "Polar",
+    "categories": ["watch"],
+    "enabled": true
+  },
+  {
+    "id": "fitbit",
+    "label": "Fitbit",
+    "categories": ["watch"],
+    "enabled": true
+  },
+  {
+    "id": "firewire",
+    "label": "Firewire",
+    "categories": ["bike"],
+    "enabled": true
+  },
+  {
+    "id": "lib-tech",
+    "label": "Lib Tech",
+    "categories": ["bike"],
+    "enabled": true
+  },
+  {
+    "id": "torq",
+    "label": "Torq",
+    "categories": ["bike"],
+    "enabled": true
+  },
+  {
+    "id": "softech",
+    "label": "Softech",
+    "categories": ["bike"],
+    "enabled": true
+  },
+  {
+    "id": "hayden-shapes",
+    "label": "Hayden Shapes",
+    "categories": ["bike"],
+    "enabled": true
+  },
+  {
+    "id": "wavestorm",
+    "label": "Wavestorm",
+    "categories": ["bike"],
+    "enabled": true
+  },
+  {
+    "id": "byerly",
+    "label": "Byerly",
+    "categories": ["bike"],
+    "enabled": true
+  },
+  {
+    "id": "hyperlite",
+    "label": "Hyperlite",
+    "categories": ["bike"],
+    "enabled": true
+  },
+  {
+    "id": "perception-kayak",
+    "label": "Perception",
+    "categories": ["kayak"],
+    "enabled": true
+  },
+  {
+    "id": "wilderness-systems",
+    "label": "Wilderness Systems",
+    "categories": ["kayak"],
+    "enabled": true
+  },
+  {
+    "id": "jackson-kayak",
+    "label": "Jackson Kayak",
+    "categories": ["kayak"],
+    "enabled": true
+  },
+  {
+    "id": "pyranha",
+    "label": "Pyranha",
+    "categories": ["kayak"],
+    "enabled": true
+  },
+  {
+    "id": "dagger",
+    "label": "Dagger",
+    "categories": ["kayak"],
+    "enabled": true
+  },
+  {
+    "id": "pelican",
+    "label": "Pelican",
+    "categories": ["kayak"],
+    "enabled": true
+  },
+  {
+    "id": "lifetime",
+    "label": "Lifetime",
+    "categories": ["kayak"],
+    "enabled": true
+  },
+  {
+    "id": "advanced-elements",
+    "label": "Advanced Elements",
+    "categories": ["kayak"],
+    "enabled": true
+  },
+  {
+    "id": "hobie",
+    "label": "Hobie",
+    "categories": ["kayak", "fishing-gear"],
+    "enabled": true
+  },
+  {
+    "id": "shimano-reel",
+    "label": "Shimano Reel",
+    "categories": ["reel"],
+    "enabled": true
+  },
+  {
+    "id": "daiwa",
+    "label": "Daiwa",
+    "categories": ["reel", "fishing-rod"],
+    "enabled": true
+  },
+  {
+    "id": "abu-garcia",
+    "label": "Abu Garcia",
+    "categories": ["reel"],
+    "enabled": true
+  },
+  {
+    "id": "penn",
+    "label": "Penn",
+    "categories": ["reel"],
+    "enabled": true
+  },
+  {
+    "id": "pflueger",
+    "label": "Pflueger",
+    "categories": ["reel"],
+    "enabled": true
+  },
+  {
+    "id": "lew",
+    "label": "Lew",
+    "categories": ["reel"],
+    "enabled": true
+  },
+  {
+    "id": "13-fishing",
+    "label": "13 Fishing",
+    "categories": ["reel"],
+    "enabled": true
+  },
+  {
+    "id": "shimano-rod",
+    "label": "Shimano Rod",
+    "categories": ["fishing-rod"],
+    "enabled": true
+  },
+  {
+    "id": "st-croix",
+    "label": "St. Croix",
+    "categories": ["fishing-rod"],
+    "enabled": true
+  },
+  {
+    "id": "cabelas",
+    "label": "Cabelas",
+    "categories": ["fishing-rod", "tackle-box"],
+    "enabled": true
+  },
+  {
+    "id": "bass-pro",
+    "label": "Bass Pro",
+    "categories": ["fishing-rod", "tackle-box"],
+    "enabled": true
+  },
+  {
+    "id": "ugly-stik",
+    "label": "Ugly Stik",
+    "categories": ["fishing-rod"],
+    "enabled": true
+  },
+  {
+    "id": "berkley",
+    "label": "Berkley",
+    "categories": ["fishing-line"],
+    "enabled": true
+  },
+  {
+    "id": "spyderco",
+    "label": "Spyderco",
+    "categories": ["knife"],
+    "enabled": true
+  },
+  {
+    "id": "benchmade",
+    "label": "Benchmade",
+    "categories": ["knife"],
+    "enabled": true
+  },
+  {
+    "id": "kershaw",
+    "label": "Kershaw",
+    "categories": ["knife"],
+    "enabled": true
+  },
+  {
+    "id": "victorinox",
+    "label": "Victorinox",
+    "categories": ["knife"],
+    "enabled": true
+  },
+  {
+    "id": "wusthof",
+    "label": "Wusthof",
+    "categories": ["knife"],
+    "enabled": true
+  },
+  {
+    "id": "zwilling",
+    "label": "Zwilling",
+    "categories": ["knife"],
+    "enabled": true
+  },
+  {
+    "id": "henckel",
+    "label": "Henckels",
+    "categories": ["knife"],
+    "enabled": true
+  },
+  {
+    "id": "global-knives",
+    "label": "Global Knives",
+    "categories": ["knife"],
+    "enabled": true
+  },
+  {
+    "id": "yaqoobian",
+    "label": "Yaqoobian",
+    "categories": ["knife"],
+    "enabled": true
+  },
+  {
+    "id": "deba",
+    "label": "Deba",
+    "categories": ["knife"],
+    "enabled": true
+  },
+  {
+    "id": "fender",
+    "label": "Fender",
+    "categories": ["instrument"],
+    "enabled": true
+  },
+  {
+    "id": "gibson",
+    "label": "Gibson",
+    "categories": ["instrument"],
+    "enabled": true
+  },
+  {
+    "id": "ibanez",
+    "label": "Ibanez",
+    "categories": ["instrument"],
+    "enabled": true
+  },
+  {
+    "id": "yamaha",
+    "label": "Yamaha",
+    "categories": ["instrument"],
+    "enabled": true
+  },
+  {
+    "id": "taylor",
+    "label": "Taylor",
+    "categories": ["instrument"],
+    "enabled": true
+  },
+  {
+    "id": "martin",
+    "label": "Martin",
+    "categories": ["instrument"],
+    "enabled": true
+  },
+  {
+    "id": "takamine",
+    "label": "Takamine",
+    "categories": ["instrument"],
+    "enabled": true
+  },
+  {
+    "id": "roland",
+    "label": "Roland",
+    "categories": ["instrument"],
+    "enabled": true
+  },
+  {
+    "id": "nord",
+    "label": "Nord",
+    "categories": ["instrument"],
+    "enabled": true
+  },
+  {
+    "id": "korg",
+    "label": "Korg",
+    "categories": ["instrument"],
+    "enabled": true
+  },
+  {
+    "id": "shure-drum",
+    "label": "Shure Drum",
+    "categories": ["instrument"],
+    "enabled": true
+  },
+  {
+    "id": "ludwig",
+    "label": "Ludwig",
+    "categories": ["instrument"],
+    "enabled": true
+  },
+  {
+    "id": "pearl-drums",
+    "label": "Pearl",
+    "categories": ["instrument"],
+    "enabled": true
+  },
+  {
+    "id": "yamaha-drums",
+    "label": "Yamaha Drums",
+    "categories": ["instrument"],
+    "enabled": true
+  },
+  {
+    "id": "zildjian",
+    "label": "Zildjian",
+    "categories": ["instrument"],
+    "enabled": true
+  },
+  {
+    "id": "sabian",
+    "label": "Sabian",
+    "categories": ["instrument"],
+    "enabled": true
+  },
+  {
+    "id": "meinl",
+    "label": "Meinl",
+    "categories": ["instrument"],
+    "enabled": true
+  },
+  {
+    "id": "yamaha-violin",
+    "label": "Yamaha Violin",
+    "categories": ["instrument"],
+    "enabled": true
+  },
+  {
+    "id": "mendini",
+    "label": "Mendini",
+    "categories": ["instrument"],
+    "enabled": true
+  },
+  {
+    "id": "thumann",
+    "label": "Thumann",
+    "categories": ["instrument"],
+    "enabled": true
+  },
+  {
+    "id": "kala",
+    "label": "Kala",
+    "categories": ["instrument"],
+    "enabled": true
+  },
+  {
+    "id": "lanikai",
+    "label": "Lanikai",
+    "categories": ["instrument"],
+    "enabled": true
+  },
+  {
+    "id": "breville",
+    "label": "Breville",
+    "categories": ["oven", "coffee-maker"],
+    "enabled": true
+  },
+  {
+    "id": "le-creuset",
+    "label": "Le Creuset",
+    "categories": ["pot"],
+    "enabled": true
+  },
+  {
+    "id": "staub",
+    "label": "Staub",
+    "categories": ["pot"],
+    "enabled": true
+  },
+  {
+    "id": "all-clad",
+    "label": "All-Clad",
+    "categories": ["pot", "pan"],
+    "enabled": true
+  },
+  {
+    "id": "cuisinart",
+    "label": "Cuisinart",
+    "categories": ["mixer", "coffee-maker"],
+    "enabled": true
+  },
+  {
+    "id": "kitchenaid",
+    "label": "KitchenAid",
+    "categories": ["mixer"],
+    "enabled": true
+  },
+  {
+    "id": "viking",
+    "label": "Viking",
+    "categories": ["oven"],
+    "enabled": true
+  },
+  {
+    "id": "la-pavoni",
+    "label": "La Pavoni",
+    "categories": ["coffee-maker"],
+    "enabled": true
+  },
+  {
+    "id": "rancilio",
+    "label": "Rancilio",
+    "categories": ["coffee-maker"],
+    "enabled": true
+  },
+  {
+    "id": "rocket",
+    "label": "Rocket Espresso",
+    "categories": ["coffee-maker"],
+    "enabled": true
+  },
+  {
+    "id": "jura",
+    "label": "Jura",
+    "categories": ["coffee-maker"],
+    "enabled": true
+  },
+  {
+    "id": "miele",
+    "label": "Miele",
+    "categories": ["oven", "coffee-maker"],
+    "enabled": true
+  },
+  {
+    "id": "bosch",
+    "label": "Bosch",
+    "categories": ["oven"],
+    "enabled": true
+  },
+  {
+    "id": "siemens",
+    "label": "Siemens",
+    "categories": ["oven"],
+    "enabled": true
+  },
+  {
+    "id": "neff",
+    "label": "Neff",
+    "categories": ["oven"],
+    "enabled": true
+  },
+  {
+    "id": "electrolux",
+    "label": "Electrolux",
+    "categories": ["oven"],
+    "enabled": true
+  },
+  {
+    "id": "beko",
+    "label": "Beko",
+    "categories": ["oven"],
+    "enabled": true
+  },
+  {
+    "id": "indesit",
+    "label": "Indesit",
+    "categories": ["oven"],
+    "enabled": true
+  },
+  {
+    "id": "hotpoint",
+    "label": "Hotpoint",
+    "categories": ["oven"],
+    "enabled": true
+  },
+  {
+    "id": "zanussi",
+    "label": "Zanussi",
+    "categories": ["oven"],
+    "enabled": true
+  },
+  {
+    "id": "husqvarna",
+    "label": "Husqvarna",
+    "categories": ["garden-tool"],
+    "enabled": true
+  },
+  {
+    "id": "stihl",
+    "label": "Stihl",
+    "categories": ["garden-tool"],
+    "enabled": true
+  },
+  {
+    "id": "echo",
+    "label": "Echo",
+    "categories": ["garden-tool"],
+    "enabled": true
+  },
+  {
+    "id": "makita",
+    "label": "Makita",
+    "categories": ["tools", "garden-tool"],
+    "enabled": true
+  },
+  {
+    "id": "dewalt",
+    "label": "DeWalt",
+    "categories": ["tools"],
+    "enabled": true
+  },
+  {
+    "id": "bosch-tools",
+    "label": "Bosch Tools",
+    "categories": ["tools"],
+    "enabled": true
+  },
+  {
+    "id": "ryobi",
+    "label": "Ryobi",
+    "categories": ["tools"],
+    "enabled": true
+  },
+  {
+    "id": "black-decker",
+    "label": "Black & Decker",
+    "categories": ["tools"],
+    "enabled": true
+  }
+]

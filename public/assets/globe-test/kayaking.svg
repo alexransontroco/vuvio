@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" fill="none">
+  <defs>
+    <linearGradient id="kayak" x1="24" y1="50" x2="104" y2="84" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#D9FBFF"/>
+      <stop offset="0.4" stop-color="#4FE7D3"/>
+      <stop offset="1" stop-color="#1D8FFF"/>
+    </linearGradient>
+    <linearGradient id="paddle" x1="32" y1="18" x2="96" y2="110" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#0C3C8C"/>
+      <stop offset="1" stop-color="#7BE9FF"/>
+    </linearGradient>
+  </defs>
+  <path d="M24 80c8-16 24-26 40-26s32 10 40 26c-8 8-24 14-40 14S32 88 24 80Z" fill="url(#kayak)"/>
+  <path d="M40 46c5 4 11 6 24 6s19-2 24-6c-3 15-11 22-24 22s-21-7-24-22Z" fill="rgba(13,47,99,0.42)"/>
+  <path d="M64 18v54" stroke="url(#paddle)" stroke-width="5" stroke-linecap="round"/>
+  <path d="M44 32h-8" stroke="url(#paddle)" stroke-width="5" stroke-linecap="round"/>
+  <path d="M84 32h8" stroke="url(#paddle)" stroke-width="5" stroke-linecap="round"/>
+  <path d="M39 52c7 3 13 4 25 4 11 0 17-1 25-4" stroke="rgba(255,255,255,0.5)" stroke-width="4" stroke-linecap="round"/>
+</svg>

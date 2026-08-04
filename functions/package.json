@@ -1,0 +1,23 @@
+{
+  "name": "vuvio-functions",
+  "private": true,
+  "type": "module",
+  "main": "lib/index.js",
+  "engines": {
+    "node": "20"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "test": "node --test \"lib/test/**/*.test.js\"",
+    "test:build": "tsc -p tsconfig.json && node --test \"lib/test/**/*.test.js\""
+  },
+  "dependencies": {
+    "firebase-admin": "^13.0.0",
+    "firebase-functions": "^6.0.1"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "@types/node-fetch": "^2.6.13",
+    "typescript": "^5.7.2"
+  }
+}

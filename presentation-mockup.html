@@ -1,0 +1,868 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vuvio - Gear Discovery Presentation</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      background: linear-gradient(135deg, #04131f 0%, #071929 50%, #051220 100%);
+      color: #f5fbff;
+      overflow: hidden;
+      height: 100vh;
+    }
+
+    .container {
+      width: 100%;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      padding: 60px 80px;
+      position: relative;
+    }
+
+    /* Header with logo */
+    .header {
+      position: absolute;
+      top: 40px;
+      left: 80px;
+      z-index: 100;
+    }
+
+    .logo {
+      font-size: 20px;
+      font-weight: 700;
+      color: #35e3dc;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    /* Main content layout */
+    .content {
+      display: grid;
+      grid-template-columns: 1fr 2.5fr 1fr;
+      gap: 60px;
+      align-items: center;
+      flex: 1;
+      position: relative;
+    }
+
+    /* Left text panel */
+    .left-panel {
+      display: flex;
+      flex-direction: column;
+      gap: 80px;
+    }
+
+    .step {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .step-number {
+      font-size: 14px;
+      font-weight: 700;
+      color: #35e3dc;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+    }
+
+    .step-title {
+      font-size: 18px;
+      font-weight: 600;
+      color: #f5fbff;
+      line-height: 1.3;
+    }
+
+    .step-description {
+      font-size: 13px;
+      color: rgba(142, 172, 190, 0.8);
+      line-height: 1.6;
+    }
+
+    /* Center - Phone screens */
+    .phones-container {
+      position: relative;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 600px;
+    }
+
+    .phone {
+      position: absolute;
+      width: 280px;
+      height: 560px;
+      border-radius: 40px;
+      border: 8px solid #1a1a1a;
+      box-shadow:
+        0 0 80px rgba(53, 227, 220, 0.15),
+        0 20px 60px rgba(0, 0, 0, 0.6);
+      background: #04131f;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .phone:nth-child(1) { transform: translateX(-280px) perspective(1000px) rotateY(15deg); z-index: 3; }
+    .phone:nth-child(2) { z-index: 5; transform: scale(1.05); }
+    .phone:nth-child(3) { transform: translateX(280px) perspective(1000px) rotateY(-15deg); z-index: 3; }
+
+    /* Phone status bar */
+    .phone-status {
+      height: 32px;
+      background: #040f17;
+      border-bottom: 0.5px solid rgba(53, 227, 220, 0.1);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 12px;
+      font-size: 11px;
+      color: #8eacbe;
+    }
+
+    .phone-content {
+      flex: 1;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Screen 1: Profile */
+    .screen-profile {
+      padding: 16px;
+      font-size: 13px;
+      overflow-y: auto;
+    }
+
+    .profile-header {
+      text-align: center;
+      margin-bottom: 20px;
+      padding-bottom: 16px;
+      border-bottom: 0.5px solid rgba(53, 227, 220, 0.1);
+    }
+
+    .profile-avatar {
+      width: 64px;
+      height: 64px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #35e3dc 0%, #1ec8ba 100%);
+      margin: 0 auto 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 28px;
+    }
+
+    .profile-name {
+      font-weight: 600;
+      color: #f5fbff;
+      font-size: 14px;
+    }
+
+    .profile-handle {
+      font-size: 12px;
+      color: rgba(142, 172, 190, 0.6);
+      margin-bottom: 8px;
+    }
+
+    .verified {
+      display: inline-block;
+      width: 14px;
+      height: 14px;
+      background: #35e3dc;
+      border-radius: 50%;
+      margin-left: 4px;
+      font-size: 9px;
+      color: #03212a;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .profile-stats {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 12px;
+      margin: 12px 0;
+      padding: 12px 0;
+      border-bottom: 0.5px solid rgba(53, 227, 220, 0.1);
+    }
+
+    .stat {
+      text-align: center;
+    }
+
+    .stat-value {
+      font-weight: 600;
+      color: #35e3dc;
+      font-size: 14px;
+    }
+
+    .stat-label {
+      font-size: 11px;
+      color: rgba(142, 172, 190, 0.6);
+      margin-top: 2px;
+    }
+
+    .profile-bio {
+      font-size: 12px;
+      color: rgba(142, 172, 190, 0.8);
+      line-height: 1.4;
+      margin: 12px 0;
+      padding: 12px;
+      border: 0.5px solid rgba(53, 227, 220, 0.1);
+      border-radius: 10px;
+    }
+
+    .gear-section {
+      margin-top: 12px;
+    }
+
+    .gear-title {
+      font-size: 12px;
+      font-weight: 600;
+      color: #35e3dc;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 8px;
+    }
+
+    .gear-item {
+      display: flex;
+      gap: 8px;
+      padding: 8px;
+      margin-bottom: 6px;
+      border: 0.5px solid rgba(53, 227, 220, 0.1);
+      border-radius: 8px;
+      background: rgba(53, 227, 220, 0.05);
+    }
+
+    .gear-icon {
+      width: 32px;
+      height: 32px;
+      border-radius: 6px;
+      background: linear-gradient(135deg, rgba(53, 227, 220, 0.3), rgba(30, 200, 186, 0.3));
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+    }
+
+    .gear-info {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+
+    .gear-category {
+      font-size: 11px;
+      color: rgba(142, 172, 190, 0.6);
+    }
+
+    .gear-name {
+      font-size: 12px;
+      font-weight: 600;
+      color: #f5fbff;
+    }
+
+    .gear-button {
+      width: 100%;
+      padding: 10px;
+      margin-top: 8px;
+      background: linear-gradient(135deg, rgba(53, 227, 220, 0.2), rgba(53, 227, 220, 0.1));
+      border: 1px solid rgba(53, 227, 220, 0.3);
+      border-radius: 10px;
+      color: #35e3dc;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 200ms ease;
+    }
+
+    .gear-button:hover {
+      background: rgba(53, 227, 220, 0.15);
+      border-color: rgba(53, 227, 220, 0.5);
+    }
+
+    .gear-note {
+      font-size: 11px;
+      color: rgba(142, 172, 190, 0.6);
+      margin-top: 4px;
+      text-align: center;
+    }
+
+    /* Screen 2: Live Stream */
+    .screen-live {
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      position: relative;
+    }
+
+    .live-video {
+      flex: 1;
+      background: linear-gradient(135deg, #1a3a2a 0%, #0f2a1a 100%);
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: rgba(142, 172, 190, 0.3);
+      font-size: 11px;
+      overflow: hidden;
+    }
+
+    .video-handlebars {
+      position: absolute;
+      bottom: 20%;
+      left: 0;
+      right: 0;
+      height: 40px;
+      opacity: 0.4;
+    }
+
+    .handlebar {
+      width: 2px;
+      height: 30px;
+      background: rgba(255, 255, 255, 0.3);
+      position: absolute;
+      bottom: 0;
+    }
+
+    .handlebar:nth-child(1) { left: 20%; }
+    .handlebar:nth-child(2) { left: 25%; }
+    .handlebar:nth-child(3) { right: 25%; }
+    .handlebar:nth-child(4) { right: 20%; }
+
+    .live-header {
+      position: absolute;
+      top: 12px;
+      left: 12px;
+      right: 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 11px;
+      z-index: 10;
+    }
+
+    .live-info {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .live-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: #ff3b3b;
+      animation: pulse 1s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+
+    .live-badge {
+      background: rgba(255, 59, 59, 0.2);
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 10px;
+      font-weight: 600;
+      color: #ff3b3b;
+    }
+
+    .live-viewers {
+      color: rgba(142, 172, 190, 0.8);
+    }
+
+    .live-timer {
+      color: rgba(142, 172, 190, 0.8);
+    }
+
+    .live-actions {
+      position: absolute;
+      right: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      z-index: 10;
+    }
+
+    .action-btn {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: rgba(0, 0, 0, 0.3);
+      border: 0.5px solid rgba(255, 255, 255, 0.2);
+      color: #f5fbff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      cursor: pointer;
+    }
+
+    .backpack-icon {
+      position: absolute;
+      right: 20px;
+      bottom: 100px;
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      background: rgba(53, 227, 220, 0.2);
+      border: 2px solid rgba(53, 227, 220, 0.6);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+      cursor: pointer;
+      box-shadow: 0 0 20px rgba(53, 227, 220, 0.3);
+      z-index: 20;
+      transition: all 200ms ease;
+    }
+
+    .backpack-icon:hover {
+      background: rgba(53, 227, 220, 0.3);
+      box-shadow: 0 0 30px rgba(53, 227, 220, 0.5);
+    }
+
+    .backpack-label {
+      position: absolute;
+      right: 64px;
+      bottom: 115px;
+      background: rgba(0, 0, 0, 0.6);
+      padding: 6px 10px;
+      border-radius: 6px;
+      font-size: 11px;
+      color: #35e3dc;
+      font-weight: 600;
+      white-space: nowrap;
+      pointer-events: none;
+    }
+
+    .gear-count {
+      position: absolute;
+      bottom: 12px;
+      left: 12px;
+      right: 12px;
+      background: rgba(0, 0, 0, 0.5);
+      padding: 8px 12px;
+      border-radius: 12px;
+      font-size: 12px;
+      color: #35e3dc;
+      border: 0.5px solid rgba(53, 227, 220, 0.3);
+      z-index: 10;
+    }
+
+    /* Screen 3: Gear Panel */
+    .screen-gear {
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      position: relative;
+    }
+
+    .gear-live-video {
+      flex: 1;
+      background: linear-gradient(135deg, #1a3a2a 0%, #0f2a1a 100%);
+      position: relative;
+    }
+
+    .gear-panel {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 280px;
+      background: linear-gradient(180deg, rgba(8, 24, 40, 0.95) 0%, rgba(4, 19, 31, 0.98) 100%);
+      border-top: 0.5px solid rgba(53, 227, 220, 0.2);
+      backdrop-filter: blur(12px);
+      border-radius: 20px 20px 0 0;
+      display: flex;
+      flex-direction: column;
+      padding: 16px;
+      overflow-y: auto;
+      z-index: 15;
+    }
+
+    .panel-header {
+      margin-bottom: 12px;
+      padding-bottom: 12px;
+      border-bottom: 0.5px solid rgba(53, 227, 220, 0.1);
+    }
+
+    .panel-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: #f5fbff;
+    }
+
+    .panel-subtitle {
+      font-size: 12px;
+      color: rgba(142, 172, 190, 0.6);
+      margin-top: 2px;
+    }
+
+    .panel-gear-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .panel-gear-item {
+      display: flex;
+      gap: 8px;
+      padding: 8px;
+      background: rgba(53, 227, 220, 0.05);
+      border: 0.5px solid rgba(53, 227, 220, 0.1);
+      border-radius: 8px;
+    }
+
+    .panel-gear-icon {
+      width: 28px;
+      height: 28px;
+      border-radius: 6px;
+      background: linear-gradient(135deg, rgba(53, 227, 220, 0.3), rgba(30, 200, 186, 0.3));
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+    }
+
+    .panel-gear-info {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .panel-gear-details {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .panel-gear-name {
+      font-size: 12px;
+      font-weight: 600;
+      color: #f5fbff;
+    }
+
+    .panel-gear-category {
+      font-size: 11px;
+      color: rgba(142, 172, 190, 0.6);
+      margin-top: 1px;
+    }
+
+    .panel-gear-badge {
+      font-size: 10px;
+      color: #35e3dc;
+      background: rgba(53, 227, 220, 0.1);
+      padding: 2px 6px;
+      border-radius: 4px;
+    }
+
+    /* Right text panel */
+    .right-panel {
+      display: flex;
+      flex-direction: column;
+      gap: 40px;
+    }
+
+    /* Bottom tagline */
+    .tagline {
+      position: absolute;
+      bottom: 40px;
+      left: 80px;
+      right: 80px;
+      text-align: center;
+    }
+
+    .tagline-text {
+      font-size: 20px;
+      font-weight: 600;
+      line-height: 1.4;
+      margin-bottom: 20px;
+    }
+
+    .tagline-highlight {
+      color: #35e3dc;
+    }
+
+    .benefits {
+      display: flex;
+      justify-content: center;
+      gap: 40px;
+    }
+
+    .benefit {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      font-size: 11px;
+      font-weight: 600;
+      color: rgba(142, 172, 190, 0.7);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .benefit-icon {
+      width: 28px;
+      height: 28px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <div class="logo">🌍 VUVIO</div>
+    </div>
+
+    <div class="content">
+      <!-- Left panel -->
+      <div class="left-panel">
+        <div class="step">
+          <div class="step-number">1. SET UP YOUR GEAR</div>
+          <div class="step-description">Cyclists add the exact gear they ride with to their profile.</div>
+        </div>
+        <div class="step">
+          <div class="step-number">2. GO LIVE</div>
+          <div class="step-description">Alex goes live with a POV mountain bike stream.</div>
+        </div>
+        <div class="step">
+          <div class="step-number">3. VIEW GEAR INSTANTLY</div>
+          <div class="step-description">Viewers can explore every gear item used in the live without leaving the stream.</div>
+        </div>
+      </div>
+
+      <!-- Center - Phones -->
+      <div class="phones-container">
+        <!-- Phone 1: Profile -->
+        <div class="phone">
+          <div class="phone-status">
+            <div>9:41</div>
+            <div>📶 📡 🔋</div>
+          </div>
+          <div class="phone-content">
+            <div class="screen-profile">
+              <div class="profile-header">
+                <div class="profile-avatar">👨‍🚴</div>
+                <div class="profile-name">Alex R. <span class="verified">✓</span></div>
+                <div class="profile-handle">@alexrides</div>
+              </div>
+              <div class="profile-stats">
+                <div class="stat">
+                  <div class="stat-value">1.2K</div>
+                  <div class="stat-label">Followers</div>
+                </div>
+                <div class="stat">
+                  <div class="stat-value">520</div>
+                  <div class="stat-label">Following</div>
+                </div>
+                <div class="stat">
+                  <div class="stat-value">48</div>
+                  <div class="stat-label">Lives</div>
+                </div>
+              </div>
+              <div class="profile-bio">Mountain biking enthusiast from Whistler. Here to share every ride, every view, every moment. 🏔️</div>
+              <div class="gear-section">
+                <div class="gear-title">My Gear</div>
+                <div class="gear-item">
+                  <div class="gear-icon">🚲</div>
+                  <div class="gear-info">
+                    <div class="gear-category">Bike</div>
+                    <div class="gear-name">TrailRider Carbon X</div>
+                  </div>
+                </div>
+                <div class="gear-item">
+                  <div class="gear-icon">🎯</div>
+                  <div class="gear-info">
+                    <div class="gear-category">Helmet</div>
+                    <div class="gear-name">AeroShield Pro</div>
+                  </div>
+                </div>
+                <div class="gear-item">
+                  <div class="gear-icon">⭕</div>
+                  <div class="gear-info">
+                    <div class="gear-category">Tires</div>
+                    <div class="gear-name">GripTread 2.4</div>
+                  </div>
+                </div>
+                <div class="gear-item">
+                  <div class="gear-icon">📷</div>
+                  <div class="gear-info">
+                    <div class="gear-category">Camera</div>
+                    <div class="gear-name">ActionCam 5</div>
+                  </div>
+                </div>
+                <div class="gear-item">
+                  <div class="gear-icon">🧤</div>
+                  <div class="gear-info">
+                    <div class="gear-category">Gloves</div>
+                    <div class="gear-name">TerraGrip Lite</div>
+                  </div>
+                </div>
+                <div class="gear-item">
+                  <div class="gear-icon">🎒</div>
+                  <div class="gear-info">
+                    <div class="gear-category">Backpack</div>
+                    <div class="gear-name">FlowPack 12L</div>
+                  </div>
+                </div>
+                <button class="gear-button">Select gear for live</button>
+                <div class="gear-note">This gear will be shown in your next live</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Phone 2: Live Stream -->
+        <div class="phone">
+          <div class="phone-status">
+            <div>9:41</div>
+            <div>📶 📡 🔋</div>
+          </div>
+          <div class="phone-content">
+            <div class="screen-live">
+              <div class="live-video">
+                <div class="video-handlebars">
+                  <div class="handlebar"></div>
+                  <div class="handlebar"></div>
+                  <div class="handlebar"></div>
+                  <div class="handlebar"></div>
+                </div>
+                <span>POV Mountain Trail</span>
+                <div class="live-header">
+                  <div class="live-info">
+                    <div style="display: flex; flex-direction: column; gap: 2px;">
+                      <div style="font-weight: 600; color: #f5fbff; font-size: 12px;">Alex R.</div>
+                      <div style="font-size: 11px; color: rgba(142, 172, 190, 0.6);">Whistler, Canada</div>
+                    </div>
+                  </div>
+                  <div style="display: flex; gap: 6px; align-items: center;">
+                    <div class="live-dot"></div>
+                    <div class="live-badge">LIVE</div>
+                  </div>
+                </div>
+                <div class="live-actions">
+                  <div class="action-btn">❤️</div>
+                  <div class="action-btn">💬</div>
+                  <div class="action-btn">📤</div>
+                  <div class="action-btn">⋮</div>
+                </div>
+                <div class="backpack-icon">🎒</div>
+                <div class="backpack-label">Tap to see gear</div>
+                <div class="gear-count">6 gear items in this live</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Phone 3: Gear Panel -->
+        <div class="phone">
+          <div class="phone-status">
+            <div>9:41</div>
+            <div>📶 📡 🔋</div>
+          </div>
+          <div class="phone-content">
+            <div class="screen-gear">
+              <div class="gear-live-video"></div>
+              <div class="gear-panel">
+                <div class="panel-header">
+                  <div class="panel-title">Gear used in this live</div>
+                </div>
+                <div class="panel-gear-list">
+                  <div class="panel-gear-item">
+                    <div class="panel-gear-icon">🚲</div>
+                    <div class="panel-gear-info">
+                      <div class="panel-gear-details">
+                        <div class="panel-gear-name">TrailRider Carbon X</div>
+                        <div class="panel-gear-category">Bike</div>
+                      </div>
+                      <div class="panel-gear-badge">Using now</div>
+                    </div>
+                  </div>
+                  <div class="panel-gear-item">
+                    <div class="panel-gear-icon">🎯</div>
+                    <div class="panel-gear-info">
+                      <div class="panel-gear-details">
+                        <div class="panel-gear-name">AeroShield Pro</div>
+                        <div class="panel-gear-category">Helmet</div>
+                      </div>
+                      <div class="panel-gear-badge">Using now</div>
+                    </div>
+                  </div>
+                  <div class="panel-gear-item">
+                    <div class="panel-gear-icon">⭕</div>
+                    <div class="panel-gear-info">
+                      <div class="panel-gear-details">
+                        <div class="panel-gear-name">GripTread 2.4</div>
+                        <div class="panel-gear-category">Tires</div>
+                      </div>
+                      <div class="panel-gear-badge">Using now</div>
+                    </div>
+                  </div>
+                  <div class="panel-gear-item">
+                    <div class="panel-gear-icon">📷</div>
+                    <div class="panel-gear-info">
+                      <div class="panel-gear-details">
+                        <div class="panel-gear-name">ActionCam 5</div>
+                        <div class="panel-gear-category">Camera</div>
+                      </div>
+                      <div class="panel-gear-badge">Using now</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right panel -->
+      <div class="right-panel">
+        <!-- Empty for balance -->
+      </div>
+    </div>
+
+    <!-- Bottom tagline -->
+    <div class="tagline">
+      <div class="tagline-text">
+        From watching the world to <span class="tagline-highlight">discovering the gear</span> behind every perspective.
+      </div>
+      <div class="benefits">
+        <div class="benefit">
+          <div class="benefit-icon">🌍</div>
+          <div>Anyone, Anywhere</div>
+        </div>
+        <div class="benefit">
+          <div class="benefit-icon">🔍</div>
+          <div>Gear Transparency</div>
+        </div>
+        <div class="benefit">
+          <div class="benefit-icon">✓</div>
+          <div>Trusted Choices</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

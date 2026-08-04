@@ -1,0 +1,162 @@
+{
+  "common": {
+    "accept": "Accepter",
+    "addImage": "Ajouter une image",
+    "back": "Retour",
+    "block": "Bloquer",
+    "cancel": "Annuler",
+    "close": "Fermer",
+    "comments": "Commentaires",
+    "delete": "Supprimer",
+    "edit": "Modifier",
+    "error": "Erreur",
+    "follow": "Suivre",
+    "following": "Suivi",
+    "hide": "Masquer",
+    "ignore": "Ignorer",
+    "loading": "Chargement",
+    "manage": "Gérer",
+    "moreActions": "Plus d’actions",
+    "notifyMe": "Me prévenir",
+    "notified": "Notifié",
+    "open": "Ouvrir",
+    "remove": "Supprimer",
+    "report": "Signaler",
+    "save": "Enregistrer",
+    "saving": "Enregistrement",
+    "search": "Rechercher",
+    "send": "Envoyer",
+    "sendMessage": "Envoyer un message",
+    "settings": "Réglages",
+    "share": "Partager",
+    "showLess": "Voir moins",
+    "showMore": "Voir plus",
+    "unfollow": "Ne plus suivre",
+    "viewDetails": "Voir les détails",
+    "viewProfile": "Voir le profil",
+    "watch": "Regarder"
+  },
+  "navigation": {
+    "home": "Accueil",
+    "discover": "Découvrir",
+    "globe": "Globe",
+    "messages": "Messages",
+    "profile": "Profil",
+    "main": "Navigation principale",
+    "create": "Créer",
+    "showNavigation": "Afficher la navigation",
+    "collapseNavigation": "Réduire la navigation",
+    "watch": "Watch",
+    "explore": "Explorer"
+  },
+  "home": {
+    "aria": "Accueil Vuvio",
+    "tabs": {
+      "forYou": "Pour toi",
+      "live": "En direct",
+      "following": "Suivis"
+    },
+    "search": "Rechercher",
+    "messages": "Ouvrir les messages",
+    "notifications": "Notifications",
+    "watchLive": "Regarder {{title}}",
+    "nearby": {
+      "title": "En direct à proximité",
+      "seeAll": "Voir tout",
+      "loading": "Recherche des lives proches",
+      "denied": "Autorisation de localisation désactivée",
+      "unavailable": "Géolocalisation indisponible",
+      "empty": "Aucun live proche pour le moment",
+      "fallback": "Lives populaires dans votre région",
+      "none": "Aucun contenu proche n’est disponible pour l’instant."
+    },
+    "upcoming": {
+      "title": "À ne pas manquer",
+      "empty": "Aucun live programmé pour le moment."
+    },
+    "empty": {
+      "following": "Vous ne suivez encore aucun créateur.",
+      "discoverLives": "Découvrir des lives",
+      "noLives": "Aucun live disponible pour le moment."
+    }
+  },
+  "explore": {
+    "aria": "Découvrir les POV",
+    "empty": "Aucun POV disponible pour le moment.",
+    "back": "Retour",
+    "filters": "Filtres",
+    "filterGroup": "Filtres Découvrir",
+    "actions": "Actions du POV",
+    "favoriteAdd": "Ajouter aux favoris",
+    "favoriteRemove": "Retirer des favoris",
+    "openComments": "Ouvrir les commentaires du live",
+    "sharePov": "Partager ce POV",
+    "controlledMix": "Mix contrôlé",
+    "swipeHint": "Swipe vers le haut pour le suivant",
+    "commentsFor": "Commentaires de {{title}}",
+    "closeComments": "Fermer les commentaires",
+    "noComments": "Aucun commentaire pour le moment.",
+    "preview": "Aperçu POV {{title}}",
+    "liveTitleFallback": "POV en direct",
+    "modes": {
+      "forYou": "Pour toi",
+      "random": "Aléatoire"
+    },
+    "filtersList": {
+      "air": "Air",
+      "land": "Terre",
+      "water": "Eau",
+      "urban": "Urbain",
+      "cityTours": "City Tours",
+      "live": "En direct",
+      "replays": "Replays"
+    },
+    "povTypes": {
+      "drone": "Drone",
+      "fixed": "Vue fixe",
+      "board": "Vue planche",
+      "underwater": "Sous l’eau",
+      "walking": "À pied",
+      "chestCamera": "Caméra poitrine",
+      "vehicle": "À bord",
+      "fallback": "POV"
+    }
+  },
+  "globe": {
+    "title": "Globe",
+    "loading": "Chargement du globe",
+    "closeSelectedLive": "Fermer le live sélectionné",
+    "close": "Fermer",
+    "liveCreatedLocally": "Live créé localement",
+    "liveNow": "En direct maintenant",
+    "watch": "Regarder"
+  },
+  "live": {
+    "badge": "En direct",
+    "soundOn": "son POV",
+    "next": "Live suivant",
+    "sendStar": "Envoyer une étoile",
+    "privateMessage": "Envoyer un message privé",
+    "messagePrefill": "Bonjour, je viens de voir ton live « {{description}} »."
+  },
+  "create": {
+    "step": "Étape {{step}} sur 6",
+    "gearTitle": "Équipement",
+    "gearSubtitle": "Vérifiez le matériel que vous utiliserez avant de démarrer.",
+    "captureSetup": "Captation",
+    "captureSetupDesc": "Matériel utilisé pour filmer et diffuser votre live.",
+    "activityEquipment": "Équipement d'activité",
+    "addCaptureEquipment": "Ajouter du matériel de captation",
+    "addActivityEquipment": "Ajouter du matériel d'activité",
+    "suggestedFromActivity": "Suggéré selon votre activité",
+    "usePreviousSetup": "Configuration précédente",
+    "defaultSetup": "Configuration par défaut",
+    "previewTitle": "Aperçu",
+    "autoCover": "Couverture auto",
+    "editGear": "Modifier l'équipement",
+    "startLiveNow": "Démarrer le live",
+    "cameraStarting": "Démarrage de la caméra…",
+    "cameraDenied": "Accès caméra refusé",
+    "cameraUnavailable": "Aucune caméra disponible"
+  }
+}

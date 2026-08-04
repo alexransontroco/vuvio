@@ -1,0 +1,109 @@
+.gear-image-uploader {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.gear-image-uploader__label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #8eacbe;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.gear-image-uploader__container {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px;
+  border: 0.5px solid rgba(53, 227, 220, 0.2);
+  border-radius: 14px;
+  background: rgba(8, 24, 40, 0.4);
+}
+
+.gear-image-uploader__preview {
+  display: flex;
+  justify-content: center;
+}
+
+.gear-image-uploader__actions {
+  display: flex;
+  gap: 8px;
+}
+
+.gear-image-uploader__upload-btn,
+.gear-image-uploader__remove-btn {
+  flex: 1;
+  padding: 10px 12px;
+  border: 0.5px solid rgba(53, 227, 220, 0.3);
+  border-radius: 10px;
+  background: rgba(53, 227, 220, 0.08);
+  color: #35e3dc;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  transition: all 200ms ease;
+}
+
+.gear-image-uploader__upload-btn:hover:not(:disabled) {
+  background: rgba(53, 227, 220, 0.15);
+  border-color: rgba(53, 227, 220, 0.5);
+}
+
+.gear-image-uploader__remove-btn {
+  flex: 0.5;
+  color: rgba(255, 59, 59, 0.7);
+  border-color: rgba(255, 59, 59, 0.2);
+  background: transparent;
+}
+
+.gear-image-uploader__remove-btn:hover:not(:disabled) {
+  border-color: rgba(255, 59, 59, 0.5);
+  background: rgba(255, 59, 59, 0.05);
+}
+
+.gear-image-uploader__upload-btn:disabled,
+.gear-image-uploader__remove-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.gear-image-uploader__input {
+  display: none;
+}
+
+.gear-image-uploader__error {
+  padding: 8px 12px;
+  border-radius: 8px;
+  background: rgba(255, 59, 59, 0.1);
+  border: 0.5px solid rgba(255, 59, 59, 0.3);
+  color: rgba(255, 59, 59, 0.8);
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.gear-image-uploader__hint {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  color: rgba(142, 172, 190, 0.6);
+  line-height: 1.4;
+}
+
+.gear-image-uploader__hint svg {
+  flex-shrink: 0;
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .gear-image-uploader__upload-btn,
+  .gear-image-uploader__remove-btn {
+    transition: none;
+  }
+}

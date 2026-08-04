@@ -1,0 +1,206 @@
+:root {
+  --dark-bg: #0D1117;
+  --dark-surface: #161B22;
+  --dark-border: #30363D;
+  --text-primary: #E6EDF3;
+  --text-secondary: #8B949E;
+  --live-color: #2BD9C8;
+  --upcoming-color: #3B82E6;
+  --accent-orange: #FB8500;
+  --hover-elevation: 0 8px 24px rgba(0, 0, 0, 0.6);
+}
+
+.desktop-layout {
+  display: flex;
+  height: 100vh;
+  width: 100%;
+  background: var(--dark-bg);
+  color: var(--text-primary);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+}
+
+.hero-area {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  overflow: hidden;
+}
+
+/* Utility animations */
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+@keyframes slideInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.pulse {
+  animation: pulse 2s infinite;
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--dark-border);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text-secondary);
+}
+
+/* Responsive */
+@media (max-width: 1600px) {
+  .info-panel {
+    width: 280px;
+  }
+}
+
+/* ═══════════════════════ GRID LAYOUT ═══════════════════════ */
+.desktop-layout-grid {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  width: 100%;
+  background: var(--dark-bg);
+}
+
+.grid-top-bar {
+  height: 64px;
+  border-bottom: 1px solid var(--dark-border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 32px;
+  background: var(--dark-surface);
+}
+
+.grid-title {
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.grid-nav {
+  height: 56px;
+  border-bottom: 1px solid var(--dark-border);
+  display: flex;
+  gap: 0;
+  background: var(--dark-surface);
+}
+
+.grid-nav-btn {
+  flex: 1;
+  padding: 0 20px;
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  transition: all 0.2s ease;
+  border-bottom: 3px solid transparent;
+}
+
+.grid-nav-btn:hover {
+  color: var(--text-primary);
+}
+
+.grid-nav-btn.active {
+  color: var(--live-color);
+  border-bottom-color: var(--live-color);
+}
+
+.grid-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 32px;
+}
+
+.grid-modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.8);
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  z-index: 100;
+  animation: slideInUp 0.3s ease;
+}
+
+.grid-modal-content {
+  background: var(--dark-surface);
+  width: 100%;
+  max-width: 360px;
+  height: 100%;
+  border-left: 1px solid var(--dark-border);
+  display: flex;
+  flex-direction: column;
+  position: relative;
+}
+
+.grid-modal-close {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  background: transparent;
+  border: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+  font-size: 20px;
+  z-index: 101;
+  transition: all 0.2s ease;
+}
+
+.grid-modal-close:hover {
+  color: var(--text-primary);
+}
+
+/* ═══════════════════════ MODE TOGGLE ═══════════════════════ */
+.mode-toggle-float {
+  position: fixed;
+  top: 20px;
+  left: 20px;
+  z-index: 50;
+  background: var(--dark-surface);
+  border-radius: 8px;
+  backdrop-filter: blur(8px);
+}
+
+/* Responsive */
+@media (max-width: 1200px) {
+  .control-panel {
+    width: 200px;
+  }
+
+  .desktop-layout {
+    grid-template-columns: 200px 1fr 240px;
+  }
+
+  .grid-top-bar,
+  .grid-content {
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+}

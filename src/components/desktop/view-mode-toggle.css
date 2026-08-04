@@ -1,0 +1,52 @@
+.view-mode-toggle {
+  display: flex;
+  gap: 4px;
+  background: var(--dark-surface);
+  border: 1px solid var(--dark-border);
+  border-radius: 8px;
+  padding: 4px;
+}
+
+.mode-btn {
+  padding: 8px 12px;
+  border-radius: 6px;
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 600;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+}
+
+.mode-btn:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text-primary);
+}
+
+.mode-btn.active {
+  background: var(--live-color);
+  color: var(--dark-bg);
+}
+
+.mode-icon {
+  font-size: 14px;
+}
+
+.mode-label {
+  font-size: 11px;
+}
+
+@media (max-width: 800px) {
+  .mode-label {
+    display: none;
+  }
+
+  .mode-btn {
+    padding: 8px;
+  }
+}

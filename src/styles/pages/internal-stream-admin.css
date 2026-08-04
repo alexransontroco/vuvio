@@ -1,0 +1,145 @@
+.internal-stream-admin {
+  display: grid;
+  gap: 14px;
+  background:
+    radial-gradient(ellipse 100% 40% at 50% -2%, rgba(20, 72, 140, 0.26), transparent 56%),
+    linear-gradient(180deg, #071929 0%, #04131f 42%, #04131f 100%);
+}
+
+.internal-stream-admin__header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.internal-stream-admin__header p {
+  margin: 0 0 4px;
+  color: var(--vuvio-cyan);
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.internal-stream-admin__header h1,
+.internal-stream-admin__panel h2 {
+  margin: 0;
+  color: var(--vuvio-text-primary);
+  letter-spacing: 0;
+}
+
+.internal-stream-admin__header h1 {
+  font-size: 25px;
+  line-height: 1.05;
+}
+
+.internal-stream-admin__header button,
+.internal-stream-admin__actions button,
+.internal-stream-admin__primary {
+  min-height: 40px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border: 0.5px solid rgba(134, 202, 224, 0.16);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.045);
+  color: var(--vuvio-text-primary);
+  padding: 0 12px;
+  font-size: 13px;
+  font-weight: 650;
+}
+
+.internal-stream-admin__panel {
+  display: grid;
+  gap: 12px;
+  border: 0.5px solid rgba(134, 202, 224, 0.14);
+  border-radius: var(--radius-lg);
+  background: rgba(8, 20, 36, 0.76);
+  box-shadow: var(--shadow-card);
+  padding: 14px;
+}
+
+.internal-stream-admin__panel h2 {
+  font-size: 17px;
+}
+
+.internal-stream-admin__grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.internal-stream-admin label {
+  display: grid;
+  gap: 6px;
+}
+
+.internal-stream-admin label span {
+  color: var(--vuvio-text-muted);
+  font-size: 11px;
+  font-weight: 650;
+}
+
+.internal-stream-admin input {
+  width: 100%;
+  min-height: 40px;
+  border: 0.5px solid rgba(134, 202, 224, 0.16);
+  border-radius: 13px;
+  background: rgba(3, 12, 22, 0.62);
+  color: var(--vuvio-text-primary);
+  padding: 0 10px;
+  font-size: 13px;
+}
+
+.internal-stream-admin__primary {
+  width: 100%;
+  border: 0;
+  background: linear-gradient(135deg, var(--color-accent), var(--color-accent-hover));
+  color: #041018;
+}
+
+.internal-stream-admin__actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.internal-stream-admin__json {
+  max-height: 260px;
+  overflow: auto;
+  border: 0.5px solid rgba(134, 202, 224, 0.1);
+  border-radius: 12px;
+  background: rgba(0, 7, 14, 0.52);
+  color: rgba(245, 251, 255, 0.76);
+  padding: 10px;
+  font-size: 11px;
+  line-height: 1.45;
+}
+
+.internal-stream-admin__log {
+  display: grid;
+  gap: 8px;
+}
+
+.internal-stream-admin__log strong {
+  color: var(--vuvio-cyan);
+  font-size: 13px;
+}
+
+.internal-stream-admin__log.is-error strong {
+  color: var(--vuvio-orange);
+}
+
+.internal-stream-admin__loading {
+  margin: 0;
+  color: var(--vuvio-text-secondary);
+  font-size: 13px;
+}
+
+.internal-stream-admin__note {
+  margin: 0;
+  color: var(--vuvio-text-secondary);
+  font-size: 13px;
+  line-height: 1.45;
+}
