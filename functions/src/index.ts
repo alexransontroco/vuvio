@@ -1,7 +1,7 @@
 import { onRequest } from 'firebase-functions/v2/https';
 import { onSchedule } from 'firebase-functions/v2/scheduler';
 import { sendError, ApiError } from './shared/errors.js';
-import { cloudflareAccountId, cloudflareApiToken, cloudflareCustomerCode, cloudflareWebhookSecret } from './config/env.js';
+import { cloudflareAccountId, cloudflareApiToken, cloudflareCustomerCode, cloudflareWebhookSecret, openaiApiKey } from './config/env.js';
 import { createStream } from './streams/createStream.js';
 import { startStream } from './streams/startStream.js';
 import { heartbeatStream } from './streams/heartbeatStream.js';
@@ -18,12 +18,15 @@ import { getCloudflareConfig, getCloudflareInputs, postCreateTestInput } from '.
 import { createLiveInputHandler } from './cloudflare/createLiveInputHandler.js';
 import { monitorStreamHeartbeats } from './streams/monitorStreamHeartbeats.js';
 import { processProductImage } from './products/processProductImage.js';
-import { searchIcecatHandler, importIcecatHandler } from './products/icecatRoutes.js';
+import { searchProductsHandler, getProductHandler, importProductHandler } from './products/productRoutes.js';
 import { requestHighlight } from './highlights/requestHighlight.js';
 import { getHighlightStatus } from './highlights/getHighlightStatus.js';
 import { cancelHighlight } from './highlights/cancelHighlight.js';
 import { highlightConfig } from './highlights/highlightConfig.js';
 import { processHighlights } from './highlights/processHighlights.js';
+import { createUploadUrl } from './streams/createUploadUrl.js';
+import { getReplayStatus } from './streams/getReplayStatus.js';
+import { processVideoAnalysisJob } from './videoProcessing/processVideoAnalysisJob.js';
 
 function pathParts(path = '') {
   return path.replace(/^\/api\/?/, '/').split('/').filter(Boolean);
@@ -37,7 +40,9 @@ function sendCors(res: { set: (key: string, value: string) => void }) {
 
 export const api = onRequest({
   region: 'europe-west1',
-  secrets: [cloudflareAccountId, cloudflareApiToken, cloudflareWebhookSecret, cloudflareCustomerCode],
+  timeoutSeconds: 540,
+  memory: '2GiB',
+  secrets: [cloudflareAccountId, cloudflareApiToken, cloudflareWebhookSecret, cloudflareCustomerCode, openaiApiKey],
 }, async (req, res) => {
   sendCors(res);
   if (req.method === 'OPTIONS') {
@@ -51,18 +56,22 @@ export const api = onRequest({
     if (req.method === 'POST' && parts[0] === 'streams' && parts.length === 1) return await createStream(req, res);
     if (req.method === 'GET' && parts[0] === 'streams' && parts[1] === 'live') return await listLiveStreams(req, res);
     if (req.method === 'GET' && parts[0] === 'globe' && parts[1] === 'streams') return await listGlobeStreams(req, res);
+    if (req.method === 'GET' && parts[0] === 'streams' && parts[2] === 'replay-status') return await getReplayStatus(req, res, parts[1]);
     if (req.method === 'GET' && parts[0] === 'streams' && parts[1]) return await getStream(req, res, parts[1]);
     if (req.method === 'POST' && parts[0] === 'streams' && parts[2] === 'start') return await startStream(req, res, parts[1]);
     if (req.method === 'POST' && parts[0] === 'streams' && parts[2] === 'heartbeat') return await heartbeatStream(req, res, parts[1]);
     if (req.method === 'POST' && parts[0] === 'streams' && parts[2] === 'end') return await endStream(req, res, parts[1]);
+    if (req.method === 'POST' && parts[0] === 'streams' && parts[2] === 'upload-url') return await createUploadUrl(req, res, parts[1]);
     if (req.method === 'POST' && parts[0] === 'streams' && parts[2] === 'gear') return await attachGearToStream(req, res, parts[1]);
     if (req.method === 'GET' && parts[0] === 'streams' && parts[2] === 'gear') return await getStreamGear(req, res, parts[1]);
     if (req.method === 'POST' && parts[0] === 'streams' && parts[2] === 'events') return await trackStreamEvent(req, res, parts[1]);
     if (req.method === 'POST' && parts[0] === 'analytics' && parts[1] === 'events') return await ingestEvents(req, res);
+    if (req.method === 'POST' && parts[0] === 'video-processing-jobs' && parts[2] === 'start') return await processVideoAnalysisJob(req, res, parts[1]);
     if (req.method === 'POST' && parts[0] === 'webhooks' && parts[1] === 'cloudflare') return await cloudflareWebhook(req, res);
     if (req.method === 'POST' && parts[0] === 'products' && parts[1] === 'process-image') return await processProductImage(req, res);
-    if (req.method === 'POST' && parts[0] === 'products' && parts[1] === 'search-icecat') return await searchIcecatHandler(req, res);
-    if (req.method === 'POST' && parts[0] === 'products' && parts[1] === 'import-icecat') return await importIcecatHandler(req, res);
+    if (req.method === 'GET' && parts[0] === 'products' && parts[1] === 'search') return await searchProductsHandler(req, res);
+    if (req.method === 'GET' && parts[0] === 'products' && parts.length === 2 && parts[1] !== 'search') return await getProductHandler(req, res, parts[1]);
+    if (req.method === 'POST' && parts[0] === 'products' && parts[1] === 'import') return await importProductHandler(req, res);
 
     // Highlight generation routes
     if (req.method === 'POST' && parts[0] === 'lives' && parts[2] === 'highlight') return await requestHighlight(req, res, parts[1]);

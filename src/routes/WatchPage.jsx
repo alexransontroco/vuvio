@@ -13,16 +13,17 @@ import { LivePresenceOverlay } from '../components/social/LivePresenceOverlay.js
 import { lives } from '../data/lives.js';
 import { mapStreams } from '../data/mapStreams.js';
 import { streams, upcomingStreams } from '../data/mockStreams.js';
-import { createLiveSoundscape } from '../services/liveSoundscape.js';
 import { getCreatedLives, getCreatedLiveStream, subscribeToCreatedLives, publishLivePing, endLive as deleteLiveFromDB } from '../services/createdLiveService.js';
 import { startBroadcast, stopBroadcast, watchBroadcast, closePeer, getLocalStream, getRemoteStream } from '../services/webrtcService.js';
+import { initRecorder, stopRecorder } from '../services/mediaRecorderService.js';
+import { uploadReplay } from '../services/replayUploadService.js';
 import { collection, doc, onSnapshot, query, where, getDocs, getDoc, addDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../firebase.js';
 import { useAuth } from '../context/AuthContext.jsx';
 import { getUnreadConversationCount, subscribeToMessaging } from '../services/messagingService.js';
 import { getUpcomingReminders, saveUpcomingReminder } from '../services/upcomingReminderService.js';
 import { demoLiveEquipmentIds } from '../data/equipmentModel.js';
-import { getEquipmentLibrary, getEquipmentSelection } from '../services/equipmentService.js';
+import { getEquipmentLibrary, getEquipmentLibraryWithProducts, getEquipmentSelection } from '../services/equipmentService.js';
 import { formatLocalSchedule, getCountdownState, toValidDate } from '../utils/countdown.js';
 
 const SWIPE_THRESHOLD = 58;
@@ -40,6 +41,9 @@ const followedCreatorNames = ['Noah Perrin', 'Maya Afonso', 'Luka Marino'];
 const fallbackUserLocation = { latitude: 48.8566, longitude: 2.3522 };
 const fallbackCover = '/icons/icon-512.png';
 const demoVideoLiveIds = [
+  'guitar-solo-pov-paris',
+  'metal-drummer-pov-berlin',
+  'piano-pov-dubai',
   'chef-michelin-paris',
   'motorbike-srinagar',
   'horseback-cappadocia',
@@ -50,7 +54,7 @@ const demoVideoLiveIds = [
   'buggy-marrakesh',
   'glacier-guide-iceland',
 ];
-const DEFAULT_WATCH_LIVE_ID = 'runner-prague';
+const DEFAULT_WATCH_LIVE_ID = 'guitar-solo-pov-paris';
 const CLOCK_TICK_MS = 1000;
 const creatorComments = [
   { avatar: 'E', name: 'Emma', text: 'This looks amazing.' },
@@ -279,6 +283,10 @@ function toHomeLive(stream) {
     povType: mapStream?.povType ?? stream.povType ?? null,
     isFeatured: Boolean(stream.isFeatured ?? mapStream?.isFeatured),
   };
+}
+
+function creatorProfileIdForLive(live) {
+  return live?.creatorUid || live?.creatorId || live?.creator || live?.id || '';
 }
 
 function selectFeaturedLive({ tab, recommendedLives, popularLives, followedLives, fallbackLives }) {
@@ -947,7 +955,7 @@ function LiveLocationGlobe({ live, onOpen }) {
   return (
     <button
       type="button"
-      className="live-location-globe"
+      className="live-location-globe live-location-globe--compass"
       onClick={onOpen}
       aria-label={`${t('common.open')} ${live.city}, ${live.country} on the globe`}
     >
@@ -1159,6 +1167,7 @@ function CreatorLiveSession({ live, onEndingChange }) {
     let active = true;
 
     const setupBroadcast = async () => {
+      let whipCredentials = null;
       try {
         // Create Cloudflare live input
         try {
@@ -1177,19 +1186,32 @@ function CreatorLiveSession({ live, onEndingChange }) {
           if (cfResponse.ok) {
             const cfData = await cfResponse.json();
             console.log('[CreatorLiveSession] Cloudflare live input created:', cfData.liveInputId);
-            // Store liveInputId in Firestore
             if (active && cfData.liveInputId) {
               const liveRef = doc(db, 'activeLives', live.id);
               await updateDoc(liveRef, { liveInputId: cfData.liveInputId });
+            }
+            console.log('[WHIP] cfData:', JSON.stringify({ webRTCUrl: cfData.webRTCUrl, streamKey: cfData.streamKey, ingestUrl: cfData.ingestUrl }));
+            if (cfData.webRTCUrl && cfData.streamKey) {
+              whipCredentials = { url: cfData.webRTCUrl, key: cfData.streamKey };
             }
           }
         } catch (cfErr) {
           console.warn('[CreatorLiveSession] Cloudflare setup failed:', cfErr.message);
         }
 
-        const stream = await startBroadcast(live.id, user.uid, getCreatedLiveStream(live.id));
+        const stream = await startBroadcast(live.id, user.uid, getCreatedLiveStream(live.id), whipCredentials?.url, whipCredentials?.key);
         if (!active) {
           stream?.getTracks?.().forEach((track) => track.stop());
+          return;
+        }
+        // Start MediaRecorder in parallel — backup recording for replay
+        if (stream) {
+          try {
+            await initRecorder(stream, live.id);
+            await updateDoc(doc(db, 'activeLives', live.id), { recordingStatus: 'recording' });
+          } catch (recErr) {
+            console.warn('[CreatorLiveSession] MediaRecorder init failed (non-fatal):', recErr.message);
+          }
         }
       } catch (err) {
         console.error('[CreatorLiveSession] Broadcast setup failed:', err.message);
@@ -1342,12 +1364,39 @@ function CreatorLiveSession({ live, onEndingChange }) {
     setPhase('ending');
     onEndingChange?.(true, live.id);
 
+    // Stop MediaRecorder first to finalize the recording
+    try {
+      await stopRecorder();
+      console.log('[endLive] MediaRecorder stopped');
+    } catch (recErr) {
+      console.warn('[endLive] MediaRecorder stop failed (non-fatal):', recErr.message);
+    }
+
     try {
       console.log('[HomePage] Ending live broadcast:', live.id);
       await stopBroadcast(live.id);
       closePeer();
     } catch (err) {
       console.error('[HomePage] Failed to stop broadcast:', err);
+    }
+
+    // Start upload in background — navigates to recap which tracks progress
+    try {
+      const token = await user.getIdToken();
+      const liveId = live.id;
+      const beforeUnload = (e) => { e.preventDefault(); e.returnValue = ''; };
+      window.addEventListener('beforeunload', beforeUnload);
+      uploadReplay(liveId, token, {
+        onProgress: () => {},
+      }).then(({ cloudflareUid } = {}) => {
+        console.log('[endLive] Upload complete, cloudflareUid:', cloudflareUid);
+        window.removeEventListener('beforeunload', beforeUnload);
+      }).catch((err) => {
+        console.error('[endLive] Upload failed:', err.message);
+        window.removeEventListener('beforeunload', beforeUnload);
+      });
+    } catch (uploadErr) {
+      console.warn('[endLive] Could not start upload:', uploadErr.message);
     }
 
     try {
@@ -1546,11 +1595,15 @@ function LiveViewer({ liveId, creatorMode = false }) {
       .map((id) => baseFeed.find((stream) => stream.id === id && stream.video))
       .filter(Boolean);
 
-    // Start with user's active lives, then mock streams
-    let combined = [...activeLives, ...baseFeed];
+    // Prioritize demo videos first
+    const demoIds = new Set(demoVideos.map((v) => v.id));
+    const nonDemoStreams = [...activeLives, ...baseFeed].filter((s) => !demoIds.has(s.id));
+    let combined = [...demoVideos, ...nonDemoStreams];
 
     // Exclude specific creators - STRICT FILTER
     combined = combined.filter((stream) => {
+      if (stream.id === liveId) return true;
+
       const streamer = (stream.streamer || stream.name || stream.displayName || '').toLowerCase().trim();
       const creatorId = (stream.creatorId || stream.creator || '').toLowerCase().trim();
       const streamId = (stream.id || '').toLowerCase().trim();
@@ -1562,16 +1615,8 @@ function LiveViewer({ liveId, creatorMode = false }) {
       return true;
     });
 
-    if (!demoVideos.length) return combined;
-
-    return combined.flatMap((stream, streamIndex) => {
-      const featuredVideo = demoVideos[streamIndex % demoVideos.length];
-      return [
-        { ...stream, feedKey: `${stream.id}-base-${streamIndex}` },
-        { ...featuredVideo, feedKey: `${featuredVideo.id}-demo-${streamIndex}` },
-      ];
-    });
-  }, [lives, createdLives]);
+    return combined;
+  }, [lives, createdLives, liveId]);
   const [index, setIndex] = useState(() => {
     const requestedIndex = liveFeed.findIndex((item) => item.id === liveId);
     return requestedIndex >= 0 ? requestedIndex : 0;
@@ -1583,7 +1628,6 @@ function LiveViewer({ liveId, creatorMode = false }) {
   const [starBursts, setStarBursts] = useState([]);
   const [starPulse, setStarPulse] = useState(false);
   const [following, setFollowing] = useState({});
-  const [soundEnabled, setSoundEnabled] = useState(false);
   const [userSheetOpen, setUserSheetOpen] = useState(false);
   const [equipmentSheetOpen, setEquipmentSheetOpen] = useState(false);
   const [chatComposerOpen, setChatComposerOpen] = useState(false);
@@ -1592,6 +1636,7 @@ function LiveViewer({ liveId, creatorMode = false }) {
   const [chatDraft, setChatDraft] = useState('');
   const [localChat, setLocalChat] = useState({});
   const [videoMuted, setVideoMuted] = useState(true);
+  const [equipmentLibrary, setEquipmentLibrary] = useState(() => getEquipmentLibrary());
   const feedRef = useRef(null);
   const chatInputRef = useRef(null);
   const chatScrollRef = useRef({ x: 0, y: 0 });
@@ -1601,11 +1646,9 @@ function LiveViewer({ liveId, creatorMode = false }) {
   const lastLiveTap = useRef({ time: 0, x: 0, y: 0 });
   const tapSheetTimer = useRef(null);
   const wheelLock = useRef(0);
-  const soundRef = useRef(null);
-  const soundRequestRef = useRef(0);
   const live = liveFeed[index] ?? liveFeed[0] ?? { id: '', equipment: [] };
   const activeLiveId = live.id;
-  const liveEquipment = live.id ? getEquipmentSelection(getEquipmentLibrary(), live.equipment?.map((item) => item.equipmentId) ?? demoLiveEquipmentIds) : [];
+  const liveEquipment = live.id ? getEquipmentSelection(equipmentLibrary, live.equipment?.map((item) => item.equipmentId) ?? demoLiveEquipmentIds) : [];
   const isLiked = !!liked[live.id];
   const isFollowing = !!following[live.id];
 
@@ -1619,7 +1662,7 @@ function LiveViewer({ liveId, creatorMode = false }) {
   } = useStreamView(
     live.id ? {
       streamId: live.id,
-      creatorId: live.creatorId || live.name || 'unknown',
+      creatorId: creatorProfileIdForLive(live) || live.name || 'unknown',
       source: 'watch',
       sourcePosition: index,
       category: live.category,
@@ -1782,94 +1825,26 @@ function LiveViewer({ liveId, creatorMode = false }) {
     };
   }, [creatorMode, activeLiveId, live.creatorUid, live.createdLocally, user?.uid, watchRetry]);
 
-  const stopSound = () => {
-    const current = soundRef.current;
-    if (!current) return;
 
-    if (current.kind === 'file') {
-      current.audio.pause();
-      current.audio.src = '';
-      current.audio.load();
-    } else {
-      current.soundscape.stop();
-    }
-
-    soundRef.current = null;
-  };
-
-  const startSound = (nextLive) => {
-    const requestId = soundRequestRef.current + 1;
-    soundRequestRef.current = requestId;
-    stopSound();
-
-    if (nextLive.audio) {
-      const audio = new Audio(nextLive.audio);
-      audio.loop = true;
-      audio.volume = 0.28;
-      audio.preload = 'auto';
-      soundRef.current = { kind: 'file', audio };
-      audio.play().catch(() => {
-        if (soundRequestRef.current === requestId) {
-          setSoundEnabled(false);
-          stopSound();
-        }
-      });
-      return;
-    }
-
-    const soundscape = createLiveSoundscape(nextLive);
-    if (soundRequestRef.current !== requestId) {
-      soundscape.stop();
-      return;
-    }
-
-    soundRef.current = { kind: 'soundscape', soundscape };
-  };
-
-  const toggleSound = () => {
-    if (live.hasVideoAudio) {
-      setVideoMuted((prev) => !prev);
-      return;
-    }
-
-    if (soundEnabled) {
-      setSoundEnabled(false);
-      soundRequestRef.current += 1;
-      stopSound();
-      return;
-    }
-
-    setSoundEnabled(true);
-    startSound(live);
-  };
-
-  useEffect(() => {
-    let cancelled = false;
-
-    if (!soundEnabled) return undefined;
-
-    startSound(live);
-    if (cancelled) {
-      soundRequestRef.current += 1;
-      stopSound();
-    }
-
-    return () => {
-      cancelled = true;
-    };
-  }, [live]);
-
-  useEffect(() => {
-    return () => {
-      stopSound();
-    };
-  }, []);
 
   useEffect(() => {
     const video = videoPlaybackRef.current;
     if (!video) return;
     video.muted = videoMuted;
   }, [videoMuted]);
+
+  useEffect(() => {
+    const feedEl = feedRef.current;
+    if (!feedEl) return;
+    feedEl.querySelectorAll('video').forEach((v) => {
+      if (v !== videoPlaybackRef.current) {
+        v.pause();
+        v.currentTime = 0;
+      } else {
+        v.muted = videoMuted;
+      }
+    });
+  }, [index, videoMuted]);
 
   const goTo = (liveion) => {
     endSession('swipe');
@@ -2015,6 +1990,41 @@ function LiveViewer({ liveId, creatorMode = false }) {
     if (!chatComposerOpen && !chatPanelOpen) return;
     window.setTimeout(() => chatInputRef.current?.focus(), 80);
   }, [chatComposerOpen, chatPanelOpen]);
+
+  useEffect(() => {
+    if (!chatComposerOpen && !chatPanelOpen) {
+      document.documentElement.style.removeProperty('--live-keyboard-offset');
+      return undefined;
+    }
+
+    const viewport = window.visualViewport;
+    if (!viewport) return undefined;
+
+    const updateKeyboardOffset = () => {
+      const offset = Math.max(0, window.innerHeight - viewport.height - viewport.offsetTop);
+      document.documentElement.style.setProperty('--live-keyboard-offset', `${Math.round(offset)}px`);
+    };
+
+    updateKeyboardOffset();
+    viewport.addEventListener('resize', updateKeyboardOffset);
+    viewport.addEventListener('scroll', updateKeyboardOffset);
+
+    return () => {
+      viewport.removeEventListener('resize', updateKeyboardOffset);
+      viewport.removeEventListener('scroll', updateKeyboardOffset);
+      document.documentElement.style.removeProperty('--live-keyboard-offset');
+    };
+  }, [chatComposerOpen, chatPanelOpen]);
+
+  useEffect(() => {
+    let active = true;
+    getEquipmentLibraryWithProducts().then((items) => {
+      if (active) setEquipmentLibrary(items);
+    }).catch(() => {});
+    return () => {
+      active = false;
+    };
+  }, []);
 
   useEffect(() => {
     setChatComposerOpen(false);
@@ -2201,13 +2211,6 @@ function LiveViewer({ liveId, creatorMode = false }) {
                         playsInline
                         style={isDragging ? { transform: `scale(1.03) translateY(${dragY * 0.1}px)` } : undefined}
                       />
-                      {!remoteStream ? (
-                        <div className="live-slide__connecting">
-                          <i aria-hidden="true" />
-                          <span>{watchRetry > 0 ? 'Reconnecting live' : 'Connecting live'}</span>
-                          {import.meta.env.DEV && watchStatus ? <small>{watchStatus}</small> : null}
-                        </div>
-                      ) : null}
                     </>
                   ) : (
                     <>
@@ -2251,7 +2254,7 @@ function LiveViewer({ liveId, creatorMode = false }) {
 
       <LivePresenceOverlay liveId={live.id} liveTitle={live.title ?? live.note} onJoinFriend={() => {}} />
 
-      <LiveLocationGlobe live={live} onOpen={() => navigate(`/globe?live=${live.id}`)} />
+      <LiveLocationGlobe live={live} onOpen={() => navigate(`/globe?live=${encodeURIComponent(live.id)}`)} />
 
       <div
         className={`live-chat${chatComposerOpen || chatPanelOpen ? ' is-lifted' : ''}`}
@@ -2321,17 +2324,13 @@ function LiveViewer({ liveId, creatorMode = false }) {
           <button type="button" onClick={recordShared} aria-label={t('common.share')}>
             <Send size={21} strokeWidth={1.8} />
           </button>
+          {live.hasVideoAudio && (
+            <button type="button" className={videoMuted ? 'live-sound-button' : 'is-active live-sound-button'} onClick={() => setVideoMuted((prev) => !prev)} aria-label={videoMuted ? 'Unmute video' : 'Mute video'}>
+              {videoMuted ? <VolumeX size={22} strokeWidth={1.8} /> : <Volume2 size={22} strokeWidth={1.8} />}
+            </button>
+          )}
           <button type="button" className="equipment-button" onClick={() => { recordGearOpened(); setEquipmentSheetOpen(true); }} aria-label="Open live equipment">
             <Backpack size={22} strokeWidth={1.9} />
-          </button>
-          <button
-            type="button"
-            className={live.hasVideoAudio ? (videoMuted ? 'live-sound-button' : 'is-active live-sound-button') : (soundEnabled ? 'is-active live-sound-button' : 'live-sound-button')}
-            onClick={toggleSound}
-            aria-label={live.hasVideoAudio ? (videoMuted ? 'Unmute video' : 'Mute video') : (soundEnabled ? 'Mute POV sound' : 'Enable POV sound')}
-          >
-            {live.hasVideoAudio ? (videoMuted ? <VolumeX size={22} strokeWidth={1.8} /> : <Volume2 size={22} strokeWidth={1.8} />) : (soundEnabled ? <Volume2 size={22} strokeWidth={1.8} /> : <VolumeX size={22} strokeWidth={1.8} />)}
-            {!live.hasVideoAudio && soundEnabled ? <span>{t('live.soundOn')}</span> : null}
           </button>
         </div>
       </div>
@@ -2410,7 +2409,7 @@ function LiveViewer({ liveId, creatorMode = false }) {
           onClose={() => setUserSheetOpen(false)}
           onViewProfile={() => {
             setUserSheetOpen(false);
-            navigate(`/profile/${live.creatorId ?? live.id}`);
+            navigate(`/profile/${creatorProfileIdForLive(live)}`);
           }}
           onViewGear={() => {
             setUserSheetOpen(false);
@@ -2426,7 +2425,7 @@ function LiveViewer({ liveId, creatorMode = false }) {
         <EquipmentViewerSheet
           items={liveEquipment}
           onClose={() => setEquipmentSheetOpen(false)}
-          onViewProfile={() => navigate(`/profile/${live.creatorId ?? live.id}?tab=equipment`)}
+          onViewProfile={() => navigate(`/profile/${creatorProfileIdForLive(live)}?tab=equipment`)}
         />
       ) : null}
     </section>

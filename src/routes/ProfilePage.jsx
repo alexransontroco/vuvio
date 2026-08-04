@@ -38,8 +38,10 @@ import { analyticsService } from '../services/analytics/index.js';
 import { useAuth } from '../context/AuthContext.jsx';
 import {
   getEquipmentLibrary,
+  getEquipmentLibraryWithProducts,
   getEquipmentSelection,
   groupEquipmentByCategory,
+  enrichEquipmentWithProducts,
   normalizeEquipmentItem,
   subscribeToEquipment,
 } from '../services/equipmentService.js';
@@ -696,6 +698,7 @@ export default function ProfilePage() {
   const [toast, setToast] = useState('');
   const [imageSheet, setImageSheet] = useState(null);
   const [equipmentLibrary, setEquipmentLibrary] = useState(() => getEquipmentLibrary());
+  const [profileEquipmentEnriched, setProfileEquipmentEnriched] = useState([]);
 
   useEffect(() => {
     window.scrollTo({ top: 0, left: 0 });
@@ -791,7 +794,48 @@ export default function ProfilePage() {
     }
   }, [creatorId, state.viewedProfile, searchParams]);
 
-  useEffect(() => subscribeToEquipment(setEquipmentLibrary), []);
+  useEffect(() => {
+    let active = true;
+    getEquipmentLibraryWithProducts().then((items) => {
+      if (active) setEquipmentLibrary(items);
+    }).catch(() => {});
+    const unsubscribe = subscribeToEquipment((items) => {
+      setEquipmentLibrary(items);
+      enrichEquipmentWithProducts(items).then((enriched) => {
+        if (active) setEquipmentLibrary(enriched);
+      }).catch(() => {});
+    });
+    return () => {
+      active = false;
+      unsubscribe();
+    };
+  }, []);
+
+  useEffect(() => {
+    let active = true;
+    const sourceItems = state.viewedProfile?.equipment?.length
+      ? state.viewedProfile.equipment.map(normalizeEquipmentItem).filter(Boolean)
+      : [];
+
+    if (!sourceItems.length) {
+      setProfileEquipmentEnriched([]);
+      return () => {
+        active = false;
+      };
+    }
+
+    enrichEquipmentWithProducts(sourceItems)
+      .then((items) => {
+        if (active) setProfileEquipmentEnriched(items);
+      })
+      .catch(() => {
+        if (active) setProfileEquipmentEnriched(sourceItems);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [state.viewedProfile?.id, state.viewedProfile?.equipment]);
 
   const showToast = (message) => {
     setToast(message);
@@ -868,7 +912,7 @@ export default function ProfilePage() {
   const profile = state.viewedProfile;
   const profileEquipment = isOwnProfile
     ? equipmentLibrary
-    : (profile.equipment?.length ? profile.equipment.map(normalizeEquipmentItem).filter(Boolean) : getEquipmentLibrary().filter((item) => item.isPublic));
+    : (profile.equipment?.length ? profileEquipmentEnriched : equipmentLibrary.filter((item) => item.isPublic));
   const liveEquipmentIds = profile.currentLive?.equipment?.map((item) => item.equipmentId) ?? demoLiveEquipmentIds;
   const liveEquipment = profile.currentLive
     ? getEquipmentSelection(profileEquipment, liveEquipmentIds)

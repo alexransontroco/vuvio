@@ -85,10 +85,11 @@ export function EquipmentCategoryCard({ category, count, onClick }) {
 }
 
 export function EquipmentItemRow({ item, selectable = false, selected = false, onToggle, onOpen, actions, compact = false }) {
+  const thumbnailUrl = item.thumbnailUrl || item.product?.thumbnailUrl || item.imageUrl || null;
   const content = (
     <>
       <EquipmentThumbnail
-        imageUrl={item.imageUrl}
+        imageUrl={thumbnailUrl}
         category={item.category}
         label={equipmentLabel(item)}
       />
@@ -150,7 +151,7 @@ export function GearInLive({ items, onViewLive, compact = false }) {
       <GearItemRow
         key={item.id ?? item.equipmentId}
         id={item.id ?? item.equipmentId}
-        imageUrl={item.imageUrl}
+        imageUrl={item.thumbnailUrl || item.product?.thumbnailUrl || item.imageUrl}
         category={item.category}
         brand={item.brand}
         model={item.model}

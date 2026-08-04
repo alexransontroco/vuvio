@@ -10,12 +10,16 @@ export function createGearSnapshot(gear) {
 
   return {
     gearId: gear.id,
+    productId: gear.productId || null,
     category: gear.category,
     brand: gear.brand,
     model: gear.model,
     displayName: gear.displayName || `${gear.brand} ${gear.model}`,
-    imageUrl: gear.imageUrl || null,
-    imageSource: gear.imageSource || null,
+    thumbnailUrl: gear.thumbnailUrl || gear.product?.thumbnailUrl || gear.imageUrl || null,
+    imageUrl: gear.imageUrl || gear.thumbnailUrl || gear.product?.thumbnailUrl || null,
+    imageSource: gear.imageSource || gear.product?.imageSource || 'placeholder',
+    provider: gear.provider || gear.product?.provider || 'demo',
+    status: gear.status || gear.product?.status || 'placeholder',
     ownership: gear.ownership || 'owned',
     equipmentType: gear.equipmentType || null,
     createdAt: new Date().toISOString(),
@@ -84,34 +88,10 @@ export async function suggestGearImage({ category, brand, model, name }) {
 }
 
 export async function getGearImageSuggestions({ category, brand, model, displayName }) {
-  try {
-    const query = displayName || `${brand} ${model}`.trim();
-    if (!query || query.length < 2) {
-      return { success: true, suggestions: [] };
-    }
-
-    // Try to fetch image from Unsplash API (free, no auth required)
-    const encodedQuery = encodeURIComponent(query);
-    const response = await fetch(
-      `https://api.unsplash.com/search/photos?query=${encodedQuery}&per_page=5&client_id=kVZeL207K1gVmJPqnhSH2Yx9rK2LTn9dS7a0A9J5Q_w`,
-      { signal: AbortSignal.timeout(5000) }
-    );
-
-    if (!response.ok) throw new Error('Unsplash API failed');
-
-    const data = await response.json();
-    const suggestions = data.results
-      ?.slice(0, 3)
-      .map((photo) => ({
-        url: photo.urls.small,
-        thumb: photo.urls.thumb,
-        alt: photo.alt_description || query,
-        source: 'unsplash',
-      })) || [];
-
-    return { success: true, suggestions };
-  } catch (error) {
-    console.warn('Failed to fetch gear images:', error.message);
-    return { success: false, error: error.message, suggestions: [] };
-  }
+  return {
+    success: true,
+    suggestions: [],
+    disabled: true,
+    reason: 'Equipment images must come from Firestore products or explicit user uploads.',
+  };
 }

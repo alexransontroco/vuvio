@@ -1,147 +1,94 @@
-/**
- * Icecat Client Service
- *
- * Frontend client for Icecat product integration.
- * Communicates with backend API which manages credentials.
- */
-
 const API_BASE = '/api';
 
-/**
- * Search for products in Icecat
- * Falls back to local products if Icecat is unavailable
- *
- * @param {string} query - Product brand, name, or model
- * @param {number} limit - Maximum results to return
- * @returns {Promise<Array>} Search results
- */
-export async function searchIcecatProducts(query, limit = 20) {
-  if (!query || query.length < 2) {
-    return [];
-  }
-
-  try {
-    const response = await fetch(`${API_BASE}/products/search-icecat`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ query, limit }),
-    });
-
-    if (!response.ok) {
-      console.warn('[Icecat] Search failed:', response.status);
-      return [];
-    }
-
-    const data = await response.json();
-    console.log(`[Icecat] Found ${data.count} products (source: ${data.source})`);
-    return data.results || [];
-  } catch (error) {
-    console.error('[Icecat] Search error:', error);
-    return [];
-  }
-}
-
-/**
- * Import a product from Icecat
- *
- * @param {string} productId - Icecat product ID
- * @param {string} category - Vuvio category (recording, audio, etc.)
- * @returns {Promise<Object>} Imported product data
- */
-export async function importIcecatProduct(productId, category) {
-  if (!productId || !category) {
-    throw new Error('Missing productId or category');
-  }
-
-  try {
-    const response = await fetch(`${API_BASE}/products/import-icecat`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${await getAuthToken()}`,
-      },
-      body: JSON.stringify({ productId, category }),
-    });
-
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.message || 'Import failed');
-    }
-
-    const data = await response.json();
-    console.log(`[Icecat] Product imported: ${data.productId}`);
-    return data;
-  } catch (error) {
-    console.error('[Icecat] Import error:', error);
-    throw error;
-  }
-}
-
-/**
- * Get Firebase auth token for backend API
- */
 async function getAuthToken() {
   try {
     const { auth } = await import('../firebase.js');
-    if (!auth.currentUser) {
-      throw new Error('Not authenticated');
-    }
+    if (!auth.currentUser) throw new Error('Not authenticated');
     return await auth.currentUser.getIdToken();
-  } catch (error) {
-    console.warn('[Auth] Could not get token:', error);
+  } catch {
     return '';
   }
 }
 
 /**
- * Determine product category from Icecat data
+ * Search products via the Vuvio backend API.
+ * Supports text, brand, gtin, ean, category query params.
  */
+export async function searchProductsAPI(query, { brand, gtin, ean, category, limit = 20 } = {}) {
+  if (!query && !brand && !gtin && !ean) return [];
+
+  try {
+    const params = new URLSearchParams();
+    if (query) params.set('q', query);
+    if (brand) params.set('brand', brand);
+    if (gtin) params.set('gtin', gtin);
+    if (ean) params.set('ean', ean);
+    if (category) params.set('category', category);
+    params.set('limit', String(limit));
+
+    const response = await fetch(`${API_BASE}/products/search?${params}`);
+
+    if (!response.ok) {
+      console.warn('[ProductAPI] Search failed:', response.status);
+      return [];
+    }
+
+    const data = await response.json();
+    return data.results || [];
+  } catch (error) {
+    console.error('[ProductAPI] Search error:', error);
+    return [];
+  }
+}
+
+/**
+ * Import a product from an external provider into Vuvio.
+ * @param {string} providerId - e.g. 'icecat'
+ * @param {string} externalId - provider-specific product ID
+ * @param {string} category - Vuvio category
+ */
+export async function importProduct(providerId, externalId, category) {
+  if (!providerId || !externalId || !category) {
+    throw new Error('Missing providerId, externalId, or category');
+  }
+
+  const token = await getAuthToken();
+
+  const response = await fetch(`${API_BASE}/products/import`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({ providerId, externalId, category }),
+  });
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({}));
+    throw new Error(error.message || `Import failed: ${response.status}`);
+  }
+
+  return response.json();
+}
+
+// Legacy alias — kept for components still using the old name
+export async function searchIcecatProducts(query, limit = 20) {
+  return searchProductsAPI(query, { limit });
+}
+
+// Legacy alias
+export async function importIcecatProduct(externalId, category) {
+  return importProduct('icecat', externalId, category);
+}
+
 export function categorizeIcecatProduct(product) {
-  const name = (product.product_name || '').toLowerCase();
-  const brand = (product.brand_name || '').toLowerCase();
+  const name = (product.name || product.product_name || '').toLowerCase();
+  const brand = (product.brand || product.brand_name || '').toLowerCase();
 
-  // Camera/recording devices
-  if (
-    name.includes('camera') ||
-    name.includes('gopro') ||
-    name.includes('dji') ||
-    name.includes('action') ||
-    name.includes('360')
-  ) {
-    return 'recording';
-  }
+  if (name.includes('camera') || name.includes('action') || brand.includes('gopro') || brand.includes('dji')) return 'recording';
+  if (name.includes('mic') || name.includes('microphone') || brand.includes('rode')) return 'audio';
+  if (name.includes('bike') || name.includes('cycle') || name.includes('gravel')) return 'activity';
+  if (name.includes('mount') || name.includes('tripod') || name.includes('bracket')) return 'power_accessories';
 
-  // Microphones
-  if (name.includes('mic') || name.includes('microphone') || brand.includes('rode')) {
-    return 'audio';
-  }
-
-  // Bikes
-  if (name.includes('bike') || name.includes('cycle') || name.includes('gravel')) {
-    return 'activity';
-  }
-
-  // Accessories
-  if (
-    name.includes('mount') ||
-    name.includes('clip') ||
-    name.includes('bracket') ||
-    name.includes('tripod')
-  ) {
-    return 'power_accessories';
-  }
-
-  // Bikes & Components
-  if (
-    name.includes('helmet') ||
-    name.includes('shoe') ||
-    name.includes('fork') ||
-    name.includes('frame')
-  ) {
-    return 'activity';
-  }
-
-  return 'recording'; // Default
+  return 'recording';
 }

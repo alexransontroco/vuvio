@@ -29,6 +29,42 @@ const PRODUCTS_COLLECTION = 'products';
 const CACHE_KEY = 'vuvio_products_cache';
 const CACHE_TTL = 1000 * 60 * 60; // 1 hour
 
+function isDevFallbackAllowed() {
+  return Boolean(import.meta.env?.DEV);
+}
+
+export function normalizeProduct(product, id = product?.id) {
+  if (!product) return null;
+  const imageStatusValue = typeof product.imageStatus === 'string'
+    ? product.imageStatus
+    : product.imageStatus?.status;
+  const normalizedStatus = product.status ?? imageStatusValue ?? 'unknown';
+  const thumbnailUrl = product.thumbnailUrl
+    || product.images?.thumbnail_medium
+    || product.images?.medium
+    || product.imageStatus?.urls?.medium
+    || product.imageUrl
+    || null;
+
+  return {
+    ...product,
+    id,
+    name: product.name ?? product.model ?? product.displayName ?? 'Unknown product',
+    category: product.category ?? 'activity',
+    thumbnailUrl,
+    provider: product.provider ?? (product.imageSource === 'placeholder' ? 'demo' : 'firestore'),
+    imageSource: product.imageSource ?? (thumbnailUrl ? 'unknown' : 'placeholder'),
+    status: normalizedStatus,
+  };
+}
+
+async function getFirestoreProduct(productId) {
+  const docRef = doc(db, PRODUCTS_COLLECTION, productId);
+  const snapshot = await getDoc(docRef);
+  if (!snapshot.exists()) return null;
+  return normalizeProduct(snapshot.data(), snapshot.id);
+}
+
 /**
  * Get cached products from localStorage
  * @returns {Object|null}
@@ -77,23 +113,51 @@ function setCachedProducts(products) {
  */
 export async function getProduct(productId) {
   try {
-    const docRef = doc(db, PRODUCTS_COLLECTION, productId);
-    const snapshot = await getDoc(docRef);
-
-    if (snapshot.exists()) {
-      return {
-        id: snapshot.id,
-        ...snapshot.data(),
-      };
-    }
+    const firestoreProduct = await getFirestoreProduct(productId);
+    if (firestoreProduct) return firestoreProduct;
 
     // Fallback to demo data
-    return getDemoProduct(productId);
+    return normalizeProduct(getDemoProduct(productId), productId);
   } catch (error) {
     console.warn(`Error fetching product ${productId}:`, error);
     // Fallback to demo data
-    return getDemoProduct(productId);
+    return normalizeProduct(getDemoProduct(productId), productId);
   }
+}
+
+/**
+ * Product resolver for equipment.
+ * Firestore `products` is the source of truth. Local/demo fallback is only used
+ * in development or when the local product is explicitly a placeholder/demo.
+ */
+export async function resolveEquipmentProduct(productId, { allowLocalFallback = isDevFallbackAllowed() } = {}) {
+  if (!productId) return null;
+
+  try {
+    const firestoreProduct = await getFirestoreProduct(productId);
+    if (firestoreProduct) return firestoreProduct;
+  } catch (error) {
+    console.warn(`[productService] Firestore product resolve failed for ${productId}:`, error.message);
+  }
+
+  const localProduct = normalizeProduct(getDemoProduct(productId), productId);
+  if (!localProduct) return null;
+
+  const isPlaceholder = localProduct.provider === 'demo'
+    || localProduct.imageSource === 'placeholder'
+    || localProduct.status === 'placeholder';
+
+  if (allowLocalFallback || isPlaceholder) {
+    return {
+      ...localProduct,
+      provider: localProduct.provider ?? 'demo',
+      imageSource: localProduct.imageSource ?? 'placeholder',
+      status: localProduct.status ?? 'placeholder',
+      isLocalFallback: true,
+    };
+  }
+
+  return null;
 }
 
 /**
@@ -111,21 +175,20 @@ export async function getProductsByCategory(categoryId) {
     );
 
     const snapshot = await getDocs(q);
-    const products = snapshot.docs.map(doc => ({
-      id: doc.id,
-      ...doc.data(),
-    }));
+    const products = snapshot.docs.map(doc => normalizeProduct(doc.data(), doc.id)).filter(Boolean);
 
-    // Append demo products from same category
-    const demoInCategory = getDemoProductsByCategory(categoryId);
+    // Append demo products only in development as explicit placeholders.
+    const demoInCategory = import.meta.env.DEV ? getDemoProductsByCategory(categoryId) : [];
     const demoIds = new Set(products.map(p => p.id));
-    const newDemoProducts = demoInCategory.filter(p => !demoIds.has(p.id));
+    const newDemoProducts = demoInCategory
+      .map((product) => normalizeProduct({ ...product, provider: product.provider ?? 'demo' }, product.id))
+      .filter((product) => product && !demoIds.has(product.id));
 
     return [...products, ...newDemoProducts];
   } catch (error) {
     console.warn(`Error fetching products for category ${categoryId}:`, error);
     // Fallback to demo data
-    return getDemoProductsByCategory(categoryId);
+    return import.meta.env.DEV ? getDemoProductsByCategory(categoryId) : [];
   }
 }
 
@@ -136,7 +199,7 @@ export async function getProductsByCategory(categoryId) {
  * @returns {Promise<Array>}
  * @throws {Error} Firebase permission or network errors
  */
-export async function searchProducts(searchQuery) {
+export async function searchProducts(searchQuery, categoryId = null) {
   if (!searchQuery || searchQuery.length < 2) {
     return [];
   }
@@ -152,18 +215,18 @@ export async function searchProducts(searchQuery) {
     );
 
     const snapshot = await getDocs(q);
-    const firestoreProducts = snapshot.docs.map(doc => ({
-      id: doc.id,
-      ...doc.data(),
-    }));
+    const firestoreProducts = snapshot.docs.map(doc => normalizeProduct(doc.data(), doc.id)).filter(Boolean);
 
-    // Combine with demo products, avoiding duplicates
-    const firestoreIds = new Set(firestoreProducts.map(p => p.id));
-    const newDemoProducts = demoProducts.filter(p => !firestoreIds.has(p.id));
+    // Demo products are development/placeholder fallback, never authoritative.
+    const firestoreIds = new Set(firestoreProducts.map((p) => p.id));
+    const newDemoProducts = (import.meta.env.DEV ? demoProducts : [])
+      .map((product) => normalizeProduct({ ...product, provider: product.provider ?? 'demo' }, product.id))
+      .filter((product) => product && !firestoreIds.has(product.id));
     const allProducts = [...firestoreProducts, ...newDemoProducts];
 
     // Filter by name, brand, or searchTerms
     return allProducts.filter(product => {
+      if (categoryId && product.category !== categoryId) return false;
       const name = (product.name || '').toLowerCase();
       const brand = (product.brand || '').toLowerCase();
       const searchTerms = (product.searchTerms || []).map(t => t.toLowerCase());
@@ -187,7 +250,10 @@ export async function searchProducts(searchQuery) {
 
     // For other errors, fallback to demo data search
     console.warn('Falling back to demo products due to:', error.code);
-    return demoProducts.filter(product => {
+    if (!import.meta.env.DEV) return [];
+
+    return demoProducts.map((product) => normalizeProduct(product, product.id)).filter(product => {
+      if (categoryId && product.category !== categoryId) return false;
       const name = (product.name || '').toLowerCase();
       const brand = (product.brand || '').toLowerCase();
       const searchTerms = (product.searchTerms || []).map(t => t.toLowerCase());

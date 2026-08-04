@@ -14,6 +14,7 @@ import {
   equipmentLabel,
   getDefaultEquipmentIds,
   getEquipmentLibrary,
+  getEquipmentLibraryWithProducts,
   getEquipmentSelection,
   getLastLiveEquipmentIds,
   getLastLiveEquipmentIdsBySubcategory,
@@ -200,6 +201,16 @@ export default function BottomNav({ collapsible = false, collapsed = false, onEx
   }, []);
 
   useEffect(() => {
+    let active = true;
+    getEquipmentLibraryWithProducts().then((items) => {
+      if (active) setEquipmentLibrary(items);
+    }).catch(() => {});
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  useEffect(() => {
     setCreateOpen(false);
     setCreateMode('actions');
     setDraft(initialLiveDraft);
@@ -280,6 +291,7 @@ export default function BottomNav({ collapsible = false, collapsed = false, onEx
     });
     const nextLibrary = getEquipmentLibrary();
     setEquipmentLibrary(nextLibrary);
+    getEquipmentLibraryWithProducts().then(setEquipmentLibrary).catch(() => {});
     setDraft((current) => ({ ...current, equipmentIds: [...new Set([...(current.equipmentIds ?? []), item.id])] }));
     setQuickAddDraft({ category: 'recording', brand: '', model: '' });
     setQuickAddOpen(false);

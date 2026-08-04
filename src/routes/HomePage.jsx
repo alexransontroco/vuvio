@@ -13,7 +13,6 @@ import { LivePresenceOverlay } from '../components/social/LivePresenceOverlay.js
 import { lives } from '../data/lives.js';
 import { mapStreams } from '../data/mapStreams.js';
 import { streams, upcomingStreams } from '../data/mockStreams.js';
-import { createLiveSoundscape } from '../services/liveSoundscape.js';
 import { getCreatedLives, getCreatedLiveStream, subscribeToCreatedLives, publishLivePing, endLive as deleteLiveFromDB } from '../services/createdLiveService.js';
 import { startBroadcast, stopBroadcast, watchBroadcast, closePeer, getLocalStream, getRemoteStream } from '../services/webrtcService.js';
 import { collection, doc, onSnapshot, query, where } from 'firebase/firestore';
@@ -22,7 +21,7 @@ import { useAuth } from '../context/AuthContext.jsx';
 import { getUnreadConversationCount, subscribeToMessaging } from '../services/messagingService.js';
 import { getUpcomingReminders, saveUpcomingReminder } from '../services/upcomingReminderService.js';
 import { demoLiveEquipmentIds } from '../data/equipmentModel.js';
-import { getEquipmentLibrary, getEquipmentSelection } from '../services/equipmentService.js';
+import { getEquipmentLibrary, getEquipmentLibraryWithProducts, getEquipmentSelection } from '../services/equipmentService.js';
 import { formatLocalSchedule, getCountdownState, toValidDate } from '../utils/countdown.js';
 
 const SWIPE_THRESHOLD = 58;
@@ -1454,7 +1453,6 @@ function LiveViewer({ liveId, creatorMode = false }) {
   const [starBursts, setStarBursts] = useState([]);
   const [starPulse, setStarPulse] = useState(false);
   const [following, setFollowing] = useState({});
-  const [soundEnabled, setSoundEnabled] = useState(false);
   const [userSheetOpen, setUserSheetOpen] = useState(false);
   const [equipmentSheetOpen, setEquipmentSheetOpen] = useState(false);
   const [chatComposerOpen, setChatComposerOpen] = useState(false);
@@ -1462,6 +1460,7 @@ function LiveViewer({ liveId, creatorMode = false }) {
   const [immersive, setImmersive] = useState(false);
   const [chatDraft, setChatDraft] = useState('');
   const [localChat, setLocalChat] = useState({});
+  const [equipmentLibrary, setEquipmentLibrary] = useState(() => getEquipmentLibrary());
   const [videoMuted, setVideoMuted] = useState(true);
   const feedRef = useRef(null);
   const chatInputRef = useRef(null);
@@ -1472,11 +1471,9 @@ function LiveViewer({ liveId, creatorMode = false }) {
   const lastLiveTap = useRef({ time: 0, x: 0, y: 0 });
   const tapSheetTimer = useRef(null);
   const wheelLock = useRef(0);
-  const soundRef = useRef(null);
-  const soundRequestRef = useRef(0);
   const live = liveFeed[index] ?? liveFeed[0] ?? { id: '', equipment: [] };
   const activeLiveId = live.id;
-  const liveEquipment = live.id ? getEquipmentSelection(getEquipmentLibrary(), live.equipment?.map((item) => item.equipmentId) ?? demoLiveEquipmentIds) : [];
+  const liveEquipment = live.id ? getEquipmentSelection(equipmentLibrary, live.equipment?.map((item) => item.equipmentId) ?? demoLiveEquipmentIds) : [];
   const isLiked = !!liked[live.id];
   const isFollowing = !!following[live.id];
 
@@ -1524,6 +1521,20 @@ function LiveViewer({ liveId, creatorMode = false }) {
       },
     }
   );
+
+  useEffect(() => {
+    let active = true;
+    getEquipmentLibraryWithProducts()
+      .then((items) => {
+        if (active) setEquipmentLibrary(items);
+      })
+      .catch((err) => {
+        console.warn('[HomePage] Equipment product enrichment failed:', err);
+      });
+    return () => {
+      active = false;
+    };
+  }, []);
 
   useEffect(() => {
     const requestedIndex = liveFeed.findIndex((item) => item.id === liveId);
@@ -1674,88 +1685,6 @@ function LiveViewer({ liveId, creatorMode = false }) {
     };
   }, [creatorMode, activeLiveId, live.creatorUid, live.createdLocally, user?.uid, watchRetry]);
 
-  const stopSound = () => {
-    const current = soundRef.current;
-    if (!current) return;
-
-    if (current.kind === 'file') {
-      current.audio.pause();
-      current.audio.src = '';
-      current.audio.load();
-    } else {
-      current.soundscape.stop();
-    }
-
-    soundRef.current = null;
-  };
-
-  const startSound = (nextLive) => {
-    const requestId = soundRequestRef.current + 1;
-    soundRequestRef.current = requestId;
-    stopSound();
-
-    if (nextLive.audio) {
-      const audio = new Audio(nextLive.audio);
-      audio.loop = true;
-      audio.volume = 0.28;
-      audio.preload = 'auto';
-      soundRef.current = { kind: 'file', audio };
-      audio.play().catch(() => {
-        if (soundRequestRef.current === requestId) {
-          setSoundEnabled(false);
-          stopSound();
-        }
-      });
-      return;
-    }
-
-    const soundscape = createLiveSoundscape(nextLive);
-    if (soundRequestRef.current !== requestId) {
-      soundscape.stop();
-      return;
-    }
-
-    soundRef.current = { kind: 'soundscape', soundscape };
-  };
-
-  const toggleSound = () => {
-    if (live.hasVideoAudio) {
-      setVideoMuted((prev) => !prev);
-      return;
-    }
-
-    if (soundEnabled) {
-      setSoundEnabled(false);
-      soundRequestRef.current += 1;
-      stopSound();
-      return;
-    }
-
-    setSoundEnabled(true);
-    startSound(live);
-  };
-
-  useEffect(() => {
-    let cancelled = false;
-
-    if (!soundEnabled) return undefined;
-
-    startSound(live);
-    if (cancelled) {
-      soundRequestRef.current += 1;
-      stopSound();
-    }
-
-    return () => {
-      cancelled = true;
-    };
-  }, [live]);
-
-  useEffect(() => {
-    return () => {
-      stopSound();
-    };
-  }, []);
 
   useEffect(() => {
     const video = videoPlaybackRef.current;
@@ -2126,7 +2055,7 @@ function LiveViewer({ liveId, creatorMode = false }) {
 
       <LivePresenceOverlay liveId={live.id} liveTitle={live.title ?? live.note} onJoinFriend={() => {}} />
 
-      <LiveLocationGlobe live={live} onOpen={() => navigate(`/globe?live=${live.id}`)} />
+      <LiveLocationGlobe live={live} onOpen={() => navigate(`/globe?live=${encodeURIComponent(live.id)}`)} />
 
       <div
         className={`live-chat${chatComposerOpen || chatPanelOpen ? ' is-lifted' : ''}`}
@@ -2196,17 +2125,13 @@ function LiveViewer({ liveId, creatorMode = false }) {
           <button type="button" onClick={recordShared} aria-label={t('common.share')}>
             <Send size={21} strokeWidth={1.8} />
           </button>
+          {live.hasVideoAudio && (
+            <button type="button" className={videoMuted ? 'live-sound-button' : 'is-active live-sound-button'} onClick={() => setVideoMuted((prev) => !prev)} aria-label={videoMuted ? 'Unmute video' : 'Mute video'}>
+              {videoMuted ? <VolumeX size={22} strokeWidth={1.8} /> : <Volume2 size={22} strokeWidth={1.8} />}
+            </button>
+          )}
           <button type="button" className="equipment-button" onClick={() => { recordGearOpened(); setEquipmentSheetOpen(true); }} aria-label="Open live equipment">
             <Backpack size={22} strokeWidth={1.9} />
-          </button>
-          <button
-            type="button"
-            className={live.hasVideoAudio ? (videoMuted ? 'live-sound-button' : 'is-active live-sound-button') : (soundEnabled ? 'is-active live-sound-button' : 'live-sound-button')}
-            onClick={toggleSound}
-            aria-label={live.hasVideoAudio ? (videoMuted ? 'Unmute video' : 'Mute video') : (soundEnabled ? 'Mute POV sound' : 'Enable POV sound')}
-          >
-            {live.hasVideoAudio ? (videoMuted ? <VolumeX size={22} strokeWidth={1.8} /> : <Volume2 size={22} strokeWidth={1.8} />) : (soundEnabled ? <Volume2 size={22} strokeWidth={1.8} /> : <VolumeX size={22} strokeWidth={1.8} />)}
-            {!live.hasVideoAudio && soundEnabled ? <span>{t('live.soundOn')}</span> : null}
           </button>
         </div>
       </div>

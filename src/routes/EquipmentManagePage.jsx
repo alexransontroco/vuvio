@@ -1,5 +1,5 @@
 import { ChevronLeft, Plus, CheckCircle } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   EquipmentItemRow,
@@ -15,6 +15,7 @@ import {
   removeEquipmentItem,
   updateEquipmentItem,
   getEquipmentLibrary,
+  getEquipmentLibraryWithProducts,
 } from '../services/equipmentService.js';
 
 const emptyForm = {
@@ -81,9 +82,17 @@ function EquipmentForm({ value, onChange, onSave, onCancel, submitLabel = 'Save 
       {value.productId && (
         <div className="equipment-selected-product">
           <div className="equipment-selected-product__thumbnail">
-            {value.imageUrl && (
-              <img src={value.imageUrl} alt={displayProductName} />
-            )}
+            <ProductThumbnail
+              product={{
+                id: value.productId,
+                name: value.model,
+                brand: value.brand,
+                category: value.category,
+                thumbnailUrl: value.imageUrl || null,
+                imageSource: value.imageSource || 'placeholder',
+              }}
+              size="md"
+            />
           </div>
           <div className="equipment-selected-product__info">
             <strong>{value.brand} {value.model}</strong>
@@ -199,7 +208,27 @@ export default function EquipmentManagePage() {
     window.setTimeout(() => setToast(''), 1600);
   };
 
-  const saveForm = () => {
+  const refreshItems = useCallback(async () => {
+    const enriched = await getEquipmentLibraryWithProducts();
+    setItems(enriched);
+    return enriched;
+  }, []);
+
+  useEffect(() => {
+    let active = true;
+    getEquipmentLibraryWithProducts()
+      .then((enriched) => {
+        if (active) setItems(enriched);
+      })
+      .catch((err) => {
+        console.warn('[EquipmentManagePage] Product enrichment failed:', err);
+      });
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const saveForm = async () => {
     if (!form?.brand.trim() || !form?.model.trim()) return;
     try {
       if (editingId) {
@@ -211,9 +240,8 @@ export default function EquipmentManagePage() {
         console.log('[EquipmentManagePage] Equipment added:', saved);
         showToast('Equipment added');
       }
-      const updated = getEquipmentLibrary();
+      const updated = await refreshItems();
       console.log('[EquipmentManagePage] Current library:', updated.length, 'items');
-      setItems(updated);
       setForm(null);
       setEditingId(null);
     } catch (err) {
@@ -267,18 +295,18 @@ export default function EquipmentManagePage() {
                   <EquipmentManageActions
                     item={item}
                     onEdit={() => { setEditingId(item.id); setForm(item); }}
-                    onTogglePublic={() => {
+                    onTogglePublic={async () => {
                       updateEquipmentItem(item.id, { isPublic: !item.isPublic });
-                      setItems(getEquipmentLibrary());
+                      await refreshItems();
                     }}
-                    onToggleDefault={() => {
+                    onToggleDefault={async () => {
                       updateEquipmentItem(item.id, { isDefault: !item.isDefault });
-                      setItems(getEquipmentLibrary());
+                      await refreshItems();
                     }}
-                    onRemove={() => {
+                    onRemove={async () => {
                       if (!window.confirm('Remove this equipment? Past live records will remain available.')) return;
                       removeEquipmentItem(item.id);
-                      setItems(getEquipmentLibrary());
+                      await refreshItems();
                       showToast('Equipment removed');
                     }}
                   />

@@ -1,9 +1,25 @@
-import { demoEquipmentItems, demoLiveEquipmentIds, EQUIPMENT_CATEGORIES } from '../data/equipmentModel.js';
+import { db } from '../firebase.js';
+import {
+  collection,
+  doc,
+  getDocs,
+  setDoc,
+  deleteDoc,
+  query,
+  where,
+  serverTimestamp,
+} from 'firebase/firestore';
+import { demoEquipmentItems, demoLiveEquipmentIds, EQUIPMENT_CATEGORIES, EQUIPMENT_PRODUCT_ID_MAP } from '../data/equipmentModel.js';
+import { resolveEquipmentProduct, getProductThumbnailUrl } from './productService.js';
 
 const EQUIPMENT_KEY = 'vuvio:equipment-library';
 const LIVE_SETUP_KEY = 'vuvio:last-live-equipment';
 const LIVE_SUBCATEGORY_KEY = 'vuvio:last-live-equipment-subcategory';
 const EQUIPMENT_EVENT = 'vuvio:equipment-updated';
+const CREATOR_EQUIPMENT_COLLECTION = 'creatorEquipment';
+
+// Current authenticated user ID — set by initEquipmentService()
+let _currentUserId = null;
 
 function safeWindow() {
   return typeof window !== 'undefined' ? window : null;
@@ -15,24 +31,30 @@ function nowIso() {
 
 function normalizeLegacyEquipment(item) {
   if (!item) return null;
+  const productId = item.productId || EQUIPMENT_PRODUCT_ID_MAP[item.id] || item.id;
   if (item.brand && item.model && item.category && EQUIPMENT_CATEGORIES.some((category) => category.id === item.category)) {
     return {
       userId: 'current-user',
+      productId,
       ownership: 'owned',
       isPublic: true,
       isDefault: false,
       imageUrl: item.imageUrl || null,
-      imageSource: item.imageSource || 'default_icon',
-      imageStatus: item.imageStatus || 'confirmed',
+      imageSource: item.imageSource || 'placeholder',
+      imageStatus: item.imageStatus || 'placeholder',
+      provider: item.provider || 'demo',
+      status: item.status || 'placeholder',
       createdAt: nowIso(),
       updatedAt: nowIso(),
       ...item,
+      productId,
     };
   }
 
   return {
     id: item.id ?? `equipment-${Date.now()}`,
     userId: 'current-user',
+    productId,
     category: item.category === 'Camera' ? 'recording' : item.category === 'Mixer' ? 'activity' : item.category === 'Oven' ? 'activity' : 'activity',
     brand: item.brand ?? String(item.name ?? '').split(' ')[0] ?? 'Gear',
     model: item.model ?? item.name ?? 'Equipment',
@@ -43,8 +65,10 @@ function normalizeLegacyEquipment(item) {
     isDefault: false,
     notes: item.note ?? '',
     imageUrl: item.imageUrl || null,
-    imageSource: item.imageSource || 'default_icon',
-    imageStatus: item.imageStatus || 'confirmed',
+    imageSource: item.imageSource || 'placeholder',
+    imageStatus: item.imageStatus || 'placeholder',
+    provider: item.provider || 'demo',
+    status: item.status || 'placeholder',
     createdAt: nowIso(),
     updatedAt: nowIso(),
   };
@@ -54,13 +78,116 @@ export function normalizeEquipmentItem(item) {
   return normalizeLegacyEquipment(item);
 }
 
+// ── Firestore helpers ─────────────────────────────────────────────────────────
+
+function toFirestoreDoc(item, userId) {
+  const { id, userId: _uid, ...rest } = item;
+  return {
+    ...rest,
+    creatorId: userId,
+    updatedAt: serverTimestamp(),
+  };
+}
+
+async function loadFromFirestore(userId) {
+  try {
+    const q = query(
+      collection(db, CREATOR_EQUIPMENT_COLLECTION),
+      where('creatorId', '==', userId),
+    );
+    const snapshot = await getDocs(q);
+    return snapshot.docs.map((d) => ({ id: d.id, ...d.data() }));
+  } catch (err) {
+    console.warn('[equipmentService] Firestore load failed:', err.message);
+    return null;
+  }
+}
+
+async function writeToFirestore(item, userId) {
+  try {
+    const docRef = doc(db, CREATOR_EQUIPMENT_COLLECTION, item.id);
+    await setDoc(docRef, toFirestoreDoc(item, userId), { merge: true });
+  } catch (err) {
+    console.warn('[equipmentService] Firestore write failed:', err.message);
+  }
+}
+
+async function deleteFromFirestore(id) {
+  try {
+    await deleteDoc(doc(db, CREATOR_EQUIPMENT_COLLECTION, id));
+  } catch (err) {
+    console.warn('[equipmentService] Firestore delete failed:', err.message);
+  }
+}
+
+// ── Init — call on auth state change ─────────────────────────────────────────
+
+/**
+ * Initialize equipment service for an authenticated user.
+ * Loads their equipment from Firestore into localStorage, then migrates
+ * any existing localStorage items not yet in Firestore.
+ */
+export async function initEquipmentService(userId) {
+  _currentUserId = userId;
+  if (!userId) return;
+
+  const remoteItems = await loadFromFirestore(userId);
+  if (remoteItems === null) return; // Firestore unavailable, keep localStorage
+
+  const win = safeWindow();
+  if (!win) return;
+
+  // Merge: remote is source of truth, local items without remote counterpart get migrated up
+  const remoteIds = new Set(remoteItems.map((i) => i.id));
+  let localItems = [];
+  try {
+    localItems = JSON.parse(win.localStorage.getItem(EQUIPMENT_KEY) ?? '[]');
+  } catch { /* */ }
+
+  const localOnly = localItems.filter((i) => i && i.id && !remoteIds.has(i.id));
+
+  // Migrate local-only items to Firestore
+  for (const item of localOnly) {
+    const normalized = normalizeLegacyEquipment(item);
+    if (normalized) {
+      await writeToFirestore(normalized, userId);
+    }
+  }
+
+  // Write merged set to localStorage as cache
+  const merged = [
+    ...remoteItems.map(normalizeLegacyEquipment).filter(Boolean),
+    ...localOnly.map(normalizeLegacyEquipment).filter(Boolean),
+  ];
+  win.localStorage.setItem(EQUIPMENT_KEY, JSON.stringify(merged));
+  win.dispatchEvent(new CustomEvent(EQUIPMENT_EVENT, { detail: merged }));
+}
+
+/**
+ * Call when user signs out.
+ */
+export function resetEquipmentService() {
+  _currentUserId = null;
+}
+
+// ── Core CRUD ─────────────────────────────────────────────────────────────────
+
 export function getEquipmentLibrary(seedItems = demoEquipmentItems) {
   const win = safeWindow();
   if (!win) return seedItems.map(normalizeEquipmentItem).filter(Boolean);
 
   try {
     const stored = JSON.parse(win.localStorage.getItem(EQUIPMENT_KEY) ?? 'null');
-    if (Array.isArray(stored)) return stored.map(normalizeEquipmentItem).filter(Boolean);
+    if (Array.isArray(stored)) {
+      const storedIds = new Set(stored.map((i) => i.id));
+      const newSeeds = seedItems.filter((i) => !storedIds.has(i.id)).map(normalizeEquipmentItem).filter(Boolean);
+      if (newSeeds.length) {
+        const merged = [...stored.map(normalizeEquipmentItem).filter(Boolean), ...newSeeds];
+        win.localStorage.setItem(EQUIPMENT_KEY, JSON.stringify(merged));
+        return merged;
+      }
+      return stored.map(normalizeEquipmentItem).filter(Boolean);
+    }
   } catch {
     // Fall through to seed data.
   }
@@ -68,6 +195,39 @@ export function getEquipmentLibrary(seedItems = demoEquipmentItems) {
   const seeded = seedItems.map(normalizeEquipmentItem).filter(Boolean);
   win.localStorage.setItem(EQUIPMENT_KEY, JSON.stringify(seeded));
   return seeded;
+}
+
+function mergeEquipmentProduct(item, product) {
+  if (!item || !product) return item;
+  const thumbnailUrl = getProductThumbnailUrl(product, 'medium') || product.thumbnailUrl || null;
+  return {
+    ...item,
+    product,
+    productId: item.productId || product.id,
+    brand: item.brand || product.brand,
+    model: item.model || product.name,
+    productUrl: item.productUrl || product.productUrl || '',
+    affiliateUrl: item.affiliateUrl || product.affiliateUrl || '',
+    thumbnailUrl,
+    imageUrl: item.imageUrl || thumbnailUrl,
+    imageSource: item.imageSource || product.imageSource || 'placeholder',
+    imageStatus: item.imageStatus || product.status || 'placeholder',
+    provider: item.provider || product.provider || 'demo',
+    status: item.status || product.status || 'placeholder',
+  };
+}
+
+export async function enrichEquipmentWithProducts(items, options = {}) {
+  const normalized = items.map(normalizeEquipmentItem).filter(Boolean);
+  const enriched = await Promise.all(normalized.map(async (item) => {
+    const product = await resolveEquipmentProduct(item.productId, options);
+    return mergeEquipmentProduct(item, product);
+  }));
+  return enriched;
+}
+
+export async function getEquipmentLibraryWithProducts(seedItems = demoEquipmentItems, options = {}) {
+  return enrichEquipmentWithProducts(getEquipmentLibrary(seedItems), options);
 }
 
 export function saveEquipmentLibrary(items) {
@@ -97,9 +257,14 @@ export function addEquipmentItem(input) {
     isDefault: false,
     createdAt: nowIso(),
     updatedAt: nowIso(),
+    provider: input.provider || (input.productId ? 'user' : 'demo'),
+    imageSource: input.imageSource || (input.productId ? 'product-catalog' : 'placeholder'),
+    status: input.status || (input.productId ? 'active' : 'placeholder'),
     ...input,
   });
-  return saveEquipmentLibrary([item, ...getEquipmentLibrary()])[0];
+  const saved = saveEquipmentLibrary([item, ...getEquipmentLibrary()])[0];
+  if (_currentUserId) writeToFirestore(item, _currentUserId);
+  return saved;
 }
 
 export function updateEquipmentItem(id, patch) {
@@ -110,12 +275,17 @@ export function updateEquipmentItem(id, patch) {
     return updatedItem;
   });
   saveEquipmentLibrary(next);
+  if (_currentUserId && updatedItem) writeToFirestore(updatedItem, _currentUserId);
   return updatedItem;
 }
 
 export function removeEquipmentItem(id) {
-  return saveEquipmentLibrary(getEquipmentLibrary().filter((item) => item.id !== id));
+  const result = saveEquipmentLibrary(getEquipmentLibrary().filter((item) => item.id !== id));
+  if (_currentUserId) deleteFromFirestore(id);
+  return result;
 }
+
+// ── Utilities ─────────────────────────────────────────────────────────────────
 
 export function groupEquipmentByCategory(items) {
   return EQUIPMENT_CATEGORIES.map((category) => ({
@@ -202,12 +372,13 @@ export function getSuggestedEquipmentIds(items, subcategory, compatibleTypes = [
 
 export function getEquipmentSelection(items, ids = demoLiveEquipmentIds) {
   const idSet = new Set(ids);
-  return items.filter((item) => idSet.has(item.id));
+  return items.filter((item) => idSet.has(item.id) || idSet.has(item.equipmentId));
 }
 
 export function buildEquipmentSnapshots(items, ids) {
   return getEquipmentSelection(items, ids).map((item) => ({
     equipmentId: item.id,
+    productId: item.productId || null,
     displayName: item.displayName || `${item.brand} ${item.model}`,
     brand: item.brand,
     model: item.model,
@@ -216,39 +387,19 @@ export function buildEquipmentSnapshots(items, ids) {
     ownership: item.ownership,
     affiliateUrl: item.affiliateUrl,
     productUrl: item.productUrl,
-    imageUrl: item.imageUrl || null,
-    imageSource: item.imageSource || null,
+    thumbnailUrl: item.thumbnailUrl || item.product?.thumbnailUrl || item.imageUrl || null,
+    imageUrl: item.imageUrl || item.thumbnailUrl || item.product?.thumbnailUrl || null,
+    imageSource: item.imageSource || item.product?.imageSource || 'placeholder',
+    provider: item.provider || item.product?.provider || 'demo',
+    status: item.status || item.product?.status || 'placeholder',
   }));
 }
 
 export async function fetchMissingEquipmentImages() {
-  const { getGearImageSuggestions } = await import('./gearSnapshotService.js');
-  const allItems = getEquipmentLibrary();
-  const itemsNeedingImages = allItems.filter((item) => !item.imageUrl && item.brand && item.model);
-
-  if (itemsNeedingImages.length === 0) return { updated: 0, items: [] };
-
-  const updatedItems = [];
-  for (const item of itemsNeedingImages) {
-    try {
-      const result = await getGearImageSuggestions({
-        brand: item.brand,
-        model: item.model,
-        displayName: `${item.brand} ${item.model}`.trim(),
-      });
-
-      if (result.success && result.suggestions?.[0]) {
-        updateEquipmentItem(item.id, {
-          imageUrl: result.suggestions[0].url,
-          imageSource: 'auto',
-          imageStatus: 'auto-fetched',
-        });
-        updatedItems.push(item.id);
-      }
-    } catch (error) {
-      console.warn(`Failed to fetch image for ${item.brand} ${item.model}:`, error);
-    }
-  }
-
-  return { updated: updatedItems.length, items: updatedItems };
+  return {
+    updated: 0,
+    items: [],
+    disabled: true,
+    reason: 'Equipment images are resolved from Firestore products or explicit user uploads only.',
+  };
 }

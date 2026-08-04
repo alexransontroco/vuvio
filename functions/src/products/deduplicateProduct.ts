@@ -5,7 +5,7 @@
  * Matches products by GTIN/EAN, MPN + brand, and normalized name + brand.
  */
 
-import { db } from '../shared/firebaseAdmin.js';
+import { db } from '../shared/firestore.js';
 import { logger } from 'firebase-functions';
 
 export interface DeduplicateCheck {

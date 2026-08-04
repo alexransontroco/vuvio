@@ -1,341 +1,321 @@
-/**
- * Icecat Product Data Service
- *
- * Provides access to Icecat's product database for authorized accounts.
- * Handles product search, data mapping, and image management.
- *
- * Documentation: https://icecat.biz/en/publish/xml-p-datasheet
- *
- * NOTE: Requires valid Icecat credentials (ICECAT_USERNAME, ICECAT_API_KEY)
- * These must be set as Firebase Function secrets.
- */
-
-import fetch from 'node-fetch';
 import { logger } from 'firebase-functions';
 
-interface IcecatConfig {
+export interface IcecatConfig {
   username: string;
-  apiKey: string;
+  password: string;
   language: string;
   market: string;
 }
 
-interface IcecatSearchResult {
-  product_id: string;
-  brand_name: string;
-  product_name: string;
-  category?: string;
-  image_url?: string;
-  spec_sheet_url?: string;
+type IcecatErrorType = 'not_found' | 'access_denied' | 'rate_limited' | 'parse_error' | 'network_error';
+
+export class IcecatError extends Error {
+  constructor(readonly type: IcecatErrorType, message: string) {
+    super(message);
+    this.name = 'IcecatError';
+  }
 }
 
-interface IcecatProductData {
-  product_id: string;
+export interface IcecatProductData {
+  icecatId: string;
   brand: string;
   name: string;
+  mpn?: string;
+  gtin?: string[];
+  ean?: string;
   category?: string;
   description?: string;
-  specs?: Record<string, string>;
-  images?: {
-    thumbnail?: string;
-    full?: string;
-  };
-  identifiers?: {
-    gtin?: string;
-    ean?: string;
-    mpn?: string;
-  };
-  url?: string;
+  thumbnailUrl?: string;
+  highResImageUrl?: string;
+  gallery?: string[];
+  sourceUrl: string;
 }
 
-const ICECAT_API_BASE = 'https://icecat.biz/api/product';
-const ICECAT_FREE_API_BASE = 'https://icecat.biz/xml_t.asp';
+interface CacheEntry<T> {
+  data: T;
+  expiresAt: number;
+}
 
-/**
- * Search for products in Icecat
- * Uses the free XML API with limited results
- *
- * @param query - Product name, brand, or model number
- * @param config - Icecat API configuration
- * @returns Array of search results
- */
-export async function searchIcecatProducts(
-  query: string,
-  config: IcecatConfig
-): Promise<IcecatSearchResult[]> {
-  try {
-    if (!query || query.length < 2) {
-      logger.info('[Icecat] Search query too short');
-      return [];
+const productCache = new Map<string, CacheEntry<IcecatProductData>>();
+const searchCache = new Map<string, CacheEntry<IcecatProductData[]>>();
+const PRODUCT_CACHE_TTL = 24 * 60 * 60 * 1000;
+const SEARCH_CACHE_TTL = 60 * 60 * 1000;
+const NEGATIVE_CACHE_TTL = 30 * 60 * 1000;
+
+let tokenBucketCount = 10;
+let tokenBucketLastRefill = Date.now();
+const TOKEN_BUCKET_MAX = 10;
+const TOKEN_BUCKET_REFILL_MS = 60 * 1000;
+
+function acquireToken(): boolean {
+  const now = Date.now();
+  const elapsed = now - tokenBucketLastRefill;
+  if (elapsed >= TOKEN_BUCKET_REFILL_MS) {
+    tokenBucketCount = TOKEN_BUCKET_MAX;
+    tokenBucketLastRefill = now;
+  }
+  if (tokenBucketCount <= 0) {
+    return false;
+  }
+  tokenBucketCount--;
+  return true;
+}
+
+// Icecat authenticates via app_key URL parameter, not Basic Auth.
+// username + app_key are both added to the URLSearchParams before the request.
+function addIcecatAuth(params: URLSearchParams, config: IcecatConfig): void {
+  params.set('UserName', config.username);
+  if (config.password) {
+    params.set('app_key', config.password);
+  }
+}
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function parseIcecatResponse(data: Record<string, unknown>): IcecatProductData {
+  const generalInfo = data.GeneralInfo as Record<string, unknown> | undefined;
+  if (!generalInfo) {
+    throw new IcecatError('parse_error', 'Missing GeneralInfo in Icecat response');
+  }
+
+  const icecatId = String(generalInfo.IcecatId ?? '');
+  const brand = String(generalInfo.BrandName ?? '');
+  const name = String(generalInfo.ProductName ?? '');
+  const mpn = generalInfo.BrandPartCode ? String(generalInfo.BrandPartCode) : undefined;
+
+  const gtinRaw = generalInfo.GTIN as string[] | undefined;
+  const gtin = Array.isArray(gtinRaw) && gtinRaw.length > 0 ? gtinRaw : undefined;
+
+  const categoryRaw = generalInfo.Category as Record<string, unknown> | undefined;
+  let category: string | undefined;
+  if (categoryRaw) {
+    const nameArr = categoryRaw.Name as Array<Record<string, unknown>> | undefined;
+    if (Array.isArray(nameArr) && nameArr.length > 0) {
+      category = String(nameArr[0].Value ?? '');
     }
+  }
 
-    logger.info(`[Icecat] Searching for: ${query}`);
+  const summaryRaw = generalInfo.SummaryDescription as Record<string, unknown> | undefined;
+  const description = summaryRaw?.LongSummaryDescription
+    ? String(summaryRaw.LongSummaryDescription)
+    : undefined;
 
-    // Use free API endpoint for search
-    // This is a simple search that returns limited results
-    const searchUrl = new URL(ICECAT_FREE_API_BASE);
-    searchUrl.searchParams.append('action', 'make_request');
-    searchUrl.searchParams.append('type', 'CatalogSearch.xml');
-    searchUrl.searchParams.append('username', config.username);
-    searchUrl.searchParams.append('usertoken', config.apiKey);
-    searchUrl.searchParams.append('lang_id', getLangId(config.language));
-    searchUrl.searchParams.append('market_id', getMarketId(config.market));
-    searchUrl.searchParams.append('search', query);
+  const imageRaw = data.Image as Record<string, unknown> | undefined;
+  const thumbnailUrl = imageRaw?.ThumbPic ? String(imageRaw.ThumbPic) : undefined;
+  const highResImageUrl = imageRaw?.HighPic ? String(imageRaw.HighPic) : undefined;
 
-    const response = await fetchWithTimeout(searchUrl.toString(), {
-      method: 'GET',
-      timeout: 10000,
+  const galleryRaw = data.Gallery as Array<Record<string, unknown>> | undefined;
+  let gallery: string[] | undefined;
+  if (Array.isArray(galleryRaw) && galleryRaw.length > 0) {
+    const sorted = [...galleryRaw].sort((a, b) => {
+      const aMain = a.IsMain ? 1 : 0;
+      const bMain = b.IsMain ? 1 : 0;
+      return bMain - aMain;
     });
-
-    if (!response.ok) {
-      logger.error(`[Icecat] API error: ${response.status} ${response.statusText}`);
-      return [];
-    }
-
-    const xmlText = await response.text();
-
-    // Parse simple XML response
-    // In production, use a proper XML parser like xml2js
-    const results = parseIcecatSearchXml(xmlText);
-
-    logger.info(`[Icecat] Found ${results.length} products`);
-    return results;
-  } catch (error) {
-    logger.error('[Icecat] Search error:', error);
-    return [];
+    gallery = sorted
+      .map((g) => String(g.Pic ?? ''))
+      .filter((url) => url.length > 0);
   }
-}
-
-/**
- * Get detailed product information from Icecat
- *
- * @param productId - Icecat product ID
- * @param config - Icecat API configuration
- * @returns Detailed product data
- */
-export async function getIcecatProduct(
-  productId: string,
-  config: IcecatConfig
-): Promise<IcecatProductData | null> {
-  try {
-    logger.info(`[Icecat] Fetching product: ${productId}`);
-
-    const url = new URL(ICECAT_API_BASE);
-    url.searchParams.append('username', config.username);
-    url.searchParams.append('usertoken', config.apiKey);
-    url.searchParams.append('lang_id', getLangId(config.language));
-    url.searchParams.append('market_id', getMarketId(config.market));
-    url.searchParams.append('product_id', productId);
-
-    const response = await fetchWithTimeout(url.toString(), {
-      method: 'GET',
-      timeout: 10000,
-    });
-
-    if (!response.ok) {
-      logger.warn(`[Icecat] Product not found: ${productId}`);
-      return null;
-    }
-
-    const xmlText = await response.text();
-    const productData = parseIcecatProductXml(xmlText);
-
-    return productData;
-  } catch (error) {
-    logger.error(`[Icecat] Product fetch error for ${productId}:`, error);
-    return null;
-  }
-}
-
-/**
- * Normalize Icecat product data to Vuvio format
- */
-export function mapIcecatToVuvioProduct(
-  icecatData: IcecatProductData,
-  category: string
-): Record<string, unknown> {
-  const searchTerms = [
-    icecatData.brand.toLowerCase(),
-    icecatData.name.toLowerCase(),
-  ];
-
-  if (icecatData.identifiers?.mpn) {
-    searchTerms.push(icecatData.identifiers.mpn.toLowerCase());
-  }
-
-  // Extract model number from name if present
-  const nameWords = icecatData.name.split(/[\s\-]+/);
-  searchTerms.push(...nameWords.map((w) => w.toLowerCase()).filter((w) => w.length > 2));
 
   return {
-    brand: icecatData.brand,
-    name: icecatData.name,
+    icecatId,
+    brand,
+    name,
+    mpn,
+    gtin,
     category,
-    description: icecatData.description,
-
-    // Image URLs - prefer high-quality versions
-    thumbnailUrl: icecatData.images?.thumbnail,
-    originalImageUrl: icecatData.images?.full,
-
-    // External identifiers for deduplication
-    source: 'icecat' as const,
-    sourceProductId: icecatData.product_id,
-    sourceProductUrl: `https://icecat.biz/p/${icecatData.product_id}`,
-    sourceImageUrl: icecatData.images?.full,
-
-    gtin: icecatData.identifiers?.gtin,
-    ean: icecatData.identifiers?.ean,
-    mpn: icecatData.identifiers?.mpn,
-
-    imageSource: 'official' as const,
-    imageStatus: icecatData.images?.thumbnail ? 'ready' : 'pending',
-
-    searchTerms: [...new Set(searchTerms)].filter((t) => t),
-
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
+    description,
+    thumbnailUrl,
+    highResImageUrl,
+    gallery,
+    sourceUrl: `https://icecat.biz/p/${icecatId}`,
   };
 }
 
-/**
- * Simple XML parser for Icecat search response
- * In production, use xml2js or similar library
- */
-function parseIcecatSearchXml(xml: string): IcecatSearchResult[] {
-  const results: IcecatSearchResult[] = [];
-
-  // Simple regex-based parsing - replace with proper XML parser in production
-  const productPattern = /<Product[^>]*>/g;
-  const matches = xml.match(productPattern) || [];
-
-  matches.forEach((productTag) => {
-    const productId = extractAttribute(productTag, 'ID');
-    const brandName = extractAttribute(productTag, 'Brand');
-    const productName = extractAttribute(productTag, 'Title');
-
-    if (productId && brandName && productName) {
-      results.push({
-        product_id: productId,
-        brand_name: brandName,
-        product_name: productName,
-      });
-    }
-  });
-
-  return results;
-}
-
-/**
- * Simple XML parser for detailed product response
- */
-function parseIcecatProductXml(xml: string): IcecatProductData {
-  return {
-    product_id: extractAttribute(xml, 'ID'),
-    brand: extractAttribute(xml, 'Brand'),
-    name: extractAttribute(xml, 'Title'),
-    images: {
-      thumbnail: extractImageUrl(xml, 'thumbnail'),
-      full: extractImageUrl(xml, 'high'),
-    },
-    identifiers: {
-      gtin: extractSpecValue(xml, 'GTIN'),
-      ean: extractSpecValue(xml, 'EAN'),
-      mpn: extractSpecValue(xml, 'MPN'),
-    },
-  };
-}
-
-/**
- * Extract XML attribute value
- */
-function extractAttribute(xml: string, attrName: string): string {
-  const regex = new RegExp(`${attrName}="([^"]*)"`, 'i');
-  const match = xml.match(regex);
-  return match ? match[1] : '';
-}
-
-/**
- * Extract image URL from Icecat XML
- */
-function extractImageUrl(xml: string, type: string): string | undefined {
-  // Look for picture elements
-  const regex = new RegExp(`<Picture[^>]*type="${type}"[^>]*src="([^"]*)"`, 'i');
-  const match = xml.match(regex);
-  return match ? match[1] : undefined;
-}
-
-/**
- * Extract specification value from XML
- */
-function extractSpecValue(xml: string, specName: string): string | undefined {
-  const regex = new RegExp(`<${specName}>([^<]*)<`, 'i');
-  const match = xml.match(regex);
-  return match ? match[1] : undefined;
-}
-
-/**
- * Convert language code to Icecat language ID
- */
-function getLangId(language: string): string {
-  const langMap: Record<string, string> = {
-    en: '1',
-    de: '3',
-    fr: '4',
-    es: '8',
-    it: '9',
-    nl: '11',
-    pt: '15',
-    ru: '25',
-    ja: '31',
-    zh: '33',
-  };
-  return langMap[language.toLowerCase()] || '1'; // Default to English
-}
-
-/**
- * Convert market code to Icecat market ID
- */
-function getMarketId(market: string): string {
-  const marketMap: Record<string, string> = {
-    GB: '1',
-    US: '2',
-    DE: '3',
-    FR: '4',
-    ES: '5',
-    IT: '6',
-    NL: '7',
-    CH: '8',
-    BE: '9',
-    AU: '10',
-    CA: '11',
-    JP: '12',
-  };
-  return marketMap[market.toUpperCase()] || '1'; // Default to GB
-}
-
-/**
- * Fetch with timeout protection
- */
-async function fetchWithTimeout(
+async function fetchFromIcecat(
   url: string,
-  options: { method?: string; timeout?: number } = {}
-): Promise<Response> {
-  const controller = new AbortController();
-  const timeoutId = setTimeout(
-    () => controller.abort(),
-    options.timeout || 30000
-  );
+  config: IcecatConfig,
+  retryCount = 0
+): Promise<Record<string, unknown>> {
+  if (!acquireToken()) {
+    throw new IcecatError('rate_limited', 'Icecat rate limit exceeded (local token bucket)');
+  }
 
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 10000);
+
+  let response: Response;
   try {
-    const response = await fetch(url, {
-      method: options.method || 'GET',
-      signal: controller.signal as never,
+    response = await fetch(url, {
+      signal: controller.signal,
       headers: {
         'User-Agent': 'Vuvio/1.0',
+        Accept: 'application/json',
       },
-    } as never);
-    return response;
+    });
+  } catch (err) {
+    clearTimeout(timeoutId);
+    throw new IcecatError('network_error', `Icecat fetch failed: ${String(err)}`);
   } finally {
     clearTimeout(timeoutId);
   }
+
+  if (response.status === 200) {
+    let json: unknown;
+    try {
+      json = await response.json();
+    } catch {
+      throw new IcecatError('parse_error', 'Failed to parse Icecat JSON response');
+    }
+    return (json as Record<string, unknown>).data as Record<string, unknown>;
+  }
+
+  if (response.status === 404) {
+    throw new IcecatError('not_found', `Icecat: product not found`);
+  }
+
+  if (response.status === 401 || response.status === 403) {
+    throw new IcecatError('access_denied', 'Icecat credentials invalid or insufficient access');
+  }
+
+  if (response.status === 429) {
+    if (retryCount >= 3) {
+      throw new IcecatError('rate_limited', 'Icecat rate limited after 3 retries');
+    }
+    const waitMs = Math.pow(2, retryCount) * 1000;
+    await sleep(waitMs);
+    return fetchFromIcecat(url, config, retryCount + 1);
+  }
+
+  throw new IcecatError('network_error', `Icecat unexpected status: ${response.status}`);
+}
+
+export async function fetchIcecatProduct(
+  identifier: { gtin?: string; brand?: string; mpn?: string; icecatId?: string },
+  config: IcecatConfig
+): Promise<IcecatProductData> {
+  let cacheKey: string;
+  let urlParams: URLSearchParams;
+
+  if (identifier.gtin) {
+    cacheKey = `gtin:${identifier.gtin}`;
+    urlParams = new URLSearchParams({ GTIN: identifier.gtin, lang: config.language });
+  } else if (identifier.brand && identifier.mpn) {
+    cacheKey = `brand:${identifier.brand}:mpn:${identifier.mpn}`;
+    urlParams = new URLSearchParams({ Brand: identifier.brand, prod_id: identifier.mpn, lang: config.language });
+  } else if (identifier.icecatId) {
+    cacheKey = `icecatId:${identifier.icecatId}`;
+    urlParams = new URLSearchParams({ icecat_id: identifier.icecatId, lang: config.language });
+  } else {
+    throw new IcecatError('network_error', 'fetchIcecatProduct: no valid identifier provided');
+  }
+
+  // app_key and UserName go in URL params (Icecat rejects them in Authorization header)
+  addIcecatAuth(urlParams, config);
+
+  const cached = productCache.get(cacheKey);
+  if (cached) {
+    if (Date.now() < cached.expiresAt) {
+      return cached.data;
+    }
+    productCache.delete(cacheKey);
+  }
+
+  const url = `https://live.icecat.biz/api?${urlParams.toString()}`;
+
+  let data: Record<string, unknown>;
+  try {
+    data = await fetchFromIcecat(url, config);
+  } catch (err) {
+    if (err instanceof IcecatError && err.type === 'not_found') {
+      productCache.set(cacheKey, {
+        data: null as unknown as IcecatProductData,
+        expiresAt: Date.now() + NEGATIVE_CACHE_TTL,
+      });
+    }
+    throw err;
+  }
+
+  const product = parseIcecatResponse(data);
+  productCache.set(cacheKey, { data: product, expiresAt: Date.now() + PRODUCT_CACHE_TTL });
+  return product;
+}
+
+export async function searchIcecat(
+  query: string,
+  config: IcecatConfig,
+  limit = 20
+): Promise<IcecatProductData[]> {
+  const cacheKey = `search:${config.language}:${query}:${limit}`;
+  const cached = searchCache.get(cacheKey);
+  if (cached && Date.now() < cached.expiresAt) {
+    return cached.data;
+  }
+
+  const urlParams = new URLSearchParams({ keywords: query, lang: config.language, limit: String(limit) });
+  addIcecatAuth(urlParams, config);
+
+  const url = `https://live.icecat.biz/api/search?${urlParams.toString()}`;
+
+  if (!acquireToken()) {
+    logger.warn('[Icecat] Rate limited during search, returning empty');
+    return [];
+  }
+
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 10000);
+
+  let response: Response;
+  try {
+    response = await fetch(url, {
+      signal: controller.signal,
+      headers: {
+        'User-Agent': 'Vuvio/1.0',
+        Accept: 'application/json',
+      },
+    });
+  } catch (err) {
+    clearTimeout(timeoutId);
+    logger.warn('[Icecat] Search request failed:', err);
+    return [];
+  } finally {
+    clearTimeout(timeoutId);
+  }
+
+  if (response.status === 404) {
+    logger.warn('[Icecat] Search endpoint not available on this account');
+    return [];
+  }
+
+  if (!response.ok) {
+    logger.warn(`[Icecat] Search returned ${response.status}`);
+    return [];
+  }
+
+  let json: unknown;
+  try {
+    json = await response.json();
+  } catch {
+    logger.warn('[Icecat] Failed to parse search response');
+    return [];
+  }
+
+  const items = (json as Record<string, unknown>).data as Array<Record<string, unknown>> | undefined;
+  if (!Array.isArray(items)) {
+    return [];
+  }
+
+  const results: IcecatProductData[] = [];
+  for (const item of items) {
+    try {
+      results.push(parseIcecatResponse(item));
+    } catch {
+      // skip unparseable items silently
+    }
+  }
+
+  searchCache.set(cacheKey, { data: results, expiresAt: Date.now() + SEARCH_CACHE_TTL });
+  return results;
 }
