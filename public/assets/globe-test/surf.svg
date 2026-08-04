@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" fill="none">
+  <defs>
+    <linearGradient id="surfBoard" x1="34" y1="18" x2="94" y2="112" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#7EDCFF"/>
+      <stop offset="0.5" stop-color="#1E8CFF"/>
+      <stop offset="1" stop-color="#0B3A97"/>
+    </linearGradient>
+    <linearGradient id="surfWave" x1="24" y1="68" x2="102" y2="90" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#B8FBFF"/>
+      <stop offset="1" stop-color="#3DE6D1"/>
+    </linearGradient>
+  </defs>
+  <path d="M38 84c0-10 9-20 24-20 12 0 18 6 18 13 0 4-3 7-7 7-6 0-7-6-14-6-5 0-10 3-11 8h-10Z" fill="url(#surfWave)"/>
+  <path d="M67 18c3 0 6 2 8 5l12 21c1 2 1 5-1 7L51 107c-2 2-5 3-7 2-3-1-5-4-5-7 0-2 0-4 1-5l35-73c1-3 4-6 7-6Z" fill="url(#surfBoard)"/>
+  <path d="M68 24 47 68" stroke="rgba(255,255,255,0.48)" stroke-width="4" stroke-linecap="round"/>
+</svg>

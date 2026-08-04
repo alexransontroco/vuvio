@@ -1,0 +1,246 @@
+.icons-preview-screen {
+  height: 100%;
+  overflow-x: hidden;
+  overflow-y: auto;
+  background:
+    radial-gradient(100% 34% at 50% -8%, rgba(47, 107, 255, 0.18), transparent 66%),
+    linear-gradient(180deg, #070b13 0%, #09101a 48%, #060a12 100%);
+  color: var(--color-text);
+  padding: calc(18px + env(safe-area-inset-top)) 16px calc(var(--nav-height) + var(--safe-bottom) + 28px);
+  scrollbar-width: none;
+}
+
+.icons-preview-screen::-webkit-scrollbar {
+  display: none;
+}
+
+.icons-preview-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+  margin-bottom: 14px;
+}
+
+.icons-preview-kicker {
+  margin: 0 0 6px;
+  color: rgba(109, 156, 255, 0.88);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.icons-preview-header h1 {
+  margin: 0;
+  color: #fff;
+  font-size: 21px;
+  font-weight: 680;
+  letter-spacing: 0;
+}
+
+.icons-preview-header p {
+  max-width: 260px;
+  margin: 5px 0 0;
+  color: rgba(242, 247, 246, 0.52);
+  font-size: 12.5px;
+  line-height: 1.45;
+}
+
+.icons-preview-header span {
+  min-width: 40px;
+  height: 40px;
+  display: grid;
+  place-items: center;
+  border: 0.5px solid rgba(255, 255, 255, 0.1);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.055);
+  color: #b8ccff;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.icons-preview-content,
+.icons-preview-group {
+  display: grid;
+  gap: 14px;
+}
+
+.icons-preview-group {
+  --category-color: #4d82ff;
+  --category-glow: rgba(77, 130, 255, 0.16);
+}
+
+.icons-preview-group.is-terre {
+  --category-color: #7ee05f;
+  --category-glow: rgba(126, 224, 95, 0.16);
+}
+
+.icons-preview-group.is-eau {
+  --category-color: #38dfe8;
+  --category-glow: rgba(56, 223, 232, 0.16);
+}
+
+.icons-preview-group.is-transport {
+  --category-color: #9b67ff;
+  --category-glow: rgba(155, 103, 255, 0.16);
+}
+
+.icons-preview-group.is-live {
+  --category-color: rgba(242, 247, 246, 0.88);
+  --category-glow: rgba(242, 247, 246, 0.12);
+}
+
+.icons-preview-group.is-metiers {
+  --category-color: #ffb347;
+  --category-glow: rgba(255, 179, 71, 0.16);
+}
+
+.icons-preview-group.is-passions {
+  --category-color: #ef79d8;
+  --category-glow: rgba(239, 121, 216, 0.16);
+}
+
+.icons-preview-group.is-navigation,
+.icons-preview-group.is-interface {
+  --category-color: rgba(242, 247, 246, 0.88);
+  --category-glow: rgba(242, 247, 246, 0.12);
+}
+
+.icons-reference-card {
+  overflow: hidden;
+  border: 0.5px solid rgba(255, 255, 255, 0.1);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.icons-reference-card img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.icons-preview-group-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.icons-preview-group h2 {
+  margin: 0;
+  color: rgba(242, 247, 246, 0.54);
+  font-size: 11px;
+  font-weight: 680;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.icons-preview-group-header span {
+  color: rgba(242, 247, 246, 0.34);
+  font-size: 11px;
+  font-weight: 650;
+}
+
+.icons-preview-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 9px;
+}
+
+.icons-preview-card {
+  min-width: 0;
+  min-height: 132px;
+  display: grid;
+  place-items: center;
+  align-content: center;
+  gap: 8px;
+  border: 0.5px solid rgba(255, 255, 255, 0.08);
+  border-radius: 15px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.055), rgba(255, 255, 255, 0.032)),
+    rgba(10, 16, 27, 0.86);
+  padding: 10px 7px;
+  text-align: center;
+}
+
+.icons-preview-sizes {
+  width: 100%;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.icons-preview-sizes span {
+  min-width: 0;
+  min-height: 68px;
+  display: grid;
+  place-items: center;
+  align-content: center;
+  gap: 5px;
+  border: 0.5px solid var(--category-glow);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--category-color) 8%, transparent);
+}
+
+.icons-preview-glyph {
+  width: var(--preview-icon-size, 32px);
+  height: var(--preview-icon-size, 32px);
+  display: grid;
+  place-items: center;
+  color: var(--category-color);
+}
+
+.icons-preview-glyph svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+  color: inherit;
+  overflow: visible;
+}
+
+.icons-preview-sizes em {
+  color: rgba(242, 247, 246, 0.36);
+  font-size: 9.5px;
+  font-style: normal;
+  font-weight: 600;
+}
+
+.icons-preview-card strong {
+  max-width: 100%;
+  overflow: hidden;
+  color: rgba(242, 247, 246, 0.9);
+  font-size: 11.5px;
+  font-weight: 580;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.icons-preview-card small {
+  max-width: 100%;
+  overflow: hidden;
+  color: rgba(242, 247, 246, 0.38);
+  font-size: 9.5px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.icons-preview-card b {
+  color: var(--category-color);
+  font-size: 10.5px;
+  font-weight: 680;
+}
+
+.icons-preview-footer {
+  margin: 2px 0 0;
+  color: rgba(242, 247, 246, 0.4);
+  font-size: 12px;
+  line-height: 1.4;
+  text-align: center;
+}
+
+@media (max-width: 360px) {
+  .icons-preview-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}

@@ -1,0 +1,132 @@
+.gear-item-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px;
+  border: 0.5px solid rgba(53, 227, 220, 0.1);
+  border-radius: 10px;
+  background: transparent;
+  transition: all 200ms ease;
+}
+
+.gear-item-row.is-selected {
+  background: rgba(53, 227, 220, 0.08);
+  border-color: rgba(53, 227, 220, 0.3);
+}
+
+.gear-item-row.has-error {
+  border-color: rgba(255, 59, 59, 0.2);
+  background: rgba(255, 59, 59, 0.03);
+}
+
+.gear-item-row__button {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border: none;
+  background: transparent;
+  padding: 0;
+  cursor: pointer;
+  text-align: left;
+  color: inherit;
+}
+
+.gear-item-row__thumbnail {
+  flex-shrink: 0;
+}
+
+.gear-item-row__content {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.gear-item-row__header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  justify-content: space-between;
+}
+
+.gear-item-row__name {
+  font-size: 13px;
+  font-weight: 600;
+  color: #f5fbff;
+  word-break: break-word;
+}
+
+.gear-item-row__live-badge {
+  flex-shrink: 0;
+  font-size: 10px;
+  font-weight: 700;
+  color: #35e3dc;
+  background: rgba(53, 227, 220, 0.15);
+  padding: 2px 6px;
+  border-radius: 3px;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  white-space: nowrap;
+}
+
+.gear-item-row__meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: rgba(142, 172, 190, 0.7);
+}
+
+.gear-item-row__category {
+  display: inline-block;
+  padding: 2px 6px;
+  background: rgba(53, 227, 220, 0.1);
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 550;
+  text-transform: capitalize;
+}
+
+.gear-item-row__subtitle {
+  color: rgba(142, 172, 190, 0.5);
+}
+
+.gear-item-row__chevron {
+  flex-shrink: 0;
+  color: rgba(142, 172, 190, 0.5);
+}
+
+.gear-item-row__remove {
+  flex-shrink: 0;
+  width: 24px;
+  height: 24px;
+  border: 0.5px solid rgba(255, 59, 59, 0.3);
+  border-radius: 50%;
+  background: transparent;
+  color: rgba(255, 59, 59, 0.6);
+  font-size: 18px;
+  font-weight: 300;
+  cursor: pointer;
+  transition: all 200ms ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.gear-item-row__remove:hover {
+  border-color: rgba(255, 59, 59, 0.6);
+  color: rgba(255, 59, 59, 0.8);
+  background: rgba(255, 59, 59, 0.05);
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .gear-item-row {
+    transition: none;
+  }
+  .gear-item-row__remove {
+    transition: none;
+  }
+}

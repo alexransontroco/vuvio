@@ -1,0 +1,167 @@
+import { Eye, EyeOff, LogIn } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import BrandMark from '../components/BrandMark.jsx';
+import { useAuth } from '../context/AuthContext.jsx';
+
+function GoogleIcon() {
+  return (
+    <svg className="auth-google__icon" viewBox="0 0 24 24" aria-hidden="true">
+      <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
+      <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
+      <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" />
+      <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
+    </svg>
+  );
+}
+
+export default function LoginPage() {
+  const navigate   = useNavigate();
+  const location   = useLocation();
+  const { user, authLoading, signIn, signInWithGoogle } = useAuth();
+  const returnTo   = location.state?.returnTo || '/watch';
+
+  const [email,       setEmail]       = useState('');
+  const [password,    setPassword]    = useState('');
+  const [showPw,      setShowPw]      = useState(false);
+  const [error,       setError]       = useState('');
+  const [submitting,  setSubmitting]  = useState(false);
+  const [googleBusy,  setGoogleBusy]  = useState(false);
+
+  // If user is authenticated (e.g., from Google redirect), redirect to home
+  useEffect(() => {
+    console.log('[LoginPage] Auth state:', { authLoading, user: user?.uid, returnTo });
+    if (!authLoading && user) {
+      console.log('[LoginPage] User authenticated, redirecting to:', returnTo);
+      navigate(returnTo, { replace: true });
+    }
+  }, [user, authLoading, navigate, returnTo]);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (submitting) return;
+    setError('');
+    setSubmitting(true);
+    const result = await signIn(email.trim(), password);
+    setSubmitting(false);
+    if (result.success) {
+      navigate(returnTo, { replace: true });
+    } else {
+      setError(result.error);
+    }
+  };
+
+  const handleGoogle = async () => {
+    if (googleBusy) return;
+    setError('');
+    setGoogleBusy(true);
+    try {
+      const result = await signInWithGoogle();
+      // For mobile redirect flow, result is null and redirect happens
+      if (result === null) {
+        console.log('[LoginPage] Redirect initiated, awaiting Google...');
+        // Don't reset googleBusy - redirect will reload the page
+        return;
+      }
+      // For desktop popup flow, result is user object
+      if (result?.uid) {
+        console.log('[LoginPage] Google Sign-In successful');
+        navigate(returnTo, { replace: true });
+      } else {
+        setGoogleBusy(false);
+      }
+    } catch (err) {
+      const message = err?.message || 'Google Sign-In failed';
+      if (message && message !== '') {
+        setError(message);
+      }
+      setGoogleBusy(false);
+    }
+  };
+
+  const busy = submitting || googleBusy;
+
+  return (
+    <div className="auth-screen">
+      <div className="auth-panel">
+        <Link to="/home" className="auth-brand" aria-label="Vuvio home">
+          <BrandMark size={34} showName />
+        </Link>
+
+        <div className="auth-card">
+          <h1 className="auth-card__title">Log in</h1>
+          <p className="auth-card__subtitle">Welcome back to Vuvio.</p>
+
+          {error ? <p className="auth-error" role="alert">{error}</p> : null}
+
+          <form className="auth-form" onSubmit={handleSubmit} noValidate>
+            <div className="auth-field">
+              <label className="auth-field__label" htmlFor="login-email">Email</label>
+              <div className="auth-field__control">
+                <input
+                  id="login-email"
+                  className="auth-field__input"
+                  type="email"
+                  autoComplete="email"
+                  placeholder="you@example.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                  disabled={busy}
+                />
+              </div>
+            </div>
+
+            <div className="auth-field">
+              <label className="auth-field__label" htmlFor="login-password">Password</label>
+              <div className="auth-field__control">
+                <input
+                  id="login-password"
+                  className="auth-field__input"
+                  type={showPw ? 'text' : 'password'}
+                  autoComplete="current-password"
+                  placeholder="••••••••"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  disabled={busy}
+                />
+                <button
+                  type="button"
+                  className="auth-field__toggle"
+                  onClick={() => setShowPw((v) => !v)}
+                  aria-label={showPw ? 'Hide password' : 'Show password'}
+                  tabIndex={-1}
+                >
+                  {showPw ? <EyeOff size={17} strokeWidth={1.8} /> : <Eye size={17} strokeWidth={1.8} />}
+                </button>
+              </div>
+            </div>
+
+            <Link to="/forgot-password" className="auth-forgot">Forgot password?</Link>
+
+            <button type="submit" className="auth-submit" disabled={busy || !email || !password}>
+              {submitting ? <span className="auth-submit__spinner" aria-hidden="true" /> : <LogIn size={17} strokeWidth={2} aria-hidden="true" />}
+              {submitting ? 'Logging in…' : 'Log in'}
+            </button>
+
+            <div className="auth-divider">or</div>
+
+            <button type="button" className="auth-google" onClick={handleGoogle} disabled={busy}>
+              {googleBusy
+                ? <span className="auth-submit__spinner" aria-hidden="true" />
+                : <GoogleIcon />
+              }
+              Continue with Google
+            </button>
+          </form>
+        </div>
+
+        <p className="auth-footer">
+          Don't have an account?{' '}
+          <Link to="/signup" state={{ returnTo }}>Create one</Link>
+        </p>
+      </div>
+    </div>
+  );
+}

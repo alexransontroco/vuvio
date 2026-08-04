@@ -1,0 +1,32 @@
+{
+  "cycling": [
+    "cycling pov",
+    "mountain bike pov",
+    "bike ride first person"
+  ],
+  "driving": [
+    "driving pov",
+    "car dashboard road",
+    "road trip first person"
+  ],
+  "craft": [
+    "woodworking hands",
+    "pottery hands",
+    "blacksmith work"
+  ],
+  "food": [
+    "cooking hands",
+    "baker bread",
+    "barista coffee"
+  ],
+  "water": [
+    "surfing pov",
+    "diving underwater",
+    "kayak pov"
+  ],
+  "travel": [
+    "walking pov",
+    "city walking",
+    "hiking pov"
+  ]
+}

@@ -1,0 +1,7 @@
+{
+  "cycling": ["cycling pov", "mountain bike pov", "bike ride first person"],
+  "driving": ["driving pov", "car dashboard road", "road trip first person"],
+  "walking": ["walking pov", "city walk first person", "hiking pov"],
+  "cooking": ["cooking pov", "chef hands cooking", "bakery work"],
+  "surfing": ["surfing pov", "wave first person", "ocean action camera"]
+}

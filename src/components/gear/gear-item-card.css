@@ -1,0 +1,184 @@
+/* ── Gear Item Card ────────────────────────────────────────────────── */
+
+.gear-item-card {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem;
+  border: 1px solid rgba(53, 227, 220, 0.15);
+  border-radius: 8px;
+  background: linear-gradient(135deg, rgba(53, 227, 220, 0.03) 0%, rgba(62, 220, 158, 0.02) 100%);
+  transition: all 200ms ease;
+}
+
+.gear-item-card:hover {
+  background: linear-gradient(135deg, rgba(53, 227, 220, 0.08) 0%, rgba(62, 220, 158, 0.05) 100%);
+  border-color: rgba(53, 227, 220, 0.25);
+}
+
+.gear-item-card.is-compact {
+  padding: 0.75rem;
+}
+
+/* ── Content ───────────────────────────────────────────────────────── */
+
+.gear-item-card__content {
+  flex: 1;
+  min-width: 0;
+}
+
+.gear-item-card__header {
+  display: flex;
+  align-items: baseline;
+  gap: 0.75rem;
+  margin-bottom: 0.5rem;
+}
+
+.gear-item-card__title {
+  font-size: 1rem;
+  font-weight: 600;
+  margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: #ffffff;
+}
+
+.gear-item-card.is-compact .gear-item-card__title {
+  font-size: 0.95rem;
+}
+
+.gear-item-card__badge {
+  display: inline-block;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  background: rgba(255, 152, 31, 0.15);
+  color: #ff981f;
+  font-size: 0.625rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* ── Meta Information ──────────────────────────────────────────────── */
+
+.gear-item-card__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+  font-size: 0.8rem;
+}
+
+.gear-item-card.is-compact .gear-item-card__meta {
+  margin-bottom: 0;
+}
+
+.gear-item-card__meta-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.gear-item-card__meta-label {
+  color: rgba(255, 255, 255, 0.6);
+  font-weight: 500;
+}
+
+/* ── Notes ─────────────────────────────────────────────────────────── */
+
+.gear-item-card__notes {
+  font-size: 0.875rem;
+  color: rgba(255, 255, 255, 0.5);
+  margin: 0.75rem 0 0 0;
+  line-height: 1.4;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* ── Actions ───────────────────────────────────────────────────────── */
+
+.gear-item-card__actions {
+  display: flex;
+  gap: 0.5rem;
+  flex-shrink: 0;
+}
+
+.gear-item-card__action {
+  width: 36px;
+  height: 36px;
+  border: 1px solid rgba(53, 227, 220, 0.2);
+  border-radius: 6px;
+  background: rgba(53, 227, 220, 0.05);
+  color: #35e3dc;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 150ms ease;
+  padding: 0;
+  text-decoration: none;
+}
+
+.gear-item-card__action:hover {
+  background: rgba(53, 227, 220, 0.15);
+  border-color: rgba(53, 227, 220, 0.4);
+}
+
+.gear-item-card.is-compact .gear-item-card__action {
+  width: 32px;
+  height: 32px;
+}
+
+.gear-item-card__action--link {
+  color: #35e3dc;
+}
+
+.gear-item-card__action--edit {
+  color: #35e3dc;
+}
+
+.gear-item-card__action--remove {
+  color: #ff3b3b;
+  border-color: rgba(255, 59, 59, 0.2);
+  background: rgba(255, 59, 59, 0.05);
+}
+
+.gear-item-card__action--remove:hover {
+  background: rgba(255, 59, 59, 0.15);
+  border-color: rgba(255, 59, 59, 0.4);
+}
+
+/* ── Mobile Responsive ─────────────────────────────────────────────── */
+
+@media (max-width: 480px) {
+  .gear-item-card {
+    padding: 0.75rem;
+  }
+
+  .gear-item-card__title {
+    font-size: 0.95rem;
+  }
+
+  .gear-item-card__meta {
+    font-size: 0.75rem;
+  }
+
+  .gear-item-card__action {
+    width: 32px;
+    height: 32px;
+  }
+}
+
+/* ── Reduced Motion ────────────────────────────────────────────────── */
+
+@media (prefers-reduced-motion: reduce) {
+  .gear-item-card {
+    transition: none;
+  }
+}

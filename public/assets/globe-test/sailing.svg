@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" fill="none">
+  <defs>
+    <linearGradient id="sail" x1="36" y1="20" x2="90" y2="102" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#F2FDFF"/>
+      <stop offset="0.45" stop-color="#61E5FF"/>
+      <stop offset="1" stop-color="#1678FF"/>
+    </linearGradient>
+    <linearGradient id="hull" x1="24" y1="80" x2="104" y2="104" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#0E2E67"/>
+      <stop offset="1" stop-color="#36E1D2"/>
+    </linearGradient>
+  </defs>
+  <path d="M56 20 83 70H56V20Z" fill="url(#sail)"/>
+  <path d="M43 28 56 20v50H39L43 28Z" fill="rgba(22,123,255,0.55)"/>
+  <path d="M20 89h88c-4 11-16 17-30 17H47c-14 0-25-6-27-17Z" fill="url(#hull)"/>
+  <path d="M62 18v57" stroke="rgba(255,255,255,0.44)" stroke-width="4" stroke-linecap="round"/>
+  <path d="M62 78c-2 5-8 9-13 11" stroke="rgba(183,250,255,0.72)" stroke-width="4" stroke-linecap="round"/>
+</svg>

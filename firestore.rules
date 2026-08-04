@@ -1,0 +1,155 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ── User profiles ──────────────────────────────
+    match /users/{uid} {
+      // Authenticated users can read all profiles
+      allow read: if request.auth != null;
+
+      // Only the owner can create their own document
+      allow create: if request.auth != null
+        && request.auth.uid == uid
+        && request.resource.data.uid == uid
+        && !('role' in request.resource.data)       // role set server-side
+        && (!('followerCount' in request.resource.data) || request.resource.data.followerCount == 0);
+
+      // Owner can update their own document (restricted fields cannot be changed)
+      allow update: if request.auth != null
+        && request.auth.uid == uid
+        && request.resource.data.uid == uid
+        && (!('role' in request.resource.data) || request.resource.data.role == resource.data.role)
+        && (!('accountStatus' in request.resource.data) || request.resource.data.accountStatus == resource.data.accountStatus)
+        && (!('followerCount' in request.resource.data) || request.resource.data.followerCount == resource.data.followerCount)
+        && (!('followingCount' in request.resource.data) || request.resource.data.followingCount == resource.data.followingCount)
+        && (!('liveCount' in request.resource.data) || request.resource.data.liveCount == resource.data.liveCount);
+
+      // No deletes
+      allow delete: if false;
+    }
+
+    // ── Username reservations ──────────────────────
+    match /usernames/{username} {
+      allow read:   if true;
+      allow create: if request.auth != null
+        && request.resource.data.uid == request.auth.uid;
+      allow update: if request.auth != null
+        && resource.data.uid == request.auth.uid;
+      allow delete: if false;
+    }
+
+    // ── Active live sessions ───────────────────────
+    match /activeLives/{liveId} {
+      allow read: if true;
+      allow create: if request.auth != null
+        && request.resource.data.creatorUid == request.auth.uid
+        && request.resource.data.status == 'live';
+      allow update: if true;
+      allow delete: if request.auth != null
+        && resource.data.creatorUid == request.auth.uid;
+
+      match /watchers/{watcherId} {
+        allow read: if true;
+        allow create: if request.auth != null
+          && request.resource.data.watcherUid == request.auth.uid
+          && request.resource.data.keys().hasOnly([
+            'sdpAnswer',
+            'signalSessionId',
+            'watcherUid',
+            'watcherIceCandidates',
+            'updatedAt'
+          ]);
+        allow update: if request.auth != null
+          && resource.data.watcherUid == request.auth.uid
+          && request.resource.data.watcherUid == resource.data.watcherUid
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+            'sdpAnswer',
+            'signalSessionId',
+            'watcherUid',
+            'watcherIceCandidates',
+            'updatedAt'
+          ]);
+        allow delete: if request.auth != null
+          && resource.data.watcherUid == request.auth.uid;
+      }
+
+      match /comments/{commentId} {
+        allow read: if true;
+        allow create: if request.auth != null
+          && request.resource.data.userId == request.auth.uid
+          && request.resource.data.keys().hasOnly([
+            'text',
+            'userId',
+            'userDisplayName',
+            'userPhotoURL',
+            'timestamp'
+          ])
+          && request.resource.data.text is string
+          && request.resource.data.text.size() > 0
+          && request.resource.data.text.size() <= 500;
+        allow delete: if request.auth != null
+          && resource.data.userId == request.auth.uid;
+      }
+
+      match /stars/{starId} {
+        allow read: if true;
+        allow create: if request.auth != null
+          && request.resource.data.userId == request.auth.uid
+          && request.resource.data.keys().hasOnly([
+            'userId',
+            'userDisplayName',
+            'timestamp'
+          ]);
+        allow delete: if request.auth != null
+          && resource.data.userId == request.auth.uid;
+      }
+    }
+
+    // ── Creator equipment ──────────────────────────
+    match /creatorEquipment/{equipmentId} {
+      allow read: if request.auth != null
+        && resource.data.creatorId == request.auth.uid;
+      allow create: if request.auth != null
+        && request.resource.data.creatorId == request.auth.uid;
+      allow update: if request.auth != null
+        && resource.data.creatorId == request.auth.uid
+        && request.resource.data.creatorId == request.auth.uid;
+      allow delete: if request.auth != null
+        && resource.data.creatorId == request.auth.uid;
+    }
+
+    // ── Post-live video analysis jobs ──────────────
+    match /videoProcessingJobs/{jobId} {
+      allow read: if request.auth != null
+        && resource.data.userId == request.auth.uid;
+
+      allow create: if request.auth != null
+        && request.resource.data.userId == request.auth.uid
+        && request.resource.data.liveId is string
+        && request.resource.data.sourceStoragePath is string
+        && request.resource.data.status == 'queued';
+
+      allow update: if request.auth != null
+        && resource.data.userId == request.auth.uid
+        && request.resource.data.userId == resource.data.userId
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+          'highlightDecisions',
+          'updatedAt'
+        ]);
+
+      allow delete: if false;
+    }
+
+    // ── Product catalog ────────────────────────────
+    match /products/{productId} {
+      // Authenticated users can read products
+      allow read: if request.auth != null;
+
+      // Authenticated users can create/update products (for seeding and management)
+      // In production, restrict to admins only via backend
+      allow create, update: if request.auth != null;
+      allow delete: if false;
+    }
+  }
+}

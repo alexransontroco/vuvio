@@ -1,0 +1,36 @@
+.view-mode-toggle {
+  position: fixed;
+  top: 12px;
+  right: 12px;
+  z-index: 9999;
+  display: flex;
+  gap: 4px;
+  border: 0.5px solid rgba(255, 255, 255, 0.15);
+  border-radius: 8px;
+  background: rgba(8, 17, 28, 0.72);
+  backdrop-filter: blur(12px);
+  padding: 4px;
+}
+
+.view-mode-toggle__btn {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border: 0.5px solid transparent;
+  border-radius: 6px;
+  background: transparent;
+  color: rgba(242, 247, 246, 0.5);
+  cursor: pointer;
+  transition: all 200ms ease;
+}
+
+.view-mode-toggle__btn:hover {
+  color: rgba(242, 247, 246, 0.7);
+}
+
+.view-mode-toggle__btn.is-active {
+  border-color: rgba(43, 217, 200, 0.3);
+  background: rgba(43, 217, 200, 0.12);
+  color: #2bd9c8;
+}

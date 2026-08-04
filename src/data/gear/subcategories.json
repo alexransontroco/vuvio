@@ -1,0 +1,254 @@
+[
+  {
+    "id": "road-bike",
+    "categoryId": "bike",
+    "label": "Road Bike",
+    "enabled": true
+  },
+  {
+    "id": "mountain-bike",
+    "categoryId": "bike",
+    "label": "Mountain Bike",
+    "enabled": true
+  },
+  {
+    "id": "gravel-bike",
+    "categoryId": "bike",
+    "label": "Gravel Bike",
+    "enabled": true
+  },
+  {
+    "id": "city-bike",
+    "categoryId": "bike",
+    "label": "City Bike",
+    "enabled": true
+  },
+  {
+    "id": "bmx",
+    "categoryId": "bike",
+    "label": "BMX",
+    "enabled": true
+  },
+  {
+    "id": "cargo-bike",
+    "categoryId": "bike",
+    "label": "Cargo Bike",
+    "enabled": true
+  },
+  {
+    "id": "road-helmet",
+    "categoryId": "helmet",
+    "label": "Road Helmet",
+    "enabled": true
+  },
+  {
+    "id": "mountain-helmet",
+    "categoryId": "helmet",
+    "label": "Mountain Helmet",
+    "enabled": true
+  },
+  {
+    "id": "water-helmet",
+    "categoryId": "helmet",
+    "label": "Water Helmet",
+    "enabled": true
+  },
+  {
+    "id": "cycling-helmet",
+    "categoryId": "helmet",
+    "label": "Cycling Helmet",
+    "enabled": true
+  },
+  {
+    "id": "sports-helmet",
+    "categoryId": "helmet",
+    "label": "Sports Helmet",
+    "enabled": true
+  },
+  {
+    "id": "road-tires",
+    "categoryId": "tires",
+    "label": "Road Tires",
+    "enabled": true
+  },
+  {
+    "id": "mountain-tires",
+    "categoryId": "tires",
+    "label": "Mountain Tires",
+    "enabled": true
+  },
+  {
+    "id": "gravel-tires",
+    "categoryId": "tires",
+    "label": "Gravel Tires",
+    "enabled": true
+  },
+  {
+    "id": "cycling-shoes",
+    "categoryId": "shoes",
+    "label": "Cycling Shoes",
+    "enabled": true
+  },
+  {
+    "id": "running-shoes",
+    "categoryId": "shoes",
+    "label": "Running Shoes",
+    "enabled": true
+  },
+  {
+    "id": "hiking-boots",
+    "categoryId": "shoes",
+    "label": "Hiking Boots",
+    "enabled": true
+  },
+  {
+    "id": "water-shoes",
+    "categoryId": "shoes",
+    "label": "Water Shoes",
+    "enabled": true
+  },
+  {
+    "id": "cycling-shorts",
+    "categoryId": "clothing",
+    "label": "Cycling Shorts",
+    "enabled": true
+  },
+  {
+    "id": "cycling-jersey",
+    "categoryId": "clothing",
+    "label": "Cycling Jersey",
+    "enabled": true
+  },
+  {
+    "id": "running-shirt",
+    "categoryId": "clothing",
+    "label": "Running Shirt",
+    "enabled": true
+  },
+  {
+    "id": "hiking-jacket",
+    "categoryId": "clothing",
+    "label": "Hiking Jacket",
+    "enabled": true
+  },
+  {
+    "id": "shortboard",
+    "categoryId": "bike",
+    "label": "Shortboard",
+    "enabled": true
+  },
+  {
+    "id": "longboard",
+    "categoryId": "bike",
+    "label": "Longboard",
+    "enabled": true
+  },
+  {
+    "id": "funboard",
+    "categoryId": "bike",
+    "label": "Funboard",
+    "enabled": true
+  },
+  {
+    "id": "action-camera",
+    "categoryId": "camera",
+    "label": "Action Camera",
+    "enabled": true
+  },
+  {
+    "id": "mirrorless-camera",
+    "categoryId": "camera",
+    "label": "Mirrorless Camera",
+    "enabled": true
+  },
+  {
+    "id": "dslr-camera",
+    "categoryId": "camera",
+    "label": "DSLR Camera",
+    "enabled": true
+  },
+  {
+    "id": "compact-camera",
+    "categoryId": "camera",
+    "label": "Compact Camera",
+    "enabled": true
+  },
+  {
+    "id": "smartphone-camera",
+    "categoryId": "camera",
+    "label": "Smartphone",
+    "enabled": true
+  },
+  {
+    "id": "instant-camera",
+    "categoryId": "camera",
+    "label": "Instant Camera",
+    "enabled": true
+  },
+  {
+    "id": "chest-mount",
+    "categoryId": "camera-mount",
+    "label": "Chest Mount",
+    "enabled": true
+  },
+  {
+    "id": "head-mount",
+    "categoryId": "camera-mount",
+    "label": "Head Mount",
+    "enabled": true
+  },
+  {
+    "id": "tripod-mount",
+    "categoryId": "camera-mount",
+    "label": "Tripod Mount",
+    "enabled": true
+  },
+  {
+    "id": "suction-mount",
+    "categoryId": "camera-mount",
+    "label": "Suction Mount",
+    "enabled": true
+  },
+  {
+    "id": "acoustic-guitar",
+    "categoryId": "instrument",
+    "label": "Acoustic Guitar",
+    "enabled": true
+  },
+  {
+    "id": "electric-guitar",
+    "categoryId": "instrument",
+    "label": "Electric Guitar",
+    "enabled": true
+  },
+  {
+    "id": "bass-guitar",
+    "categoryId": "instrument",
+    "label": "Bass Guitar",
+    "enabled": true
+  },
+  {
+    "id": "keyboard",
+    "categoryId": "instrument",
+    "label": "Keyboard",
+    "enabled": true
+  },
+  {
+    "id": "drums",
+    "categoryId": "instrument",
+    "label": "Drums",
+    "enabled": true
+  },
+  {
+    "id": "violin",
+    "categoryId": "instrument",
+    "label": "Violin",
+    "enabled": true
+  },
+  {
+    "id": "ukulele",
+    "categoryId": "instrument",
+    "label": "Ukulele",
+    "enabled": true
+  }
+]

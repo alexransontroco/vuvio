@@ -1,0 +1,314 @@
+[
+  {
+    "id": "bike",
+    "label": "Bike",
+    "icon": "bike",
+    "enabled": true
+  },
+  {
+    "id": "helmet",
+    "label": "Helmet",
+    "icon": "shield",
+    "enabled": true
+  },
+  {
+    "id": "tires",
+    "label": "Tires",
+    "icon": "circle",
+    "enabled": true
+  },
+  {
+    "id": "shoes",
+    "label": "Shoes",
+    "icon": "shoe",
+    "enabled": true
+  },
+  {
+    "id": "clothing",
+    "label": "Clothing",
+    "icon": "shirt",
+    "enabled": true
+  },
+  {
+    "id": "gps",
+    "label": "GPS Device",
+    "icon": "map",
+    "enabled": true
+  },
+  {
+    "id": "lights",
+    "label": "Lights",
+    "icon": "lightbulb",
+    "enabled": true
+  },
+  {
+    "id": "camera",
+    "label": "Camera",
+    "icon": "camera",
+    "enabled": true
+  },
+  {
+    "id": "camera-mount",
+    "label": "Camera Mount",
+    "icon": "camera",
+    "enabled": true
+  },
+  {
+    "id": "tools",
+    "label": "Tools",
+    "icon": "wrench",
+    "enabled": true
+  },
+  {
+    "id": "hydration",
+    "label": "Hydration",
+    "icon": "droplet",
+    "enabled": true
+  },
+  {
+    "id": "bag",
+    "label": "Bag",
+    "icon": "backpack",
+    "enabled": true
+  },
+  {
+    "id": "wetsuit",
+    "label": "Wetsuit",
+    "icon": "shirt",
+    "enabled": true
+  },
+  {
+    "id": "leash",
+    "label": "Leash",
+    "icon": "link",
+    "enabled": true
+  },
+  {
+    "id": "fins",
+    "label": "Fins",
+    "icon": "circle",
+    "enabled": true
+  },
+  {
+    "id": "wax",
+    "label": "Wax",
+    "icon": "package",
+    "enabled": true
+  },
+  {
+    "id": "board-bag",
+    "label": "Board Bag",
+    "icon": "package",
+    "enabled": true
+  },
+  {
+    "id": "watch",
+    "label": "Watch",
+    "icon": "watch",
+    "enabled": true
+  },
+  {
+    "id": "oven",
+    "label": "Oven",
+    "icon": "box",
+    "enabled": true
+  },
+  {
+    "id": "mixer",
+    "label": "Mixer",
+    "icon": "settings",
+    "enabled": true
+  },
+  {
+    "id": "flour",
+    "label": "Flour",
+    "icon": "package",
+    "enabled": true
+  },
+  {
+    "id": "knife",
+    "label": "Knife",
+    "icon": "cut",
+    "enabled": true
+  },
+  {
+    "id": "scale",
+    "label": "Scale",
+    "icon": "balance",
+    "enabled": true
+  },
+  {
+    "id": "baking-tray",
+    "label": "Baking Tray",
+    "icon": "box",
+    "enabled": true
+  },
+  {
+    "id": "mold",
+    "label": "Mold",
+    "icon": "box",
+    "enabled": true
+  },
+  {
+    "id": "thermometer",
+    "label": "Thermometer",
+    "icon": "thermometer",
+    "enabled": true
+  },
+  {
+    "id": "apron",
+    "label": "Apron",
+    "icon": "shirt",
+    "enabled": true
+  },
+  {
+    "id": "microphone",
+    "label": "Microphone",
+    "icon": "mic",
+    "enabled": true
+  },
+  {
+    "id": "headphones",
+    "label": "Headphones",
+    "icon": "headphones",
+    "enabled": true
+  },
+  {
+    "id": "amplifier",
+    "label": "Amplifier",
+    "icon": "speaker",
+    "enabled": true
+  },
+  {
+    "id": "instrument",
+    "label": "Instrument",
+    "icon": "music",
+    "enabled": true
+  },
+  {
+    "id": "coffee-maker",
+    "label": "Coffee Maker",
+    "icon": "coffee",
+    "enabled": true
+  },
+  {
+    "id": "grinder",
+    "label": "Grinder",
+    "icon": "settings",
+    "enabled": true
+  },
+  {
+    "id": "fishing-rod",
+    "label": "Fishing Rod",
+    "icon": "fishing-rod",
+    "enabled": true
+  },
+  {
+    "id": "reel",
+    "label": "Reel",
+    "icon": "circle",
+    "enabled": true
+  },
+  {
+    "id": "tackle-box",
+    "label": "Tackle Box",
+    "icon": "box",
+    "enabled": true
+  },
+  {
+    "id": "kayak",
+    "label": "Kayak",
+    "icon": "canoe",
+    "enabled": true
+  },
+  {
+    "id": "paddle",
+    "label": "Paddle",
+    "icon": "rowing",
+    "enabled": true
+  },
+  {
+    "id": "life-jacket",
+    "label": "Life Jacket",
+    "icon": "shield",
+    "enabled": true
+  },
+  {
+    "id": "sailboat",
+    "label": "Sailboat",
+    "icon": "sailboat",
+    "enabled": true
+  },
+  {
+    "id": "diving-gear",
+    "label": "Diving Gear",
+    "icon": "scuba",
+    "enabled": true
+  },
+  {
+    "id": "tank",
+    "label": "Tank",
+    "icon": "cylinder",
+    "enabled": true
+  },
+  {
+    "id": "lens",
+    "label": "Lens",
+    "icon": "lens",
+    "enabled": true
+  },
+  {
+    "id": "tripod",
+    "label": "Tripod",
+    "icon": "tripod",
+    "enabled": true
+  },
+  {
+    "id": "lighting",
+    "label": "Lighting",
+    "icon": "lightbulb",
+    "enabled": true
+  },
+  {
+    "id": "vehicle",
+    "label": "Vehicle",
+    "icon": "car",
+    "enabled": true
+  },
+  {
+    "id": "motorcycle",
+    "label": "Motorcycle",
+    "icon": "bike",
+    "enabled": true
+  },
+  {
+    "id": "gloves",
+    "label": "Gloves",
+    "icon": "shield",
+    "enabled": true
+  },
+  {
+    "id": "protective-gear",
+    "label": "Protective Gear",
+    "icon": "shield",
+    "enabled": true
+  },
+  {
+    "id": "garden-tool",
+    "label": "Garden Tool",
+    "icon": "wrench",
+    "enabled": true
+  },
+  {
+    "id": "plant",
+    "label": "Plant",
+    "icon": "leaf",
+    "enabled": true
+  },
+  {
+    "id": "pot",
+    "label": "Pot",
+    "icon": "box",
+    "enabled": true
+  }
+]

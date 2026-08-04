@@ -1,0 +1,796 @@
+/* ── Friends Watching Pill ───────────────────────────────── */
+/* Compact capsule showing friends currently watching the live */
+
+.friends-watching-pill {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 14px;
+  border: 0.5px solid rgba(134, 202, 224, 0.18);
+  border-radius: 999px;
+  background: rgba(9, 28, 42, 0.72);
+  color: var(--vuvio-text-primary);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  box-shadow: 0 4px 16px rgba(0, 8, 16, 0.2);
+  font-size: 13px;
+  font-weight: 500;
+  white-space: nowrap;
+  cursor: pointer;
+  transition:
+    background 200ms ease,
+    border-color 200ms ease,
+    transform 140ms ease,
+    box-shadow 200ms ease;
+}
+
+.friends-watching-pill:active {
+  transform: scale(0.96);
+}
+
+.friends-watching-pill:hover {
+  background: rgba(9, 28, 42, 0.88);
+  border-color: rgba(134, 202, 224, 0.28);
+  box-shadow: 0 6px 20px rgba(0, 8, 16, 0.28);
+}
+
+.friends-watching-pill__avatars {
+  display: flex;
+  align-items: center;
+  margin-right: 4px;
+}
+
+.friends-watching-pill__avatar {
+  position: relative;
+  width: 24px;
+  height: 24px;
+  display: grid;
+  place-items: center;
+  border: 1.5px solid rgba(4, 19, 31, 0.94);
+  border-radius: 50%;
+  background: rgba(53, 227, 220, 0.12);
+  font-size: 12px;
+  line-height: 1;
+  margin-left: calc(var(--avatar-index, 0) * -8px);
+  animation: friend-avatar-in 280ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation-delay: calc(var(--avatar-index, 0) * 40ms);
+}
+
+@keyframes friend-avatar-in {
+  from {
+    opacity: 0;
+    transform: scale(0.7) translateX(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateX(0);
+  }
+}
+
+.friends-watching-pill__avatar--more {
+  background: rgba(53, 227, 220, 0.2);
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--vuvio-cyan);
+  margin-left: 0;
+}
+
+.friends-watching-pill__text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.friends-watching-pill__name,
+.friends-watching-pill__count {
+  color: var(--vuvio-text-primary);
+  font-size: 13px;
+  font-weight: 580;
+  line-height: 1;
+}
+
+.friends-watching-pill__label {
+  color: var(--vuvio-text-muted);
+  font-size: 11px;
+  font-weight: 420;
+  line-height: 1;
+}
+
+.friends-watching-pill__icon {
+  flex: none;
+  color: var(--vuvio-cyan);
+  opacity: 0.7;
+  transition: opacity 200ms ease, transform 200ms ease;
+}
+
+.friends-watching-pill:hover .friends-watching-pill__icon {
+  opacity: 1;
+  transform: scale(1.1);
+}
+
+/* Subtle breathing animation for avatars - respects prefers-reduced-motion */
+@media (prefers-reduced-motion: no-preference) {
+  .friends-watching-pill__avatars {
+    animation: friends-avatars-drift 4s ease-in-out infinite;
+  }
+
+  @keyframes friends-avatars-drift {
+    0%, 100% {
+      transform: translateY(0);
+    }
+    50% {
+      transform: translateY(-1px);
+    }
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .friends-watching-pill {
+    transition: none;
+  }
+
+  .friends-watching-pill__avatar {
+    animation: none;
+  }
+}
+
+/* ── Friends Watching Sheet ──────────────────────────────── */
+/* Bottom sheet showing all friends currently watching */
+
+.friends-watching-sheet {
+  position: absolute;
+  inset: 0;
+  z-index: 70;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  background: linear-gradient(180deg, transparent 48%, rgba(2, 6, 10, 0.42));
+  pointer-events: auto;
+}
+
+.friends-watching-sheet__backdrop {
+  position: absolute;
+  inset: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+}
+
+.friends-watching-sheet__panel {
+  position: relative;
+  z-index: 1;
+  width: calc(100% - 16px);
+  max-height: 68dvh;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  margin: 0 8px 8px;
+  margin-bottom: calc(var(--nav-height) + var(--safe-bottom) + 8px);
+  border: 0.5px solid rgba(134, 202, 224, 0.16);
+  border-radius: 28px;
+  background: rgba(7, 26, 43, 0.96);
+  box-shadow: 0 22px 64px rgba(0, 8, 16, 0.42);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  animation: friends-sheet-in 280ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  overflow: hidden;
+}
+
+@keyframes friends-sheet-in {
+  from {
+    opacity: 0;
+    transform: translateY(40px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.friends-watching-sheet__handle {
+  display: block;
+  width: 36px;
+  height: 4px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.16);
+  margin: 10px auto 0;
+}
+
+.friends-watching-sheet__header {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 14px 20px 12px;
+  border-bottom: 0.5px solid rgba(134, 202, 224, 0.1);
+}
+
+.friends-watching-sheet__title {
+  margin: 0;
+  color: var(--vuvio-text-primary);
+  font-size: 17px;
+  font-weight: 680;
+  letter-spacing: -0.02em;
+}
+
+.friends-watching-sheet__subtitle {
+  margin: 0;
+  color: var(--vuvio-text-muted);
+  font-size: 12px;
+  font-weight: 420;
+}
+
+.friends-watching-sheet__list {
+  flex: 1;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.friends-watching-sheet__list::-webkit-scrollbar {
+  width: 4px;
+}
+
+.friends-watching-sheet__list::-webkit-scrollbar-thumb {
+  border-radius: 2px;
+  background: rgba(134, 202, 224, 0.2);
+}
+
+.friends-watching-sheet__list::-webkit-scrollbar-thumb:hover {
+  background: rgba(134, 202, 224, 0.3);
+}
+
+.friends-watching-sheet__empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 32px 20px;
+  color: var(--vuvio-text-muted);
+  text-align: center;
+}
+
+.friends-watching-sheet__empty strong {
+  color: var(--vuvio-text-secondary);
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.friends-watching-sheet__empty p {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 420;
+  line-height: 1.4;
+}
+
+.friends-watching-sheet__footer {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px 16px;
+  border-top: 0.5px solid rgba(134, 202, 224, 0.1);
+}
+
+.friends-watching-sheet__invite-btn {
+  width: 100%;
+  height: 44px;
+  border: 0;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #71f5ec 0%, var(--vuvio-cyan) 100%);
+  color: #03212a;
+  font-size: 14px;
+  font-weight: 650;
+  cursor: pointer;
+  transition: box-shadow 200ms ease;
+  box-shadow: 0 6px 20px rgba(53, 227, 220, 0.22);
+}
+
+.friends-watching-sheet__invite-btn:active {
+  transform: scale(0.98);
+}
+
+.friends-watching-sheet__invite-btn:hover {
+  box-shadow: 0 8px 28px rgba(53, 227, 220, 0.32);
+}
+
+/* ── Friend Watching Row ─────────────────────────────────── */
+/* Individual friend item in the sheet */
+
+.friend-watching-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  border-bottom: 0.5px solid rgba(134, 202, 224, 0.08);
+  cursor: pointer;
+  transition: background 140ms ease;
+}
+
+.friend-watching-row:active {
+  background: rgba(53, 227, 220, 0.06);
+}
+
+.friend-watching-row:hover {
+  background: rgba(53, 227, 220, 0.04);
+}
+
+.friend-watching-row__avatar {
+  flex: none;
+  width: 40px;
+  height: 40px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: rgba(53, 227, 220, 0.1);
+  border: 1px solid rgba(134, 202, 224, 0.2);
+  font-size: 18px;
+  line-height: 1;
+}
+
+.friend-watching-row__info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.friend-watching-row__name {
+  margin: 0;
+  color: var(--vuvio-text-primary);
+  font-size: 14px;
+  font-weight: 580;
+  line-height: 1;
+}
+
+.friend-watching-row__username {
+  margin: 0;
+  color: var(--vuvio-text-muted);
+  font-size: 12px;
+  font-weight: 420;
+  line-height: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.friend-watching-row__time {
+  color: var(--vuvio-text-muted);
+  font-size: 11px;
+  font-weight: 420;
+}
+
+.friend-watching-row__action {
+  flex: none;
+  width: 32px;
+  height: 32px;
+  display: grid;
+  place-items: center;
+  border: 0;
+  border-radius: 50%;
+  background: rgba(53, 227, 220, 0.1);
+  color: var(--vuvio-cyan);
+  cursor: pointer;
+  transition: background 140ms ease, transform 140ms ease;
+}
+
+.friend-watching-row__action:active {
+  transform: scale(0.92);
+}
+
+.friend-watching-row__action:hover {
+  background: rgba(53, 227, 220, 0.2);
+}
+
+/* ── Invite Friends Sheet ────────────────────────────────── */
+
+.invite-friends-sheet {
+  position: absolute;
+  inset: 0;
+  z-index: 72;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  background: linear-gradient(180deg, transparent 48%, rgba(2, 6, 10, 0.48));
+  pointer-events: auto;
+}
+
+.invite-friends-sheet__panel {
+  position: relative;
+  z-index: 1;
+  width: calc(100% - 16px);
+  max-height: 76dvh;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  margin: 0 8px 8px;
+  margin-bottom: calc(var(--nav-height) + var(--safe-bottom) + 8px);
+  border: 0.5px solid rgba(134, 202, 224, 0.16);
+  border-radius: 28px;
+  background: rgba(7, 26, 43, 0.96);
+  box-shadow: 0 24px 68px rgba(0, 8, 16, 0.44);
+  backdrop-filter: blur(26px);
+  -webkit-backdrop-filter: blur(26px);
+  animation: invite-sheet-in 280ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  overflow: hidden;
+}
+
+@keyframes invite-sheet-in {
+  from {
+    opacity: 0;
+    transform: translateY(40px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.invite-friends-sheet__handle {
+  display: block;
+  width: 36px;
+  height: 4px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.16);
+  margin: 10px auto 0;
+}
+
+.invite-friends-sheet__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 20px 12px;
+  border-bottom: 0.5px solid rgba(134, 202, 224, 0.1);
+}
+
+.invite-friends-sheet__title {
+  margin: 0;
+  color: var(--vuvio-text-primary);
+  font-size: 17px;
+  font-weight: 680;
+  letter-spacing: -0.02em;
+}
+
+.invite-friends-sheet__close {
+  flex: none;
+  width: 32px;
+  height: 32px;
+  display: grid;
+  place-items: center;
+  border: 0;
+  border-radius: 50%;
+  background: rgba(53, 227, 220, 0.1);
+  color: var(--vuvio-cyan);
+  cursor: pointer;
+  transition: background 140ms ease;
+}
+
+.invite-friends-sheet__close:hover {
+  background: rgba(53, 227, 220, 0.2);
+}
+
+.invite-friends-sheet__search {
+  padding: 12px 16px;
+  border-bottom: 0.5px solid rgba(134, 202, 224, 0.08);
+}
+
+.invite-friends-sheet__search input {
+  width: 100%;
+  height: 40px;
+  padding: 0 12px;
+  border: 0.5px solid rgba(134, 202, 224, 0.2);
+  border-radius: 10px;
+  background: rgba(13, 38, 54, 0.62);
+  color: var(--vuvio-text-primary);
+  font-size: 14px;
+  font-weight: 420;
+}
+
+.invite-friends-sheet__search input::placeholder {
+  color: var(--vuvio-text-muted);
+}
+
+.invite-friends-sheet__list {
+  flex: 1;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.invite-friends-sheet__footer {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px 16px;
+  border-top: 0.5px solid rgba(134, 202, 224, 0.1);
+}
+
+.invite-friends-sheet__send-btn {
+  width: 100%;
+  height: 44px;
+  border: 0;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #71f5ec 0%, var(--vuvio-cyan) 100%);
+  color: #03212a;
+  font-size: 14px;
+  font-weight: 650;
+  cursor: pointer;
+  transition: box-shadow 200ms ease, opacity 200ms ease;
+  box-shadow: 0 6px 20px rgba(53, 227, 220, 0.22);
+}
+
+.invite-friends-sheet__send-btn:active:not(:disabled) {
+  transform: scale(0.98);
+}
+
+.invite-friends-sheet__send-btn:hover:not(:disabled) {
+  box-shadow: 0 8px 28px rgba(53, 227, 220, 0.32);
+}
+
+.invite-friends-sheet__send-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.invite-friends-sheet__send-btn.is-loading {
+  position: relative;
+}
+
+.invite-friends-sheet__send-btn.is-loading::after {
+  content: '';
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  border: 2px solid rgba(3, 33, 42, 0.2);
+  border-top-color: #03212a;
+  border-radius: 50%;
+  animation: invite-spinner 600ms linear infinite;
+}
+
+@keyframes invite-spinner {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ── Friend Live Activity Card ───────────────────────────── */
+
+.friend-live-activity-card {
+  display: grid;
+  grid-template-columns: 60px 1fr;
+  gap: 12px;
+  padding: 12px;
+  border: 0.5px solid rgba(134, 202, 224, 0.14);
+  border-radius: 14px;
+  background: rgba(11, 38, 55, 0.52);
+  cursor: pointer;
+  transition: background 140ms ease, border-color 140ms ease;
+}
+
+.friend-live-activity-card:active {
+  background: rgba(11, 38, 55, 0.72);
+}
+
+.friend-live-activity-card:hover {
+  background: rgba(11, 38, 55, 0.68);
+  border-color: rgba(134, 202, 224, 0.24);
+}
+
+.friend-live-activity-card__thumbnail {
+  width: 60px;
+  height: 60px;
+  border-radius: 10px;
+  overflow: hidden;
+  background: rgba(53, 227, 220, 0.1);
+  flex: none;
+}
+
+.friend-live-activity-card__thumbnail img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.friend-live-activity-card__info {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.friend-live-activity-card__header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.friend-live-activity-card__avatar {
+  flex: none;
+  width: 28px;
+  height: 28px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: rgba(53, 227, 220, 0.1);
+  font-size: 14px;
+  line-height: 1;
+}
+
+.friend-live-activity-card__name {
+  color: var(--vuvio-text-primary);
+  font-size: 13px;
+  font-weight: 580;
+  line-height: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.friend-live-activity-card__badge {
+  flex: none;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: rgba(53, 227, 220, 0.1);
+  color: var(--vuvio-cyan);
+  font-size: 9px;
+  font-weight: 680;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.friend-live-activity-card__title {
+  margin: 0;
+  color: var(--vuvio-text-secondary);
+  font-size: 13px;
+  font-weight: 520;
+  line-height: 1.3;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+}
+
+.friend-live-activity-card__location {
+  color: var(--vuvio-text-muted);
+  font-size: 11px;
+  font-weight: 420;
+}
+
+.friend-live-activity-card__action {
+  margin-top: 4px;
+}
+
+.friend-live-activity-card__action button {
+  width: 100%;
+  height: 32px;
+  border: 0.5px solid rgba(134, 202, 224, 0.24);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--vuvio-cyan);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 140ms ease, border-color 140ms ease;
+}
+
+.friend-live-activity-card__action button:active {
+  background: rgba(53, 227, 220, 0.1);
+}
+
+.friend-live-activity-card__action button:hover {
+  background: rgba(53, 227, 220, 0.06);
+  border-color: rgba(53, 227, 220, 0.4);
+}
+
+/* ── Friend Joined Toast ─────────────────────────────────── */
+
+.friend-joined-toast {
+  position: fixed;
+  bottom: calc(var(--nav-height) + var(--safe-bottom) + 16px);
+  left: 16px;
+  right: 16px;
+  z-index: 60;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+  border: 0.5px solid rgba(134, 202, 224, 0.2);
+  border-radius: 12px;
+  background: rgba(9, 28, 42, 0.92);
+  box-shadow: 0 8px 24px rgba(0, 8, 16, 0.32);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  font-size: 14px;
+  font-weight: 500;
+  animation: toast-in 220ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.friend-joined-toast__avatar {
+  flex: none;
+  width: 32px;
+  height: 32px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: rgba(53, 227, 220, 0.12);
+  font-size: 16px;
+  line-height: 1;
+}
+
+.friend-joined-toast__message {
+  color: var(--vuvio-text-primary);
+  margin: 0;
+}
+
+.friend-joined-toast__name {
+  font-weight: 600;
+  color: var(--vuvio-cyan);
+}
+
+/* ── Responsive adjustments ──────────────────────────────── */
+
+@media (max-width: 360px) {
+  .friends-watching-pill {
+    gap: 8px;
+    padding: 7px 12px;
+    font-size: 12px;
+  }
+
+  .friends-watching-pill__avatar {
+    width: 22px;
+    height: 22px;
+    font-size: 10px;
+  }
+
+  .friends-watching-sheet__panel,
+  .invite-friends-sheet__panel {
+    width: calc(100% - 12px);
+    margin: 0 6px 6px;
+  }
+
+  .friend-watching-row {
+    padding: 10px 12px;
+    gap: 10px;
+  }
+
+  .friend-watching-row__avatar {
+    width: 36px;
+    height: 36px;
+    font-size: 16px;
+  }
+
+  .friend-live-activity-card {
+    grid-template-columns: 52px 1fr;
+    gap: 10px;
+    padding: 10px;
+  }
+
+  .friend-live-activity-card__thumbnail {
+    width: 52px;
+    height: 52px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .friends-watching-pill,
+  .friends-watching-sheet__panel,
+  .invite-friends-sheet__panel,
+  .friend-watching-row,
+  .friend-joined-toast {
+    animation: none;
+    transition: none;
+  }
+}

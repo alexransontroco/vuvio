@@ -1,0 +1,54 @@
+Vuvio live stream work notes
+Date: 2026-07-29
+
+Goal
+Fix real phone-to-computer live viewing so a live broadcast from an iPhone can be watched from another account on desktop without opening the desktop camera.
+
+What was fixed
+- Viewer vs broadcaster routing:
+  - Watch links now use /watch?live=...&mode=view.
+  - The watch page refuses to start broadcaster mode when mode=view is present.
+  - A page can only become broadcaster if the current browser tab owns the local camera stream.
+
+- Real WebRTC viewing:
+  - Replaced the old single global answer on activeLives/{liveId}.
+  - Each viewer now writes its own signaling doc at activeLives/{liveId}/watchers/{viewerId}.
+  - Each broadcast gets a signalSessionId so stale Firestore answers are ignored.
+  - Broadcaster and viewer publish ICE candidates continuously.
+  - Added TURN relay support, which fixed black screens between iPhone and desktop.
+
+- Stream resilience:
+  - Viewer retries automatically when ICE fails, disconnects, or no stream arrives after 12 seconds.
+  - Watcher Firestore docs are cleaned up when the viewer disconnects.
+  - Firestore rules now restrict watcher writes/deletes to the authenticated viewer.
+  - Production UI shows a clean Connecting/Reconnecting live loader instead of raw debug states.
+
+- TURN production preparation:
+  - Frontend first tries to fetch temporary credentials from /api/turn-credentials.
+  - Firebase Auth token is sent as Authorization: Bearer ...
+  - TURN credentials are cached with TTL.
+  - If the endpoint is not ready, the current working fallback remains active.
+  - .env.example documents VITE_TURN_CREDENTIALS_URL, VITE_TURN_URLS, VITE_TURN_USERNAME, VITE_TURN_CREDENTIAL.
+
+Deployments
+- Firebase Hosting deployed successfully.
+- Firestore rules deployed successfully.
+- Hosting URL: https://vuvio-bf328.web.app
+
+Commits
+- 47d1f34 Fix live broadcast viewing flow
+- 4a18fd6 Improve live stream resilience
+- 909cd5b Prepare dynamic TURN credentials
+
+Known remaining work
+- Replace the public TURN fallback with a real Vuvio TURN provider:
+  Metered, Twilio Network Traversal, Xirsys, or self-hosted Coturn.
+- Implement /api/turn-credentials server-side to return short-lived credentials.
+- Remove or disable the public fallback before a serious production/beta release.
+
+Build notes
+- npm run build passed.
+- Existing non-blocking warnings remain:
+  - Duplicate key "Lisbon" in src/components/WatchMiniGlobe.jsx.
+  - CSS minify warning: Unexpected "}".
+  - Large chunk warnings.

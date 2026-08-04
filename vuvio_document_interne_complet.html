@@ -1,0 +1,828 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VUVIO — Document Interne de Référence (Texte Intégral)</title>
+<style>
+  @page {
+    size: A4;
+    margin: 15mm;
+  }
+
+  *, *::before, *::after {
+    box-sizing: border-box;
+  }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    color: #cbd5e1;
+    background-color: #070d18;
+    margin: 0;
+    padding: 32px;
+    font-size: 10pt;
+    line-height: 1.6;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  .header {
+    border-bottom: 1px solid rgba(0, 229, 255, 0.25);
+    padding-bottom: 20px;
+    margin-bottom: 32px;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+  }
+
+  .logo-text {
+    font-size: 28pt;
+    font-weight: 800;
+    letter-spacing: -0.5px;
+    color: #ffffff;
+    line-height: 1;
+  }
+
+  .logo-symbol {
+    color: #00e5ff;
+    font-weight: 900;
+  }
+
+  .badge-internal {
+    background: rgba(0, 229, 255, 0.08);
+    border: 1px solid rgba(0, 229, 255, 0.3);
+    color: #00e5ff;
+    padding: 6px 16px;
+    border-radius: 20px;
+    font-size: 8.5pt;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+  }
+
+  .doc-title {
+    font-size: 12pt;
+    color: #94a3b8;
+    margin-top: 8px;
+    font-weight: 400;
+  }
+
+  .hero-banner {
+    background: linear-gradient(135deg, rgba(15, 23, 42, 0.95) 0%, rgba(0, 229, 255, 0.12) 100%);
+    border: 1px solid rgba(0, 229, 255, 0.3);
+    border-radius: 12px;
+    padding: 28px;
+    margin-bottom: 32px;
+  }
+
+  .hero-title {
+    font-size: 24pt;
+    font-weight: 700;
+    color: #ffffff;
+    margin: 0 0 8px 0;
+    line-height: 1.2;
+  }
+
+  .hero-subtitle {
+    font-size: 12pt;
+    color: #00e5ff;
+    margin: 0 0 16px 0;
+    font-weight: 500;
+  }
+
+  .section {
+    background: #0f172a;
+    border: 1px solid #1e293b;
+    border-radius: 10px;
+    padding: 24px;
+    margin-bottom: 24px;
+    page-break-inside: avoid;
+  }
+
+  .section-accent-cyan {
+    border-left: 4px solid #00e5ff;
+  }
+
+  .section-accent-green {
+    border-left: 4px solid #10b981;
+  }
+
+  .section-accent-orange {
+    border-left: 4px solid #f97316;
+  }
+
+  h2 {
+    font-size: 13pt;
+    color: #ffffff;
+    margin: 0 0 16px 0;
+    padding-bottom: 6px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  h2 .num {
+    color: #00e5ff;
+    font-weight: 800;
+  }
+
+  h3 {
+    font-size: 10.5pt;
+    color: #38bdf8;
+    margin: 16px 0 8px 0;
+    font-weight: 600;
+  }
+
+  p {
+    margin: 0 0 12px 0;
+    color: #cbd5e1;
+    text-align: justify;
+  }
+
+  ul, ol {
+    margin: 0 0 12px 0;
+    padding-left: 20px;
+  }
+
+  li {
+    margin-bottom: 6px;
+    color: #cbd5e1;
+  }
+
+  strong {
+    color: #f8fafc;
+  }
+
+  .quote-box {
+    border-left: 3px solid #00e5ff;
+    padding: 10px 16px;
+    margin: 16px 0;
+    font-style: italic;
+    color: #94a3b8;
+    background: rgba(0, 229, 255, 0.03);
+    border-radius: 0 6px 6px 0;
+  }
+
+  .tag {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 4px;
+    font-size: 8pt;
+    font-weight: 600;
+    margin-right: 6px;
+  }
+
+  .tag-air { background: rgba(0, 229, 255, 0.15); color: #00e5ff; border: 1px solid rgba(0, 229, 255, 0.3); }
+  .tag-water { background: rgba(14, 165, 233, 0.15); color: #38bdf8; border: 1px solid rgba(14, 165, 233, 0.3); }
+  .tag-land { background: rgba(16, 185, 129, 0.15); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.3); }
+
+  .footer {
+    text-align: center;
+    color: #64748b;
+    font-size: 8.5pt;
+    margin-top: 40px;
+    border-top: 1px solid #1e293b;
+    padding-top: 16px;
+  }
+
+
+  html {
+    scroll-behavior: smooth;
+    scroll-padding-top: 24px;
+  }
+
+  body {
+    max-width: 1180px;
+    margin: 0 auto;
+  }
+
+  .eyebrow {
+    color: #00e5ff;
+    font-size: 8pt;
+    font-weight: 700;
+    letter-spacing: 1.2px;
+    text-transform: uppercase;
+    margin-bottom: 5px;
+  }
+
+  .toc {
+    background: linear-gradient(180deg, rgba(15, 23, 42, 0.98), rgba(10, 18, 33, 0.98));
+    border: 1px solid rgba(56, 189, 248, 0.28);
+    border-radius: 14px;
+    padding: 26px;
+    margin: 0 0 32px;
+    box-shadow: 0 18px 55px rgba(0, 0, 0, 0.22);
+  }
+
+  .toc-heading {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    padding-bottom: 18px;
+    margin-bottom: 18px;
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+  }
+
+  .toc-heading h2 {
+    border: 0;
+    padding: 0;
+    margin: 0;
+    font-size: 18pt;
+    text-transform: none;
+    letter-spacing: -0.2px;
+  }
+
+  .toc-count {
+    white-space: nowrap;
+    padding: 6px 10px;
+    border-radius: 999px;
+    color: #94a3b8;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.08);
+    font-size: 8pt;
+  }
+
+  .toc-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 24px 34px;
+  }
+
+  .toc-group h3 {
+    margin: 0 0 10px;
+    color: #f8fafc;
+    font-size: 9pt;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+  }
+
+  .toc-group ol {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+
+  .toc-group li {
+    margin: 0;
+  }
+
+  .toc-group a {
+    display: grid;
+    grid-template-columns: 30px 1fr;
+    gap: 9px;
+    align-items: baseline;
+    padding: 6px 8px;
+    border-radius: 7px;
+    color: #cbd5e1;
+    text-decoration: none;
+    transition: background 160ms ease, color 160ms ease, transform 160ms ease;
+  }
+
+  .toc-group a span {
+    color: #00e5ff;
+    font-size: 8pt;
+    font-weight: 800;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .toc-group a:hover {
+    color: #fff;
+    background: rgba(0,229,255,0.07);
+    transform: translateX(2px);
+  }
+
+  .section {
+    scroll-margin-top: 24px;
+    position: relative;
+  }
+
+  .section-anchor {
+    color: inherit;
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+  }
+
+  .section-anchor::after {
+    content: "#";
+    margin-left: auto;
+    color: transparent;
+    font-weight: 500;
+    transition: color 160ms ease;
+  }
+
+  .section-anchor:hover::after {
+    color: #475569;
+  }
+
+  .back-to-top {
+    position: fixed;
+    right: 22px;
+    bottom: 22px;
+    width: 42px;
+    height: 42px;
+    display: grid;
+    place-items: center;
+    border-radius: 50%;
+    background: rgba(15, 23, 42, 0.94);
+    color: #00e5ff;
+    border: 1px solid rgba(0,229,255,0.35);
+    text-decoration: none;
+    font-size: 18px;
+    box-shadow: 0 8px 30px rgba(0,0,0,.28);
+    z-index: 20;
+  }
+
+  .print-note {
+    margin-top: 12px;
+    color: #64748b;
+    font-size: 8.5pt;
+  }
+
+  @media (max-width: 760px) {
+    body { padding: 18px; font-size: 10.5pt; }
+    .header { flex-direction: column; gap: 16px; }
+    .hero-banner { padding: 22px; }
+    .hero-title { font-size: 21pt; }
+    .section { padding: 19px; }
+    .toc { padding: 20px; }
+    .toc-grid { grid-template-columns: 1fr; gap: 20px; }
+    .toc-heading { flex-direction: column; }
+    .back-to-top { right: 14px; bottom: 14px; }
+  }
+
+  @media print {
+    html { scroll-behavior: auto; }
+    body { max-width: none; padding: 0; background: #070d18; }
+    .back-to-top { display: none; }
+    .toc { page-break-after: always; box-shadow: none; }
+    .section { page-break-inside: auto; break-inside: auto; }
+    h2, h3 { break-after: avoid; page-break-after: avoid; }
+    p, li { orphans: 3; widows: 3; }
+    a { color: inherit; text-decoration: none; }
+  }
+
+</style>
+</head>
+<body id="top">
+
+  <!-- HEADER -->
+  <div class="header">
+    <div>
+      <div class="logo-text"><span class="logo-symbol">w</span> Vuvio</div>
+      <div class="doc-title">Document Interne de Référence — Cahier des Charges & Spécifications Complètes</div>
+    </div>
+    <div class="badge-internal">Confidentiel / Version Intégrale</div>
+  </div>
+
+  <!-- HERO BANNER -->
+  <div class="hero-banner">
+    <div class="hero-title">See the world through someone else's eyes.</div>
+    <div class="hero-subtitle">The world is not a feed. It is millions of lives happening at once.</div>
+    <p style="margin:0;">
+      Vuvio connecte les utilisateurs à des lieux, activités et perspectives réelles en direct à travers le monde. De vraies personnes. De vrais endroits. Du direct immersif en vue subjective (POV).
+    </p>
+  </div>
+
+
+  <!-- TABLE OF CONTENTS -->
+  <nav class="toc" aria-labelledby="toc-title">
+    <div class="toc-heading">
+      <div>
+        <div class="eyebrow">Navigation du document</div>
+        <h2 id="toc-title">Table des matières</h2>
+      </div>
+      <div class="toc-count">34 sections</div>
+    </div>
+    <div class="toc-grid"><div class="toc-group"><h3>Fondations du projet</h3><ol><li><a href="#section-01"><span>01</span>Résumé du projet</a></li><li><a href="#section-02"><span>02</span>Vision</a></li><li><a href="#section-03"><span>03</span>Problème auquel Vuvio répond</a></li><li><a href="#section-04"><span>04</span>Proposition de Valeur</a></li><li><a href="#section-05"><span>05</span>Positionnement</a></li><li><a href="#section-06"><span>06</span>Types de contenus</a></li><li><a href="#section-07"><span>07</span>Grandes Catégories de Navigation</a></li></ol></div><div class="toc-group"><h3>Expérience et parcours</h3><ol><li><a href="#section-08"><span>08</span>Parcours Utilisateurs</a></li><li><a href="#section-09"><span>09</span>Navigation Mobile</a></li><li><a href="#section-10"><span>10</span>Page Home</a></li><li><a href="#section-11"><span>11</span>Page Explore</a></li><li><a href="#section-12"><span>12</span>Le Globe Vuvio (Feature Cœur)</a></li><li><a href="#section-13"><span>13</span>Live Viewer</a></li><li><a href="#section-14"><span>14</span>Création &amp; Sécurité du Streamer</a></li><li><a href="#section-15"><span>15</span>Profil Public Streamer</a></li><li><a href="#section-16"><span>16</span>Paramètres Personnels</a></li><li><a href="#section-17"><span>17</span>Page Equipment (Gear)</a></li><li><a href="#section-18"><span>18</span>Messagerie Privée</a></li><li><a href="#section-19"><span>19</span>Notifications Push</a></li><li><a href="#section-20"><span>20</span>Authentification &amp; Onboarding</a></li></ol></div><div class="toc-group"><h3>Système, sécurité et économie</h3><ol><li><a href="#section-21"><span>21</span>Algorithme de Recommandation</a></li><li><a href="#section-22"><span>22</span>Modération &amp; Sécurité</a></li><li><a href="#section-23"><span>23</span>Modèle Économique</a></li><li><a href="#section-24"><span>24</span>Design System &amp; Palette Officielle</a></li><li><a href="#section-25"><span>25</span>Branding, Logos &amp; Signatures</a></li></ol></div><div class="toc-group"><h3>Lancement et exécution</h3><ol><li><a href="#section-26"><span>26</span>Stratégie de Lancement</a></li><li><a href="#section-27"><span>27</span>Architecture &amp; Infrastructure Technique</a></li><li><a href="#section-28"><span>28</span>Scope du MVP (Produit Minimum Viable)</a></li><li><a href="#section-29"><span>29</span>Métriques &amp; KPIs de Succès</a></li><li><a href="#section-30"><span>30</span>Analyse des Risques</a></li><li><a href="#section-31"><span>31</span>Décisions Validées</a></li><li><a href="#section-32"><span>32</span>Interdictions Strictes</a></li><li><a href="#section-33"><span>33</span>Feuille de Route Prioritaire</a></li><li><a href="#section-34"><span>34</span>Synthèse Globale</a></li></ol></div></div>
+  </nav>
+
+  <!-- SECTION 1 -->
+  <div id="section-01" class="section section-accent-cyan">
+    <h2><a class="section-anchor" href="#section-01" aria-label="Lien vers Résumé du projet"><span class="num">01.</span> Résumé du projet</a></h2>
+    <p><strong>Vuvio</strong> est une plateforme de diffusion en direct centrée sur les expériences immersives en vue subjective (POV — Point of View). L'objectif fondamental du projet est de permettre à des personnes partout dans le monde de montrer une activité, un métier, un savoir-faire, un déplacement ou une aventure directement depuis leur propre point de vue.</p>
+    <div class="quote-box">
+      "Voir le monde à travers les yeux de ceux qui le vivent."
+    </div>
+    <p>Contrairement aux services de streaming traditionnels qui imposent souvent un format face-caméra ou centré sur la personnalité du créateur, Vuvio remet l'action, l'environnement et le geste au cœur de l'expérience. Qu'il s'agisse d'un boulanger façonnant son pain à 4 heures du matin à Paris, d'un cycliste traversant Amsterdam sous la pluie, d'un artisan ébéniste dans son atelier ou d'un surfeur au large de Hawaii, Vuvio offre une fenêtre directe, authentique et sans filtre sur le monde réel.</p>
+  </div>
+
+  <!-- SECTION 2 -->
+  <div id="section-02" class="section">
+    <h2><a class="section-anchor" href="#section-02" aria-label="Lien vers Vision"><span class="num">02.</span> Vision</a></h2>
+    <h3>2.1 Vision générale</h3>
+    <p>Devenir la destination mondiale de référence pour l'exploration en direct des expériences humaines. Vuvio ambitionne de construire une bibliothèque vivante du monde en temps réel, où chaque utilisateur peut instantanément s'immerger dans le quotidien, la passion ou le travail d'un autre être humain, quel que soit l'endroit où il se trouve.</p>
+    
+    <h3>2.2 Vision à long terme</h3>
+    <p>À terme, Vuvio ne se limite pas à être une simple application de divertissement. La plateforme a pour vocation de devenir :</p>
+    <ul>
+      <li>Une cartographie dynamique et vivante des savoir-faire et des territoires mondiaux.</li>
+      <li>Un outil d'apprentissage immersif et de découverte des métiers pour les jeunes et les curieux.</li>
+      <li>Une plateforme d'affiliation et de recommandation de matériel de précision en situation réelle d'usage.</li>
+      <li>Une infrastructure globale connectant spectateurs, professionnels, marques et sponsors autour du geste authentique.</li>
+    </ul>
+
+    <h3>2.3 Idée centrale</h3>
+    <p>Le monde réel regorge déjà de contenus captivants sans qu'il soit nécessaire de les scénariser excessivement. Vuvio réduit au strict minimum la friction technique nécessaire pour partager un flux vidéo POV, permettant à n'importe quel passionné ou professionnel de diffuser son activité sans avoir à s'improviser animateur ou influenceur commercial.</p>
+  </div>
+
+  <!-- SECTION 3 -->
+  <div id="section-03" class="section section-accent-green">
+    <h2><a class="section-anchor" href="#section-03" aria-label="Lien vers Problème auquel Vuvio répond"><span class="num">03.</span> Problème auquel Vuvio répond</a></h2>
+    <h3>3.1 Omniprésence du format centré sur la personnalité</h3>
+    <p>Les plateformes de live streaming dominantes (Twitch, Kick, TikTok Live) sont largement optimisées pour le gaming, les discussions en plateau ou les prestations scénarisées face caméra. Les créateurs doivent constamment animer, parler et entretenir leur audience, ce qui exclut de nombreuses activités réelles nécessitant concentration, calme ou usage des deux mains.</p>
+
+    <h3>3.2 Dispersion du contenu POV</h3>
+    <p>Bien que les vidéos POV (caméras embarquées, GoPros, dji action) accumulent des milliards de vues sur internet, elles sont éparpillées sous forme de clips courts pré-enregistrés, montés et retouchés. Il n'existe pas d'écosystème dédié au streaming POV en direct, brut et géolocalisé.</p>
+
+    <h3>3.3 Méconnaissance et invisibilité des métiers du quotidien</h3>
+    <p>Il est aujourd'hui difficile pour un spectateur de comprendre la réalité concrète, le rythme et la beauté d'un métier (agriculteur, mécanicien, marin, artisan) au-delà des reportages télévisés souvent superficiels. Vuvio comble ce manque en offrant un accès direct et non filtré.</p>
+
+    <h3>3.4 Biais des algorithmes d'engagement</h3>
+    <p>Les réseaux sociaux actuels favorisent le choc visuel, la polémique et la réaction rapide. Vuvio prend le contre-pied en valorisant également la contemplation, la précision du geste, le déplacement géographique et la beauté des environnements naturels ou urbains.</p>
+  </div>
+
+  <!-- SECTION 4 -->
+  <div id="section-04" class="section">
+    <h2><a class="section-anchor" href="#section-04" aria-label="Lien vers Proposition de Valeur"><span class="num">04.</span> Proposition de Valeur</a></h2>
+    <h3>Pour les Spectateurs</h3>
+    <ul>
+      <li><strong>Immersion totale :</strong> Vivre une expérience depuis la perspective exacte de celui qui l'exécute.</li>
+      <li><strong>Exploration spatiale :</strong> Naviguer à travers une carte mondiale interactive pour choisir où et quoi regarder en direct.</li>
+      <li><strong>Apprentissage passif et actif :</strong> Observer des techniques artisanales, sportives ou artistiques en temps réel et poser des questions ciblées via le chat.</li>
+    </ul>
+
+    <h3>Pour les Streamers</h3>
+    <ul>
+      <li><strong>Zéro mise en scène :</strong> Diffuser son activité habituelle sans obligation de parler en continu ou de jouer un rôle.</li>
+      <li><strong>Valorisation du matériel et du savoir-faire :</strong> Exposer ses outils, ses équipements et ses techniques auprès d'une audience passionnée et qualifiée.</li>
+      <li><strong>Monétisation et opportunités :</strong> Obtenir des sponsors, vendre des produits liés à son matériel via l'affiliation et attirer de nouveaux clients pour son activité réelle.</li>
+    </ul>
+
+    <h3>Pour les Marques & Sponsors</h3>
+    <ul>
+      <li><strong>Placement contextuel authentique :</strong> Associer des produits (caméras, outils, vêtements techniques, véhicules) à leur utilisation réelle sur le terrain.</li>
+      <li><strong>Audience ultra-ciblée :</strong> Toucher des passionnés par secteur (cyclisme, cuisine, navigation, aviation, bricolage) avec un fort niveau d'engagement.</li>
+    </ul>
+  </div>
+
+  <!-- SECTION 5 -->
+  <div id="section-05" class="section">
+    <h2><a class="section-anchor" href="#section-05" aria-label="Lien vers Positionnement"><span class="num">05.</span> Positionnement</a></h2>
+    <p>Vuvio s'intercale exactement à la jonction entre le streaming en direct, le documentaire immersif et l'exploration cartographique.</p>
+    <ul>
+      <li><strong>Ce que Vuvio EST :</strong> Un réseau social d'expériences en vue subjective, une plateforme de découverte géographique en temps réel, un vitrine d'outils et de gestes réels.</li>
+      <li><strong>Ce que Vuvio N'EST PAS :</strong> Un clone de Twitch axé sur les jeux vidéo, un réseau de surveillance ou de webcams passives d'infrastructures, un flux de vidéos virales pré-enregistrées, ou un espace de streaming de bavardage face caméra.</li>
+      <li><strong>Facteur différenciateur :</strong> L'intégration native du Globe 3D interactif, la classification stricte par perspectives/équipements et la mise en valeur du matériel utilisé durant le direct.</li>
+    </ul>
+  </div>
+
+  <!-- SECTION 6 -->
+  <div id="section-06" class="section">
+    <h2><a class="section-anchor" href="#section-06" aria-label="Lien vers Types de contenus"><span class="num">06.</span> Types de contenus</a></h2>
+    <p>Les contenus sur Vuvio s'articulent autour de 4 grands piliers d'expériences :</p>
+    
+    <h3>1. Métiers, Artisanat & Savoir-faire</h3>
+    <p>Boulangerie, pâtisserie, cuisine de chef, agriculture, pêche professionnelle, horlogerie, menuiserie, mécanique automobile, maçonnerie, chirurgie vétérinaire, toilettage, élevage, etc.</p>
+
+    <h3>2. Sports, Aventures & Plein Air</h3>
+    <p>Cyclisme urbain, VTT de descente, surf, ski, snowboard, escalade, alpinisme, parapente, randonnée sauvage, kayak, voile, équitation, motocross, skateboard.</p>
+
+    <h3>3. Mobilité, Transports & Voyages</h3>
+    <p>Conduite de trains, trajets en bus panoramiques, vols en avion de tourisme, pilotage d'hélicoptère, sessions de drones FPV, croisières, trajets routiers mythiques.</p>
+
+    <h3>4. Création Artistique & Coulisses</h3>
+    <p>Peinture en atelier, sculpture, soufflage de verre, répétitions musicales depuis l'angle d'un instrumentiste, coulisses de pièces de théâtre, préparation d'événements.</p>
+  </div>
+
+  <!-- SECTION 7 -->
+  <div id="section-07" class="section section-accent-cyan">
+    <h2><a class="section-anchor" href="#section-07" aria-label="Lien vers Grandes Catégories de Navigation"><span class="num">07.</span> Grandes Catégories de Navigation</a></h2>
+    <p>Afin de simplifier la découverte parmi des milliers de flux, Vuvio structure sa navigation autour de 3 grandes familles élémentaires de déplacement, complétées par des filtres métier et matériel :</p>
+    
+    <p><span class="tag tag-air">🛸 AIR</span> Vol en drone FPV, hélicoptère, montgolfière, parapente, planeur, aviation civile, saut en parachute.</p>
+    <p><span class="tag tag-water">🌊 WATER</span> Bateau à moteur, voilier, plongée sous-marine, pêche en mer, surf, kayak, stand-up paddle, natation en eau libre.</p>
+    <p><span class="tag tag-land">🚴 LAND</span> Vélo de route, VTT, automobile, camion, bus, train, marche à pied, course à pied, équitation, engins de chantier.</p>
+
+    <p style="margin-top: 12px;">Des filtres secondaires permettent de trier par : pays/région, langue parlée (ou flux 100% ASMR/silencieux), niveau de popularité, état du direct (En cours ou Programmé).</p>
+  </div>
+
+  <!-- SECTION 8 -->
+  <div id="section-08" class="section">
+    <h2><a class="section-anchor" href="#section-08" aria-label="Lien vers Parcours Utilisateurs"><span class="num">08.</span> Parcours Utilisateurs</a></h2>
+    <h3>8.1 Parcours Spectateur</h3>
+    <ol>
+      <li><strong>Ouverture de l'application :</strong> Arrivée directe sur la page Home proposant une sélection de lives marquants et le calendrier des événements à venir.</li>
+      <li><strong>Exploration :</strong> Passage sur l'onglet Explore pour un défilement vertical immersif ou ouverture du Globe 3D pour cibler une zone géographique précise.</li>
+      <li><strong>Consommation :</strong> Entrée dans un Live Viewer. Le spectateur peut basculer entre le mode plein écran immersif et l'affichage des informations détaillées (matériel utilisé, chat, profil du créateur).</li>
+      <li><strong>Action & Rétention :</strong> Enregistrement de rappels pour de futurs lives, abonnement au créateur ou clic sur les liens d'équipements recommandés.</li>
+    </ol>
+
+    <h3>8.2 Parcours Streamer</h3>
+    <ol>
+      <li><strong>Préparation :</strong> Connexion au compte créateur, configuration du matériel de capture (smartphone sur harnais, caméra d'action connectée via RTMP/WebRTC).</li>
+      <li><strong>Programmation ou Direct Instantané :</strong> Saisie du titre, sélection de la catégorie (Air/Water/Land), spécification de la localisation et renseignement de l'équipement utilisé.</li>
+      <li><strong>Vérification :</strong> Test du signal réseau, vérification de la cadrage POV via le retour vidéo.</li>
+      <li><strong>Diffusion :</strong> Lancement du flux. Gestion simplifiée des interactions pendant l'effort ou l'activité (synthèse vocale des messages du chat ou mode silencieux).</li>
+      <li><strong>Fin du live :</strong> Consultation des statistiques (spectateurs uniques, pics d'audience, clics sur le matériel, nouveaux abonnés) et publication automatique du replay si souhaité.</li>
+    </ol>
+  </div>
+
+  <!-- SECTION 9 -->
+  <div id="section-09" class="section">
+    <h2><a class="section-anchor" href="#section-09" aria-label="Lien vers Navigation Mobile"><span class="num">09.</span> Navigation Mobile</a></h2>
+    <p>L'interface mobile de Vuvio est pensée pour privilégier l'image et limiter les éléments parasites. La barre de navigation principale située en bas de l'écran comprend 4 éléments fondamentaux :</p>
+    <ul>
+      <li><strong>Home :</strong> Accueil avec les catégories, recommandations contextuelles et lives programmés.</li>
+      <li><strong>Explore :</strong> Flux vidéo vertical continu pour découvrir rapidement de nouveaux streamers par balayage.</li>
+      <li><strong>Messages :</strong> Espace de discussion privée avec d'autres utilisateurs ou créateurs.</li>
+      <li><strong>Profile :</strong> Gestion du compte personnel, des abonnements, de la liste d'équipements enregistrés et des réglages.</li>
+    </ul>
+    <p><strong>Règle linguistique de l'interface :</strong> L'ensemble des libellés et éléments de navigation UI de l'application est exclusivement rédigé en anglais (<em>English Only</em>) pour assurer une uniformité internationale.</p>
+  </div>
+
+  <!-- SECTION 10 -->
+  <div id="section-10" class="section">
+    <h2><a class="section-anchor" href="#section-10" aria-label="Lien vers Page Home"><span class="num">10.</span> Page Home</a></h2>
+    <p>La page Home fait office de hall d'entrée dynamique. Elle est divisée en deux sous-onglets principaux :</p>
+    
+    <h3>10.1 Onglet "Live Now"</h3>
+    <p>Présente sous forme de cartes élégantes et sombres les flux actuellement en cours de diffusion. Chaque carte affiche un aperçu vidéo en direct léger, le nom du streamer, la localisation géographique exacte ou approximative, la catégorie (Air, Water, Land) et le nombre de spectateurs. Les indicateurs "LIVE" adoptent une couleur cyan ou verte subtile, bannissant le rouge vif agressif.</p>
+
+    <h3>10.2 Onglet "Upcoming"</h3>
+    <p>Affiche la grille de programmation des futurs lives annoncés par la communauté. Chaque fiche d'événement à venir indique la date, l'heure locale convertie automatiquement pour le spectateur, un descriptif de ce qui sera montré et un bouton "Remind me" permettant de recevoir une notification push avant le début de la session.</p>
+  </div>
+
+  <!-- SECTION 11 -->
+  <div id="section-11" class="section">
+    <h2><a class="section-anchor" href="#section-11" aria-label="Lien vers Page Explore"><span class="num">11.</span> Page Explore</a></h2>
+    <p>La page Explore propose un mode de découverte rapide et vertical. En glissant vers le haut, l'utilisateur passe d'un flux POV en direct à un autre de manière fluide. Les informations textuelles (nom du streamer, titre de la session, localisation) sont superposées en bas d'écran avec un traitement typographique fin et un dégradé sombre discret pour garantir une lisibilité optimale sans masquer l'action.</p>
+  </div>
+
+  <!-- SECTION 12 -->
+  <div id="section-12" class="section section-accent-cyan">
+    <h2><a class="section-anchor" href="#section-12" aria-label="Lien vers Le Globe Vuvio (Feature Cœur)"><span class="num">12.</span> Le Globe Vuvio (Feature Cœur)</a></h2>
+    <p>Le Globe Vuvio constitue l'élément emblématique de l'application. Accessible depuis la Home ou via une icône dédiée, il s'agit d'une représentation 3D interactive de la Terre sur fond sombre (Deep Space Navy).</p>
+
+    <h3>Caractéristiques visuelles du Globe :</h3>
+    <ul>
+      <li><strong>Points d'activité :</strong> Chaque flux en direct est matérialisé par un point lumineux étincelant sur la carte.</li>
+      <li><strong>Code couleur des points :</strong> Cyan pour l'Air, Bleu pour l'Water, Vert pour la Land.</li>
+      <li><strong>Signature visuelle W :</strong> Au survol ou au zoom sur un point de direct, le rayonnement lumineux (glow/halo) adopte très subtilement une géométrie évoquant la forme du W de Vuvio, créant une identité visuelle unique sans altérer la clarté cartographique.</li>
+      <li><strong>Interactions :</strong> La rotation, le zoom et le déplacement sont fluides. Un tap sur un point ouvre une fiche pré-visuel du live avant l'entrée en immersion complète.</li>
+    </ul>
+  </div>
+
+  <!-- SECTION 13 -->
+  <div id="section-13" class="section">
+    <h2><a class="section-anchor" href="#section-13" aria-label="Lien vers Live Viewer"><span class="num">13.</span> Live Viewer</a></h2>
+    <p>L'écran du Live Viewer est conçu pour maximiser l'effet d'immersion dans la perspective du streamer. Le flux vidéo occupe l'intégralité de l'écran. Les commandes de superposition (overlay) sont minimalistes :</p>
+    <ul>
+      <li><strong>Bouton masquer UI :</strong> Un simple tap permet de nettoyer intégralement l'écran de tout texte ou icône.</li>
+      <li><strong>Chat flottant :</strong> Les messages défilent avec un fond translucide sombre. Un mode "Zen" permet de désactiver le chat pour une expérience purement contemplative.</li>
+      <li><strong>Accès Gear :</strong> Un bouton dédié ouvre le tiroir d'équipements "Gear in this live".</li>
+      <li><strong>Navigation par swipe :</strong> Glisser latéralement permet de basculer vers d'autres angles ou d'autres streams de la même catégorie.</li>
+    </ul>
+  </div>
+
+  <!-- SECTION 14 -->
+  <div id="section-14" class="section">
+    <h2><a class="section-anchor" href="#section-14" aria-label="Lien vers Création &amp; Sécurité du Streamer"><span class="num">14.</span> Création & Sécurité du Streamer</a></h2>
+    <p>Le studio de lancement de direct sur mobile guide le streamer en trois étapes simples :</p>
+    <ol>
+      <li><strong>Titre & Catégorie :</strong> Choix du nom de la session et classement.</li>
+      <li><strong>Matériel & Support :</strong> Déclaration de la caméra utilisée et de la méthode de fixation (ex: harnais poitrail, casque, trépied, fixation guidon).</li>
+      <li><strong>Rappels de Sécurité obligatoires :</strong> Avant tout lancement dans les catégories de mobilité ou de sport extrême, un message d'avertissement rappelle au streamer de ne jamais manipuler son téléphone ou sa caméra pendant la conduite ou le pilotage. La fixation doit être passive et sécurisée.</li>
+    </ol>
+  </div>
+
+  <!-- SECTION 15 -->
+  <div id="section-15" class="section">
+    <h2><a class="section-anchor" href="#section-15" aria-label="Lien vers Profil Public Streamer"><span class="num">15.</span> Profil Public Streamer</a></h2>
+    <p>Le profil public d'un streamer Vuvio se distingue par sa double orientation : présenter l'individu mais aussi et surtout son cadre de travail et ses équipements réels. Il comprend :</p>
+    <ul>
+      <li>Une biographie courte exposant son métier ou sa passion.</li>
+      <li>Sa localisation principale et ses badges de vérification.</li>
+      <li>La liste complète de ses équipements (sa caméra principale, ses micro-cravates, son véhicule, ses outils).</li>
+      <li>Le calendrier de ses prochains directs programmés.</li>
+      <li>Les replays de ses meilleures sessions passées.</li>
+    </ul>
+  </div>
+
+  <!-- SECTION 16 -->
+  <div id="section-16" class="section">
+    <h2><a class="section-anchor" href="#section-16" aria-label="Lien vers Paramètres Personnels"><span class="num">16.</span> Paramètres Personnels</a></h2>
+    <p>Accessible depuis l'onglet Profile, l'espace de configuration offre un contrôle total à l'utilisateur : gestion du compte, préférences de notifications géolocalisées, paramètres de confidentialité (masquage de la position exacte pour des raisons de sécurité), gestion des abonnements payants et réglages de la qualité de streaming vidéo en fonction de la consommation de données cellulaires.</p>
+  </div>
+
+  <!-- SECTION 17 -->
+  <div id="section-17" class="section section-accent-green">
+    <h2><a class="section-anchor" href="#section-17" aria-label="Lien vers Page Equipment (Gear)"><span class="num">17.</span> Page Equipment (Gear)</a></h2>
+    <p>La page Equipment constitue l'un des moteurs économiques et communautaires majeurs de Vuvio. Chaque fiche d'équipement répertorie les caractéristiques techniques du matériel utilisé par les streamers (caméras d'action, systèmes audio, stabilisateurs, supports de fixation, vêtements techniques).</p>
+    <p>Depuis le Live Viewer, un spectateur intrigué par la qualité d'un son sous le vent ou la Stabilité d'une image en VTT peut ouvrir le panneau "Gear", voir le modèle exact utilisé par le créateur et cliquer sur un lien affilié ou sponsorisé pour se le procurer.</p>
+  </div>
+
+  <!-- SECTION 18 -->
+  <div id="section-18" class="section">
+    <h2><a class="section-anchor" href="#section-18" aria-label="Lien vers Messagerie Privée"><span class="num">18.</span> Messagerie Privée</a></h2>
+    <p>La messagerie permet les échanges directs entre utilisateurs et créateurs. Elle inclut des filtres anti-spam stricts et permet aux marques ou organisateurs d'événements de contacter directement des streamers qualifiés pour des opportunités de partenariat ou de diffusion sponsorisée.</p>
+  </div>
+
+  <!-- SECTION 19 -->
+  <div id="section-19" class="section">
+    <h2><a class="section-anchor" href="#section-19" aria-label="Lien vers Notifications Push"><span class="num">19.</span> Notifications Push</a></h2>
+    <p>Les notifications sont personnalisables et intelligentes. Elles préviennent l'utilisateur dans trois cas précis :</p>
+    <ul>
+      <li>Début d'un live programmé auquel l'utilisateur s'est inscrit ("Upcoming").</li>
+      <li>Lancement d'un direct impromptu par un streamer suivi.</li>
+      <li>Notifications géolocalisées optionnelles lorsqu'un live d'exception démarre dans la région du spectateur.</li>
+    </ul>
+  </div>
+
+  <!-- SECTION 20 -->
+  <div id="section-20" class="section">
+    <h2><a class="section-anchor" href="#section-20" aria-label="Lien vers Authentification &amp; Onboarding"><span class="num">20.</span> Authentification & Onboarding</a></h2>
+    <p>L'accès à l'application est simplifié à l'extrême. L'inscription peut s'effectuer par Email, Google, Apple ID ou numéro de téléphone. Lors du premier démarrage, un parcours d'onboarding en 3 étapes invite le nouvel utilisateur à sélectionner ses univers de prédilection (Artisanat, Sports, Aviation, Navigation, Transports) afin de calibrer immédiatement l'algorithme de découverte de la Home.</p>
+  </div>
+
+  <!-- SECTION 21 -->
+  <div id="section-21" class="section">
+    <h2><a class="section-anchor" href="#section-21" aria-label="Lien vers Algorithme de Recommandation"><span class="num">21.</span> Algorithme de Recommandation</a></h2>
+    <p>L'algorithme de Vuvio ne cherche pas à maximiser le temps d'écran par de la provocation, mais par la pertinence contextuelle. Ses critères de classement intègrent :</p>
+    <ul>
+      <li>La qualité technique du flux (stabilité du débit, résolution).</li>
+      <li>La diversité géographique (mise en avant de régions du monde peu représentées).</li>
+      <li>Le taux de complétion des sessions de streaming.</li>
+      <li>Les préférences déclarées et l'historique d'exploration cartographique du spectateur.</li>
+    </ul>
+  </div>
+
+  <!-- SECTION 22 -->
+  <div id="section-22" class="section">
+    <h2><a class="section-anchor" href="#section-22" aria-label="Lien vers Modération &amp; Sécurité"><span class="num">22.</span> Modération & Sécurité</a></h2>
+    <p>La sécurité est primordiale pour préserver un environnement bienveillant :</p>
+    <ul>
+      <li><strong>Analyse automatique :</strong> Détection de contenus inappropriés, violents ou illégaux via de l'analyse d'image en temps réel.</li>
+      <li><strong>Modération du chat :</strong> Filtres stricts de mots-clés, possibilité pour le streamer de désigner des modérateurs ou de passer le chat en mode restreint.</li>
+      <li><strong>Protection de la vie privée :</strong> Floutage automatique optionnel des visages de tiers et masquage du point de départ exact du domicile du streamer.</li>
+    </ul>
+  </div>
+
+  <!-- SECTION 23 -->
+  <div id="section-23" class="section section-accent-orange">
+    <h2><a class="section-anchor" href="#section-23" aria-label="Lien vers Modèle Économique"><span class="num">23.</span> Modèle Économique</a></h2>
+    <p>Vuvio repose sur un modèle économique diversifié et pérenne :</p>
+    <ol>
+      <li><strong>Sponsoring Contextuel de Matériel (Gear Partnerships) :</strong> Commissionnements sur les ventes d'équipements générées via les fiches "Gear" et les liens d'affiliation intégrés aux streams.</li>
+      <li><strong>Publicité de Coupure lors des Micro-Interruptions :</strong> Lorsqu'un streamer traverse une zone à faible couverture réseau (tunnel, forêt, mer) créant un micro-buffer, un billboard sponsorisé silencieux de quelques secondes peut s'afficher proprement sans couper le flux audio.</li>
+      <li><strong>Abonnements Créateurs & Pourboires (Tips) :</strong> Les spectateurs peuvent soutenir directement leurs streamers favoris pour débloquer des badges exclusifs ou accéder à des replays HD archivés.</li>
+      <li><strong>Comptes Vuvio PRO :</strong> Abonnement pour les entreprises, artisans et marques souhaitant utiliser Vuvio comme canal de visibilité et de recrutement.</li>
+    </ol>
+  </div>
+
+  <!-- SECTION 24 -->
+  <div id="section-24" class="section">
+    <h2><a class="section-anchor" href="#section-24" aria-label="Lien vers Design System &amp; Palette Officielle"><span class="num">24.</span> Design System & Palette Officielle</a></h2>
+    <p>La direction artistique de Vuvio rejette le style flashy et le noir pur étouffant pour privilégier un univers sombre, professionnel et technologique :</p>
+    <ul>
+      <li><strong>Deep Space Navy (<code>#070d18</code>) :</strong> Fond principal de l'application, évoquant l'espace et la nuit.</li>
+      <li><strong>Card Background (<code>#0f172a</code> & <code>#1e293b</code>) :</strong> Teintes sombres bleutées pour la structure des cartes et panneaux.</li>
+      <li><strong>Cyan Électrique (<code>#00e5ff</code>) :</strong> Couleur d'accentuation principale pour les éléments actifs, l'air et le branding.</li>
+      <li><strong>Teal / Sky Blue (<code>#06b6d4</code> / <code>#38bdf8</code>) :</strong> Utilisé pour l'eau et les sous-titres.</li>
+      <li><strong>Vert Émeraude (<code>#10b981</code>) :</strong> Indicateur de statut, catégorie terre et validations.</li>
+      <li><strong>Orange Sécurité (<code>#f97316</code>) :</strong> Utilisé très ponctuellement pour les alertes ou éléments financiers.</li>
+    </ul>
+  </div>
+
+  <!-- SECTION 25 -->
+  <div id="section-25" class="section">
+    <h2><a class="section-anchor" href="#section-25" aria-label="Lien vers Branding, Logos &amp; Signatures"><span class="num">25.</span> Branding, Logos & Signatures</a></h2>
+    <p>Le logo Vuvio se compose de son nom en typographie sans-serif fine et contemporaine, précédé d'un symbole subtil réunissant deux "V" entrelacés pour former un "W" stylisé, rappelant l'angle d'un objectif de caméra ou les deux yeux d'un observateur.</p>
+    <p><strong>Signatures officielles :</strong></p>
+    <ul>
+      <li><em>"See the world through someone else's eyes."</em></li>
+      <li><em>"Experience the world in first person."</em></li>
+      <li><em>"See the world live."</em></li>
+    </ul>
+  </div>
+
+  <!-- SECTION 26 -->
+  <div id="section-26" class="section">
+    <h2><a class="section-anchor" href="#section-26" aria-label="Lien vers Stratégie de Lancement"><span class="num">26.</span> Stratégie de Lancement</a></h2>
+    <p>Le lancement de Vuvio s'appuiera sur un programme d'ambassadeurs ciblés. Plutôt que de viser de grandes célébrités génériques, Vuvio recrutera 50 professionnels et passionnés reconnus dans leurs niches respectives :</p>
+    <ul>
+      <li>Des maîtres boulangers réputés à Paris, Tokyo et New York.</li>
+      <li>Des livreurs à vélo et commuters dans les grandes capitales.</li>
+      <li>Des marins et skippers en préparation de traversées.</li>
+      <li>Des artisans d'art et créateurs d'exception.</li>
+    </ul>
+    <p>Cette sélection initiale garantira un niveau de contenu captivant dès le premier jour sur le Globe.</p>
+  </div>
+
+  <!-- SECTION 27 -->
+  <div id="section-27" class="section">
+    <h2><a class="section-anchor" href="#section-27" aria-label="Lien vers Architecture &amp; Infrastructure Technique"><span class="num">27.</span> Architecture & Infrastructure Technique</a></h2>
+    <p>L'infrastructure Vuvio est bâtie sur des technologies modernes à très faible latence :</p>
+    <ul>
+      <li><strong>Frontend :</strong> React / React Native avec Vite pour une réactivité maximale.</li>
+      <li><strong>Cartographie 3D :</strong> MapLibre GL / Three.js optimisé pour le rendu fluide du Globe sur mobile.</li>
+      <li><strong>Ingestion & Streaming Vidéo :</strong> Cloudflare Stream et AWS IVS supportant l'acquisition WebRTC et RTMP depuis les smartphones et caméras embarquées.</li>
+      <li><strong>Backend & Base de données :</strong> Firebase / Node.js avec architecture serverless pour encaisser les montées en charge.</li>
+    </ul>
+  </div>
+
+  <!-- SECTION 28 -->
+  <div id="section-28" class="section">
+    <h2><a class="section-anchor" href="#section-28" aria-label="Lien vers Scope du MVP (Produit Minimum Viable)"><span class="num">28.</span> Scope du MVP (Produit Minimum Viable)</a></h2>
+    <p>La première version livrée inclut strictement :</p>
+    <ul>
+      <li>L'authentification utilisateur et le profil basique.</li>
+      <li>La Home avec les sections Live Now et Upcoming.</li>
+      <li>Le Globe 3D interactif avec affichage des points de live.</li>
+      <li>Le flux Explore vertical.</li>
+      <li>Le Live Viewer complet avec chat et panneau Gear.</li>
+      <li>Le studio de diffusion mobile pour streamers avec sélecteur d'équipement.</li>
+    </ul>
+  </div>
+
+  <!-- SECTION 29 -->
+  <div id="section-29" class="section">
+    <h2><a class="section-anchor" href="#section-29" aria-label="Lien vers Métriques &amp; KPIs de Succès"><span class="num">29.</span> Métriques & KPIs de Succès</a></h2>
+    <p>La santé et le succès du projet seront évalués selon 4 indicateurs clés :</p>
+    <ul>
+      <li><strong>Durée moyenne de visionnage par session (Watch Time) :</strong> Objectif &gt; 15 minutes.</li>
+      <li><strong>Rétention à J+7 et J+30 :</strong> Mesure du réengagement spontané sur la carte et la Home.</li>
+      <li><strong>Taux de conversion sur les liens "Gear" :</strong> Nombre de clics générés vers les équipements sponsors.</li>
+      <li><strong>Stabilité des flux (Stream Uptime Ratio) :</strong> Maintien de la connexion malgré la mobilité des streamers.</li>
+    </ul>
+  </div>
+
+  <!-- SECTION 30 -->
+  <div id="section-30" class="section">
+    <h2><a class="section-anchor" href="#section-30" aria-label="Lien vers Analyse des Risques"><span class="num">30.</span> Analyse des Risques</a></h2>
+    <p>Trois risques majeurs ont été identifiés avec leurs stratégies de mitigation associées :</p>
+    <ul>
+      <li><strong>Risque 1 : Débit réseau mobile instable sur le terrain.</strong><br>
+      <em>Mitigation :</em> Utilisation de protocoles de streaming adaptatifs (ABR) réduisant automatiquement la définition vidéo pour privilégier la continuité du flux audio et de l'image.</li>
+      <li><strong>Risque 2 : Coûts de bande passante vidéo élevés.</strong><br>
+      <em>Mitigation :</em> Optimisation de l'encodage via Cloudflare Stream et limitation de la résolution des aperçus cartographiques tant que l'utilisateur n'a pas tapé sur le live.</li>
+      <li><strong>Risque 3 : Dérives de modération en direct.</strong><br>
+      <em>Mitigation :</em> Détection automatique des ruptures de flux et possibilité pour la communauté de signaler un live en 1 tap avec gel instantané du broadcast.</li>
+    </ul>
+  </div>
+
+  <!-- SECTION 31 -->
+  <div id="section-31" class="section">
+    <h2><a class="section-anchor" href="#section-31" aria-label="Lien vers Décisions Validées"><span class="num">31.</span> Décisions Validées</a></h2>
+    <ul>
+      <li>Nom définitif retenu : <strong>Vuvio</strong>.</li>
+      <li>Positionnement produit : 100% axé sur le live POV et les perspectives réelles.</li>
+      <li>Choix technologique de la carte : Globe 3D fluide avec points de couleur selon l'élément.</li>
+      <li>Design global : Palette Deep Space Navy, Cyan, Teal et Vert.</li>
+      <li>Règle linguistique de l'interface utilisateur : Anglais uniquement (English Only).</li>
+    </ul>
+  </div>
+
+  <!-- SECTION 32 -->
+  <div id="section-32" class="section">
+    <h2><a class="section-anchor" href="#section-32" aria-label="Lien vers Interdictions Strictes"><span class="num">32.</span> Interdictions Strictes</a></h2>
+    <ul>
+      <li><strong>Pas de couleur Violette :</strong> Règle absolue de la charte graphique Vuvio.</li>
+      <li><strong>Pas d'esthétique Crypto / Néon Agressif :</strong> L'interface doit rester sobre, moderne et lisible.</li>
+      <li><strong>Pas de voyant "LIVE" rouge vif clignotant :</strong> Utilisation exclusive du cyan, vert émeraude ou blanc doux.</li>
+      <li><strong>Pas de distraction exagérée dans le Live Viewer :</strong> La vidéo POV doit rester l'élément central à tout moment.</li>
+    </ul>
+  </div>
+
+  <!-- SECTION 33 -->
+  <div id="section-33" class="section section-accent-green">
+    <h2><a class="section-anchor" href="#section-33" aria-label="Lien vers Feuille de Route Prioritaire"><span class="num">33.</span> Feuille de Route Prioritaire</a></h2>
+    <ol>
+      <li>Finaliser le prototype UI/UX complet du Globe 3D et du Live Viewer.</li>
+      <li>Mettre en place le pipeline de streaming basse latence.</li>
+      <li>Développer les fiches "Gear" et le système d'affiliation matériel.</li>
+      <li>Lancer la campagne de recrutement des 50 premiers streamers pilotes.</li>
+      <li>Effectuer les tests de charge et valider la version bêta fermée.</li>
+    </ol>
+  </div>
+
+  <!-- SECTION 34 -->
+  <div id="section-34" class="section section-accent-cyan">
+    <h2><a class="section-anchor" href="#section-34" aria-label="Lien vers Synthèse Globale"><span class="num">34.</span> Synthèse Globale</a></h2>
+    <p>Vuvio redéfinit la manière dont nous observons le monde à distance. En combinant la puissance de la vue subjective en direct, la simplicité de la cartographie 3D et la valorisation concrète des gestes et des équipements du quotidien, Vuvio ne crée pas seulement une nouvelle application de streaming : elle ouvre une fenêtre authentique, captivante et humaine sur la réalité de notre planète.</p>
+  </div>
+
+  <!-- FOOTER -->
+  <div class="footer">
+    Vuvio Platform Inc. © 2026 — Document Interne de Référence — Cahier des Charges Complètement Rédigé.
+  </div>
+
+  <a class="back-to-top" href="#top" aria-label="Retour en haut">↑</a>
+</body>
+</html>

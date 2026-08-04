@@ -1,0 +1,4 @@
+/**
+ * Product Type Definitions
+ */
+export {};
