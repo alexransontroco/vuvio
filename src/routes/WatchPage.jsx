@@ -1,3 +1,4 @@
+import Hls from 'hls.js';
 import { Backpack, BatteryWarning, Bell, CalendarClock, Camera, Check, ChevronLeft, ChevronRight, ChevronUp, Clock, Eye, Flag, Flashlight, Lock, MapPin, MessageCircle, Mic, MicOff, Play, RotateCcw, Search, Send, Settings, Share2, ShieldBan, Square, Star, Trash2, UnlockKeyhole, UserPlus, UserRound, UsersRound, Volume2, VolumeX, WifiOff, X } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -7,18 +8,19 @@ import { analyticsService } from '../services/analytics';
 import BrandMark from '../components/BrandMark.jsx';
 import CreatorLink from '../components/CreatorLink.jsx';
 import { EquipmentViewerSheet } from '../components/equipment/EquipmentKit.jsx';
+import ShareLiveSheet from '../components/ShareLiveSheet.jsx';
+import LiveShareBanner from '../components/LiveShareBanner.jsx';
 import LiveBadge from '../components/LiveBadge.jsx';
 import SegmentedControl from '../components/SegmentedControl.jsx';
 import { LivePresenceOverlay } from '../components/social/LivePresenceOverlay.jsx';
 import { lives } from '../data/lives.js';
 import { mapStreams } from '../data/mapStreams.js';
 import { streams, upcomingStreams } from '../data/mockStreams.js';
-import { getCreatedLives, getCreatedLiveStream, subscribeToCreatedLives, publishLivePing, endLive as deleteLiveFromDB } from '../services/createdLiveService.js';
-import { startBroadcast, stopBroadcast, watchBroadcast, closePeer, getLocalStream, getRemoteStream } from '../services/webrtcService.js';
-import { initRecorder, stopRecorder } from '../services/mediaRecorderService.js';
-import { uploadReplay } from '../services/replayUploadService.js';
+import { getCreatedLives, getCreatedLiveStream, subscribeToCreatedLives, publishLivePing, updateCreatedLive, endLive as deleteLiveFromDB } from '../services/createdLiveService.js';
+import { startBroadcast, stopBroadcast, stopBroadcastSync, watchBroadcast, closePeer, getLocalStream, getRemoteStream, startWhepPlayback, stopWhepPlayback } from '../services/webrtcService.js';
 import { collection, doc, onSnapshot, query, where, getDocs, getDoc, addDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
-import { db } from '../firebase.js';
+import { getDownloadURL, ref as storageRef, uploadString } from 'firebase/storage';
+import { db, storage } from '../firebase.js';
 import { useAuth } from '../context/AuthContext.jsx';
 import { getUnreadConversationCount, subscribeToMessaging } from '../services/messagingService.js';
 import { getUpcomingReminders, saveUpcomingReminder } from '../services/upcomingReminderService.js';
@@ -28,7 +30,7 @@ import { formatLocalSchedule, getCountdownState, toValidDate } from '../utils/co
 
 const SWIPE_THRESHOLD = 58;
 const WHEEL_THRESHOLD = 36;
-const WHEEL_LOCK_MS = 620;
+const WHEEL_IDLE_MS = 350;
 
 const streamLocations = new Map(streams.map((stream) => [stream.id, stream.map]));
 const mapStreamById = new Map(mapStreams.map((stream) => [stream.id, stream]));
@@ -54,13 +56,48 @@ const demoVideoLiveIds = [
   'buggy-marrakesh',
   'glacier-guide-iceland',
 ];
-const DEFAULT_WATCH_LIVE_ID = 'guitar-solo-pov-paris';
 const CLOCK_TICK_MS = 1000;
+const COVER_CAPTURE_DELAY_MS = 2000;
+const COVER_CAPTURE_MAX_WIDTH = 720;
+const COVER_CAPTURE_QUALITY = 0.68;
 const creatorComments = [
   { avatar: 'E', name: 'Emma', text: 'This looks amazing.' },
   { avatar: 'N', name: 'Noah', text: 'Trail view is clean.' },
   { avatar: 'M', name: 'Maya', text: 'Audio is good.' },
 ];
+
+function sleep(ms) {
+  return new Promise((resolve) => window.setTimeout(resolve, ms));
+}
+
+function captureVideoCoverDataUrl(videoEl) {
+  if (!videoEl || videoEl.readyState < 2 || !videoEl.videoWidth || !videoEl.videoHeight) return null;
+
+  const ratio = videoEl.videoHeight / videoEl.videoWidth;
+  const width = Math.min(COVER_CAPTURE_MAX_WIDTH, videoEl.videoWidth);
+  const height = Math.round(width * ratio);
+  const canvas = document.createElement('canvas');
+  canvas.width = width;
+  canvas.height = height;
+  const ctx = canvas.getContext('2d');
+  if (!ctx) return null;
+  ctx.drawImage(videoEl, 0, 0, width, height);
+  return canvas.toDataURL('image/jpeg', COVER_CAPTURE_QUALITY);
+}
+
+async function uploadLiveCoverImage(liveId, uid, imageData) {
+  if (!liveId || !uid || !imageData) return null;
+  const coverRef = storageRef(storage, `live-covers/${uid}/${liveId}/cover.jpg`);
+  await uploadString(coverRef, imageData, 'data_url', {
+    contentType: 'image/jpeg',
+    cacheControl: 'public,max-age=86400',
+  });
+  return getDownloadURL(coverRef);
+}
+
+function isPublicImageUrl(value) {
+  return typeof value === 'string' && /^https?:\/\//i.test(value);
+}
 
 const fallbackLocations = {
   'fisherman-lofoten': { top: '29%', left: '50%' },
@@ -90,6 +127,7 @@ function formatCompactCount(value, language = 'en') {
   if (count >= 1000) return `${(count / 1000).toLocaleString(language, { maximumFractionDigits: 1 })} k`;
   return count.toLocaleString(language);
 }
+
 
 function useScrollReveal(ref) {
   useEffect(() => {
@@ -270,7 +308,7 @@ function toHomeLive(stream) {
     image: stream.image ?? mapStream?.image,
     video: stream.video,
     kind: isVideoKind ? 'video' : stream.kind,
-    hasVideoAudio: isVideoKind || stream.hasVideoAudio,
+    hasVideoAudio: Boolean(stream.hasVideoAudio),
     viewerLabel: stream.viewerLabel ?? mapStream?.viewers ?? stream.viewers ?? '0',
     city: mapStream?.city ?? stream.city ?? city,
     country: mapStream?.country ?? stream.country ?? country,
@@ -317,6 +355,30 @@ function distanceKm(from, coordinates) {
   const a = Math.sin(latDistance / 2) ** 2
     + Math.cos(toRadians(from.latitude)) * Math.cos(toRadians(latitude)) * Math.sin(lonDistance / 2) ** 2;
   return earthRadius * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
+function shuffleArray(items) {
+  const shuffled = [...items];
+  for (let index = shuffled.length - 1; index > 0; index -= 1) {
+    const swapIndex = Math.floor(Math.random() * (index + 1));
+    [shuffled[index], shuffled[swapIndex]] = [shuffled[swapIndex], shuffled[index]];
+  }
+  return shuffled;
+}
+
+function isVideoWatchItem(live) {
+  return Boolean(live?.video || live?.kind === 'video');
+}
+
+function randomizeWatchLives(items) {
+  const videos = [];
+  const photos = [];
+
+  items.forEach((item) => {
+    (isVideoWatchItem(item) ? videos : photos).push(item);
+  });
+
+  return [...shuffleArray(videos), ...shuffleArray(photos)];
 }
 
 function SearchSheet({ onClose }) {
@@ -836,8 +898,14 @@ function WatchPage() {
   const [searchOpen, setSearchOpen] = useState(false);
   const [locationStatus, setLocationStatus] = useState('loading');
   const [userLocation, setUserLocation] = useState(fallbackUserLocation);
-  const homeLives = useMemo(() => streams.map(toHomeLive).filter((stream) => stream.status === 'live'), []);
-  const fallbackLiveStreams = useMemo(() => mapStreams.map(toHomeLive).filter((stream) => stream.status === 'live'), []);
+  const homeLives = useMemo(
+    () => randomizeWatchLives(streams.map(toHomeLive).filter((stream) => stream.status === 'live')),
+    [],
+  );
+  const fallbackLiveStreams = useMemo(
+    () => randomizeWatchLives(mapStreams.map(toHomeLive).filter((stream) => stream.status === 'live')),
+    [],
+  );
   const cityTourLives = useMemo(() => homeLives.filter((live) => live.category === 'City Tours').slice(0, 6), [homeLives]);
   const followedLives = useMemo(() => homeLives.filter((stream) => followedCreatorNames.includes(stream.name)), [homeLives]);
   const popularLiveLives = useMemo(() => [...homeLives].sort((a, b) => viewerCount(b.viewerLabel) - viewerCount(a.viewerLabel)), [homeLives]);
@@ -1070,21 +1138,34 @@ function CreatorCameraSurface({ live, className = '', children, videoRef: extern
   const stream = getCreatedLiveStream(live.id);
   const internalRef = useRef(null);
   const videoRef = externalVideoRef || internalRef;
+  // Keep onVideoReady in a ref so changing it never re-runs the effect
+  const onVideoReadyRef = useRef(onVideoReady);
+  useEffect(() => { onVideoReadyRef.current = onVideoReady; });
 
   useEffect(() => {
-    if (!videoRef.current || !stream) return undefined;
+    console.log('[CreatorCameraSurface] mount — stream:', stream?.id ?? 'none');
+    if (!videoRef.current || !stream) return () => console.log('[CreatorCameraSurface] unmount (no stream)');
+    console.log('[CreatorCameraSurface] srcObject = stream', stream.id);
     videoRef.current.srcObject = stream;
-    const handleLoadedMetadata = () => {
-      onVideoReady?.();
-    };
+
+    const tracks = stream.getTracks();
+    tracks.forEach((track) => {
+      track.onmute = () => console.warn('[CreatorCameraSurface] track muted:', track.kind);
+      track.onunmute = () => console.log('[CreatorCameraSurface] track unmuted:', track.kind);
+      track.onended = () => console.warn('[CreatorCameraSurface] track ended:', track.kind);
+    });
+
+    const handleLoadedMetadata = () => onVideoReadyRef.current?.();
     videoRef.current.addEventListener('loadedmetadata', handleLoadedMetadata);
     return () => {
+      console.warn('[CreatorCameraSurface] unmount — srcObject = null');
+      tracks.forEach((track) => { track.onmute = null; track.onunmute = null; track.onended = null; });
       if (videoRef.current) {
         videoRef.current.removeEventListener('loadedmetadata', handleLoadedMetadata);
         videoRef.current.srcObject = null;
       }
     };
-  }, [stream, videoRef, onVideoReady]);
+  }, [stream, videoRef]); // onVideoReady intentionally excluded — held in ref above
 
   return (
     <div className={`creator-live-camera ${className}`}>
@@ -1117,28 +1198,78 @@ function CreatorLiveSession({ live, onEndingChange }) {
   const [toast, setToast] = useState(null);
   const [comment, setComment] = useState(null);
   const [starBursts, setStarBursts] = useState([]);
+  const [shareLiveOpen, setShareLiveOpen] = useState(false);
+  const [bannerVisible, setBannerVisible] = useState(false);
+  const [bannerDismissed, setBannerDismissed] = useState(false);
   const hideTimer = useRef(null);
   const longPressTimer = useRef(null);
   const lastCenterTapRef = useRef({ time: 0, x: 0, y: 0 });
   const broadcastStartedRef = useRef(false);
   const videoElementRef = useRef(null);
+  const coverCaptureRef = useRef({ status: 'idle', imageData: null });
+  const lastCommentKeyRef = useRef(null);
 
-  const captureAndSaveCoverImage = useCallback(async (liveId) => {
+  const captureAndSaveCoverImage = useCallback(async (liveId, options = {}) => {
+    if (!liveId) return null;
+    if (coverCaptureRef.current.imageData && !options.force) return coverCaptureRef.current.imageData;
+    if (coverCaptureRef.current.status === 'pending' && !options.force) return null;
+
+    coverCaptureRef.current.status = 'pending';
     try {
-      const videoEl = videoElementRef.current;
-      if (!videoEl || videoEl.readyState < 2) return;
-      const canvas = document.createElement('canvas');
-      canvas.width = videoEl.videoWidth || 1280;
-      canvas.height = videoEl.videoHeight || 720;
-      const ctx = canvas.getContext('2d');
-      ctx?.drawImage(videoEl, 0, 0);
-      const imageData = canvas.toDataURL('image/jpeg', 0.8);
-      const liveRef = doc(db, 'activeLives', liveId);
-      await updateDoc(liveRef, { image: imageData });
+      if (options.delayMs !== 0) {
+        await sleep(options.delayMs ?? COVER_CAPTURE_DELAY_MS);
+      }
+
+      let imageData = null;
+      for (let attempt = 0; attempt < 6; attempt += 1) {
+        imageData = captureVideoCoverDataUrl(videoElementRef.current);
+        if (imageData) break;
+        await sleep(350);
+      }
+      if (!imageData) {
+        coverCaptureRef.current.status = 'idle';
+        return null;
+      }
+
+      let publicCoverUrl = null;
+      try {
+        publicCoverUrl = await uploadLiveCoverImage(liveId, user?.uid, imageData);
+      } catch (err) {
+        console.warn('[CreatorLiveSession] Failed to upload cover image:', err.message);
+      }
+
+      const shareCoverUrl = publicCoverUrl || imageData;
+      const localCoverPatch = {
+        image: shareCoverUrl,
+        thumbnailUrl: shareCoverUrl,
+        coverImageUrl: shareCoverUrl,
+        coverImageDataUrl: imageData,
+        coverSource: 'screenshot',
+        coverCapturedAt: new Date().toISOString(),
+        coverCaptureOffsetSeconds: 2,
+      };
+      coverCaptureRef.current = { status: 'captured', imageData: shareCoverUrl };
+      updateCreatedLive(liveId, localCoverPatch);
+
+      if (publicCoverUrl) {
+        const liveRef = doc(db, 'activeLives', liveId);
+        await updateDoc(liveRef, {
+          image: publicCoverUrl,
+          thumbnailUrl: publicCoverUrl,
+          coverImageUrl: publicCoverUrl,
+          coverSource: 'screenshot',
+          coverCapturedAt: serverTimestamp(),
+          coverCaptureOffsetSeconds: 2,
+          updatedAt: serverTimestamp(),
+        });
+      }
+      return shareCoverUrl;
     } catch (err) {
+      coverCaptureRef.current.status = 'idle';
       console.warn('[CreatorLiveSession] Failed to capture image:', err.message);
+      return null;
     }
-  }, []);
+  }, [user?.uid]);
 
   const keepHudAwake = () => {
     if (locked || phase !== 'live') return;
@@ -1162,14 +1293,20 @@ function CreatorLiveSession({ live, onEndingChange }) {
   }, []);
 
   useEffect(() => {
+    if (bannerDismissed || viewerCount >= 5) return undefined;
+    const t = window.setTimeout(() => setBannerVisible(true), 8000);
+    return () => window.clearTimeout(t);
+  }, [bannerDismissed, viewerCount]);
+
+  useEffect(() => {
     if (!live?.id || !user?.uid || broadcastStartedRef.current) return undefined;
     broadcastStartedRef.current = true;
     let active = true;
 
     const setupBroadcast = async () => {
       let whipCredentials = null;
+      let cloudflareLiveInputId = live.cloudflareLiveInputId || null;
       try {
-        // Create Cloudflare live input
         try {
           const token = await user.getIdToken();
           const cfResponse = await fetch('/api/cloudflare/live-input/create', {
@@ -1185,18 +1322,17 @@ function CreatorLiveSession({ live, onEndingChange }) {
           });
           if (cfResponse.ok) {
             const cfData = await cfResponse.json();
-            console.log('[CreatorLiveSession] Cloudflare live input created:', cfData.liveInputId);
-            if (active && cfData.liveInputId) {
-              const liveRef = doc(db, 'activeLives', live.id);
-              await updateDoc(liveRef, { liveInputId: cfData.liveInputId });
-            }
-            console.log('[WHIP] cfData:', JSON.stringify({ webRTCUrl: cfData.webRTCUrl, streamKey: cfData.streamKey, ingestUrl: cfData.ingestUrl }));
+            console.log('[CLOUDFLARE] broadcast started — live input:', cfData.liveInputId, '| WHEP URL:', cfData.whepUrl ?? 'none');
+            if (cfData.liveInputId) cloudflareLiveInputId = cfData.liveInputId;
             if (cfData.webRTCUrl && cfData.streamKey) {
               whipCredentials = { url: cfData.webRTCUrl, key: cfData.streamKey };
+            } else {
+              console.error('[CLOUDFLARE] ❌ Missing WHIP credentials — broadcast will NOT reach Cloudflare. webRTCUrl:', cfData.webRTCUrl, 'streamKey present:', !!cfData.streamKey);
             }
+            // whepUrl is already stored in Firestore by createLiveInputHandler
           }
         } catch (cfErr) {
-          console.warn('[CreatorLiveSession] Cloudflare setup failed:', cfErr.message);
+          console.warn('[CLOUDFLARE] Cloudflare setup failed:', cfErr.message);
         }
 
         const stream = await startBroadcast(live.id, user.uid, getCreatedLiveStream(live.id), whipCredentials?.url, whipCredentials?.key);
@@ -1204,17 +1340,16 @@ function CreatorLiveSession({ live, onEndingChange }) {
           stream?.getTracks?.().forEach((track) => track.stop());
           return;
         }
-        // Start MediaRecorder in parallel — backup recording for replay
         if (stream) {
-          try {
-            await initRecorder(stream, live.id);
-            await updateDoc(doc(db, 'activeLives', live.id), { recordingStatus: 'recording' });
-          } catch (recErr) {
-            console.warn('[CreatorLiveSession] MediaRecorder init failed (non-fatal):', recErr.message);
-          }
+          await updateDoc(doc(db, 'activeLives', live.id), {
+            cloudflareLiveInputId,
+            liveStartedAt: serverTimestamp(),
+            recordingStatus: 'recording',
+            updatedAt: serverTimestamp(),
+          });
         }
       } catch (err) {
-        console.error('[CreatorLiveSession] Broadcast setup failed:', err.message);
+        console.error('[CLOUDFLARE] Broadcast setup failed:', err.message);
         setToast('Broadcast connection failed');
         window.setTimeout(() => setToast(null), 1800);
       }
@@ -1228,6 +1363,30 @@ function CreatorLiveSession({ live, onEndingChange }) {
       onEndingChange?.(false, live.id);
     };
   }, [live?.id, onEndingChange, user?.uid]);
+
+  // Heartbeat — keeps activeLives doc alive so the server stale-live detector doesn't end it
+  useEffect(() => {
+    if (phase !== 'live' || !live?.id) return undefined;
+    const sendHeartbeat = () => {
+      updateDoc(doc(db, 'activeLives', live.id), {
+        lastHeartbeatAt: serverTimestamp(),
+      }).catch(() => {});
+    };
+    sendHeartbeat();
+    const timer = window.setInterval(sendHeartbeat, 30000);
+    return () => window.clearInterval(timer);
+  }, [phase, live?.id]);
+
+  // beforeunload — best-effort sync cleanup when broadcaster closes tab or loses network
+  useEffect(() => {
+    if (!live?.id) return undefined;
+    const handleBeforeUnload = () => {
+      console.log('[CLOUDFLARE] broadcast ending (unload)');
+      stopBroadcastSync();
+    };
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [live?.id]);
 
   useEffect(() => {
     if (phase !== 'live') return undefined;
@@ -1253,20 +1412,59 @@ function CreatorLiveSession({ live, onEndingChange }) {
   useEffect(() => {
     if (!live?.id || phase !== 'live') return undefined;
     const commentsRef = collection(db, `activeLives/${live.id}/comments`);
+    let initialSnapshotSeen = false;
+    const showComment = (commentKey, data) => {
+      if (!commentKey || lastCommentKeyRef.current === commentKey) return;
+      lastCommentKeyRef.current = commentKey;
+      setComment({ name: data.userDisplayName || 'Anonymous', text: ` ${data.text}`, avatar: data.avatar || '👤' });
+      window.setTimeout(() => setComment(null), 4000);
+      setCommentsCount((count) => count + 1);
+    };
     const unsubscribe = onSnapshot(
       query(commentsRef),
       (snapshot) => {
+        if (!initialSnapshotSeen) {
+          initialSnapshotSeen = true;
+          return;
+        }
+
         snapshot.docChanges().forEach((change) => {
           if (change.type === 'added') {
             const data = change.doc.data();
-            setComment({ name: data.userDisplayName || 'Anonymous', text: ` ${data.text}`, avatar: '👤' });
-            window.setTimeout(() => setComment(null), 4000);
-            setCommentsCount((count) => count + 1);
+            showComment(change.doc.id, data);
           }
         });
       },
       (err) => console.warn('[CreatorLiveSession] Comments listener error:', err.message)
     );
+    return () => unsubscribe();
+  }, [live?.id, phase]);
+
+  useEffect(() => {
+    if (!live?.id || phase !== 'live') return undefined;
+
+    const liveRef = doc(db, 'activeLives', live.id);
+    let lastLatestCommentId = null;
+    const unsubscribe = onSnapshot(
+      liveRef,
+      (docSnap) => {
+        if (!docSnap.exists()) return;
+        const data = docSnap.data();
+        const latestComment = data?.latestComment;
+        if (!latestComment || latestComment.id === lastLatestCommentId) return;
+        lastLatestCommentId = latestComment.id;
+        lastCommentKeyRef.current = latestComment.id;
+        setComment({
+          name: latestComment.userDisplayName || 'Anonymous',
+          text: ` ${latestComment.text || ''}`,
+          avatar: latestComment.avatar || '👤',
+        });
+        window.setTimeout(() => setComment(null), 4000);
+        setCommentsCount((count) => count + 1);
+      },
+      (err) => console.warn('[CreatorLiveSession] Live doc listener error:', err.message)
+    );
+
     return () => unsubscribe();
   }, [live?.id, phase]);
 
@@ -1363,45 +1561,49 @@ function CreatorLiveSession({ live, onEndingChange }) {
     setConfirmEnd(false);
     setPhase('ending');
     onEndingChange?.(true, live.id);
+    const cloudflareLiveInputId = live.cloudflareLiveInputId || null;
 
-    // Stop MediaRecorder first to finalize the recording
-    try {
-      await stopRecorder();
-      console.log('[endLive] MediaRecorder stopped');
-    } catch (recErr) {
-      console.warn('[endLive] MediaRecorder stop failed (non-fatal):', recErr.message);
-    }
+    const finalCoverImage = coverCaptureRef.current.imageData || await captureAndSaveCoverImage(live.id, { delayMs: 0, force: true });
+    const coverFields = finalCoverImage ? {
+      image: finalCoverImage,
+      thumbnailUrl: finalCoverImage,
+      coverImageUrl: finalCoverImage,
+      coverSource: 'screenshot',
+      coverCapturedAt: new Date().toISOString(),
+      coverCaptureOffsetSeconds: 2,
+    } : {};
+    const firestoreCoverFields = isPublicImageUrl(finalCoverImage) ? {
+      image: finalCoverImage,
+      thumbnailUrl: finalCoverImage,
+      coverImageUrl: finalCoverImage,
+      coverSource: 'screenshot',
+      coverCapturedAt: serverTimestamp(),
+      coverCaptureOffsetSeconds: 2,
+    } : {};
 
+    console.log('[CLOUDFLARE] broadcast ending — stopping WHIP and tracks');
     try {
-      console.log('[HomePage] Ending live broadcast:', live.id);
       await stopBroadcast(live.id);
       closePeer();
+      console.log('[CLOUDFLARE] WHIP closed');
     } catch (err) {
-      console.error('[HomePage] Failed to stop broadcast:', err);
+      console.error('[CLOUDFLARE] Failed to stop broadcast:', err);
     }
 
-    // Start upload in background — navigates to recap which tracks progress
     try {
-      const token = await user.getIdToken();
       const liveId = live.id;
-      const beforeUnload = (e) => { e.preventDefault(); e.returnValue = ''; };
-      window.addEventListener('beforeunload', beforeUnload);
-      uploadReplay(liveId, token, {
-        onProgress: () => {},
-      }).then(({ cloudflareUid } = {}) => {
-        console.log('[endLive] Upload complete, cloudflareUid:', cloudflareUid);
-        window.removeEventListener('beforeunload', beforeUnload);
-      }).catch((err) => {
-        console.error('[endLive] Upload failed:', err.message);
-        window.removeEventListener('beforeunload', beforeUnload);
+      await updateDoc(doc(db, 'activeLives', liveId), {
+        recordingStatus: 'processing',
+        liveEndedAt: serverTimestamp(),
+        ...(cloudflareLiveInputId ? { cloudflareLiveInputId } : {}),
+        updatedAt: serverTimestamp(),
       });
     } catch (uploadErr) {
-      console.warn('[endLive] Could not start upload:', uploadErr.message);
+      console.warn('[endLive] Could not mark processing:', uploadErr.message);
     }
 
     try {
       console.log('[endLive] Stats - elapsed:', elapsed, 'viewers:', viewerCount, 'peak:', peakViewers, 'comments:', commentsCount, 'stars:', stars);
-      console.log('[endLive] Updating live document:', live.id, 'user UID:', user?.uid, 'live creatorUid:', live.creatorUid);
       const liveRef = doc(db, 'activeLives', live.id);
 
       let commentCount = commentsCount;
@@ -1420,28 +1622,6 @@ function CreatorLiveSession({ live, onEndingChange }) {
         console.log('[endLive] Using state counts - comments:', commentsCount, 'stars:', stars);
       }
 
-      let replayUrl = live.playbackUrl || null;
-      if (!replayUrl) {
-        try {
-          const freshLive = await getDoc(doc(db, 'activeLives', live.id));
-          if (freshLive.exists()) {
-            const freshData = freshLive.data();
-            console.log('[endLive] Fresh live data:', freshData);
-            replayUrl = freshData.playbackUrl || freshData.hlsManifestUrl || null;
-            console.log('[endLive] Fetched fresh playbackUrl:', replayUrl);
-          } else {
-            console.log('[endLive] Live document not found');
-          }
-        } catch (err) {
-          console.warn('[endLive] Failed to fetch fresh live data:', err.message);
-        }
-      }
-      if (replayUrl) {
-        console.log('[endLive] Using replay URL:', replayUrl);
-      } else {
-        console.log('[endLive] No playbackUrl or hlsManifestUrl available');
-      }
-
       const stats = {
         status: 'ended',
         endedAt: serverTimestamp(),
@@ -1450,21 +1630,56 @@ function CreatorLiveSession({ live, onEndingChange }) {
         peakViewerCount: peakViewers,
         commentCount: commentCount,
         starCount: starCount,
+        recordingStatus: 'processing',
       };
-      if (replayUrl) stats.replayUrl = replayUrl;
 
-      console.log('[endLive] Stats object to save:', stats);
-      await updateDoc(liveRef, stats);
-      console.log('[endLive] Stats saved successfully');
+      await updateDoc(liveRef, { ...stats, ...firestoreCoverFields });
+      console.log('[CLOUDFLARE] live marked ended');
+      console.log('[CLOUDFLARE] cleanup complete');
+
+      const recapLiveData = {
+        ...live,
+        ...stats,
+        ...coverFields,
+        status: 'ended',
+        durationSeconds: elapsed,
+        totalUniqueViewers: viewerCount,
+        peakViewerCount: peakViewers,
+        commentCount,
+        starCount,
+        endedAt: new Date().toISOString(),
+      };
+
+      setPhase('processing');
+      await sleep(1500);
+      navigate(`/live/${live.id}/recap`, {
+        replace: true,
+        state: { liveData: recapLiveData },
+      });
+      return;
     } catch (err) {
       console.error('[endLive] Stats save error:', err.code, err.message);
       console.error('[endLive] Error details:', err);
     }
 
-    window.setTimeout(() => setPhase('processing'), 1100);
-    window.setTimeout(() => {
-      navigate(`/live/${live.id}/recap`, { replace: true });
-    }, 2900);
+    setPhase('processing');
+    await sleep(1500);
+    navigate(`/live/${live.id}/recap`, {
+      replace: true,
+      state: {
+        liveData: {
+          ...live,
+          ...coverFields,
+          status: 'ended',
+          durationSeconds: elapsed,
+          totalUniqueViewers: viewerCount,
+          peakViewerCount: peakViewers,
+          commentCount: commentsCount,
+          starCount: stars,
+          endedAt: new Date().toISOString(),
+        },
+      },
+    });
   };
 
   const stats = {
@@ -1517,6 +1732,14 @@ function CreatorLiveSession({ live, onEndingChange }) {
           <span>{formatLiveDuration(elapsed)}</span>
         </div>
         <div className="creator-live-hud__right">
+          <button
+            type="button"
+            className="creator-hud-share-btn"
+            onClick={(e) => { e.stopPropagation(); setShareLiveOpen(true); }}
+            aria-label="Share your live"
+          >
+            <Share2 size={15} strokeWidth={1.9} />
+          </button>
           <Eye size={13} strokeWidth={1.8} />
           {viewerCount}
         </div>
@@ -1562,6 +1785,15 @@ function CreatorLiveSession({ live, onEndingChange }) {
           </section>
         </div>
       ) : null}
+      {bannerVisible && !bannerDismissed && !shareLiveOpen && !confirmEnd ? (
+        <LiveShareBanner
+          onShare={() => { setBannerVisible(false); setShareLiveOpen(true); }}
+          onDismiss={() => { setBannerVisible(false); setBannerDismissed(true); }}
+        />
+      ) : null}
+      {shareLiveOpen ? (
+        <ShareLiveSheet live={live} onClose={() => setShareLiveOpen(false)} />
+      ) : null}
     </section>
   );
 }
@@ -1576,6 +1808,7 @@ function LiveViewer({ liveId, creatorMode = false }) {
   const [watchStatus, setWatchStatus] = useState('');
   const [watchRetry, setWatchRetry] = useState(0);
   const [broadcastEnded, setBroadcastEnded] = useState(false);
+  const [forceWebRtcFallback, setForceWebRtcFallback] = useState(false);
   const localVideoRef = useRef(null);
   const remoteVideoRef = useRef(null);
   const videoPlaybackRef = useRef(null);
@@ -1583,19 +1816,25 @@ function LiveViewer({ liveId, creatorMode = false }) {
   const watcherIdRef = useRef(null);
   const retryTimerRef = useRef(null);
   const timeoutTimerRef = useRef(null);
+  const hlsFallbackTimerRef = useRef(null);
 
-  useEffect(() => {
-    getCreatedLives().then(setCreatedLives).catch(() => setCreatedLives([]));
-  }, []);
+  const ensureRemoteVideoMuted = (video) => {
+    if (!video) return;
+    video.muted = true;
+  };
+
+  useEffect(() => { getCreatedLives().then(setCreatedLives).catch(() => setCreatedLives([])); }, []);
+  // Stable shuffle — computed once per session so Firestore updates don't reshuffle the feed
+  const [shuffledDemoIds] = useState(() => shuffleArray(demoVideoLiveIds));
   const liveFeed = useMemo(() => {
     if (lives && lives.length > 0) return lives;
-    const baseFeed = streams.map(toHomeLive).filter((stream) => stream.status === 'live');
+    const baseFeed = streams.map(toHomeLive).filter((stream) => stream.status === 'live' || stream.id === liveId);
     const activeLives = createdLives.filter((live) => live.status === 'live');
-    const demoVideos = demoVideoLiveIds
+    const demoVideos = shuffledDemoIds
       .map((id) => baseFeed.find((stream) => stream.id === id && stream.video))
       .filter(Boolean);
 
-    // Prioritize demo videos first
+    // Prioritize demo videos first (order stable — shuffled once at mount)
     const demoIds = new Set(demoVideos.map((v) => v.id));
     const nonDemoStreams = [...activeLives, ...baseFeed].filter((s) => !demoIds.has(s.id));
     let combined = [...demoVideos, ...nonDemoStreams];
@@ -1615,8 +1854,17 @@ function LiveViewer({ liveId, creatorMode = false }) {
       return true;
     });
 
+    // If a specific stream is requested, always put it first
+    if (liveId) {
+      const requestedIdx = combined.findIndex((s) => s.id === liveId);
+      if (requestedIdx > 0) {
+        const [requested] = combined.splice(requestedIdx, 1);
+        combined.unshift(requested);
+      }
+    }
+
     return combined;
-  }, [lives, createdLives, liveId]);
+  }, [lives, createdLives, liveId, shuffledDemoIds]);
   const [index, setIndex] = useState(() => {
     const requestedIndex = liveFeed.findIndex((item) => item.id === liveId);
     return requestedIndex >= 0 ? requestedIndex : 0;
@@ -1630,6 +1878,7 @@ function LiveViewer({ liveId, creatorMode = false }) {
   const [following, setFollowing] = useState({});
   const [userSheetOpen, setUserSheetOpen] = useState(false);
   const [equipmentSheetOpen, setEquipmentSheetOpen] = useState(false);
+  const [shareLiveSheetOpen, setShareLiveSheetOpen] = useState(false);
   const [chatComposerOpen, setChatComposerOpen] = useState(false);
   const [chatPanelOpen, setChatPanelOpen] = useState(false);
   const [immersive, setImmersive] = useState(false);
@@ -1645,7 +1894,7 @@ function LiveViewer({ liveId, creatorMode = false }) {
   const pointerStart = useRef(null);
   const lastLiveTap = useRef({ time: 0, x: 0, y: 0 });
   const tapSheetTimer = useRef(null);
-  const wheelLock = useRef(0);
+  const wheelTimer = useRef(null);
   const live = liveFeed[index] ?? liveFeed[0] ?? { id: '', equipment: [] };
   const activeLiveId = live.id;
   const liveEquipment = live.id ? getEquipmentSelection(equipmentLibrary, live.equipment?.map((item) => item.equipmentId) ?? demoLiveEquipmentIds) : [];
@@ -1748,9 +1997,147 @@ function LiveViewer({ liveId, creatorMode = false }) {
     };
   }, [creatorMode, activeLiveId, live.creatorUid]);
 
-  // WebRTC streaming for watchers (only for real active broadcasts)
+  // WHEP viewer — DISABLED: Cloudflare WHEP only supports 1 simultaneous viewer per live input.
+  // HLS (below) is the primary viewer path — scales to unlimited viewers via Cloudflare CDN.
+  useEffect(() => {
+    if (true || creatorMode || !live?.whepUrl || !remoteVideoRef.current || forceWebRtcFallback) return; // eslint-disable-line no-constant-condition
+    const video = remoteVideoRef.current;
+    let cancelled = false;
+    let whepResourceUrl = null;
+    let whepPeerConnection = null;
+
+    if (video.srcObject) video.srcObject = null;
+    setRemoteStream('whep');
+    setBroadcastEnded(false);
+    console.log('[CLOUDFLARE] viewer connecting via WHEP:', live.whepUrl);
+
+    startWhepPlayback(live.whepUrl, (stream, status) => {
+      if (cancelled) return;
+      if (stream) {
+        video.srcObject = stream;
+        video.muted = true;
+        video.play()?.catch(() => {});
+        setRemoteStream(stream);
+        setWatchStatus('connected');
+      } else if (status === 'failed' || status === 'disconnected') {
+        console.warn('[CLOUDFLARE] WHEP lost, falling back to P2P WebRTC');
+        setWatchStatus('retrying');
+        setForceWebRtcFallback(true);
+      }
+    }).then((result) => {
+      if (result) whepResourceUrl = result.resourceUrl;
+      if (result?.peerConnection) whepPeerConnection = result.peerConnection;
+    }).catch((err) => {
+      if (!cancelled) {
+        console.warn('[LiveViewer] WHEP failed, falling back to P2P:', err.message);
+        setForceWebRtcFallback(true);
+      }
+    });
+
+    return () => {
+      cancelled = true;
+      stopWhepPlayback(whepResourceUrl, whepPeerConnection);
+    };
+  }, [creatorMode, forceWebRtcFallback, live?.whepUrl]);
+
+  // HLS viewer — primary viewer path for all Cloudflare live streams (unlimited concurrent viewers via CDN)
+  useEffect(() => {
+    const hlsUrl = live?.hlsManifestUrl;
+    if (creatorMode || !hlsUrl?.startsWith('http') || !remoteVideoRef.current || forceWebRtcFallback) return;
+    const video = remoteVideoRef.current;
+    window.clearTimeout(hlsFallbackTimerRef.current);
+    ensureRemoteVideoMuted(video);
+    if (video.srcObject) video.srcObject = null;
+    setRemoteStream('hls');
+    setBroadcastEnded(false);
+    console.log('[LiveViewer] HLS playback via Cloudflare:', hlsUrl);
+
+    let hlsInstance = null;
+    let cancelled = false;
+    const settleHlsPlayback = () => {
+      window.clearTimeout(hlsFallbackTimerRef.current);
+    };
+    const fallbackToWebRTC = () => {
+      window.clearTimeout(hlsFallbackTimerRef.current);
+      if (cancelled || !video.isConnected) return;
+      cancelled = true;
+      console.warn('[LiveViewer] HLS did not start, falling back to WebRTC');
+      if (hlsInstance) {
+        hlsInstance.destroy();
+        hlsInstance = null;
+      }
+      video.removeAttribute('src');
+      video.load?.();
+      setRemoteStream(null);
+      setWatchStatus('retrying');
+      setForceWebRtcFallback(true);
+    };
+
+    if (Hls.isSupported()) {
+      let hlsRetries = 0;
+      const MAX_HLS_RETRIES = 10;
+      const HLS_RETRY_DELAY = 3000;
+      const startHls = (url) => {
+        if (cancelled) return;
+        if (hlsInstance) { hlsInstance.destroy(); hlsInstance = null; }
+        hlsInstance = new Hls({ lowLatencyMode: true });
+        hlsInstance.loadSource(url);
+        hlsInstance.attachMedia(video);
+        hlsInstance.on(Hls.Events.MANIFEST_PARSED, () => {
+          settleHlsPlayback();
+          ensureRemoteVideoMuted(video);
+          video.play()?.catch(() => {});
+        });
+        hlsInstance.on(Hls.Events.ERROR, (_event, data) => {
+          console.warn('[LiveViewer] HLS error:', data?.type, data?.details);
+          if (!data?.fatal) return;
+          if (hlsRetries < MAX_HLS_RETRIES) {
+            hlsRetries += 1;
+            console.warn(`[LiveViewer] HLS retry ${hlsRetries}/${MAX_HLS_RETRIES}...`);
+            window.setTimeout(() => { if (!cancelled && video.isConnected) startHls(url); }, HLS_RETRY_DELAY);
+          } else {
+            fallbackToWebRTC();
+          }
+        });
+      };
+      startHls(hlsUrl);
+    } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+      video.src = hlsUrl;
+      const onReady = () => {
+        settleHlsPlayback();
+        ensureRemoteVideoMuted(video);
+        video.play()?.catch(() => {});
+      };
+      const onError = () => fallbackToWebRTC();
+      video.addEventListener('loadedmetadata', onReady, { once: true });
+      video.addEventListener('playing', onReady, { once: true });
+      video.addEventListener('canplay', onReady, { once: true });
+      video.addEventListener('error', onError, { once: true });
+      video.load();
+      hlsFallbackTimerRef.current = window.setTimeout(() => {
+        if (!video.videoWidth && !video.currentTime) fallbackToWebRTC();
+      }, 120000);
+      return () => {
+        cancelled = true;
+        settleHlsPlayback();
+        hlsInstance?.destroy();
+        video.removeEventListener('error', onError);
+      };
+    }
+    hlsFallbackTimerRef.current = window.setTimeout(() => {
+      if (!video.videoWidth && !video.currentTime) fallbackToWebRTC();
+    }, 120000);
+    return () => {
+      cancelled = true;
+      settleHlsPlayback();
+      hlsInstance?.destroy();
+    };
+  }, [creatorMode, forceWebRtcFallback, live?.hlsManifestUrl]);
+
+  // WebRTC P2P — final fallback when HLS is unavailable or failed
   useEffect(() => {
     if (creatorMode || !activeLiveId) return;
+    if ((live.whepUrl || live.hlsManifestUrl) && !forceWebRtcFallback) return; // WHEP/HLS take priority
 
     // Only set up WebRTC for real broadcasts with active broadcasters
     const isRealBroadcast = live.creatorUid || live.createdLocally;
@@ -1823,7 +2210,7 @@ function LiveViewer({ liveId, creatorMode = false }) {
       watcherIdRef.current = null;
       closePeer();
     };
-  }, [creatorMode, activeLiveId, live.creatorUid, live.createdLocally, user?.uid, watchRetry]);
+  }, [creatorMode, activeLiveId, live.creatorUid, live.createdLocally, live.whepUrl, live.hlsManifestUrl, forceWebRtcFallback, user?.uid, watchRetry]);
 
 
 
@@ -1848,6 +2235,7 @@ function LiveViewer({ liveId, creatorMode = false }) {
 
   const goTo = (liveion) => {
     endSession('swipe');
+    setBroadcastEnded(false);
     setIndex((current) => {
       const next = current + liveion;
       if (next < 0) return liveFeed.length - 1;
@@ -1922,12 +2310,19 @@ function LiveViewer({ liveId, creatorMode = false }) {
     setIsDragging(false);
   };
 
+  const wheelDirection = useRef(0);
   const onWheel = (event) => {
     if (Math.abs(event.deltaY) < WHEEL_THRESHOLD) return;
-    const now = Date.now();
-    if (now - wheelLock.current < WHEEL_LOCK_MS) return;
-    wheelLock.current = now;
-    goTo(event.deltaY > 0 ? 1 : -1);
+    // Record the dominant scroll direction for this gesture
+    if (wheelTimer.current === null) {
+      wheelDirection.current = event.deltaY > 0 ? 1 : -1;
+    }
+    // Reset idle timer — navigate only after scrolling stops
+    if (wheelTimer.current !== null) clearTimeout(wheelTimer.current);
+    wheelTimer.current = setTimeout(() => {
+      wheelTimer.current = null;
+      goTo(wheelDirection.current);
+    }, WHEEL_IDLE_MS);
   };
 
   useEffect(() => {
@@ -1936,16 +2331,6 @@ function LiveViewer({ liveId, creatorMode = false }) {
     setWatchStatus('');
     setWatchRetry(0);
   }, [activeLiveId]);
-
-  useEffect(() => {
-    if (!broadcastEnded || liveFeed.length < 2) return undefined;
-
-    const timer = window.setTimeout(() => {
-      goTo(1);
-    }, 1800);
-
-    return () => window.clearTimeout(timer);
-  }, [broadcastEnded, liveFeed.length]);
 
   const reactWithStar = async (event) => {
     if (isLiked) return;
@@ -1961,7 +2346,10 @@ function LiveViewer({ liveId, creatorMode = false }) {
     setStarPulse(true);
 
     try {
-      const starsRef = collection(db, `activeLives/${liveId}/stars`);
+      const targetLiveId = activeLiveId || liveId;
+      if (!targetLiveId || !user?.uid) return;
+
+      const starsRef = collection(db, `activeLives/${targetLiveId}/stars`);
       await addDoc(starsRef, {
         userId: user.uid,
         userDisplayName: user.displayName || 'Anonymous',
@@ -1979,7 +2367,7 @@ function LiveViewer({ liveId, creatorMode = false }) {
     }, 220);
   };
 
-  const chat = useMemo(() => [...(live.chat ?? []), ...(localChat[liveId] ?? [])], [live.chat, localChat, liveId]);
+  const chat = useMemo(() => [...(live.chat ?? []), ...(localChat[activeLiveId] ?? [])], [live.chat, localChat, activeLiveId]);
   const visibleChat = useMemo(() => chat.slice(-4), [chat]);
   const chatCount = Math.max(chat.length, viewerCount(live.viewerLabel) + 21);
   const trackStyle = {
@@ -2049,6 +2437,7 @@ function LiveViewer({ liveId, creatorMode = false }) {
 
   useEffect(() => {
     const onKeyDown = (event) => {
+      if (event.repeat) return;
       if (event.key === 'ArrowDown') {
         event.preventDefault();
         goTo(1);
@@ -2059,7 +2448,10 @@ function LiveViewer({ liveId, creatorMode = false }) {
     };
 
     window.addEventListener('keydown', onKeyDown);
-    return () => window.removeEventListener('keydown', onKeyDown);
+    return () => {
+      window.removeEventListener('keydown', onKeyDown);
+      if (wheelTimer.current !== null) clearTimeout(wheelTimer.current);
+    };
   }, []);
 
   const openChatComposer = () => {
@@ -2088,7 +2480,9 @@ function LiveViewer({ liveId, creatorMode = false }) {
     event?.preventDefault();
     event?.stopPropagation();
     const text = chatDraft.trim();
-    if (!text || !liveId) return;
+    const targetLiveId = activeLiveId || liveId;
+    if (!text || !targetLiveId || !user?.uid) return;
+    const sentAt = Date.now();
 
     chatInputRef.current?.blur();
     pointerStart.current = null;
@@ -2096,8 +2490,8 @@ function LiveViewer({ liveId, creatorMode = false }) {
     setDragY(0);
     setLocalChat((state) => ({
       ...state,
-      [liveId]: [
-        ...(state[liveId] ?? []),
+      [targetLiveId]: [
+        ...(state[targetLiveId] ?? []),
         { who: 'You', text, time: new Intl.DateTimeFormat(undefined, { hour: '2-digit', minute: '2-digit' }).format(new Date()) },
       ],
     }));
@@ -2106,13 +2500,30 @@ function LiveViewer({ liveId, creatorMode = false }) {
     setChatPanelOpen(false);
 
     try {
-      const commentsRef = collection(db, `activeLives/${liveId}/comments`);
+      const commentsRef = collection(db, `activeLives/${targetLiveId}/comments`);
+      const latestComment = {
+        id: `${targetLiveId}-${sentAt}`,
+        text,
+        userId: user.uid,
+        userDisplayName: user.displayName || 'Anonymous',
+        userPhotoURL: user.photoURL || null,
+        avatar: '👤',
+        timestamp: new Date().toISOString(),
+      };
+      const liveStartMs = live.liveStartedAt?.toMillis?.() ?? (live.liveStartedAt?.seconds != null ? live.liveStartedAt.seconds * 1000 : null);
+      const liveElapsedSeconds = liveStartMs ? Math.max(0, Math.round((Date.now() - liveStartMs) / 1000)) : null;
       await addDoc(commentsRef, {
         text,
         userId: user.uid,
         userDisplayName: user.displayName || 'Anonymous',
         userPhotoURL: user.photoURL || null,
         timestamp: serverTimestamp(),
+        ...(liveElapsedSeconds != null ? { liveElapsedSeconds } : {}),
+      });
+      await updateDoc(doc(db, 'activeLives', targetLiveId), {
+        latestComment,
+        latestCommentAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
       });
     } catch (err) {
       console.error('[LiveViewer] Failed to save comment:', err);
@@ -2176,9 +2587,6 @@ function LiveViewer({ liveId, creatorMode = false }) {
                   ref={isActive ? (el) => {
                     videoPlaybackRef.current = el;
                     videoRefCallback(el);
-                    el?.play()?.catch?.((err) => {
-                      console.warn('[HomePage] Video play error:', err.name, err.message);
-                    });
                   } : null}
                   className="live-slide__media live-slide__media--video"
                   src={isActive ? item.video : undefined}
@@ -2203,6 +2611,7 @@ function LiveViewer({ liveId, creatorMode = false }) {
                     />
                   ) : !creatorMode && isActive && !broadcastEnded && (item.creatorUid || item.createdLocally) ? (
                     <>
+                      {item.image && <img className="live-slide__bg" src={item.image} aria-hidden="true" draggable="false" />}
                       <video
                         ref={remoteVideoRef}
                         className="live-slide__media live-slide__media--pov"
@@ -2226,6 +2635,36 @@ function LiveViewer({ liveId, creatorMode = false }) {
                   )}
                 </>
               )}
+              {broadcastEnded && isActive && !creatorMode && (
+                <div className="live-ended-screen">
+                  <div className="live-ended-screen__avatar">
+                    {item.avatarUrl ? (
+                      <img src={item.avatarUrl} alt="" />
+                    ) : (
+                      <span>{(item.streamer ?? item.name ?? '?')[0].toUpperCase()}</span>
+                    )}
+                  </div>
+                  <p className="live-ended-screen__headline">
+                    <strong>@{item.streamer ?? item.name}</strong> ended their livestream
+                  </p>
+                  <div className="live-ended-screen__btns">
+                    <Link
+                      to={`/profile/${item.creatorUid}`}
+                      className="live-ended-screen__btn"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      View profile
+                    </Link>
+                    <button
+                      type="button"
+                      className="live-ended-screen__btn live-ended-screen__btn--primary"
+                      onClick={() => goTo(1)}
+                    >
+                      Back to Watch
+                    </button>
+                  </div>
+                </div>
+              )}
             </article>
           );
         })}
@@ -2241,51 +2680,51 @@ function LiveViewer({ liveId, creatorMode = false }) {
         {index + 1} / {liveFeed.length}
       </div>
 
-      <div className="live-feed__status">
-        {broadcastEnded ? (
-          <span className="live-feed__watching">{live.streamer ?? live.name} has ended their live. Next live...</span>
-        ) : (
-          <>
-            <LiveBadge pulse />
-            <span className="live-feed__viewer-count">{formatViewers(live.viewerLabel ?? live.viewers ?? '0', i18n.language)}</span>
-          </>
-        )}
-      </div>
+      {!broadcastEnded && (
+        <div className="live-feed__status">
+          <LiveBadge pulse />
+          <span className="live-feed__viewer-count">{formatViewers(live.viewerLabel ?? live.viewers ?? '0', i18n.language)}</span>
+        </div>
+      )}
 
-      <LivePresenceOverlay liveId={live.id} liveTitle={live.title ?? live.note} onJoinFriend={() => {}} />
+      {!broadcastEnded && <LivePresenceOverlay liveId={live.id} liveTitle={live.title ?? live.note} onJoinFriend={() => {}} />}
 
-      <LiveLocationGlobe live={live} onOpen={() => navigate(`/globe?live=${encodeURIComponent(live.id)}`)} />
+      {!broadcastEnded && <LiveLocationGlobe live={live} onOpen={() => navigate(`/globe?live=${encodeURIComponent(live.id)}`)} />}
 
-      <div
-        className={`live-chat${chatComposerOpen || chatPanelOpen ? ' is-lifted' : ''}`}
-        aria-label="Live chat"
-        onPointerDownCapture={onChatPointerDown}
-        onPointerUpCapture={onChatPointerUp}
-        onClickCapture={onChatClickCapture}
-      >
-        {visibleChat.map((message, messageIndex) => (
-          <button type="button" key={`${live.id}-${message.who}-${messageIndex}`} onClick={() => setUserSheetOpen(true)}>
-            <strong>{message.who}</strong> {message.text}
+      {!broadcastEnded && (
+        <div
+          className={`live-chat${chatComposerOpen || chatPanelOpen ? ' is-lifted' : ''}`}
+          aria-label="Live chat"
+          onPointerDownCapture={onChatPointerDown}
+          onPointerUpCapture={onChatPointerUp}
+          onClickCapture={onChatClickCapture}
+        >
+          {visibleChat.map((message, messageIndex) => (
+            <button type="button" key={`${live.id}-${message.who}-${messageIndex}`} onClick={() => setUserSheetOpen(true)}>
+              <strong>{message.who}</strong> {message.text}
+            </button>
+          ))}
+          <button type="button" className="live-chat__count" onClick={openChatPanel}>
+            {chatCount} live messages
           </button>
-        ))}
-        <button type="button" className="live-chat__count" onClick={openChatPanel}>
-          {chatCount} live messages
-        </button>
-      </div>
+        </div>
+      )}
 
-      <div className="live-reactions" aria-hidden="true">
-        {starBursts.map((burst) => (
-          <span
-            key={burst.id}
-            className="live-reaction-star"
-            style={{ left: `${burst.x}px`, top: `${burst.y}px` }}
-          >
-            <Star size={18} strokeWidth={1.8} fill="currentColor" />
-          </span>
-        ))}
-      </div>
+      {!broadcastEnded && (
+        <div className="live-reactions" aria-hidden="true">
+          {starBursts.map((burst) => (
+            <span
+              key={burst.id}
+              className="live-reaction-star"
+              style={{ left: `${burst.x}px`, top: `${burst.y}px` }}
+            >
+              <Star size={18} strokeWidth={1.8} fill="currentColor" />
+            </span>
+          ))}
+        </div>
+      )}
 
-      <div className="live-feed__details">
+      {!broadcastEnded && <div className="live-feed__details">
         <div className="live-feed__copy">
           <CreatorLink creator={live} className="live-feed__creator" stopPropagation />
           <p>
@@ -2321,7 +2760,7 @@ function LiveViewer({ liveId, creatorMode = false }) {
           <button type="button" onClick={openChatComposer} aria-label={t('live.privateMessage')}>
             <MessageCircle size={22} strokeWidth={1.8} />
           </button>
-          <button type="button" onClick={recordShared} aria-label={t('common.share')}>
+          <button type="button" onClick={() => { recordShared(); setShareLiveSheetOpen(true); }} aria-label={t('common.share')}>
             <Send size={21} strokeWidth={1.8} />
           </button>
           {live.hasVideoAudio && (
@@ -2333,11 +2772,13 @@ function LiveViewer({ liveId, creatorMode = false }) {
             <Backpack size={22} strokeWidth={1.9} />
           </button>
         </div>
-      </div>
+      </div>}
 
-      <button type="button" className="next-live" onClick={() => goTo(1)} aria-label={t('live.next')}>
-        <ChevronUp size={18} strokeWidth={2} aria-hidden="true" />
-      </button>
+      {!broadcastEnded && (
+        <button type="button" className="next-live" onClick={() => goTo(1)} aria-label={t('live.next')}>
+          <ChevronUp size={18} strokeWidth={2} aria-hidden="true" />
+        </button>
+      )}
 
       {chatComposerOpen ? (
         <button type="button" className="live-chat-dismiss" aria-label="Close message composer" onClick={closeChatComposer} />
@@ -2421,6 +2862,9 @@ function LiveViewer({ liveId, creatorMode = false }) {
           }}
         />
       ) : null}
+      {shareLiveSheetOpen ? (
+        <ShareLiveSheet live={live} onClose={() => setShareLiveSheetOpen(false)} />
+      ) : null}
       {equipmentSheetOpen ? (
         <EquipmentViewerSheet
           items={liveEquipment}
@@ -2443,18 +2887,17 @@ export default function WatchPageRoute() {
   const [searchParams] = useSearchParams();
   const { user } = useAuth();
   const [createdLives, setCreatedLives] = useState([]);
-  const homeLives = useMemo(() => streams.map(toHomeLive).filter((stream) => stream.status === 'live'), []);
-  const defaultWatchLive = homeLives.find((stream) => stream.id === DEFAULT_WATCH_LIVE_ID);
-  const liveId = searchParams.get('live') ?? defaultWatchLive?.id ?? homeLives[0]?.id ?? '';
+  const liveId = searchParams.get('live') ?? '';
   const forcedViewerMode = searchParams.get('mode') === 'view';
+  const resolvedLiveId = createdLives.some((l) => l.id === liveId)
+    ? liveId
+    : (liveId && /^\d+$/.test(liveId) ? `created-${liveId}` : liveId);
 
-  useEffect(() => {
-    getCreatedLives().then(setCreatedLives).catch(() => setCreatedLives([]));
-  }, []);
+  useEffect(() => { getCreatedLives().then(setCreatedLives).catch(() => {}); }, []);
 
   // Check if viewing own live to enable creator mode
-  const live = createdLives.find((l) => l.id === liveId);
-  const hasLocalBroadcastStream = !!getCreatedLiveStream(liveId);
+  const live = createdLives.find((l) => l.id === resolvedLiveId);
+  const hasLocalBroadcastStream = !!getCreatedLiveStream(resolvedLiveId);
   const creatorMode = !!(
     !forcedViewerMode
     && user
@@ -2464,5 +2907,5 @@ export default function WatchPageRoute() {
     && hasLocalBroadcastStream
   );
 
-  return <LiveViewer liveId={liveId} creatorMode={creatorMode} />;
+  return <LiveViewer liveId={resolvedLiveId} creatorMode={creatorMode} />;
 }
