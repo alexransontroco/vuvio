@@ -1,4 +1,5 @@
 import { newPovMapStreams } from './newPovStreams.js';
+import { MOCK_THUMBNAILS } from './mockVideoUrls.js';
 
 export const legacyMapStreams = [
   {
@@ -9,7 +10,7 @@ export const legacyMapStreams = [
     city: 'Cortina d’Ampezzo',
     country: 'Italy',
     viewers: '1,508',
-    image: '/assets/videos/biking-cover.jpg',
+    image: MOCK_THUMBNAILS.biking,
     coordinates: [12.1357, 46.5405],
   },
   {
@@ -20,7 +21,7 @@ export const legacyMapStreams = [
     city: 'Serra de Tramuntana',
     country: 'Spain',
     viewers: '1,089',
-    image: '/assets/videos/16232606_2160_3840_30fps-cover.jpg',
+    image: MOCK_THUMBNAILS.pexels5,
     coordinates: [2.6502, 39.7216],
   },
   {
@@ -31,7 +32,7 @@ export const legacyMapStreams = [
     city: 'Srinagar',
     country: 'India',
     viewers: '1,216',
-    image: '/assets/videos/20667540-uhd_2160_3840_60fps-cover.jpg',
+    image: MOCK_THUMBNAILS.pexels8,
     coordinates: [74.7973, 34.0837],
   },
   {
@@ -42,7 +43,7 @@ export const legacyMapStreams = [
     city: 'Portland',
     country: 'United States',
     viewers: '742',
-    image: '/assets/videos/11963745-uhd_2160_3840_60fps-cover.jpg',
+    image: MOCK_THUMBNAILS.pexels1,
     coordinates: [-122.6784, 45.5152],
   },
   {
@@ -53,7 +54,7 @@ export const legacyMapStreams = [
     city: 'Marrakesh',
     country: 'Morocco',
     viewers: '1,327',
-    image: '/assets/videos/12130364_2160_3840_30fps-cover.jpg',
+    image: MOCK_THUMBNAILS.pexels2,
     coordinates: [-7.9811, 31.6295],
   },
   {
@@ -64,7 +65,7 @@ export const legacyMapStreams = [
     city: 'Goreme',
     country: 'Turkey',
     viewers: '614',
-    image: '/assets/videos/12339859_2160_3840_60fps-cover.jpg',
+    image: MOCK_THUMBNAILS.pexels3,
     coordinates: [34.8297, 38.6431],
   },
   {
@@ -75,7 +76,7 @@ export const legacyMapStreams = [
     city: 'Prague',
     country: 'Czech Republic',
     viewers: '521',
-    image: '/assets/videos/15794531_1440_2560_24fps-cover.jpg',
+    image: MOCK_THUMBNAILS.pexels4,
     coordinates: [14.4378, 50.0755],
   },
   {
@@ -86,7 +87,7 @@ export const legacyMapStreams = [
     city: 'Split',
     country: 'Croatia',
     viewers: '835',
-    image: '/assets/videos/16352747_1080_1920_30fps-cover.jpg',
+    image: MOCK_THUMBNAILS.pexels7,
     coordinates: [16.4402, 43.5081],
   },
   {
@@ -97,7 +98,7 @@ export const legacyMapStreams = [
     city: 'Jokulsarlon',
     country: 'Iceland',
     viewers: '966',
-    image: '/assets/videos/8678453-hd_1080_1920_30fps-cover.jpg',
+    image: MOCK_THUMBNAILS.pexels9,
     coordinates: [-16.2306, 64.0483],
   },
   {

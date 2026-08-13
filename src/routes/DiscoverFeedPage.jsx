@@ -7,10 +7,11 @@ import CreatorLink from '../components/CreatorLink.jsx';
 import LiveBadge from '../components/LiveBadge.jsx';
 import SegmentedControl from '../components/SegmentedControl.jsx';
 import WatchMiniGlobe from '../components/WatchMiniGlobe.jsx';
-import { getCreatedLives } from '../services/createdLiveService.js';
+import { getCreatedLives, subscribeToCreatedLives } from '../services/createdLiveService.js';
 import { mapStreams } from '../data/mapStreams.js';
 import { streams as mockStreams } from '../data/mockStreams.js';
 import { analyticsService } from '../services/analytics/analyticsService.ts';
+import { MOCK_THUMBNAILS, MOCK_VIDEO_URLS } from '../data/mockVideoUrls.js';
 
 const discoverModes = [
   { labelKey: 'explore.modes.forYou', value: 'for-you' },
@@ -34,36 +35,36 @@ const swipeLockMs = 520;
 
 const highResolutionDiscoverMedia = {
   air: {
-    src: '/assets/videos/20667540-uhd_2160_3840_60fps.mp4',
-    poster: '/assets/videos/20667540-uhd_2160_3840_60fps-cover.jpg',
+    src: MOCK_VIDEO_URLS.pexels8,
+    poster: MOCK_THUMBNAILS.pexels8,
   },
   sky: {
-    src: '/assets/videos/20667540-uhd_2160_3840_60fps.mp4',
-    poster: '/assets/videos/20667540-uhd_2160_3840_60fps-cover.jpg',
+    src: MOCK_VIDEO_URLS.pexels8,
+    poster: MOCK_THUMBNAILS.pexels8,
   },
   earth: {
-    src: '/assets/videos/16232606_2160_3840_30fps.mp4',
-    poster: '/assets/videos/16232606_2160_3840_30fps-cover.jpg',
+    src: MOCK_VIDEO_URLS.pexels5,
+    poster: MOCK_THUMBNAILS.pexels5,
   },
   nature: {
-    src: '/assets/videos/16232606_2160_3840_30fps.mp4',
-    poster: '/assets/videos/16232606_2160_3840_30fps-cover.jpg',
+    src: MOCK_VIDEO_URLS.pexels5,
+    poster: MOCK_THUMBNAILS.pexels5,
   },
   sport: {
-    src: '/assets/videos/16232606_2160_3840_30fps.mp4',
-    poster: '/assets/videos/16232606_2160_3840_30fps-cover.jpg',
+    src: MOCK_VIDEO_URLS.pexels5,
+    poster: MOCK_THUMBNAILS.pexels5,
   },
   travel: {
-    src: '/assets/videos/16232606_2160_3840_30fps.mp4',
-    poster: '/assets/videos/16232606_2160_3840_30fps-cover.jpg',
+    src: MOCK_VIDEO_URLS.pexels5,
+    poster: MOCK_THUMBNAILS.pexels5,
   },
   water: {
-    src: '/assets/videos/16352747_1080_1920_30fps.mp4',
-    poster: '/assets/videos/16352747_1080_1920_30fps-cover.jpg',
+    src: MOCK_VIDEO_URLS.pexels7,
+    poster: MOCK_THUMBNAILS.pexels7,
   },
   fallback: {
-    src: '/assets/videos/8678453-hd_1080_1920_30fps.mp4',
-    poster: '/assets/videos/8678453-hd_1080_1920_30fps-cover.jpg',
+    src: MOCK_VIDEO_URLS.pexels9,
+    poster: MOCK_THUMBNAILS.pexels9,
   },
 };
 
@@ -167,6 +168,7 @@ export default function DiscoverFeedPage() {
 
   useEffect(() => {
     getCreatedLives().then(setCreatedLives).catch(() => setCreatedLives([]));
+    return subscribeToCreatedLives(setCreatedLives);
   }, []);
 
   const allAvailableStreams = useMemo(() => {
@@ -184,19 +186,26 @@ export default function DiscoverFeedPage() {
   }, [createdLives, requestedLiveId]);
 
   const feed = useMemo(() => {
-    const result = weightedDiscoverStreams(mode, allAvailableStreams);
+    // Pin real Firestore lives to the top, sorted by recency (most recent first)
+    const realLives = [...createdLives]
+      .sort((a, b) => (b.startedAt?.toMillis?.() ?? 0) - (a.startedAt?.toMillis?.() ?? 0))
+      .map(formatStreamForDiscover);
+    const realIds = new Set(realLives.map(s => s.id));
+
+    // Sort mock streams below the real ones
+    const mockFeed = weightedDiscoverStreams(mode, [...mapStreams, ...mockStreams]);
+    const result = [...realLives, ...mockFeed.filter(s => !realIds.has(s.id))];
 
     // Ensure requested live is in feed
     if (requestedLiveId && !result.find(s => s.id === requestedLiveId)) {
       const requested = allAvailableStreams.find(s => s.id === requestedLiveId);
       if (requested) {
-        const formatted = formatStreamForDiscover(requested);
-        return [formatted, ...result];
+        return [formatStreamForDiscover(requested), ...result];
       }
     }
 
     return result;
-  }, [mode, allAvailableStreams, requestedLiveId]);
+  }, [mode, createdLives, allAvailableStreams, requestedLiveId]);
 
   useEffect(() => {
     if (!requestedLiveId) return;

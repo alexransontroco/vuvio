@@ -22,7 +22,7 @@ export default function SplashScreen({ leaving = false }) {
         playsInline
         preload="auto"
       >
-        <source src="/assets/videos/landing-loop.mp4" type="video/mp4" />
+        <source src="/assets/videos/landing-loop2.mp4" type="video/mp4" />
       </video>
       <div className="splash-screen__overlay" />
       <div className="splash-screen__glow" />

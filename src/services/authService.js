@@ -237,28 +237,12 @@ export async function signInWithEmail(email, password) {
 export async function signInWithGoogle() {
   const provider = new GoogleAuthProvider();
   provider.setCustomParameters({ prompt: 'select_account' });
-  const isMobile = shouldUseRedirect();
-  console.log('[authService] signInWithGoogle called, isMobile:', isMobile);
 
   try {
-    let userCredential;
-    if (isMobile) {
-      // Mobile/PWA: Use redirect flow
-      console.log('[authService] Using signInWithRedirect (mobile/PWA)');
-      console.log('[authService] About to redirect to Google...');
-      await signInWithRedirect(auth, provider);
-      // Note: Control returns to the app after redirect, but the actual credential
-      // is handled by getRedirectResult in AuthContext
-      console.log('[authService] signInWithRedirect completed (will not reach here due to redirect)');
-      return null;
-    } else {
-      // Desktop: Use popup flow
-      console.log('[authService] Using signInWithPopup (desktop)');
-      userCredential = await signInWithPopup(auth, provider);
-      console.log('[authService] Popup signin completed for:', userCredential.user.uid.slice(0, 8));
-      await createUserProfileIfMissing(userCredential.user, { provider: 'google' });
-      return userCredential.user;
-    }
+    const userCredential = await signInWithPopup(auth, provider);
+    console.log('[authService] Google popup signin completed for:', userCredential.user.uid.slice(0, 8));
+    await createUserProfileIfMissing(userCredential.user, { provider: 'google' });
+    return userCredential.user;
   } catch (err) {
     console.error('[authService] signInWithGoogle failed:', err.code, err.message);
     throw err;

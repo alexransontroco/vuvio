@@ -1,4 +1,5 @@
 import { ArrowLeft, Backpack, Check, ChevronUp, Hand, RotateCcw } from 'lucide-react';
+import { MOCK_THUMBNAILS } from '../data/mockVideoUrls.js';
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import BrandMark from '../components/BrandMark.jsx';
@@ -19,7 +20,7 @@ const interests = [
   { id: 'city-life', label: 'City Life', image: '/assets/pov/05_architect.jpg' },
   { id: 'transport', label: 'Transport', image: '/assets/pov/16_tgv_driver.jpg' },
   { id: 'nature', label: 'Nature', image: '/assets/pov/08_wildlife_photographer.jpg' },
-  { id: 'sports', label: 'Sports', image: '/assets/videos/biking-cover.jpg' },
+  { id: 'sports', label: 'Sports', image: MOCK_THUMBNAILS.biking },
   { id: 'travel', label: 'Travel', image: '/assets/pov/03_hot_air_balloon.jpg' },
   { id: 'behind-scenes', label: 'Behind the Scenes', image: '/assets/pov/14_cinematographer.jpg', wide: true },
 ];

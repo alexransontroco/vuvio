@@ -57,24 +57,15 @@ export default function LoginPage() {
     setGoogleBusy(true);
     try {
       const result = await signInWithGoogle();
-      // For mobile redirect flow, result is null and redirect happens
-      if (result === null) {
-        console.log('[LoginPage] Redirect initiated, awaiting Google...');
-        // Don't reset googleBusy - redirect will reload the page
-        return;
-      }
-      // For desktop popup flow, result is user object
       if (result?.uid) {
-        console.log('[LoginPage] Google Sign-In successful');
         navigate(returnTo, { replace: true });
-      } else {
-        setGoogleBusy(false);
       }
     } catch (err) {
       const message = err?.message || 'Google Sign-In failed';
       if (message && message !== '') {
         setError(message);
       }
+    } finally {
       setGoogleBusy(false);
     }
   };

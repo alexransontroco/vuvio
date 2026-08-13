@@ -1,3 +1,5 @@
+import { MOCK_THUMBNAILS } from './mockVideoUrls.js';
+
 export const liveRecap = {
   id: 'morning-ride-alps-2025',
   title: 'Morning Ride in the Alps',
@@ -5,7 +7,7 @@ export const liveRecap = {
   startTime: '07:32',
   endTime: '08:18',
   duration: 2760,
-  heroImage: '/assets/videos/biking-cover.jpg',
+  heroImage: MOCK_THUMBNAILS.biking,
   replayImage: '/assets/pov/17_mountain_hiker.jpg',
   stats: [
     { id: 'avg', label: 'Avg Viewers', value: '842', trend: '12%', icon: 'users' },
@@ -66,9 +68,9 @@ export const liveRecap = {
   ],
   highlights: [
     { id: 'audience', icon: 'chart', title: 'Peak Audience', text: '1.6K viewers', timestamp: '07:58', seconds: 1560, tone: 'blue', thumbnail: 'chart' },
-    { id: 'stars', icon: 'star', title: 'Most Stars', text: '420 stars in 2 min', timestamp: '15:32', seconds: 2880, tone: 'yellow', thumbnail: '/assets/videos/12339859_2160_3840_60fps-cover.jpg' },
-    { id: 'chat', icon: 'message', title: 'Chat Explosion', text: '43 messages in 1 min', timestamp: '22:17', seconds: 1337, tone: 'blue', thumbnail: '/assets/videos/11963745-uhd_2160_3840_60fps-cover.jpg' },
-    { id: 'replay', icon: 'flame', title: 'Most Replayed Moment', text: 'Replay rate 38%', timestamp: '31:44', seconds: 1904, tone: 'rose', thumbnail: '/assets/videos/biking-cover.jpg' },
+    { id: 'stars', icon: 'star', title: 'Most Stars', text: '420 stars in 2 min', timestamp: '15:32', seconds: 2880, tone: 'yellow', thumbnail: MOCK_THUMBNAILS.pexels3 },
+    { id: 'chat', icon: 'message', title: 'Chat Explosion', text: '43 messages in 1 min', timestamp: '22:17', seconds: 1337, tone: 'blue', thumbnail: MOCK_THUMBNAILS.pexels1 },
+    { id: 'replay', icon: 'flame', title: 'Most Replayed Moment', text: 'Replay rate 38%', timestamp: '31:44', seconds: 1904, tone: 'rose', thumbnail: MOCK_THUMBNAILS.biking },
     { id: 'ai', icon: 'camera', title: 'AI Highlight', text: 'Beautiful view', timestamp: '36:02', seconds: 2162, tone: 'cyan', thumbnail: '/assets/pov/17_mountain_hiker.jpg' },
   ],
   chatByHighlight: {

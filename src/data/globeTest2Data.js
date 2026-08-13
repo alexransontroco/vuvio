@@ -1,3 +1,5 @@
+import { MOCK_THUMBNAILS } from './mockVideoUrls.js';
+
 const DENSITY_COUNTS = {
   low: 50,
   medium: 250,
@@ -36,7 +38,7 @@ export const globeTest2Config = {
 
 const IMAGE_POOL = {
   earth: [
-    '/assets/videos/biking-cover.jpg',
+    MOCK_THUMBNAILS.biking,
     '/assets/pov/12_firefighter.jpg',
     '/assets/VuVio_POV_Pack_20/05_volcanologist.jpg',
     '/assets/VuVio_20_New_POV/09_rooftop_worker.jpg',
@@ -45,7 +47,7 @@ const IMAGE_POOL = {
     '/assets/VuVio_20_New_POV/01_surfer.jpg',
     '/assets/VuVio_20_New_POV/16_kayaker.jpg',
     '/assets/VuVio_POV_Pack_20/15_ice_diver.jpg',
-    '/assets/videos/16352747_1080_1920_30fps-cover.jpg',
+    MOCK_THUMBNAILS.pexels7,
   ],
   air: [
     '/assets/pov/01_mountain_rescue_helicopter.jpg',

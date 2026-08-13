@@ -1,3 +1,5 @@
+import { MOCK_THUMBNAILS } from './mockVideoUrls.js';
+
 export const CURRENT_MESSAGE_USER_ID = 'current-user';
 
 export const messageProfiles = {
@@ -55,7 +57,7 @@ export const messageProfiles = {
     id: 'sofia-marquez',
     name: 'Sofia Marquez',
     username: 'sofiamarquez',
-    avatar: '/assets/videos/16352747_1080_1920_30fps-cover.jpg',
+    avatar: MOCK_THUMBNAILS.pexels7,
     online: false,
     profession: 'Sailor',
     location: 'Split',
@@ -66,7 +68,7 @@ export const messageProfiles = {
     id: 'urban-riders',
     name: 'Urban Riders',
     username: 'urbanriders',
-    avatar: '/assets/videos/11963745-uhd_2160_3840_60fps-cover.jpg',
+    avatar: MOCK_THUMBNAILS.pexels1,
     online: false,
     profession: 'Community',
     location: 'Tokyo',
@@ -146,7 +148,7 @@ export const mockMessageLives = {
     statusText: '1 day ago',
     actionLabel: 'Watch replay',
     secondaryActionLabel: null,
-    image: '/assets/videos/16352747_1080_1920_30fps-cover.jpg',
+    image: MOCK_THUMBNAILS.pexels7,
     creator: 'Sofia Marquez',
     location: 'Split, Croatia',
     category: 'POV',
@@ -159,7 +161,7 @@ export const mockMessageLives = {
     statusText: '2 days ago',
     actionLabel: 'Watch replay',
     secondaryActionLabel: null,
-    image: '/assets/videos/11963745-uhd_2160_3840_60fps-cover.jpg',
+    image: MOCK_THUMBNAILS.pexels1,
     creator: 'Urban Riders',
     location: 'Tokyo, Japan',
     category: 'VEHICLE',

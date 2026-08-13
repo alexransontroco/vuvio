@@ -1,3 +1,5 @@
+import { MOCK_THUMBNAILS } from './mockVideoUrls.js';
+
 export const CURRENT_USER_ID = 'current-user';
 
 export const ownCreatorProfile = {
@@ -89,7 +91,7 @@ export const creatorProfiles = {
     username: 'arthurl',
     displayName: 'Arthur L.',
     avatarUrl: '/assets/VuVio_10_POV/01_helicopter_pilot.jpg',
-    coverUrl: '/assets/videos/8678453-hd_1080_1920_30fps-cover.jpg',
+    coverUrl: MOCK_THUMBNAILS.pexels9,
     profession: 'Drone pilot',
     city: 'Chamonix',
     country: 'France',
@@ -103,7 +105,7 @@ export const creatorProfiles = {
     currentLive: {
       id: 'mont-blanc-drone',
       title: 'Drone above the massif',
-      thumbnailUrl: '/assets/videos/8678453-hd_1080_1920_30fps-cover.jpg',
+      thumbnailUrl: MOCK_THUMBNAILS.pexels9,
       location: 'Mont Blanc, France',
       status: 'live',
       viewers: 1761,
@@ -123,7 +125,7 @@ export const creatorProfiles = {
       {
         id: 'drone-aiguille-midi',
         title: 'Aiguille du Midi by drone',
-        thumbnailUrl: '/assets/videos/8678453-hd_1080_1920_30fps-cover.jpg',
+        thumbnailUrl: MOCK_THUMBNAILS.pexels9,
         location: 'Chamonix, France',
         relativeDate: '2 days ago',
         duration: '34:12',
@@ -137,7 +139,7 @@ export const creatorProfiles = {
     username: 'globetrekker',
     displayName: 'GlobeTrekker',
     avatarUrl: '/assets/VuVio_10_POV/08_wildlife_photographer.jpg',
-    coverUrl: '/assets/videos/12339859_2160_3840_60fps-cover.jpg',
+    coverUrl: MOCK_THUMBNAILS.pexels3,
     profession: 'POV explorer',
     city: 'Lisbon',
     country: 'Portugal',
@@ -152,7 +154,7 @@ export const creatorProfiles = {
     id: 'streetvibes',
     username: 'streetvibes',
     displayName: 'StreetVibes',
-    avatarUrl: '/assets/videos/11963745-uhd_2160_3840_60fps-cover.jpg',
+    avatarUrl: MOCK_THUMBNAILS.pexels1,
     profession: 'Urban creator',
     city: 'Portland',
     country: 'United States',

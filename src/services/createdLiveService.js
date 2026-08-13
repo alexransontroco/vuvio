@@ -9,9 +9,11 @@ const RETIRED_LIVE_IDS = new Set([
   'created-1785259033066',
 ]);
 
+import { MOCK_THUMBNAILS } from '../data/mockVideoUrls.js';
+
 const coverByFamily = {
   air: '/assets/pov/01_mountain_rescue_helicopter.jpg',
-  earth: '/assets/videos/biking-cover.jpg',
+  earth: MOCK_THUMBNAILS.biking,
   water: '/assets/pov/01_surfer.jpg',
 };
 
@@ -177,8 +179,8 @@ export function createLocalLive(draft, creatorUid = null, userCoordinates = null
     creatorUid,
     kind: draft.hasCameraStream ? 'camera' : 'image',
     job: draft.subcategory,
-    city: draft.family === 'water' ? 'Marseille' : draft.family === 'air' ? 'Paris' : 'Chamonix',
-    country: 'France',
+    city: draft.geoCity ?? (draft.family === 'water' ? 'Marseille' : draft.family === 'air' ? 'Paris' : 'Chamonix'),
+    country: draft.geoCountry ?? 'France',
     location: draft.location?.trim() || 'My location',
     locationLabel: draft.location?.trim() || 'My location',
     privacy: draft.privacy || 'Everyone',
@@ -209,6 +211,15 @@ export function createLocalLive(draft, creatorUid = null, userCoordinates = null
   saveLiveToFirestore(live);
   safeWindow()?.dispatchEvent(new CustomEvent(CREATED_LIVE_EVENT, { detail: live }));
   return live;
+}
+
+export function updateCreatedLive(liveId, patch) {
+  const lives = readStoredLives();
+  const idx = lives.findIndex(l => l.id === liveId);
+  if (idx === -1) return;
+  lives[idx] = { ...lives[idx], ...patch };
+  writeStoredLives(lives);
+  safeWindow()?.dispatchEvent(new CustomEvent(CREATED_LIVE_EVENT, { detail: lives[idx] }));
 }
 
 export function registerCreatedLiveStream(liveId, stream) {
