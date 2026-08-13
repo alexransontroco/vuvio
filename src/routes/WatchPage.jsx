@@ -16,7 +16,7 @@ import { LivePresenceOverlay } from '../components/social/LivePresenceOverlay.js
 import { lives } from '../data/lives.js';
 import { mapStreams } from '../data/mapStreams.js';
 import { streams, upcomingStreams } from '../data/mockStreams.js';
-import { getCreatedLives, getCreatedLiveStream, subscribeToCreatedLives, publishLivePing, updateCreatedLive, endLive as deleteLiveFromDB } from '../services/createdLiveService.js';
+import { getCreatedLives, getCreatedLiveStream, subscribeToCreatedLives, publishLivePing, updateCreatedLive } from '../services/createdLiveService.js';
 import { startBroadcast, stopBroadcast, stopBroadcastSync, watchBroadcast, closePeer, getLocalStream, getRemoteStream, startWhepPlayback, stopWhepPlayback } from '../services/webrtcService.js';
 import { collection, doc, onSnapshot, query, where, getDocs, getDoc, addDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { getDownloadURL, ref as storageRef, uploadString } from 'firebase/storage';
@@ -27,6 +27,7 @@ import { getUpcomingReminders, saveUpcomingReminder } from '../services/upcoming
 import { demoLiveEquipmentIds } from '../data/equipmentModel.js';
 import { getEquipmentLibrary, getEquipmentLibraryWithProducts, getEquipmentSelection } from '../services/equipmentService.js';
 import { formatLocalSchedule, getCountdownState, toValidDate } from '../utils/countdown.js';
+import { finishStream } from '../services/streamApi.ts';
 
 const SWIPE_THRESHOLD = 58;
 const WHEEL_THRESHOLD = 36;
@@ -378,7 +379,10 @@ function randomizeWatchLives(items) {
     (isVideoWatchItem(item) ? videos : photos).push(item);
   });
 
-  return [...shuffleArray(videos), ...shuffleArray(photos)];
+  return [...shuffleArray(videos), ...shuffleArray(photos)].map((item, index) => ({
+    ...item,
+    feedKey: item.feedKey ?? `${item.id}-${item.kind ?? 'live'}-${index}`,
+  }));
 }
 
 function SearchSheet({ onClose }) {
@@ -898,10 +902,16 @@ function WatchPage() {
   const [searchOpen, setSearchOpen] = useState(false);
   const [locationStatus, setLocationStatus] = useState('loading');
   const [userLocation, setUserLocation] = useState(fallbackUserLocation);
-  const homeLives = useMemo(
-    () => randomizeWatchLives(streams.map(toHomeLive).filter((stream) => stream.status === 'live')),
-    [],
-  );
+  const [firestoreLives, setFirestoreLives] = useState([]);
+
+  useEffect(() => subscribeToCreatedLives(setFirestoreLives), []);
+
+  const homeLives = useMemo(() => {
+    const mockLives = randomizeWatchLives(streams.map(toHomeLive).filter((stream) => stream.status === 'live'));
+    const realLives = firestoreLives.filter((l) => l.status === 'live');
+    const realIds = new Set(realLives.map((l) => l.id));
+    return [...realLives, ...mockLives.filter((l) => !realIds.has(l.id))];
+  }, [firestoreLives]);
   const fallbackLiveStreams = useMemo(
     () => randomizeWatchLives(mapStreams.map(toHomeLive).filter((stream) => stream.status === 'live')),
     [],
@@ -1561,7 +1571,6 @@ function CreatorLiveSession({ live, onEndingChange }) {
     setConfirmEnd(false);
     setPhase('ending');
     onEndingChange?.(true, live.id);
-    const cloudflareLiveInputId = live.cloudflareLiveInputId || null;
 
     const finalCoverImage = coverCaptureRef.current.imageData || await captureAndSaveCoverImage(live.id, { delayMs: 0, force: true });
     const coverFields = finalCoverImage ? {
@@ -1581,21 +1590,18 @@ function CreatorLiveSession({ live, onEndingChange }) {
       coverCaptureOffsetSeconds: 2,
     } : {};
 
-    console.log('[CLOUDFLARE] broadcast ending — stopping WHIP and tracks');
     try {
+      await finishStream(live.id);
       await stopBroadcast(live.id);
       closePeer();
-      console.log('[CLOUDFLARE] WHIP closed');
     } catch (err) {
-      console.error('[CLOUDFLARE] Failed to stop broadcast:', err);
+      console.error('[endLive] Failed to finish stream:', err);
     }
 
     try {
       const liveId = live.id;
       await updateDoc(doc(db, 'activeLives', liveId), {
-        recordingStatus: 'processing',
         liveEndedAt: serverTimestamp(),
-        ...(cloudflareLiveInputId ? { cloudflareLiveInputId } : {}),
         updatedAt: serverTimestamp(),
       });
     } catch (uploadErr) {
@@ -1630,7 +1636,6 @@ function CreatorLiveSession({ live, onEndingChange }) {
         peakViewerCount: peakViewers,
         commentCount: commentCount,
         starCount: starCount,
-        recordingStatus: 'processing',
       };
 
       await updateDoc(liveRef, { ...stats, ...firestoreCoverFields });
@@ -1808,7 +1813,6 @@ function LiveViewer({ liveId, creatorMode = false }) {
   const [watchStatus, setWatchStatus] = useState('');
   const [watchRetry, setWatchRetry] = useState(0);
   const [broadcastEnded, setBroadcastEnded] = useState(false);
-  const [forceWebRtcFallback, setForceWebRtcFallback] = useState(false);
   const localVideoRef = useRef(null);
   const remoteVideoRef = useRef(null);
   const videoPlaybackRef = useRef(null);
@@ -1817,6 +1821,7 @@ function LiveViewer({ liveId, creatorMode = false }) {
   const retryTimerRef = useRef(null);
   const timeoutTimerRef = useRef(null);
   const hlsFallbackTimerRef = useRef(null);
+  const whepSessionRef = useRef(null);
 
   const ensureRemoteVideoMuted = (video) => {
     if (!video) return;
@@ -1997,220 +2002,80 @@ function LiveViewer({ liveId, creatorMode = false }) {
     };
   }, [creatorMode, activeLiveId, live.creatorUid]);
 
-  // WHEP viewer — DISABLED: Cloudflare WHEP only supports 1 simultaneous viewer per live input.
-  // HLS (below) is the primary viewer path — scales to unlimited viewers via Cloudflare CDN.
+  // WHEP viewer — one RTCPeerConnection per viewer instance.
   useEffect(() => {
-    if (true || creatorMode || !live?.whepUrl || !remoteVideoRef.current || forceWebRtcFallback) return; // eslint-disable-line no-constant-condition
+    if (creatorMode || !live?.whepUrl || !remoteVideoRef.current) return;
     const video = remoteVideoRef.current;
     let cancelled = false;
-    let whepResourceUrl = null;
-    let whepPeerConnection = null;
+    const viewerSessionId = Math.random().toString(36).slice(2, 8);
+    let whepSession = null;
+    let retryTimer = null;
+    let retryCount = 0;
+    const MAX_RETRIES = 12;
+    const RETRY_DELAY = 1500;
 
+    window.clearTimeout(hlsFallbackTimerRef.current);
     if (video.srcObject) video.srcObject = null;
     setRemoteStream('whep');
     setBroadcastEnded(false);
-    console.log('[CLOUDFLARE] viewer connecting via WHEP:', live.whepUrl);
 
-    startWhepPlayback(live.whepUrl, (stream, status) => {
+    const connect = () => {
       if (cancelled) return;
-      if (stream) {
-        video.srcObject = stream;
-        video.muted = true;
-        video.play()?.catch(() => {});
-        setRemoteStream(stream);
-        setWatchStatus('connected');
-      } else if (status === 'failed' || status === 'disconnected') {
-        console.warn('[CLOUDFLARE] WHEP lost, falling back to P2P WebRTC');
-        setWatchStatus('retrying');
-        setForceWebRtcFallback(true);
-      }
-    }).then((result) => {
-      if (result) whepResourceUrl = result.resourceUrl;
-      if (result?.peerConnection) whepPeerConnection = result.peerConnection;
-    }).catch((err) => {
-      if (!cancelled) {
-        console.warn('[LiveViewer] WHEP failed, falling back to P2P:', err.message);
-        setForceWebRtcFallback(true);
-      }
-    });
+      console.log(`[WHEP viewer ${viewerSessionId}] creating`, live.whepUrl);
 
-    return () => {
-      cancelled = true;
-      stopWhepPlayback(whepResourceUrl, whepPeerConnection);
-    };
-  }, [creatorMode, forceWebRtcFallback, live?.whepUrl]);
-
-  // HLS viewer — primary viewer path for all Cloudflare live streams (unlimited concurrent viewers via CDN)
-  useEffect(() => {
-    const hlsUrl = live?.hlsManifestUrl;
-    if (creatorMode || !hlsUrl?.startsWith('http') || !remoteVideoRef.current || forceWebRtcFallback) return;
-    const video = remoteVideoRef.current;
-    window.clearTimeout(hlsFallbackTimerRef.current);
-    ensureRemoteVideoMuted(video);
-    if (video.srcObject) video.srcObject = null;
-    setRemoteStream('hls');
-    setBroadcastEnded(false);
-    console.log('[LiveViewer] HLS playback via Cloudflare:', hlsUrl);
-
-    let hlsInstance = null;
-    let cancelled = false;
-    const settleHlsPlayback = () => {
-      window.clearTimeout(hlsFallbackTimerRef.current);
-    };
-    const fallbackToWebRTC = () => {
-      window.clearTimeout(hlsFallbackTimerRef.current);
-      if (cancelled || !video.isConnected) return;
-      cancelled = true;
-      console.warn('[LiveViewer] HLS did not start, falling back to WebRTC');
-      if (hlsInstance) {
-        hlsInstance.destroy();
-        hlsInstance = null;
-      }
-      video.removeAttribute('src');
-      video.load?.();
-      setRemoteStream(null);
-      setWatchStatus('retrying');
-      setForceWebRtcFallback(true);
-    };
-
-    if (Hls.isSupported()) {
-      let hlsRetries = 0;
-      const MAX_HLS_RETRIES = 10;
-      const HLS_RETRY_DELAY = 3000;
-      const startHls = (url) => {
+      startWhepPlayback(live.whepUrl, (stream, status) => {
         if (cancelled) return;
-        if (hlsInstance) { hlsInstance.destroy(); hlsInstance = null; }
-        hlsInstance = new Hls({ lowLatencyMode: true });
-        hlsInstance.loadSource(url);
-        hlsInstance.attachMedia(video);
-        hlsInstance.on(Hls.Events.MANIFEST_PARSED, () => {
-          settleHlsPlayback();
-          ensureRemoteVideoMuted(video);
+        if (stream) {
+          video.srcObject = stream;
+          video.muted = true;
           video.play()?.catch(() => {});
-        });
-        hlsInstance.on(Hls.Events.ERROR, (_event, data) => {
-          console.warn('[LiveViewer] HLS error:', data?.type, data?.details);
-          if (!data?.fatal) return;
-          if (hlsRetries < MAX_HLS_RETRIES) {
-            hlsRetries += 1;
-            console.warn(`[LiveViewer] HLS retry ${hlsRetries}/${MAX_HLS_RETRIES}...`);
-            window.setTimeout(() => { if (!cancelled && video.isConnected) startHls(url); }, HLS_RETRY_DELAY);
-          } else {
-            fallbackToWebRTC();
+          setRemoteStream(stream);
+          setWatchStatus('connected');
+          window.clearTimeout(hlsFallbackTimerRef.current);
+        } else if (status === 'failed' || status === 'disconnected') {
+          console.warn(`[WHEP viewer ${viewerSessionId}] disconnected`);
+          setWatchStatus('retrying');
+          if (!cancelled) {
+            retryTimer = window.setTimeout(connect, RETRY_DELAY);
           }
-        });
-      };
-      startHls(hlsUrl);
-    } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
-      video.src = hlsUrl;
-      const onReady = () => {
-        settleHlsPlayback();
-        ensureRemoteVideoMuted(video);
-        video.play()?.catch(() => {});
-      };
-      const onError = () => fallbackToWebRTC();
-      video.addEventListener('loadedmetadata', onReady, { once: true });
-      video.addEventListener('playing', onReady, { once: true });
-      video.addEventListener('canplay', onReady, { once: true });
-      video.addEventListener('error', onError, { once: true });
-      video.load();
-      hlsFallbackTimerRef.current = window.setTimeout(() => {
-        if (!video.videoWidth && !video.currentTime) fallbackToWebRTC();
-      }, 120000);
-      return () => {
-        cancelled = true;
-        settleHlsPlayback();
-        hlsInstance?.destroy();
-        video.removeEventListener('error', onError);
-      };
-    }
-    hlsFallbackTimerRef.current = window.setTimeout(() => {
-      if (!video.videoWidth && !video.currentTime) fallbackToWebRTC();
-    }, 120000);
+        }
+      }, viewerSessionId).then((result) => {
+        whepSession = result;
+        whepSessionRef.current = result;
+      }).catch((err) => {
+        if (cancelled) return;
+        const message = String(err?.message ?? err);
+        console.warn(`[WHEP viewer ${viewerSessionId}] failed`, message);
+        if (message.includes('409') && message.includes('Live broadcast not started yet') && retryCount < MAX_RETRIES) {
+          retryCount += 1;
+          setWatchStatus('retrying');
+          retryTimer = window.setTimeout(connect, RETRY_DELAY);
+        }
+      });
+    };
+
+    connect();
+
     return () => {
       cancelled = true;
-      settleHlsPlayback();
-      hlsInstance?.destroy();
+      window.clearTimeout(hlsFallbackTimerRef.current);
+      if (retryTimer) window.clearTimeout(retryTimer);
+      if (whepSessionRef.current === whepSession) {
+        whepSessionRef.current = null;
+      }
+      whepSession?.stop?.();
     };
-  }, [creatorMode, forceWebRtcFallback, live?.hlsManifestUrl]);
+  }, [creatorMode, live?.whepUrl]);
 
-  // WebRTC P2P — final fallback when HLS is unavailable or failed
+  // HLS viewer disabled for the restored WHEP multi-viewer path.
   useEffect(() => {
-    if (creatorMode || !activeLiveId) return;
-    if ((live.whepUrl || live.hlsManifestUrl) && !forceWebRtcFallback) return; // WHEP/HLS take priority
+    return undefined;
+  }, [creatorMode, live?.hlsManifestUrl, live?.whepUrl]);
 
-    // Only set up WebRTC for real broadcasts with active broadcasters
-    const isRealBroadcast = live.creatorUid || live.createdLocally;
-    if (!isRealBroadcast) return;
-
-    setBroadcastEnded(false);
-    let isMounted = true;
-    let receivedStream = false;
-    window.clearTimeout(retryTimerRef.current);
-    window.clearTimeout(timeoutTimerRef.current);
-
-    const scheduleRetry = (reason) => {
-      if (!isMounted || receivedStream || watchRetry >= 3) return;
-      setWatchStatus(reason);
-      window.clearTimeout(retryTimerRef.current);
-      retryTimerRef.current = window.setTimeout(() => {
-        if (!isMounted || receivedStream) return;
-        closePeer();
-        watcherIdRef.current = `viewer-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
-        setRemoteStream(null);
-        setWatchRetry((value) => value + 1);
-      }, 1400);
-    };
-
-  const setupWatcher = async () => {
-      try {
-        console.log('[LiveViewer] Setting up watcher');
-        if (!watcherIdRef.current) {
-          watcherIdRef.current = `viewer-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
-        }
-        timeoutTimerRef.current = window.setTimeout(() => {
-          scheduleRetry('retrying');
-        }, 12000);
-        webrtcCallRef.current = await watchBroadcast(activeLiveId, (stream, status) => {
-          if (isMounted && status) {
-            setWatchStatus(status);
-            if (['failed', 'disconnected', 'ice:failed', 'ice:disconnected'].includes(status)) {
-              scheduleRetry('retrying');
-            }
-          }
-          if (isMounted && stream) {
-            receivedStream = true;
-            window.clearTimeout(retryTimerRef.current);
-            window.clearTimeout(timeoutTimerRef.current);
-            if (remoteVideoRef.current) {
-              remoteVideoRef.current.srcObject = stream;
-              remoteVideoRef.current.muted = true;
-              remoteVideoRef.current.play()?.catch?.((err) => {
-                console.warn('[LiveViewer] Remote video play error:', err.name, err.message);
-              });
-            }
-            setRemoteStream(stream);
-          }
-        }, watcherIdRef.current, user?.uid ?? null);
-      } catch (err) {
-        console.error('[LiveViewer] Watcher setup failed:', err.message);
-        scheduleRetry('retrying');
-      }
-    };
-
-    setupWatcher();
-
-    return () => {
-      isMounted = false;
-      if (webrtcCallRef.current) {
-        webrtcCallRef.current.close();
-      }
-      window.clearTimeout(retryTimerRef.current);
-      window.clearTimeout(timeoutTimerRef.current);
-      watcherIdRef.current = null;
-      closePeer();
-    };
-  }, [creatorMode, activeLiveId, live.creatorUid, live.createdLocally, live.whepUrl, live.hlsManifestUrl, forceWebRtcFallback, user?.uid, watchRetry]);
+  // WebRTC P2P — disabled for Cloudflare one-to-many playback.
+  useEffect(() => {
+    return undefined;
+  }, [creatorMode, activeLiveId, live.creatorUid, live.createdLocally, live.whepUrl, live.hlsManifestUrl]);
 
 
 
@@ -2224,7 +2089,7 @@ function LiveViewer({ liveId, creatorMode = false }) {
     const feedEl = feedRef.current;
     if (!feedEl) return;
     feedEl.querySelectorAll('video').forEach((v) => {
-      if (v !== videoPlaybackRef.current) {
+      if (v !== videoPlaybackRef.current && v !== remoteVideoRef.current) {
         v.pause();
         v.currentTime = 0;
       } else {
@@ -2590,7 +2455,6 @@ function LiveViewer({ liveId, creatorMode = false }) {
                   } : null}
                   className="live-slide__media live-slide__media--video"
                   src={isActive ? item.video : undefined}
-                  poster={item.image}
                   muted={true}
                   loop
                   playsInline
@@ -2610,17 +2474,14 @@ function LiveViewer({ liveId, creatorMode = false }) {
                       style={isDragging ? { transform: `scale(1.03) translateY(${dragY * 0.1}px)` } : undefined}
                     />
                   ) : !creatorMode && isActive && !broadcastEnded && (item.creatorUid || item.createdLocally) ? (
-                    <>
-                      {item.image && <img className="live-slide__bg" src={item.image} aria-hidden="true" draggable="false" />}
-                      <video
-                        ref={remoteVideoRef}
-                        className="live-slide__media live-slide__media--pov"
-                        autoPlay
-                        muted
-                        playsInline
-                        style={isDragging ? { transform: `scale(1.03) translateY(${dragY * 0.1}px)` } : undefined}
-                      />
-                    </>
+                    <video
+                      ref={remoteVideoRef}
+                      className="live-slide__media live-slide__media--pov"
+                      autoPlay
+                      muted
+                      playsInline
+                      style={isDragging ? { transform: `scale(1.03) translateY(${dragY * 0.1}px)` } : undefined}
+                    />
                   ) : (
                     <>
                       <img className="live-slide__bg" src={item.image} aria-hidden="true" draggable="false" />
@@ -2763,7 +2624,7 @@ function LiveViewer({ liveId, creatorMode = false }) {
           <button type="button" onClick={() => { recordShared(); setShareLiveSheetOpen(true); }} aria-label={t('common.share')}>
             <Send size={21} strokeWidth={1.8} />
           </button>
-          {live.hasVideoAudio && (
+          {(live.hasVideoAudio || live.whepUrl || (live.kind === 'camera' && (live.creatorUid || live.createdLocally))) && !creatorMode && (
             <button type="button" className={videoMuted ? 'live-sound-button' : 'is-active live-sound-button'} onClick={() => setVideoMuted((prev) => !prev)} aria-label={videoMuted ? 'Unmute video' : 'Mute video'}>
               {videoMuted ? <VolumeX size={22} strokeWidth={1.8} /> : <Volume2 size={22} strokeWidth={1.8} />}
             </button>

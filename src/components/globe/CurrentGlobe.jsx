@@ -136,17 +136,17 @@ function liveColorGlowRadius(clock) {
     '+',
     ['case',
       ['==', ['get', 'markerType'], MARKER_TYPES.sponsored],
-      ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 6.5, 300, 8.5, 800, 12.0, 1500, 16.0],
+      ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 3.0, 300, 4.0, 800, 5.5, 1500, 7.5],
       ['==', ['get', 'markerType'], MARKER_TYPES.vuvio],
-      ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 7.0, 300, 9.0, 800, 13.0, 1500, 18.0],
-      ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 6.0, 300, 8.0, 800, 11.0, 1500, 15.0],
+      ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 3.2, 300, 4.2, 800, 6.0, 1500, 8.5],
+      ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 2.8, 300, 3.8, 800, 5.0, 1500, 7.0],
     ],
     ['*', wave, ['case',
       ['==', ['get', 'markerType'], MARKER_TYPES.sponsored],
-      ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 2.0, 800, 4.5, 1500, 7.0],
+      ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 1.0, 800, 2.0, 1500, 3.0],
       ['==', ['get', 'markerType'], MARKER_TYPES.vuvio],
-      ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 2.5, 800, 5.0, 1500, 8.0],
-      ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 2.0, 800, 4.5, 1500, 7.0],
+      ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 1.2, 800, 2.5, 1500, 4.0],
+      ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 1.0, 800, 2.0, 1500, 3.0],
     ]],
   ];
 }
@@ -176,8 +176,8 @@ function liveCrowdHaloRadius(clock) {
   const wave = breathingWave((clock * 1.35) % 1);
   return [
     '+',
-    ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 0, 500, 0, 800, 7, 1500, 10],
-    ['*', wave, ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 0, 500, 0, 800, 4.5, 1500, 8.5]],
+    ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 0, 500, 0, 800, 3, 1500, 4.5],
+    ['*', wave, ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 0, 500, 0, 800, 2.0, 1500, 3.5]],
   ];
 }
 
@@ -192,7 +192,7 @@ function liveCrowdHaloOpacity(clock) {
 
 function livePingRippleRadius(clock) {
   const wave = breathingWave(clock);
-  return ['+', ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 8, 800, 11, 1500, 14], ['*', wave, 19]];
+  return ['+', ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 4, 800, 6, 1500, 8], ['*', wave, 10]];
 }
 
 function livePingRippleOpacity(clock) {
@@ -205,8 +205,8 @@ function liveBroadcastHaloRadius(clock, selectedId = '') {
   return [
     'case',
     ['==', ['get', 'id'], selectedId],
-    ['+', ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 2.7, 300, 3.2, 800, 4.0, 1500, 4.5], ['*', wave, ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 2.6, 800, 4.1, 1500, 5.2]]],
-    ['+', ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 2.0, 300, 2.4, 800, 3.2, 1500, 3.6], ['*', wave, ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 2.0, 800, 3.4, 1500, 4.4]]],
+    ['+', ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 1.5, 300, 1.8, 800, 2.2, 1500, 2.5], ['*', wave, ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 1.3, 800, 2.0, 1500, 2.6]]],
+    ['+', ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 1.2, 300, 1.4, 800, 1.8, 1500, 2.0], ['*', wave, ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 1.0, 800, 1.7, 1500, 2.2]]],
   ];
 }
 
@@ -292,9 +292,9 @@ function liveRingRadius(clock, selectedId = '', hoveredId = '') {
   return [
     'case',
     ['==', ['get', 'id'], selectedId],
-    ['+', 7.6, ['*', wave, 0.6]],
+    ['+', 4.0, ['*', wave, 0.3]],
     ['==', ['get', 'id'], hoveredId],
-    ['+', 6.2, ['*', wave, 0.4]],
+    ['+', 3.2, ['*', wave, 0.2]],
     0,
   ];
 }
@@ -495,9 +495,12 @@ export default function CurrentGlobe({ streams, onboarding = false, onOnboarding
       container: containerRef.current,
       style: variant === 'test3' ? STYLE_URL_GREEN : STYLE_URL,
       center: INITIAL_CENTER,
-      zoom: 1.35,
+      zoom: 0.8,
+      pitch: 0,
+      bearing: 0,
       minZoom: 0,
       maxZoom: 9,
+      maxPitch: 80,
       projection: { type: 'globe' },
       attributionControl: false,
       logoPosition: 'bottom-left',
@@ -809,7 +812,7 @@ export default function CurrentGlobe({ streams, onboarding = false, onOnboarding
         center: requestedLive.coordinates,
         zoom: REQUESTED_LIVE_ZOOM,
         bearing: 0,
-        pitch: 0,
+        pitch: 18,
         duration: 1050,
         easing: (t) => 1 - Math.pow(1 - t, 3),
         essential: true,
@@ -984,19 +987,37 @@ export default function CurrentGlobe({ streams, onboarding = false, onOnboarding
   }, [hoveredId, selectedId]);
 
   const recenter = () => {
-    mapRef.current?.setProjection({ type: 'globe' });
-    mapRef.current?.easeTo({
-      center: INITIAL_CENTER,
-      zoom: 1.35,
-      bearing: 0,
-      pitch: 0,
-      duration: 1350,
+    const map = mapRef.current;
+    if (!map) return;
+    map.setProjection({ type: 'globe' });
+    setSelectedId(null);
+    setHoveredId('');
+    pauseUntilRef.current = Date.now() + 2200;
+
+    const fly = (center, zoom) => {
+      map.easeTo({
+        center,
+        zoom,
+        bearing: 0,
+        pitch: 0,
+        duration: 1350,
+        easing: (t) => 1 - Math.pow(1 - t, 3),
+        essential: true,
+      });
+    };
+
+    fly(INITIAL_CENTER, 0.8);
+  };
+
+  const tiltBy = (delta) => {
+    const map = mapRef.current;
+    if (!map) return;
+    map.easeTo({
+      pitch: Math.max(0, Math.min(80, map.getPitch() + delta)),
+      duration: 400,
       easing: (t) => 1 - Math.pow(1 - t, 3),
       essential: true,
     });
-    pauseUntilRef.current = Date.now() + 2200;
-    setSelectedId(null);
-    setHoveredId('');
   };
 
   const zoomBy = (delta) => {

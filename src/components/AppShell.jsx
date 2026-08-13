@@ -10,7 +10,7 @@ export default function AppShell() {
   const { userProfile } = useAuth();
   const { notifications, dismissNotification } = useFollowedCreatorNotifications(userProfile);
   const isBroadcast = location.pathname.startsWith('/live/');
-  const isLive = location.pathname.startsWith('/watch/');
+  const isLive = location.pathname === '/watch' || location.pathname.startsWith('/watch/');
   const [liveNavCollapsed, setLiveNavCollapsed] = useState(false);
 
   useEffect(() => {
