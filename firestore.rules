@@ -83,7 +83,8 @@ service cloud.firestore {
             'userId',
             'userDisplayName',
             'userPhotoURL',
-            'timestamp'
+            'timestamp',
+            'liveElapsedSeconds'
           ])
           && request.resource.data.text is string
           && request.resource.data.text.size() > 0

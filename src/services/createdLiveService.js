@@ -147,7 +147,10 @@ function mergeCreatedLives(local, firestore) {
 
   const merged = {};
   usableLocal.forEach(live => { merged[live.id] = live; });
-  firestore.filter((live) => !isRetiredLive(live)).forEach(live => { merged[live.id] = live; });
+  firestore.filter((live) => !isRetiredLive(live)).forEach(live => {
+    const existing = merged[live.id];
+    merged[live.id] = existing?.createdLocally ? { ...live, createdLocally: true } : live;
+  });
 
   return Object.values(merged).sort((a, b) => {
     const aTime = new Date(a.equipmentUpdatedAt || 0).getTime();
@@ -272,7 +275,6 @@ export async function endLive(liveId) {
   const local = readStoredLives();
   const updated = local.filter(live => live.id !== liveId);
   writeStoredLives(updated);
-  await removeLiveFromFirestore(liveId);
 }
 
 export async function publishLivePing(liveId) {

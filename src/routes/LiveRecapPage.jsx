@@ -1,7 +1,7 @@
 import { ArrowLeft, BarChart3, Camera, Check, Flame, MessageCircle, MoreHorizontal, Star } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { doc, getDoc } from 'firebase/firestore';
+import { collection, doc, getDoc, getDocs, onSnapshot, orderBy, query } from 'firebase/firestore';
 import { db } from '../firebase.js';
 import { endLive } from '../services/createdLiveService.js';
 import BottomNav from '../components/BottomNav.jsx';
@@ -93,6 +93,44 @@ export default function LiveRecapPage() {
   const [modal, setModal] = useState(null);
   const [finishingLive, setFinishingLive] = useState(false);
   const [liveData, setLiveData] = useState(null);
+  const [liveComments, setLiveComments] = useState([]);
+  const [replayUrl, setReplayUrl] = useState(null);
+  const replayUrlRef = useRef(null);
+
+  // Poll backend to trigger Cloudflare check + listen for Firestore replayUrl update
+  useEffect(() => {
+    const liveId = location.pathname.split('/')[2];
+    if (!liveId) return;
+
+    const poll = async () => {
+      if (replayUrlRef.current) return;
+      try {
+        await fetch(`/api/streams/${encodeURIComponent(liveId)}/replay-status`);
+      } catch {
+        // ignore — Firestore snapshot will pick up the update
+      }
+    };
+
+    poll();
+    const interval = setInterval(poll, 10000);
+
+    const unsub = onSnapshot(doc(db, 'activeLives', liveId), (snap) => {
+      if (!snap.exists()) return;
+      const url = snap.data()?.replayUrl ?? '';
+      if (url) {
+        replayUrlRef.current = url;
+        setReplayUrl(url);
+        clearInterval(interval);
+      } else {
+        setReplayUrl('');
+      }
+    });
+
+    return () => {
+      clearInterval(interval);
+      unsub();
+    };
+  }, [location.pathname]);
 
   // Always fetch fresh data from Firestore to ensure image and stats are up-to-date
   useEffect(() => {
@@ -102,10 +140,12 @@ export default function LiveRecapPage() {
     (async () => {
       try {
         const liveRef = doc(db, 'activeLives', liveId);
-        const liveSnap = await getDoc(liveRef);
-        if (liveSnap.exists()) {
-          setLiveData(liveSnap.data());
-        }
+        const [liveSnap, commentsSnap] = await Promise.all([
+          getDoc(liveRef),
+          getDocs(query(collection(db, `activeLives/${liveId}/comments`), orderBy('timestamp', 'asc'))).catch(() => ({ docs: [] })),
+        ]);
+        if (liveSnap.exists()) setLiveData(liveSnap.data());
+        setLiveComments(commentsSnap.docs.map((d) => d.data()));
       } catch (err) {
         console.error('[LiveRecapPage] Failed to fetch live data:', err);
       }
@@ -144,11 +184,19 @@ export default function LiveRecapPage() {
     };
   }, [location.search, location.pathname]);
 
+  const realChatMessages = useMemo(() => {
+    if (!liveComments.length) return null;
+    return liveComments.map((c) => {
+      const secs = c.liveElapsedSeconds ?? 0;
+      const m = String(Math.floor(secs / 60)).padStart(2, '0');
+      const s = String(secs % 60).padStart(2, '0');
+      return [`${m}:${s}`, c.userDisplayName || 'Viewer', c.text || ''];
+    });
+  }, [liveComments]);
+
   // Use real data if available, otherwise fallback to mock
   const recap = useMemo(() => {
-    if (!liveData) return liveRecap;
-    console.log('[LiveRecapPage] liveData:', { id: liveData.id, title: liveData.title, image: liveData.image, durationSeconds: liveData.durationSeconds, peakViewerCount: liveData.peakViewerCount });
-    return {
+    const base = liveData ? {
       ...liveRecap,
       id: liveData.id,
       title: liveData.title || liveRecap.title,
@@ -159,10 +207,18 @@ export default function LiveRecapPage() {
         { id: 'avg', label: 'Avg Viewers', value: Math.round((liveData.currentViewerCount || 0) * 0.8).toString(), trend: '', icon: 'users' },
         { id: 'stars', label: 'Stars Received', value: '0', icon: 'star' },
         { id: 'followers', label: 'New Followers', value: '+0', icon: 'userPlus' },
-        { id: 'messages', label: 'Total Messages', value: '0', icon: 'message' },
+        { id: 'messages', label: 'Total Messages', value: liveComments.length.toString(), icon: 'message' },
       ],
-    };
-  }, [liveData]);
+    } : liveRecap;
+
+    if (realChatMessages) {
+      return {
+        ...base,
+        chatByHighlight: { ...base.chatByHighlight, chat: realChatMessages },
+      };
+    }
+    return base;
+  }, [liveData, liveComments, realChatMessages]);
 
   const activeHighlight = useMemo(
     () => recap.highlights.find((item) => item.id === activeId) ?? recap.highlights[0],
@@ -341,6 +397,8 @@ export default function LiveRecapPage() {
                 onNudge={(amount) => seekToSeconds(activeHighlight.seconds + amount)}
                 onSpeed={() => setSpeedIndex((v) => (v + 1) % speeds.length)}
                 onFullscreen={() => setModal('player')}
+                src={replayUrl}
+                poster={liveData?.image}
               />
               <SynchronizedChat messages={chatMessages} activeTime={activeHighlight.timestamp} />
             </div>
@@ -408,7 +466,7 @@ export default function LiveRecapPage() {
       <SimpleModal
         type={modal}
         onClose={() => setModal(null)}
-        onConfirm={modal === 'download' ? handleMockDownload : undefined}
+        onConfirm={modal === 'download' ? handleMockDownload : modal === 'share' ? async () => { try { await navigator.clipboard.writeText(window.location.href); } catch { /* ignore */ } setModal(null); } : undefined}
       />
     </main>
   );

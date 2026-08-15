@@ -1,4 +1,6 @@
-import { Expand, Gauge, Pause, Play, RotateCcw, RotateCw, Star } from 'lucide-react';
+import Hls from 'hls.js';
+import { Expand, Gauge, Loader, Pause, Play, RotateCcw, RotateCw, Star } from 'lucide-react';
+import { useEffect, useRef } from 'react';
 import BrandMark from '../BrandMark.jsx';
 
 function formatSeconds(seconds) {
@@ -7,7 +9,60 @@ function formatSeconds(seconds) {
   return `${minutes}:${rest}`;
 }
 
-export default function ReplayPlayer({ live, activeHighlight, playing, speed, onTogglePlay, onSeek, onNudge, onSpeed, onFullscreen }) {
+function HlsVideo({ src, poster }) {
+  const videoRef = useRef(null);
+
+  useEffect(() => {
+    if (!src || !videoRef.current) return;
+    const video = videoRef.current;
+
+    if (Hls.isSupported()) {
+      const hls = new Hls({ enableWorker: true });
+      hls.loadSource(src);
+      hls.attachMedia(video);
+      return () => hls.destroy();
+    } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+      video.src = src;
+    }
+  }, [src]);
+
+  return (
+    <video
+      ref={videoRef}
+      controls
+      playsInline
+      poster={poster}
+      style={{ width: '100%', height: '100%', objectFit: 'contain', display: 'block', background: '#000', borderRadius: 12 }}
+    />
+  );
+}
+
+function ProcessingState() {
+  return (
+    <section className="replay-player" aria-label="Replay player" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 12, background: '#0a0a0f' }}>
+      <Loader size={32} style={{ opacity: 0.5, animation: 'spin 1s linear infinite' }} />
+      <p style={{ margin: 0, opacity: 0.6, fontSize: 14 }}>Replay being processed…</p>
+      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+    </section>
+  );
+}
+
+export default function ReplayPlayer({ live, activeHighlight, playing, speed, onTogglePlay, onSeek, onNudge, onSpeed, onFullscreen, src, poster }) {
+  // Real replay available
+  if (src) {
+    return (
+      <section className="replay-player" aria-label="Replay player" style={{ background: '#000' }}>
+        <HlsVideo src={src} poster={poster} />
+      </section>
+    );
+  }
+
+  // Live data exists but replay not ready yet
+  if (src === '') {
+    return <ProcessingState />;
+  }
+
+  // No live context — show mock UI
   const progress = Math.min(100, Math.max(0, (activeHighlight.seconds / live.duration) * 100));
 
   return (

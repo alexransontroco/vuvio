@@ -1,11 +1,12 @@
 import { onRequest } from 'firebase-functions/v2/https';
 import { onSchedule } from 'firebase-functions/v2/scheduler';
 import { sendError, ApiError } from './shared/errors.js';
-import { cloudflareAccountId, cloudflareApiToken, cloudflareCustomerCode, cloudflareWebhookSecret, openaiApiKey } from './config/env.js';
+import { cloudflareAccountId, cloudflareApiToken, cloudflareCustomerCode, cloudflareWebhookSecret, openaiApiKey, icecatUsername, icecatPassword } from './config/env.js';
 import { createStream } from './streams/createStream.js';
 import { startStream } from './streams/startStream.js';
 import { heartbeatStream } from './streams/heartbeatStream.js';
 import { endStream } from './streams/endStream.js';
+import { finishStream } from './streams/finishStream.js';
 import { getStream } from './streams/getStream.js';
 import { listGlobeStreams, listLiveStreams } from './streams/listLiveStreams.js';
 import { attachGearToStream } from './gear/attachGearToStream.js';
@@ -17,6 +18,7 @@ import { cloudflareWebhook } from './cloudflare/cloudflareWebhook.js';
 import { getCloudflareConfig, getCloudflareInputs, postCreateTestInput } from './cloudflare/testRouteHandlers.js';
 import { createLiveInputHandler } from './cloudflare/createLiveInputHandler.js';
 import { monitorStreamHeartbeats } from './streams/monitorStreamHeartbeats.js';
+import { cleanupStaleLives } from './streams/cleanupStaleLives.js';
 import { processProductImage } from './products/processProductImage.js';
 import { searchProductsHandler, getProductHandler, importProductHandler } from './products/productRoutes.js';
 import { requestHighlight } from './highlights/requestHighlight.js';
@@ -42,7 +44,7 @@ export const api = onRequest({
   region: 'europe-west1',
   timeoutSeconds: 540,
   memory: '2GiB',
-  secrets: [cloudflareAccountId, cloudflareApiToken, cloudflareWebhookSecret, cloudflareCustomerCode, openaiApiKey],
+  secrets: [cloudflareAccountId, cloudflareApiToken, cloudflareWebhookSecret, cloudflareCustomerCode, openaiApiKey, icecatUsername, icecatPassword],
 }, async (req, res) => {
   sendCors(res);
   if (req.method === 'OPTIONS') {
@@ -61,6 +63,7 @@ export const api = onRequest({
     if (req.method === 'POST' && parts[0] === 'streams' && parts[2] === 'start') return await startStream(req, res, parts[1]);
     if (req.method === 'POST' && parts[0] === 'streams' && parts[2] === 'heartbeat') return await heartbeatStream(req, res, parts[1]);
     if (req.method === 'POST' && parts[0] === 'streams' && parts[2] === 'end') return await endStream(req, res, parts[1]);
+    if (req.method === 'POST' && parts[0] === 'streams' && parts[2] === 'finish') return await finishStream(req, res, parts[1]);
     if (req.method === 'POST' && parts[0] === 'streams' && parts[2] === 'upload-url') return await createUploadUrl(req, res, parts[1]);
     if (req.method === 'POST' && parts[0] === 'streams' && parts[2] === 'gear') return await attachGearToStream(req, res, parts[1]);
     if (req.method === 'GET' && parts[0] === 'streams' && parts[2] === 'gear') return await getStreamGear(req, res, parts[1]);
@@ -96,6 +99,11 @@ export const checkStreamHeartbeats = onSchedule({
   schedule: 'every 1 minutes',
 }, async () => {
   await monitorStreamHeartbeats();
+  try {
+    await cleanupStaleLives();
+  } catch (error) {
+    console.error('[cleanup] Failed to clean up stale lives:', error);
+  }
 });
 
 export const aggregateStatsScheduled = onSchedule({
