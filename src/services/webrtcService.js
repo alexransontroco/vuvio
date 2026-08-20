@@ -204,9 +204,8 @@ function closeWhipConnectionSync() {
   }
 }
 
-async function startRtmpRelayIngest(relayUrl, liveInputId, ingestUrl, streamKey, stream) {
+async function startRtmpRelayIngest(relayUrl, liveInputId, stream) {
   if (!relayUrl) throw new Error('Missing RTMPS relay URL');
-  if (!ingestUrl || !streamKey) throw new Error('Missing Cloudflare RTMPS credentials');
 
   relayBaseUrl = relayUrl.replace(/\/$/, '');
   console.log('[RTMPS-RELAY] starting relay session for live:', liveInputId);
@@ -239,8 +238,6 @@ async function startRtmpRelayIngest(relayUrl, liveInputId, ingestUrl, streamKey,
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       liveInputId,
-      ingestUrl,
-      streamKey,
       sdpOffer: pc.localDescription.sdp,
     }),
   });
@@ -426,7 +423,7 @@ export async function startBroadcast(liveId, userId, existingStream = null, whip
   }
 }
 
-export async function startRtmpRelayBroadcast(liveId, userId, existingStream = null, relayUrl = null, ingestUrl = null, streamKey = null) {
+export async function startRtmpRelayBroadcast(liveId, userId, existingStream = null, relayUrl = null) {
   try {
     console.log('[webrtcService] Starting RTMPS relay broadcast for live:', liveId);
 
@@ -448,7 +445,7 @@ export async function startRtmpRelayBroadcast(liveId, userId, existingStream = n
       track.onended = () => console.warn('[DEBUG-PREVIEW] relay track ended:', track.kind);
     });
 
-    await startRtmpRelayIngest(relayUrl, liveId, ingestUrl, streamKey, localStream);
+    await startRtmpRelayIngest(relayUrl, liveId, localStream);
     return localStream;
   } catch (err) {
     console.error('[webrtcService] Failed to start RTMPS relay broadcast:', err.message);

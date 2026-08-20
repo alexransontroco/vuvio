@@ -1343,11 +1343,20 @@ function CreatorLiveSession({ live, onEndingChange }) {
             body: JSON.stringify({
               streamId: live.id,
               title: live.title || live.experienceTitle || live.name || live.id,
+              useRelay: RTMPS_RELAY_ENABLED,
             }),
           });
           if (cfResponse.ok) {
             cfData = await cfResponse.json();
-            console.log('[CLOUDFLARE] createLiveInput response:', JSON.stringify(cfData));
+            console.log('[CLOUDFLARE] createLiveInput response:', JSON.stringify({
+              liveInputId: cfData.liveInputId,
+              playbackUrl: cfData.playbackUrl,
+              hlsManifestUrl: cfData.hlsManifestUrl,
+              whepUrl: cfData.whepUrl,
+              ingestUrl: cfData.ingestUrl,
+              webRTCUrl: cfData.webRTCUrl ? 'present' : null,
+              streamKey: cfData.streamKey ? 'present' : null,
+            }));
             if (cfData.liveInputId) cloudflareLiveInputId = cfData.liveInputId;
             if (cfData.webRTCUrl && cfData.streamKey) {
               whipCredentials = { url: cfData.webRTCUrl, key: cfData.streamKey };
@@ -1363,13 +1372,13 @@ function CreatorLiveSession({ live, onEndingChange }) {
 
         const existingStream = getCreatedLiveStream(live.id);
         const shouldUseRelay = RTMPS_RELAY_ENABLED && RTMPS_RELAY_URL && cfResponse?.ok;
-        if (shouldUseRelay && cfData?.ingestUrl && cfData?.streamKey) {
-          relayCredentials = { url: cfData.ingestUrl, key: cfData.streamKey };
-          console.log('[RTMPS-RELAY] relay credentials ready — ingestUrl:', cfData.ingestUrl, '| streamKey present:', !!cfData.streamKey);
+        if (shouldUseRelay && cfData?.liveInputId) {
+          relayCredentials = { liveInputId: cfData.liveInputId };
+          console.log('[RTMPS-RELAY] relay credentials ready — liveInputId:', cfData.liveInputId);
         }
 
         const stream = shouldUseRelay && relayCredentials
-          ? await startRtmpRelayBroadcast(live.id, user.uid, existingStream, RTMPS_RELAY_URL, relayCredentials.url, relayCredentials.key)
+          ? await startRtmpRelayBroadcast(live.id, user.uid, existingStream, RTMPS_RELAY_URL)
           : await startBroadcast(live.id, user.uid, existingStream, whipCredentials?.url, whipCredentials?.key);
         if (!active) {
           stream?.getTracks?.().forEach((track) => track.stop());

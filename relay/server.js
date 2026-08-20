@@ -14,10 +14,27 @@ const sessions = new Map();
 const ffmpegPath = process.env.FFMPEG_PATH || (fs.existsSync('/usr/bin/ffmpeg') ? '/usr/bin/ffmpeg' : null);
 const host = process.env.RTMPS_RELAY_HOST || '0.0.0.0';
 const port = Number(process.env.RTMPS_RELAY_PORT || 8787);
+const cloudflareAccountId = process.env.CLOUDFLARE_ACCOUNT_ID || '';
+const cloudflareApiToken = process.env.CLOUDFLARE_API_TOKEN || '';
 
 function buildRtmpTarget(ingestUrl, streamKey) {
   if (!ingestUrl || !streamKey) return '';
   return `${ingestUrl}${streamKey}`;
+}
+
+async function fetchCloudflareLiveInput(liveInputId) {
+  if (!cloudflareAccountId || !cloudflareApiToken) {
+    throw new Error('Missing CLOUDFLARE_ACCOUNT_ID or CLOUDFLARE_API_TOKEN');
+  }
+
+  const response = await fetch(`https://api.cloudflare.com/client/v4/accounts/${cloudflareAccountId}/stream/live_inputs/${encodeURIComponent(liveInputId)}`, {
+    headers: { Authorization: `Bearer ${cloudflareApiToken}` },
+  });
+  const body = await response.json().catch(() => ({}));
+  if (!response.ok || body?.success === false || !body?.result) {
+    throw new Error(`Cloudflare live input fetch failed (${response.status})`);
+  }
+  return body.result;
 }
 
 function createFfmpegProcess(session) {
@@ -68,7 +85,14 @@ function createFfmpegProcess(session) {
   console.log('[RTMPS-RELAY] Cloudflare RTMPS connected');
 }
 
-function startSession({ liveInputId, ingestUrl, streamKey, sdpOffer, title }) {
+async function startSession({ liveInputId, sdpOffer, title }) {
+  const input = await fetchCloudflareLiveInput(liveInputId);
+  const rtmps = input.rtmps || {};
+  const ingestUrl = typeof rtmps.url === 'string' ? rtmps.url : null;
+  const streamKey = typeof rtmps.streamKey === 'string' ? rtmps.streamKey : null;
+  if (!ingestUrl || !streamKey) {
+    throw new Error('Cloudflare RTMPS credentials missing on live input');
+  }
   const pc = new RTCPeerConnection({
     bundlePolicy: 'max-bundle',
     iceServers: [{ urls: 'stun:stun.l.google.com:19302' }],
@@ -154,6 +178,8 @@ function startSession({ liveInputId, ingestUrl, streamKey, sdpOffer, title }) {
       return {
         sessionId: session.id,
         sdpAnswer: pc.localDescription?.sdp || '',
+        ingestUrl,
+        streamKey,
       };
     });
 }
@@ -186,15 +212,15 @@ app.get('/healthz', (_req, res) => {
 
 app.post('/sessions', async (req, res) => {
   try {
-    const { liveInputId, ingestUrl, streamKey, sdpOffer, title } = req.body || {};
-    if (!liveInputId || !ingestUrl || !streamKey || !sdpOffer) {
-      res.status(400).json({ error: 'Missing liveInputId, ingestUrl, streamKey, or sdpOffer' });
+    const { liveInputId, sdpOffer, title } = req.body || {};
+    if (!liveInputId || !sdpOffer) {
+      res.status(400).json({ error: 'Missing liveInputId or sdpOffer' });
       return;
     }
-    const result = await startSession({ liveInputId, ingestUrl, streamKey, sdpOffer, title });
+    const result = await startSession({ liveInputId, sdpOffer, title });
     res.json({
-      ...result,
-      rtmpTarget: buildRtmpTarget(ingestUrl, streamKey),
+      sessionId: result.sessionId,
+      sdpAnswer: result.sdpAnswer,
     });
   } catch (err) {
     console.error('[RTMPS-RELAY] session create failed:', err instanceof Error ? err.message : err);

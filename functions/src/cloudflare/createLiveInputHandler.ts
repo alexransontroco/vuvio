@@ -13,6 +13,7 @@ export async function createLiveInputHandler(req: Request, res: Response) {
     const body = asRecord(req.body);
     const streamId = stringField(body, 'streamId', { required: true, max: 64 })!;
     const title = stringField(body, 'title', { required: true, max: 120 }) ?? 'Untitled';
+    const useRelay = body.useRelay === true;
 
     const input = await createLiveInput({
       name: title,
@@ -68,8 +69,8 @@ export async function createLiveInputHandler(req: Request, res: Response) {
       hlsManifestUrl: input.hlsManifestUrl,
       whepUrl: input.whepUrl,
       ingestUrl: input.ingestUrl,
-      webRTCUrl: input.webRTCUrl,
-      streamKey: input.streamKey,
+      webRTCUrl: useRelay ? null : input.webRTCUrl,
+      streamKey: useRelay ? null : input.streamKey,
     });
   } catch (error) {
     if (error instanceof ApiError) {
