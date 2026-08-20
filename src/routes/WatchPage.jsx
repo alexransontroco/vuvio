@@ -28,6 +28,8 @@ import { demoLiveEquipmentIds } from '../data/equipmentModel.js';
 import { getEquipmentLibrary, getEquipmentLibraryWithProducts, getEquipmentSelection } from '../services/equipmentService.js';
 import { formatLocalSchedule, getCountdownState, toValidDate } from '../utils/countdown.js';
 import { finishStream } from '../services/streamApi.ts';
+import { isFollowingCreator, setFollowingCreator } from '../services/followService.js';
+import { followCreator, unfollowCreator } from '../services/creatorService.js';
 
 const SWIPE_THRESHOLD = 58;
 const WHEEL_THRESHOLD = 36;
@@ -1303,6 +1305,13 @@ function CreatorLiveSession({ live, onEndingChange }) {
   }, []);
 
   useEffect(() => {
+    const stream = getCreatedLiveStream(live.id);
+    if (!stream) return;
+    stream.getAudioTracks().forEach((track) => { track.enabled = !micMuted; });
+  }, [micMuted, live.id]);
+
+
+  useEffect(() => {
     if (bannerDismissed || viewerCount >= 5) return undefined;
     const t = window.setTimeout(() => setBannerVisible(true), 8000);
     return () => window.clearTimeout(t);
@@ -1327,17 +1336,18 @@ function CreatorLiveSession({ live, onEndingChange }) {
             },
             body: JSON.stringify({
               streamId: live.id,
-              title: live.name || live.id,
+              title: live.title || live.experienceTitle || live.name || live.id,
             }),
           });
           if (cfResponse.ok) {
             const cfData = await cfResponse.json();
-            console.log('[CLOUDFLARE] broadcast started — live input:', cfData.liveInputId, '| WHEP URL:', cfData.whepUrl ?? 'none');
+            console.log('[CLOUDFLARE] createLiveInput response:', JSON.stringify(cfData));
             if (cfData.liveInputId) cloudflareLiveInputId = cfData.liveInputId;
             if (cfData.webRTCUrl && cfData.streamKey) {
               whipCredentials = { url: cfData.webRTCUrl, key: cfData.streamKey };
+              console.log('[CLOUDFLARE] WHIP credentials ready — url:', cfData.webRTCUrl);
             } else {
-              console.error('[CLOUDFLARE] ❌ Missing WHIP credentials — broadcast will NOT reach Cloudflare. webRTCUrl:', cfData.webRTCUrl, 'streamKey present:', !!cfData.streamKey);
+              console.error('[CLOUDFLARE] ❌ Missing WHIP credentials. webRTCUrl:', cfData.webRTCUrl ?? 'NULL', '| streamKey present:', !!cfData.streamKey);
             }
             // whepUrl is already stored in Firestore by createLiveInputHandler
           }
@@ -1592,10 +1602,15 @@ function CreatorLiveSession({ live, onEndingChange }) {
 
     try {
       await finishStream(live.id);
+    } catch (err) {
+      console.warn('[endLive] finishStream failed (non-critical):', err.message);
+    }
+
+    try {
       await stopBroadcast(live.id);
       closePeer();
     } catch (err) {
-      console.error('[endLive] Failed to finish stream:', err);
+      console.error('[endLive] Failed to stop broadcast:', err);
     }
 
     try {
@@ -1832,7 +1847,11 @@ function LiveViewer({ liveId, creatorMode = false }) {
   // Stable shuffle — computed once per session so Firestore updates don't reshuffle the feed
   const [shuffledDemoIds] = useState(() => shuffleArray(demoVideoLiveIds));
   const liveFeed = useMemo(() => {
-    if (lives && lives.length > 0) return lives;
+    if (lives && lives.length > 0) {
+      const videos = lives.filter((l) => isVideoWatchItem(l));
+      const photos = lives.filter((l) => !isVideoWatchItem(l));
+      return [...videos, ...photos];
+    }
     const baseFeed = streams.map(toHomeLive).filter((stream) => stream.status === 'live' || stream.id === liveId);
     const activeLives = createdLives.filter((live) => live.status === 'live');
     const demoVideos = shuffledDemoIds
@@ -1880,7 +1899,15 @@ function LiveViewer({ liveId, creatorMode = false }) {
   const [reactionCounts, setReactionCounts] = useState({});
   const [starBursts, setStarBursts] = useState([]);
   const [starPulse, setStarPulse] = useState(false);
-  const [following, setFollowing] = useState({});
+  const [following, setFollowing] = useState(() => {
+    // Pre-populate from localStorage so state matches what was persisted
+    const init = {};
+    try {
+      const stored = JSON.parse(localStorage.getItem('vuvio:following-creators') ?? '[]');
+      if (Array.isArray(stored)) stored.forEach((id) => { init[id] = true; });
+    } catch {}
+    return init;
+  });
   const [userSheetOpen, setUserSheetOpen] = useState(false);
   const [equipmentSheetOpen, setEquipmentSheetOpen] = useState(false);
   const [shareLiveSheetOpen, setShareLiveSheetOpen] = useState(false);
@@ -1890,6 +1917,7 @@ function LiveViewer({ liveId, creatorMode = false }) {
   const [chatDraft, setChatDraft] = useState('');
   const [localChat, setLocalChat] = useState({});
   const [videoMuted, setVideoMuted] = useState(true);
+  const videoMutedRef = useRef(true);
   const [equipmentLibrary, setEquipmentLibrary] = useState(() => getEquipmentLibrary());
   const feedRef = useRef(null);
   const chatInputRef = useRef(null);
@@ -1904,7 +1932,8 @@ function LiveViewer({ liveId, creatorMode = false }) {
   const activeLiveId = live.id;
   const liveEquipment = live.id ? getEquipmentSelection(equipmentLibrary, live.equipment?.map((item) => item.equipmentId) ?? demoLiveEquipmentIds) : [];
   const isLiked = !!liked[live.id];
-  const isFollowing = !!following[live.id];
+  const liveCreatorId = live.creatorUid || live.id;
+  const isFollowing = !!(following[liveCreatorId] ?? isFollowingCreator(liveCreatorId));
 
   const {
     videoRefCallback,
@@ -2027,7 +2056,7 @@ function LiveViewer({ liveId, creatorMode = false }) {
         if (cancelled) return;
         if (stream) {
           video.srcObject = stream;
-          video.muted = true;
+          video.muted = videoMutedRef.current;
           video.play()?.catch(() => {});
           setRemoteStream(stream);
           setWatchStatus('connected');
@@ -2080,6 +2109,7 @@ function LiveViewer({ liveId, creatorMode = false }) {
 
 
   useEffect(() => {
+    videoMutedRef.current = videoMuted;
     const video = videoPlaybackRef.current;
     if (!video) return;
     video.muted = videoMuted;
@@ -2300,6 +2330,19 @@ function LiveViewer({ liveId, creatorMode = false }) {
     };
   }, []);
 
+  // Reset iOS viewport zoom on unmount — keyboard interactions during a live can
+  // leave the viewport at a non-1 scale that persists across navigation.
+  useEffect(() => {
+    return () => {
+      const meta = document.querySelector('meta[name="viewport"]');
+      if (!meta) return;
+      const original = meta.getAttribute('content');
+      meta.setAttribute('content', 'width=device-width, initial-scale=1, maximum-scale=1');
+      requestAnimationFrame(() => meta.setAttribute('content', original));
+      window.scrollTo(0, 0);
+    };
+  }, []);
+
   useEffect(() => {
     const onKeyDown = (event) => {
       if (event.repeat) return;
@@ -2478,7 +2521,7 @@ function LiveViewer({ liveId, creatorMode = false }) {
                       ref={remoteVideoRef}
                       className="live-slide__media live-slide__media--pov"
                       autoPlay
-                      muted
+                      muted={videoMuted}
                       playsInline
                       style={isDragging ? { transform: `scale(1.03) translateY(${dragY * 0.1}px)` } : undefined}
                     />
@@ -2600,11 +2643,13 @@ function LiveViewer({ liveId, creatorMode = false }) {
             type="button"
             className={isFollowing ? 'is-active' : ''}
             onClick={() => {
-              const wasFollowing = isFollowing;
-              setFollowing((state) => ({ ...state, [live.id]: !state[live.id] }));
-              if (!wasFollowing) {
-                recordCreatorFollowed();
+              const next = !isFollowing;
+              setFollowing((state) => ({ ...state, [liveCreatorId]: next }));
+              setFollowingCreator(liveCreatorId, next).catch(() => {});
+              if (live.creatorUid && user?.uid) {
+                (next ? followCreator : unfollowCreator)(user.uid, live.creatorUid).catch(() => {});
               }
+              if (next) recordCreatorFollowed();
             }}
             aria-label={isFollowing ? t('common.unfollow') : t('common.follow')}
           >
@@ -2625,7 +2670,13 @@ function LiveViewer({ liveId, creatorMode = false }) {
             <Send size={21} strokeWidth={1.8} />
           </button>
           {(live.hasVideoAudio || live.whepUrl || (live.kind === 'camera' && (live.creatorUid || live.createdLocally))) && !creatorMode && (
-            <button type="button" className={videoMuted ? 'live-sound-button' : 'is-active live-sound-button'} onClick={() => setVideoMuted((prev) => !prev)} aria-label={videoMuted ? 'Unmute video' : 'Mute video'}>
+            <button type="button" className={videoMuted ? 'live-sound-button' : 'is-active live-sound-button'} onClick={() => {
+                const next = !videoMuted;
+                setVideoMuted(next);
+                // Synchronous unmute needed for iOS user-gesture audio unlock
+                if (remoteVideoRef.current) remoteVideoRef.current.muted = next;
+                if (videoPlaybackRef.current) videoPlaybackRef.current.muted = next;
+              }} aria-label={videoMuted ? 'Unmute video' : 'Mute video'}>
               {videoMuted ? <VolumeX size={22} strokeWidth={1.8} /> : <Volume2 size={22} strokeWidth={1.8} />}
             </button>
           )}

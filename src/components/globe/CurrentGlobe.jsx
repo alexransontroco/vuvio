@@ -100,8 +100,8 @@ function livePointOpacity(clock, selectedId = '') {
   return [
     'case',
     ['==', ['get', 'id'], selectedId],
-    ['+', 0.90, ['*', wave, 0.05]],
-    ['+', 0.82, ['*', wave, 0.10]],
+    ['+', 0.90, ['*', wave, 0.10]],
+    ['+', 0.82, ['*', wave, 0.15]],
   ];
 }
 
@@ -157,17 +157,17 @@ function liveColorGlowOpacity(clock) {
     '+',
     ['case',
       ['==', ['get', 'markerType'], MARKER_TYPES.sponsored],
-      ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 0.08, 300, 0.11, 800, 0.16, 1500, 0.20],
+      ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 0.38, 300, 0.50, 800, 0.62, 1500, 0.74],
       ['==', ['get', 'markerType'], MARKER_TYPES.vuvio],
-      ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 0.09, 300, 0.12, 800, 0.18, 1500, 0.22],
-      ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 0.07, 300, 0.10, 800, 0.15, 1500, 0.19],
+      ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 0.40, 300, 0.52, 800, 0.65, 1500, 0.78],
+      ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 0.34, 300, 0.44, 800, 0.56, 1500, 0.68],
     ],
     ['*', wave, ['case',
       ['==', ['get', 'markerType'], MARKER_TYPES.sponsored],
-      ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 0.03, 800, 0.07, 1500, 0.09],
+      ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 0.14, 800, 0.22, 1500, 0.28],
       ['==', ['get', 'markerType'], MARKER_TYPES.vuvio],
-      ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 0.04, 800, 0.08, 1500, 0.10],
-      ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 0.03, 800, 0.07, 1500, 0.09],
+      ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 0.16, 800, 0.24, 1500, 0.30],
+      ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 0.12, 800, 0.20, 1500, 0.26],
     ]],
   ];
 }
@@ -220,17 +220,28 @@ function liveBroadcastHaloOpacity(clock, selectedId = '') {
   ];
 }
 
-function drawAtmosphericHalo(canvas, ctx, rotation) {
+function drawAtmosphericHalo(canvas, ctx, rotation, time, zoom = 1.4) {
   if (!ctx) return;
-  const w = canvas.width;
-  const h = canvas.height;
+  const dpr = window.devicePixelRatio || 1;
+  const w = canvas.width / dpr;
+  const h = canvas.height / dpr;
   const cx = w / 2;
   const cy = h / 2;
+  // At zoom 1.4 the globe fills ~38% of the min dimension.
+  // Each extra zoom level doubles the projected globe radius.
   const baseRadius = Math.min(w, h) * 0.38;
+  const zoomScale = Math.pow(2, Math.max(0, zoom - 1.4));
+  const globeRadius = baseRadius * zoomScale;
+  // If the globe completely fills the canvas, skip all star drawing.
+  const halfDiag = Math.hypot(cx, cy);
+  const drawStars = globeRadius < halfDiag * 1.15;
 
   ctx.clearRect(0, 0, w, h);
 
-  const starCount = Math.max(40, Math.floor((w * h) / 42000));
+  // Stars with multi-frequency twinkle — driven by RAF time (always animates)
+  const t = time * 0.001; // seconds
+  const exclusion = globeRadius * 1.08;
+  const starCount = drawStars ? Math.max(150, Math.floor((w * h) / 9000)) : 0;
   for (let i = 0; i < starCount; i += 1) {
     const seed = i * 97.37;
     const x = (Math.sin(seed * 12.9898) * 43758.5453) % 1;
@@ -239,15 +250,91 @@ function drawAtmosphericHalo(canvas, ctx, rotation) {
     const py = Math.abs(y) * h;
     const distanceFromGlobe = Math.hypot(px - cx, py - cy);
 
-    if (distanceFromGlobe < baseRadius * 1.08) continue;
+    if (distanceFromGlobe < exclusion) continue;
 
-    const twinkle = 0.45 + Math.sin(rotation * 0.075 + seed) * 0.28;
-    const size = 0.3 + Math.abs(Math.sin(seed * 0.17)) * 0.5;
-    const opacity = Math.max(0.12, Math.min(0.88, twinkle));
+    // Each star has its own irregular multi-frequency twinkle
+    const f1 = 0.18 + Math.abs(Math.sin(seed * 5.3)) * 0.55;
+    const f2 = 0.52 + Math.abs(Math.sin(seed * 2.7)) * 0.90;
+    const f3 = 1.10 + Math.abs(Math.sin(seed * 8.1)) * 1.40;
+    const twinkle = 0.55
+      + Math.sin(t * f1 + seed * 1.3) * 0.22
+      + Math.sin(t * f2 + seed * 3.7) * 0.14
+      + Math.sin(t * f3 + seed * 7.1) * 0.07;
+    const size = 0.7 + Math.abs(Math.sin(seed * 0.17)) * 1.6;
+    const opacity = Math.max(0.12, Math.min(1.0, twinkle));
 
-    ctx.fillStyle = `rgba(230, 244, 255, ${opacity})`;
+    const r = 215 + Math.floor(Math.abs(Math.sin(seed * 3.1)) * 40);
+    const g = 230 + Math.floor(Math.abs(Math.sin(seed * 2.3)) * 25);
+    const b = 255;
+    ctx.fillStyle = `rgba(${r}, ${g}, ${b}, ${opacity})`;
     ctx.beginPath();
     ctx.arc(px, py, size, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Bright stars get a cross-shaped spike
+    if (size > 1.8 && opacity > 0.78) {
+      ctx.strokeStyle = `rgba(${r}, ${g}, ${b}, ${opacity * 0.40})`;
+      ctx.lineWidth = 0.6;
+      ctx.beginPath();
+      ctx.moveTo(px - size * 2.8, py);
+      ctx.lineTo(px + size * 2.8, py);
+      ctx.moveTo(px, py - size * 2.8);
+      ctx.lineTo(px, py + size * 2.8);
+      ctx.stroke();
+    }
+  }
+
+  // Shooting stars — 6 slots, time-based so always animate even when globe is paused
+  const shootingSlots = 6;
+  for (let i = 0; i < shootingSlots; i++) {
+    const ss = i * 214.7 + 31.9;
+    const period = 8 + Math.abs(Math.sin(ss * 1.3)) * 14; // 8-22 seconds between shoots
+    const phase = (t + ss * 3.1) % period;
+    const dur = 1.2 + Math.abs(Math.sin(ss * 4.1)) * 1.0; // 1.2-2.2 seconds long
+
+    if (phase > dur) continue;
+
+    const progress = phase / dur;
+    const fade = progress < 0.10 ? progress / 0.10 : progress > 0.60 ? (1 - progress) / 0.40 : 1;
+    const alpha = fade * 0.90;
+
+    if (!drawStars) continue;
+
+    const startAngle = (ss * 2.61) % (Math.PI * 2);
+    const dirAngle = startAngle + Math.PI * (0.10 + Math.abs(Math.sin(ss * 3.3)) * 0.28);
+    const startR = globeRadius * (1.2 + Math.abs(Math.sin(ss * 2.9)) * 0.6);
+    const sx = cx + Math.cos(startAngle) * startR;
+    const sy = cy + Math.sin(startAngle) * startR * 0.88;
+    const len = globeRadius * (0.30 + Math.abs(Math.sin(ss * 5.7)) * 0.38);
+    const ex = sx + Math.cos(dirAngle) * len;
+    const ey = sy + Math.sin(dirAngle) * len;
+
+    if (Math.hypot(sx - cx, sy - cy) < globeRadius * 1.05 && Math.hypot(ex - cx, ey - cy) < globeRadius * 1.05) continue;
+
+    const headX = sx + (ex - sx) * progress;
+    const headY = sy + (ey - sy) * progress;
+    const tailProgress = Math.max(0, progress - 0.25);
+    const tailX = sx + (ex - sx) * tailProgress;
+    const tailY = sy + (ey - sy) * tailProgress;
+
+    const grad = ctx.createLinearGradient(tailX, tailY, headX, headY);
+    grad.addColorStop(0, `rgba(210, 235, 255, 0)`);
+    grad.addColorStop(0.5, `rgba(235, 248, 255, ${alpha * 0.55})`);
+    grad.addColorStop(1, `rgba(255, 255, 255, ${alpha})`);
+    ctx.strokeStyle = grad;
+    ctx.lineWidth = 1.4;
+    ctx.lineCap = 'round';
+    ctx.beginPath();
+    ctx.moveTo(tailX, tailY);
+    ctx.lineTo(headX, headY);
+    ctx.stroke();
+
+    const headGrad = ctx.createRadialGradient(headX, headY, 0, headX, headY, 3.5);
+    headGrad.addColorStop(0, `rgba(255, 255, 255, ${alpha})`);
+    headGrad.addColorStop(1, `rgba(190, 225, 255, 0)`);
+    ctx.fillStyle = headGrad;
+    ctx.beginPath();
+    ctx.arc(headX, headY, 3.5, 0, Math.PI * 2);
     ctx.fill();
   }
 
@@ -255,17 +342,17 @@ function drawAtmosphericHalo(canvas, ctx, rotation) {
   ctx.translate(cx, cy);
   ctx.rotate((rotation * Math.PI) / 180);
 
-  const grad1 = ctx.createRadialGradient(0, -baseRadius * 0.12, baseRadius * 0.18, 0, -baseRadius * 0.12, baseRadius * 1.15);
+  const grad1 = ctx.createRadialGradient(0, -globeRadius * 0.12, globeRadius * 0.18, 0, -globeRadius * 0.12, globeRadius * 1.15);
   grad1.addColorStop(0, 'rgba(80, 170, 230, 0.08)');
   grad1.addColorStop(1, 'rgba(80, 140, 200, 0)');
   ctx.fillStyle = grad1;
   ctx.beginPath();
-  ctx.arc(0, -baseRadius * 0.12, baseRadius * 1.08, 0, Math.PI * 2);
+  ctx.arc(0, -globeRadius * 0.12, globeRadius * 1.08, 0, Math.PI * 2);
   ctx.fill();
 
   ctx.restore();
 
-  const haze = ctx.createRadialGradient(cx, cy * 0.78, baseRadius * 0.48, cx, cy * 0.78, baseRadius * 1.6);
+  const haze = ctx.createRadialGradient(cx, cy * 0.78, globeRadius * 0.48, cx, cy * 0.78, globeRadius * 1.6);
   haze.addColorStop(0, 'rgba(70, 150, 200, 0.02)');
   haze.addColorStop(1, 'rgba(60, 140, 180, 0)');
   ctx.fillStyle = haze;
@@ -372,6 +459,10 @@ function brightenBaseGlobe(map) {
       if (layer.type === 'line' && (id.includes('boundary') || id.includes('admin') || sourceLayer.includes('boundary'))) {
         map.setPaintProperty(layer.id, 'line-color', 'rgba(100, 160, 220, 0.35)');
         map.setPaintProperty(layer.id, 'line-opacity', 0.4);
+      }
+      // Hide all base map circles and symbols (city dots, poi, labels, etc.)
+      if (layer.type === 'circle' || layer.type === 'symbol') {
+        map.setLayoutProperty(layer.id, 'visibility', 'none');
       }
     });
   } catch {
@@ -495,7 +586,7 @@ export default function CurrentGlobe({ streams, onboarding = false, onOnboarding
       container: containerRef.current,
       style: variant === 'test3' ? STYLE_URL_GREEN : STYLE_URL,
       center: INITIAL_CENTER,
-      zoom: 0.8,
+      zoom: 1.4,
       pitch: 0,
       bearing: 0,
       minZoom: 0,
@@ -506,7 +597,7 @@ export default function CurrentGlobe({ streams, onboarding = false, onOnboarding
       logoPosition: 'bottom-left',
       renderWorldCopies: false,
       fadeDuration: 0,
-      pixelRatio: Math.min(window.devicePixelRatio || 1, 1.0),
+      pixelRatio: Math.min(window.devicePixelRatio || 1, 2.0),
     });
 
     mapRef.current = map;
@@ -529,7 +620,6 @@ export default function CurrentGlobe({ streams, onboarding = false, onOnboarding
     };
     resizeHaloCanvas();
     window.addEventListener('resize', resizeHaloCanvas);
-    map.dragRotate.disable();
     map.touchZoomRotate.disableRotation();
 
     const pauseInteraction = () => {
@@ -590,7 +680,7 @@ export default function CurrentGlobe({ streams, onboarding = false, onOnboarding
           paint: {
             'circle-color': markerColorExpression(),
             'circle-radius': liveColorGlowRadius(0),
-            'circle-blur': 1.2,
+            'circle-blur': 5.5,
             'circle-opacity': liveColorGlowOpacity(0),
           },
         });
@@ -603,7 +693,7 @@ export default function CurrentGlobe({ streams, onboarding = false, onOnboarding
           paint: {
             'circle-color': ['case', ['==', ['get', 'markerType'], MARKER_TYPES.sponsored], '#FFD489', ['==', ['get', 'markerType'], MARKER_TYPES.vuvio], '#DAB2FF', '#F8FFFF'],
             'circle-radius': liveBroadcastHaloRadius(0, selectedId ?? ''),
-            'circle-blur': 1.0,
+            'circle-blur': 2.5,
             'circle-opacity': liveBroadcastHaloOpacity(0, selectedId ?? ''),
           },
         });
@@ -616,7 +706,7 @@ export default function CurrentGlobe({ streams, onboarding = false, onOnboarding
           paint: {
             'circle-color': markerColorExpression(),
             'circle-radius': liveCrowdHaloRadius(0),
-            'circle-blur': 1.02,
+            'circle-blur': 2.2,
             'circle-opacity': liveCrowdHaloOpacity(0),
           },
         });
@@ -637,7 +727,7 @@ export default function CurrentGlobe({ streams, onboarding = false, onOnboarding
           },
         });
 
-        // Luminous core for live markers
+        // Luminous core for live markers — soft light point, no hard edge
         map.addLayer({
           id: 'vuvio-test-live-points',
           type: 'circle',
@@ -646,10 +736,8 @@ export default function CurrentGlobe({ streams, onboarding = false, onOnboarding
           paint: {
             'circle-color': markerColorExpression(),
             'circle-radius': livePointRadius(0, selectedId ?? ''),
-            'circle-blur': 0.4,
-            'circle-stroke-color': ['case', ['==', ['get', 'id'], selectedId ?? ''], '#F2F7F6', 'rgba(242,247,246,0.34)'],
-            'circle-stroke-width': ['case', ['==', ['get', 'id'], selectedId ?? ''], 1.05, 0.55],
-            'circle-opacity': ['case', ['==', ['get', 'id'], selectedId ?? ''], 0.50, 0.35],
+            'circle-blur': 1.6,
+            'circle-opacity': ['case', ['==', ['get', 'id'], selectedId ?? ''], 1.0, 0.88],
           },
         });
 
@@ -908,7 +996,7 @@ export default function CurrentGlobe({ streams, onboarding = false, onOnboarding
       }
 
       const zoom = map.getZoom();
-      const isZoomed = Math.abs(zoom - 1.35) > 0.15;
+      const isZoomed = zoom > 2.5;
 
       if (document.visibilityState === 'hidden' || Date.now() <= pauseUntilRef.current || selectedId || isZoomed) {
         lastRotationTime = time;
@@ -930,7 +1018,7 @@ export default function CurrentGlobe({ streams, onboarding = false, onOnboarding
       const haloCanvas = haloCanvasRef.current;
       if (haloCanvas) {
         const ctx = haloCanvas.getContext('2d');
-        drawAtmosphericHalo(haloCanvas, ctx, totalRotation);
+        drawAtmosphericHalo(haloCanvas, ctx, totalRotation, time, zoom);
       }
 
       // Track zoom for ISS visibility
@@ -968,8 +1056,6 @@ export default function CurrentGlobe({ streams, onboarding = false, onOnboarding
       if (map.getLayer('vuvio-test-live-points')) {
         perfRef.current.paintCalls++;
         map.setPaintProperty('vuvio-test-live-points', 'circle-radius', livePointRadius(0.18, selectedId ?? ''));
-        map.setPaintProperty('vuvio-test-live-points', 'circle-stroke-color', ['case', ['==', ['get', 'id'], selectedId ?? ''], '#F2F7F6', 'rgba(242,247,246,0.34)']);
-        map.setPaintProperty('vuvio-test-live-points', 'circle-stroke-width', ['case', ['==', ['get', 'id'], selectedId ?? ''], 1.05, 0.55]);
       }
       if (map.getLayer('vuvio-test-live-broadcast-halo')) {
         perfRef.current.paintCalls++;
@@ -1006,7 +1092,7 @@ export default function CurrentGlobe({ streams, onboarding = false, onOnboarding
       });
     };
 
-    fly(INITIAL_CENTER, 0.8);
+    fly(INITIAL_CENTER, 1.4);
   };
 
   const tiltBy = (delta) => {
