@@ -10,6 +10,9 @@ let cachedRtcConfigExpiresAt = 0;
 // WHIP ingest state
 let whipPeerConnection = null;
 let whipResourceUrl = null; // Location header from WHIP response
+let relayPeerConnection = null;
+let relaySessionId = null;
+let relayBaseUrl = null;
 
 // WHEP playback state
 
@@ -201,6 +204,86 @@ function closeWhipConnectionSync() {
   }
 }
 
+async function startRtmpRelayIngest(relayUrl, liveInputId, ingestUrl, streamKey, stream) {
+  if (!relayUrl) throw new Error('Missing RTMPS relay URL');
+  if (!ingestUrl || !streamKey) throw new Error('Missing Cloudflare RTMPS credentials');
+
+  relayBaseUrl = relayUrl.replace(/\/$/, '');
+  console.log('[RTMPS-RELAY] starting relay session for live:', liveInputId);
+
+  const pc = new RTCPeerConnection({
+    iceServers: [{ urls: 'stun:stun.cloudflare.com:3478' }],
+    bundlePolicy: 'max-bundle',
+  });
+  relayPeerConnection = pc;
+
+  stream.getTracks().forEach((track) => pc.addTrack(track, stream));
+
+  const offer = await pc.createOffer();
+  await pc.setLocalDescription(offer);
+
+  await new Promise((resolve) => {
+    if (pc.iceGatheringState === 'complete') { resolve(); return; }
+    pc.onicegatheringstatechange = () => {
+      if (pc.iceGatheringState === 'complete') resolve();
+    };
+    setTimeout(resolve, 5000);
+  });
+
+  if (!pc.localDescription) {
+    throw new Error('[RTMPS-RELAY] Failed to create offer: localDescription is null');
+  }
+
+  const response = await fetch(`${relayBaseUrl}/sessions`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      liveInputId,
+      ingestUrl,
+      streamKey,
+      sdpOffer: pc.localDescription.sdp,
+    }),
+  });
+
+  if (!response.ok) {
+    const text = await response.text();
+    throw new Error(`[RTMPS-RELAY] session create failed: ${response.status} ${text.slice(0, 200)}`);
+  }
+
+  const data = await response.json();
+  relaySessionId = data.sessionId || null;
+  console.log('[RTMPS-RELAY] WebRTC publisher connected');
+  await pc.setRemoteDescription({ type: 'answer', sdp: data.sdpAnswer });
+  console.log('[RTMPS-RELAY] Cloudflare RTMPS connected');
+
+  pc.onconnectionstatechange = () => {
+    console.log('[RTMPS-RELAY] WebRTC connection state:', pc.connectionState);
+  };
+  pc.oniceconnectionstatechange = () => {
+    console.log('[RTMPS-RELAY] WebRTC ICE state:', pc.iceConnectionState);
+  };
+
+  return relaySessionId;
+}
+
+async function stopRtmpRelayConnection() {
+  try {
+    if (relayPeerConnection) {
+      relayPeerConnection.onconnectionstatechange = null;
+      relayPeerConnection.oniceconnectionstatechange = null;
+      relayPeerConnection.close();
+      relayPeerConnection = null;
+    }
+  } finally {
+    if (relayBaseUrl && relaySessionId) {
+      const sessionId = relaySessionId;
+      relaySessionId = null;
+      fetch(`${relayBaseUrl}/sessions/${sessionId}`, { method: 'DELETE' }).catch(() => {});
+    }
+    relayBaseUrl = null;
+  }
+}
+
 // ─── Broadcast lifecycle ────────────────────────────────────────────────────
 
 export async function startBroadcast(liveId, userId, existingStream = null, whipUrl = null, streamKey = null) {
@@ -343,6 +426,36 @@ export async function startBroadcast(liveId, userId, existingStream = null, whip
   }
 }
 
+export async function startRtmpRelayBroadcast(liveId, userId, existingStream = null, relayUrl = null, ingestUrl = null, streamKey = null) {
+  try {
+    console.log('[webrtcService] Starting RTMPS relay broadcast for live:', liveId);
+
+    if (existingStream?.getTracks?.().length) {
+      localStream = existingStream;
+      console.log('[webrtcService] Using existing camera stream — no new getUserMedia()');
+    } else {
+      localStream = await navigator.mediaDevices.getUserMedia({
+        video: { width: 1280, height: 720 },
+        audio: true,
+      });
+      console.log('[webrtcService] Camera stream acquired', localStream.id);
+    }
+
+    localStream.getTracks().forEach((track) => {
+      console.log('[DEBUG-PREVIEW] relay track ready:', track.kind, track.id, 'readyState:', track.readyState);
+      track.onmute = () => console.warn('[DEBUG-PREVIEW] relay track muted:', track.kind);
+      track.onunmute = () => console.log('[DEBUG-PREVIEW] relay track unmuted:', track.kind);
+      track.onended = () => console.warn('[DEBUG-PREVIEW] relay track ended:', track.kind);
+    });
+
+    await startRtmpRelayIngest(relayUrl, liveId, ingestUrl, streamKey, localStream);
+    return localStream;
+  } catch (err) {
+    console.error('[webrtcService] Failed to start RTMPS relay broadcast:', err.message);
+    throw err;
+  }
+}
+
 export async function stopBroadcast(liveId) {
   try {
     console.log('[CLOUDFLARE] broadcast ending');
@@ -378,6 +491,25 @@ export async function stopBroadcast(liveId) {
   }
 }
 
+export async function stopRtmpRelayBroadcast(liveId) {
+  try {
+    console.log('[RTMPS-RELAY] stopping broadcast');
+    if (localStream) {
+      localStream.getTracks().forEach(track => track.stop());
+      localStream = null;
+    }
+    await stopRtmpRelayConnection();
+    await updateDoc(doc(db, 'activeLives', liveId), {
+      status: 'ended',
+      endedAt: new Date().toISOString(),
+    });
+    console.log('[RTMPS-RELAY] live marked ended');
+  } catch (err) {
+    console.error('[RTMPS-RELAY] Failed to stop relay broadcast:', err.message);
+    throw err;
+  }
+}
+
 // Synchronous cleanup for beforeunload / tab close (no async ops allowed)
 export function stopBroadcastSync() {
   console.log('[CLOUDFLARE] broadcast ending (sync — tab closing or network loss)');
@@ -397,6 +529,26 @@ export function stopBroadcastSync() {
     console.log('[CLOUDFLARE] sync cleanup done — server stale-live detector will mark ended');
   } catch (err) {
     console.warn('[CLOUDFLARE] Sync cleanup error:', err.message);
+  }
+}
+
+export function stopRtmpRelayBroadcastSync() {
+  try {
+    if (localStream) {
+      localStream.getTracks().forEach(track => track.stop());
+      localStream = null;
+    }
+    if (relayPeerConnection) {
+      relayPeerConnection.close();
+      relayPeerConnection = null;
+    }
+    if (relayBaseUrl && relaySessionId) {
+      fetch(`${relayBaseUrl}/sessions/${relaySessionId}`, { method: 'DELETE' }).catch(() => {});
+      relaySessionId = null;
+      relayBaseUrl = null;
+    }
+  } catch (err) {
+    console.warn('[RTMPS-RELAY] Sync cleanup error:', err.message);
   }
 }
 
