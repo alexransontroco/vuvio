@@ -7,6 +7,12 @@ let iceGatheringComplete = false;
 let cachedRtcConfig = null;
 let cachedRtcConfigExpiresAt = 0;
 
+// WHIP ingest state
+let whipPeerConnection = null;
+let whipResourceUrl = null; // Location header from WHIP response
+
+// WHEP playback state
+
 function splitEnvList(value) {
   return String(value ?? '')
     .split(',')
@@ -68,7 +74,9 @@ function normalizeTurnPayload(payload) {
 }
 
 async function fetchTurnConfig() {
-  const endpoint = import.meta.env.VITE_TURN_CREDENTIALS_URL || '/api/turn-credentials';
+  const endpoint = import.meta.env.VITE_TURN_CREDENTIALS_URL;
+  if (!endpoint) return null;
+
   const controller = new AbortController();
   const timeout = window.setTimeout(() => controller.abort(), 1200);
 
@@ -108,36 +116,131 @@ async function getRtcConfig() {
   return cachedRtcConfig;
 }
 
-export async function startBroadcast(liveId, userId, existingStream = null) {
+// ─── WHIP Ingest (broadcaster → Cloudflare) ────────────────────────────────
+
+async function startWhipIngest(whipUrl, streamKey, stream) {
+  try {
+    console.log('[CLOUDFLARE] broadcast started — connecting via WHIP');
+    const pc = new RTCPeerConnection({
+      iceServers: [{ urls: 'stun:stun.cloudflare.com:3478' }],
+      bundlePolicy: 'max-bundle',
+    });
+    whipPeerConnection = pc;
+
+    stream.getTracks().forEach((track) => pc.addTrack(track, stream));
+
+    const offer = await pc.createOffer();
+    await pc.setLocalDescription(offer);
+
+    await new Promise(resolve => {
+      if (pc.iceGatheringState === 'complete') { resolve(); return; }
+      pc.onicegatheringstatechange = () => {
+        if (pc.iceGatheringState === 'complete') resolve();
+      };
+      setTimeout(resolve, 5000);
+    });
+
+    if (pc.connectionState === 'closed' || pc.signalingState === 'closed' || !pc.localDescription) {
+      throw new Error('whipPeerConnection closed during ICE gathering');
+    }
+
+    const response = await fetch(whipUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/sdp',
+        ...(streamKey ? { 'Authorization': `Bearer ${streamKey}` } : {}),
+      },
+      body: pc.localDescription.sdp,
+    });
+
+    if (!response.ok) {
+      const text = await response.text();
+      throw new Error(`WHIP ${response.status}: ${text.slice(0, 200)}`);
+    }
+
+    // Store resource URL for proper teardown (WHIP RFC 9725)
+    whipResourceUrl = response.headers.get('Location') || null;
+
+    const answerSdp = await response.text();
+    if (!whipPeerConnection) return;
+    await pc.setRemoteDescription({ type: 'answer', sdp: answerSdp });
+    console.log('[CLOUDFLARE] WHIP connected — SDP exchange complete, resource URL:', whipResourceUrl ?? 'not provided by server');
+
+    pc.onconnectionstatechange = () => {
+      const state = pc.connectionState;
+      console.log('[CLOUDFLARE] WHIP connection state:', state);
+      if (state === 'failed' || state === 'disconnected') {
+        console.warn('[CLOUDFLARE] WHIP connection lost');
+      }
+    };
+    pc.oniceconnectionstatechange = () => {
+      console.log('[CLOUDFLARE] WHIP ICE state:', pc.iceConnectionState);
+    };
+  } catch (err) {
+    console.error('[CLOUDFLARE] WHIP ingest failed:', err.message);
+    whipPeerConnection?.close();
+    whipPeerConnection = null;
+    whipResourceUrl = null;
+  }
+}
+
+function closeWhipConnectionSync() {
+  if (whipPeerConnection) {
+    whipPeerConnection.onconnectionstatechange = null;
+    whipPeerConnection.oniceconnectionstatechange = null;
+    whipPeerConnection.close();
+    whipPeerConnection = null;
+    console.log('[CLOUDFLARE] WHIP closed');
+  }
+  // Send DELETE to Cloudflare to formally end the WHIP session
+  // Closing the RTCPeerConnection also signals Cloudflare, which triggers live_input.ended webhook
+  if (whipResourceUrl) {
+    const url = whipResourceUrl;
+    whipResourceUrl = null;
+    fetch(url, { method: 'DELETE' }).catch(() => {});
+  }
+}
+
+// ─── Broadcast lifecycle ────────────────────────────────────────────────────
+
+export async function startBroadcast(liveId, userId, existingStream = null, whipUrl = null, streamKey = null) {
   try {
     console.log('[webrtcService] Starting broadcast for live:', liveId);
     const signalSessionId = `signal-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 
     if (existingStream?.getTracks?.().length) {
       localStream = existingStream;
-      console.log('[webrtcService] Using existing camera stream');
+      console.log('[webrtcService] Using existing camera stream — no new getUserMedia()');
     } else {
-      // Get camera stream
-      console.log('[webrtcService] Requesting camera stream...');
+      console.warn('[DEBUG-PREVIEW] getUserMedia() called from startBroadcast — no existingStream was provided', new Error().stack);
       localStream = await navigator.mediaDevices.getUserMedia({
         video: { width: 1280, height: 720 },
         audio: true,
       });
-      console.log('[webrtcService] Camera stream acquired');
+      console.log('[webrtcService] Camera stream acquired', localStream.id);
     }
 
-    // Create peer connection
-    console.log('[webrtcService] Creating peer connection...');
-    peerConnection = new RTCPeerConnection(await getRtcConfig());
-    console.log('[webrtcService] Peer connection created');
+    localStream.getTracks().forEach((track) => {
+      console.log('[DEBUG-PREVIEW] broadcast track ready:', track.kind, track.id, 'readyState:', track.readyState);
+      track.onmute = () => console.warn('[DEBUG-PREVIEW] broadcast track muted:', track.kind);
+      track.onunmute = () => console.log('[DEBUG-PREVIEW] broadcast track unmuted:', track.kind);
+      track.onended = () => console.warn('[DEBUG-PREVIEW] broadcast track ended:', track.kind);
+    });
 
-    // Add local stream tracks to peer connection
+    // Primary path: WHIP to Cloudflare (WHEP viewers connect on the other end)
+    if (whipUrl && streamKey) {
+      await startWhipIngest(whipUrl, streamKey, localStream);
+    } else {
+      console.warn('[CLOUDFLARE] No WHIP credentials — Cloudflare broadcast will NOT work');
+    }
+
+    // Also set up P2P fallback for viewers without WHEP
+    peerConnection = new RTCPeerConnection(await getRtcConfig());
+
     localStream.getTracks().forEach(track => {
       peerConnection.addTrack(track, localStream);
     });
 
-    // Collect ICE candidates. Keep publishing after the initial offer because
-    // mobile browsers often discover useful candidates after the first batch.
     const candidates = [];
     let offerSaved = false;
     const publishBroadcasterCandidates = () => {
@@ -149,26 +252,14 @@ export async function startBroadcast(liveId, userId, existingStream = null) {
         console.warn('[webrtcService] Failed to publish broadcaster ICE:', err.message);
       });
     };
-    peerConnection.onicecandidate = (event) => {
-      if (event.candidate) {
-        candidates.push(event.candidate.toJSON());
-        publishBroadcasterCandidates();
-      }
-    };
 
-    // Create and save SDP offer
-    console.log('[webrtcService] Creating offer...');
     const offer = await peerConnection.createOffer();
-    console.log('[webrtcService] Offer created, setting local description...');
     await peerConnection.setLocalDescription(offer);
-    console.log('[webrtcService] Local description set, waiting for ICE gathering...');
 
-    // Wait for ICE gathering to complete
     await new Promise(resolve => {
       const checkComplete = () => {
         if (peerConnection.iceGatheringState === 'complete') {
           iceGatheringComplete = true;
-          console.log('[webrtcService] ICE gathering complete (via state check)');
           resolve();
         }
       };
@@ -178,19 +269,14 @@ export async function startBroadcast(liveId, userId, existingStream = null) {
           publishBroadcasterCandidates();
         } else {
           iceGatheringComplete = true;
-          console.log('[webrtcService] ICE gathering complete (via candidate event)');
           publishBroadcasterCandidates();
           resolve();
         }
       };
-      setTimeout(() => {
-        console.log('[webrtcService] ICE gathering timeout (5s)');
-        resolve();
-      }, 5000);
+      checkComplete();
+      setTimeout(() => resolve(), 5000);
     });
 
-    // Save offer to Firestore
-    console.log('[webrtcService] Saving offer to Firestore with', candidates.length, 'candidates');
     if (!peerConnection?.localDescription) {
       throw new Error('[webrtcService] Failed to create offer: localDescription is null');
     }
@@ -204,10 +290,8 @@ export async function startBroadcast(liveId, userId, existingStream = null) {
     }, { merge: true });
     offerSaved = true;
     publishBroadcasterCandidates();
-    console.log('[webrtcService] Offer created and saved');
+    console.log('[webrtcService] P2P offer saved — fallback ready for', candidates.length, 'ICE candidates');
 
-    // Listen for answer from a watcher. Each watcher writes its own answer in a
-    // subdocument so stale/parallel viewers cannot overwrite a single global answer.
     let answerProcessed = false;
     const addedWatcherCandidates = new Set();
     const unsubscribeWatchers = onSnapshot(collection(db, 'activeLives', liveId, 'watchers'), async (snapshot) => {
@@ -224,18 +308,12 @@ export async function startBroadcast(liveId, userId, existingStream = null) {
       if (!data?.sdpAnswer) return;
 
       if (!answerProcessed && peerConnection.signalingState === 'have-local-offer') {
-        console.log('[webrtcService] Received answer from watcher:', answerDoc.id);
+        answerProcessed = true;
+        console.log('[webrtcService] Received P2P answer from watcher:', answerDoc.id);
         try {
-          const answer = new RTCSessionDescription({
-            type: 'answer',
-            sdp: data.sdpAnswer
-          });
-          await peerConnection.setRemoteDescription(answer);
-          answerProcessed = true;
-          console.log('[webrtcService] Remote description set successfully');
+          await peerConnection.setRemoteDescription(new RTCSessionDescription({ type: 'answer', sdp: data.sdpAnswer }));
         } catch (err) {
           console.error('[webrtcService] Failed to set remote description:', err.message);
-          answerProcessed = false;
         }
       }
 
@@ -267,18 +345,18 @@ export async function startBroadcast(liveId, userId, existingStream = null) {
 
 export async function stopBroadcast(liveId) {
   try {
-    console.log('[webrtcService] Stopping broadcast:', liveId);
+    console.log('[CLOUDFLARE] broadcast ending');
 
-    // Stop all local stream tracks immediately
+    // Stop all local media tracks
     if (localStream) {
-      localStream.getTracks().forEach(track => {
-        console.log('[webrtcService] Stopping track:', track.kind);
-        track.stop();
-      });
+      localStream.getTracks().forEach(track => track.stop());
       localStream = null;
     }
 
-    // Close peer connection immediately
+    // Close WHIP — this stops Cloudflare ingest and triggers live_input.ended webhook
+    closeWhipConnectionSync();
+
+    // Close P2P fallback
     if (peerConnection) {
       peerConnection._vuvioUnsubscribe?.();
       peerConnection._vuvioCleanup?.();
@@ -286,18 +364,148 @@ export async function stopBroadcast(liveId) {
       peerConnection = null;
     }
 
-    // Mark the live as ended in Firestore (don't delete, so watchers know it ended)
+    // Mark ended in Firestore so viewers see the broadcast stopped immediately
     await updateDoc(doc(db, 'activeLives', liveId), {
       status: 'ended',
       endedAt: new Date().toISOString(),
     });
 
-    console.log('[webrtcService] Broadcast marked as ended');
+    console.log('[CLOUDFLARE] live marked ended');
+    console.log('[CLOUDFLARE] cleanup complete');
   } catch (err) {
-    console.error('[webrtcService] Failed to stop broadcast:', err.message);
+    console.error('[CLOUDFLARE] Failed to stop broadcast:', err.message);
     throw err;
   }
 }
+
+// Synchronous cleanup for beforeunload / tab close (no async ops allowed)
+export function stopBroadcastSync() {
+  console.log('[CLOUDFLARE] broadcast ending (sync — tab closing or network loss)');
+  try {
+    if (localStream) {
+      localStream.getTracks().forEach(track => track.stop());
+      localStream = null;
+    }
+    // Closing PeerConnection signals Cloudflare — live_input.ended webhook will fire
+    // That webhook + server-side stale live cleanup handles the rest
+    closeWhipConnectionSync();
+    if (peerConnection) {
+      peerConnection._vuvioUnsubscribe?.();
+      peerConnection.close();
+      peerConnection = null;
+    }
+    console.log('[CLOUDFLARE] sync cleanup done — server stale-live detector will mark ended');
+  } catch (err) {
+    console.warn('[CLOUDFLARE] Sync cleanup error:', err.message);
+  }
+}
+
+// ─── WHEP Viewer (Cloudflare → viewer) ─────────────────────────────────────
+
+function createViewerSessionId() {
+  if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+    return crypto.randomUUID().slice(0, 8);
+  }
+  return Math.random().toString(36).slice(2, 10);
+}
+
+function resolveWhepResourceUrl(whepUrl, locationHeader) {
+  if (!locationHeader) return null;
+  try {
+    return new URL(locationHeader, whepUrl).href;
+  } catch {
+    return locationHeader;
+  }
+}
+
+export async function startWhepPlayback(whepUrl, onStreamReceived, viewerSessionId = createViewerSessionId()) {
+  const sessionTag = `[WHEP viewer ${viewerSessionId}]`;
+  console.log(`${sessionTag} creating`, whepUrl);
+
+  const pc = new RTCPeerConnection({
+    iceServers: [{ urls: 'stun:stun.cloudflare.com:3478' }],
+    bundlePolicy: 'max-bundle',
+  });
+
+  pc.ontrack = (event) => {
+    console.log(`${sessionTag} connected — track:`, event.track.kind);
+    if (event.streams?.[0]) {
+      onStreamReceived(event.streams[0]);
+    }
+  };
+
+  // WHEP: receive only — never send media
+  pc.addTransceiver('video', { direction: 'recvonly' });
+  pc.addTransceiver('audio', { direction: 'recvonly' });
+
+  const offer = await pc.createOffer();
+  await pc.setLocalDescription(offer);
+
+  // Wait for ICE gathering before sending offer
+  await new Promise(resolve => {
+    if (pc.iceGatheringState === 'complete') { resolve(); return; }
+    const prev = pc.onicegatheringstatechange;
+    pc.onicegatheringstatechange = (e) => {
+      prev?.(e);
+      if (pc.iceGatheringState === 'complete') resolve();
+    };
+    setTimeout(resolve, 5000);
+  });
+
+  if (!pc.localDescription) throw new Error('WHEP: no local description after ICE gathering');
+
+  const response = await fetch(whepUrl, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/sdp' },
+    body: pc.localDescription.sdp,
+  });
+
+  if (!response.ok) {
+    const text = await response.text();
+    throw new Error(`WHEP ${response.status}: ${text.slice(0, 200)}`);
+  }
+
+  const resourceUrl = resolveWhepResourceUrl(whepUrl, response.headers.get('Location'));
+  console.log(`${sessionTag} resource URL:`, resourceUrl);
+  const answerSdp = await response.text();
+  await pc.setRemoteDescription({ type: 'answer', sdp: answerSdp });
+  console.log(`${sessionTag} SDP exchange complete — waiting for tracks`);
+
+  pc.onconnectionstatechange = () => {
+    const state = pc.connectionState;
+    console.log(`${sessionTag} connection state:`, state);
+    if (state === 'failed' || state === 'disconnected') {
+      console.warn(`${sessionTag} connection lost`);
+      onStreamReceived(null, state);
+    }
+  };
+
+  const stop = () => {
+    console.log(`${sessionTag} stopping`);
+    pc.onconnectionstatechange = null;
+    if (pc.connectionState !== 'closed') {
+      pc.close();
+    }
+    if (resourceUrl) {
+      fetch(resourceUrl, { method: 'DELETE' }).catch(() => {});
+    }
+  };
+
+  return { viewerSessionId, resourceUrl, peerConnection: pc, stop };
+}
+
+export function stopWhepPlayback(resourceUrl = null, peerConnection = null) {
+  const connection = peerConnection ?? null;
+  if (connection) {
+    connection.onconnectionstatechange = null;
+    connection.close();
+  }
+  if (resourceUrl) {
+    fetch(resourceUrl, { method: 'DELETE' }).catch(() => {});
+  }
+}
+
+// ─── P2P Viewer fallback ────────────────────────────────────────────────────
 
 async function waitForBroadcasterOffer(liveId, maxRetries = 12) {
   let lastError;
@@ -320,29 +528,22 @@ async function waitForBroadcasterOffer(liveId, maxRetries = 12) {
 
 export async function watchBroadcast(liveId, onStreamReceived, watcherId = `viewer-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`, watcherUid = null) {
   try {
-    console.log('[webrtcService] Watching broadcast for live:', liveId);
+    console.log('[webrtcService] Watching broadcast for live (P2P fallback):', liveId);
 
-    // Wait for broadcaster offer with retry logic
     const offerData = await waitForBroadcasterOffer(liveId);
-    console.log('[webrtcService] Broadcaster offer received');
-
     const { sdpOffer, iceCandidates, signalSessionId } = offerData;
     const watcherRef = doc(db, 'activeLives', liveId, 'watchers', watcherId);
 
-    // Create peer connection
     peerConnection = new RTCPeerConnection(await getRtcConfig());
 
-    // Handle remote stream
     peerConnection.ontrack = (event) => {
-      console.log('[webrtcService] Received remote track:', event.track.kind);
-      console.log('[webrtcService] Streams available:', event.streams.length, event.streams[0]?.getTracks?.().length ?? 0, 'tracks');
+      console.log('[webrtcService] Received remote track (P2P):', event.track.kind);
       onStreamReceived(null, `track:${event.track.kind}`);
       if (event.streams && event.streams.length > 0) {
         onStreamReceived(event.streams[0]);
       }
     };
 
-    // Collect ICE candidates continuously and publish updates as they arrive.
     const watcherCandidates = [];
     let watcherDocReady = false;
     const publishWatcherCandidates = () => {
@@ -363,13 +564,8 @@ export async function watchBroadcast(liveId, onStreamReceived, watcherId = `view
       }
     };
 
-    // Set remote description with offer
-    await peerConnection.setRemoteDescription({
-      type: 'offer',
-      sdp: sdpOffer
-    });
+    await peerConnection.setRemoteDescription({ type: 'offer', sdp: sdpOffer });
 
-    // Add broadcaster ICE candidates
     const addedBroadcasterCandidates = new Set();
     if (iceCandidates && iceCandidates.length > 0) {
       for (const candidate of iceCandidates) {
@@ -402,7 +598,6 @@ export async function watchBroadcast(liveId, onStreamReceived, watcherId = `view
       console.error('[webrtcService] Broadcaster ICE listener failed:', err.message);
     });
 
-    // Create and send answer (only if not already set due to React Strict Mode)
     if (peerConnection.signalingState === 'have-remote-offer') {
       try {
         const answer = await peerConnection.createAnswer();
@@ -414,7 +609,6 @@ export async function watchBroadcast(liveId, onStreamReceived, watcherId = `view
       console.log('[webrtcService] Skipping answer: signaling state is', peerConnection.signalingState);
     }
 
-    // Wait for ICE gathering
     await new Promise(resolve => {
       peerConnection.onicecandidate = (event) => {
         if (event.candidate) {
@@ -423,10 +617,9 @@ export async function watchBroadcast(liveId, onStreamReceived, watcherId = `view
           resolve();
         }
       };
-      setTimeout(resolve, 5000); // Timeout after 5s
+      setTimeout(resolve, 5000);
     });
 
-    // Save answer and candidates to Firestore (only if we have a local description)
     if (peerConnection.localDescription) {
       await setDoc(watcherRef, {
         signalSessionId,
@@ -437,14 +630,13 @@ export async function watchBroadcast(liveId, onStreamReceived, watcherId = `view
       }, { merge: true });
       watcherDocReady = true;
       publishWatcherCandidates();
-      console.log('[webrtcService] Answer sent to broadcaster:', watcherId);
+      console.log('[webrtcService] P2P answer sent to broadcaster:', watcherId);
     } else {
       console.log('[webrtcService] No local description to send (already established)');
     }
 
-    // Handle connection state changes
     peerConnection.onconnectionstatechange = () => {
-      console.log('[webrtcService] Connection state:', peerConnection.connectionState);
+      console.log('[webrtcService] P2P connection state:', peerConnection.connectionState);
       onStreamReceived(null, peerConnection.connectionState);
       if (peerConnection.connectionState === 'failed' || peerConnection.connectionState === 'disconnected') {
         onStreamReceived(null);
@@ -452,7 +644,6 @@ export async function watchBroadcast(liveId, onStreamReceived, watcherId = `view
     };
 
     peerConnection.oniceconnectionstatechange = () => {
-      console.log('[webrtcService] ICE connection state:', peerConnection.iceConnectionState);
       onStreamReceived(null, `ice:${peerConnection.iceConnectionState}`);
     };
 
@@ -466,8 +657,7 @@ export async function watchBroadcast(liveId, onStreamReceived, watcherId = `view
     };
     return peerConnection;
   } catch (err) {
-    console.error('[webrtcService] Failed to watch broadcast:', err.message);
-    // Only call onStreamReceived(null) if this is a critical error before receiving tracks
+    console.error('[webrtcService] Failed to watch broadcast (P2P):', err.message);
     if (err.message.includes('Broadcaster offer not found')) {
       onStreamReceived(null);
     }
@@ -480,7 +670,7 @@ export function getLocalStream() {
 }
 
 export function getRemoteStream() {
-  return null; // Remote stream is handled via ontrack callback
+  return null;
 }
 
 export function closePeer() {
