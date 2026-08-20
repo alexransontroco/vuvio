@@ -17,7 +17,7 @@ import { lives } from '../data/lives.js';
 import { mapStreams } from '../data/mapStreams.js';
 import { streams, upcomingStreams } from '../data/mockStreams.js';
 import { getCreatedLives, getCreatedLiveStream, subscribeToCreatedLives, publishLivePing, updateCreatedLive } from '../services/createdLiveService.js';
-import { startBroadcast, stopBroadcast, stopBroadcastSync, watchBroadcast, closePeer, getLocalStream, getRemoteStream, startWhepPlayback, stopWhepPlayback } from '../services/webrtcService.js';
+import { startBroadcast, stopBroadcast, watchBroadcast, closePeer, getLocalStream, getRemoteStream } from '../services/webrtcService.js';
 import { collection, doc, onSnapshot, query, where, getDocs, getDoc, addDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { getDownloadURL, ref as storageRef, uploadString } from 'firebase/storage';
 import { db, storage } from '../firebase.js';
@@ -1402,7 +1402,7 @@ function CreatorLiveSession({ live, onEndingChange }) {
     if (!live?.id) return undefined;
     const handleBeforeUnload = () => {
       console.log('[CLOUDFLARE] broadcast ending (unload)');
-      stopBroadcastSync();
+      stopBroadcast(live.id).catch(() => {});
     };
     window.addEventListener('beforeunload', handleBeforeUnload);
     return () => window.removeEventListener('beforeunload', handleBeforeUnload);
@@ -1836,8 +1836,6 @@ function LiveViewer({ liveId, creatorMode = false }) {
   const retryTimerRef = useRef(null);
   const timeoutTimerRef = useRef(null);
   const hlsFallbackTimerRef = useRef(null);
-  const whepSessionRef = useRef(null);
-
   const ensureRemoteVideoMuted = (video) => {
     if (!video) return;
     video.muted = true;
@@ -1935,6 +1933,27 @@ function LiveViewer({ liveId, creatorMode = false }) {
   const liveCreatorId = live.creatorUid || live.id;
   const isFollowing = !!(following[liveCreatorId] ?? isFollowingCreator(liveCreatorId));
 
+  const attemptVideoPlayback = (video) => {
+    if (!video) return;
+
+    video.muted = true;
+    video.defaultMuted = true;
+    video.playsInline = true;
+    video.autoplay = true;
+
+    const playWhenReady = () => {
+      if (video.readyState >= 2) {
+        video.play()?.catch?.((err) => {
+          console.warn('[WatchPage] Video play error:', err.name, err.message);
+        });
+      } else {
+        video.addEventListener('canplay', playWhenReady, { once: true });
+      }
+    };
+
+    playWhenReady();
+  };
+
   const {
     videoRefCallback,
     recordGearOpened,
@@ -2031,13 +2050,13 @@ function LiveViewer({ liveId, creatorMode = false }) {
     };
   }, [creatorMode, activeLiveId, live.creatorUid]);
 
-  // WHEP viewer — one RTCPeerConnection per viewer instance.
+  // Viewer connection — one RTCPeerConnection per viewer instance.
   useEffect(() => {
-    if (creatorMode || !live?.whepUrl || !remoteVideoRef.current) return;
+    if (creatorMode || !activeLiveId || !remoteVideoRef.current) return;
     const video = remoteVideoRef.current;
     let cancelled = false;
     const viewerSessionId = Math.random().toString(36).slice(2, 8);
-    let whepSession = null;
+    let viewerSession = null;
     let retryTimer = null;
     let retryCount = 0;
     const MAX_RETRIES = 12;
@@ -2045,37 +2064,35 @@ function LiveViewer({ liveId, creatorMode = false }) {
 
     window.clearTimeout(hlsFallbackTimerRef.current);
     if (video.srcObject) video.srcObject = null;
-    setRemoteStream('whep');
+    setRemoteStream('watching');
     setBroadcastEnded(false);
 
     const connect = () => {
       if (cancelled) return;
-      console.log(`[WHEP viewer ${viewerSessionId}] creating`, live.whepUrl);
+      console.log(`[WatchPage viewer ${viewerSessionId}] creating`, activeLiveId);
 
-      startWhepPlayback(live.whepUrl, (stream, status) => {
+      watchBroadcast(activeLiveId, (stream, status) => {
         if (cancelled) return;
         if (stream) {
           video.srcObject = stream;
-          video.muted = videoMutedRef.current;
-          video.play()?.catch(() => {});
+          attemptVideoPlayback(video);
           setRemoteStream(stream);
           setWatchStatus('connected');
           window.clearTimeout(hlsFallbackTimerRef.current);
-        } else if (status === 'failed' || status === 'disconnected') {
-          console.warn(`[WHEP viewer ${viewerSessionId}] disconnected`);
+        } else if (status && ['failed', 'disconnected', 'ice:failed', 'ice:disconnected'].includes(status)) {
+          console.warn(`[WatchPage viewer ${viewerSessionId}] disconnected`);
           setWatchStatus('retrying');
           if (!cancelled) {
             retryTimer = window.setTimeout(connect, RETRY_DELAY);
           }
         }
-      }, viewerSessionId).then((result) => {
-        whepSession = result;
-        whepSessionRef.current = result;
+      }, viewerSessionId, user?.uid ?? null).then((result) => {
+        viewerSession = result;
       }).catch((err) => {
         if (cancelled) return;
         const message = String(err?.message ?? err);
-        console.warn(`[WHEP viewer ${viewerSessionId}] failed`, message);
-        if (message.includes('409') && message.includes('Live broadcast not started yet') && retryCount < MAX_RETRIES) {
+        console.warn(`[WatchPage viewer ${viewerSessionId}] failed`, message);
+        if (message.includes('Live broadcast not started yet') && retryCount < MAX_RETRIES) {
           retryCount += 1;
           setWatchStatus('retrying');
           retryTimer = window.setTimeout(connect, RETRY_DELAY);
@@ -2089,14 +2106,12 @@ function LiveViewer({ liveId, creatorMode = false }) {
       cancelled = true;
       window.clearTimeout(hlsFallbackTimerRef.current);
       if (retryTimer) window.clearTimeout(retryTimer);
-      if (whepSessionRef.current === whepSession) {
-        whepSessionRef.current = null;
-      }
-      whepSession?.stop?.();
+      viewerSession?.close?.();
+      closePeer();
     };
-  }, [creatorMode, live?.whepUrl]);
+  }, [creatorMode, activeLiveId, user?.uid]);
 
-  // HLS viewer disabled for the restored WHEP multi-viewer path.
+  // HLS viewer disabled for the restored one-to-one viewer path.
   useEffect(() => {
     return undefined;
   }, [creatorMode, live?.hlsManifestUrl, live?.whepUrl]);
@@ -2517,14 +2532,28 @@ function LiveViewer({ liveId, creatorMode = false }) {
                       style={isDragging ? { transform: `scale(1.03) translateY(${dragY * 0.1}px)` } : undefined}
                     />
                   ) : !creatorMode && isActive && !broadcastEnded && (item.creatorUid || item.createdLocally) ? (
-                    <video
-                      ref={remoteVideoRef}
-                      className="live-slide__media live-slide__media--pov"
-                      autoPlay
-                      muted={videoMuted}
-                      playsInline
-                      style={isDragging ? { transform: `scale(1.03) translateY(${dragY * 0.1}px)` } : undefined}
-                    />
+                    <>
+                      <video
+                        ref={(el) => {
+                          remoteVideoRef.current = el;
+                          if (el) attemptVideoPlayback(el);
+                        }}
+                        className="live-slide__media live-slide__media--pov"
+                        autoPlay
+                        muted
+                        defaultMuted
+                        playsInline
+                        poster={item.image}
+                        style={isDragging ? { transform: `scale(1.03) translateY(${dragY * 0.1}px)` } : undefined}
+                      />
+                      {!remoteStream ? (
+                        <div className="live-slide__connecting">
+                          <i aria-hidden="true" />
+                          <span>{watchRetry > 0 ? 'Reconnecting live' : 'Connecting live'}</span>
+                          {import.meta.env.DEV && watchStatus ? <small>{watchStatus}</small> : null}
+                        </div>
+                      ) : null}
+                    </>
                   ) : (
                     <>
                       <img className="live-slide__bg" src={item.image} aria-hidden="true" draggable="false" />
