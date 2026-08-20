@@ -1136,7 +1136,7 @@ function CameraLiveMedia({ live, isActive, isDragging, dragY }) {
       className="live-slide__media live-slide__media--video"
       muted
       playsInline
-      autoPlay={isActive}
+      autoPlay
       style={dragStyle}
     />
   );
@@ -1161,6 +1161,12 @@ function CreatorCameraSurface({ live, className = '', children, videoRef: extern
     if (!videoRef.current || !stream) return () => console.log('[CreatorCameraSurface] unmount (no stream)');
     console.log('[CreatorCameraSurface] srcObject = stream', stream.id);
     videoRef.current.srcObject = stream;
+    videoRef.current.muted = true;
+    videoRef.current.playsInline = true;
+    videoRef.current.autoplay = true;
+    videoRef.current.play()?.catch?.((err) => {
+      console.warn('[CreatorCameraSurface] autoplay failed:', err?.name ?? 'Error', err?.message ?? String(err));
+    });
 
     const tracks = stream.getTracks();
     tracks.forEach((track) => {
@@ -1387,6 +1393,7 @@ function CreatorLiveSession({ live, onEndingChange }) {
         if (stream) {
           ingestModeRef.current = shouldUseRelay ? 'rtmps-relay' : 'whip';
           await updateDoc(doc(db, 'activeLives', live.id), {
+            status: 'live',
             cloudflareLiveInputId,
             liveStartedAt: serverTimestamp(),
             recordingStatus: 'recording',
