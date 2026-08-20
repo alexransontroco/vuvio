@@ -17,7 +17,7 @@ import { lives } from '../data/lives.js';
 import { mapStreams } from '../data/mapStreams.js';
 import { streams, upcomingStreams } from '../data/mockStreams.js';
 import { getCreatedLives, getCreatedLiveStream, subscribeToCreatedLives, publishLivePing, updateCreatedLive } from '../services/createdLiveService.js';
-import { startBroadcast, startRtmpRelayBroadcast, stopBroadcast, stopBroadcastSync, stopRtmpRelayBroadcast, stopRtmpRelayBroadcastSync, watchBroadcast, closePeer, getLocalStream, getRemoteStream, startWhepPlayback, stopWhepPlayback } from '../services/webrtcService.js';
+import { startBroadcast, stopBroadcast, stopBroadcastSync, watchBroadcast, closePeer, getLocalStream, getRemoteStream, startWhepPlayback, stopWhepPlayback } from '../services/webrtcService.js';
 import { collection, doc, onSnapshot, query, where, getDocs, getDoc, addDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { getDownloadURL, ref as storageRef, uploadString } from 'firebase/storage';
 import { db, storage } from '../firebase.js';
@@ -68,8 +68,6 @@ const creatorComments = [
   { avatar: 'N', name: 'Noah', text: 'Trail view is clean.' },
   { avatar: 'M', name: 'Maya', text: 'Audio is good.' },
 ];
-const RTMPS_RELAY_ENABLED = import.meta.env.VITE_RTMPS_RELAY_ENABLED === 'true';
-const RTMPS_RELAY_URL = import.meta.env.VITE_RTMPS_RELAY_URL || '';
 
 function sleep(ms) {
   return new Promise((resolve) => window.setTimeout(resolve, ms));
@@ -1222,7 +1220,6 @@ function CreatorLiveSession({ live, onEndingChange }) {
   const videoElementRef = useRef(null);
   const coverCaptureRef = useRef({ status: 'idle', imageData: null });
   const lastCommentKeyRef = useRef(null);
-  const ingestModeRef = useRef('whip');
 
   const captureAndSaveCoverImage = useCallback(async (liveId, options = {}) => {
     if (!liveId) return null;
@@ -1327,14 +1324,11 @@ function CreatorLiveSession({ live, onEndingChange }) {
 
     const setupBroadcast = async () => {
       let whipCredentials = null;
-      let relayCredentials = null;
       let cloudflareLiveInputId = live.cloudflareLiveInputId || null;
-      let cfResponse = null;
-      let cfData = null;
       try {
         try {
           const token = await user.getIdToken();
-          cfResponse = await fetch('/api/cloudflare/live-input/create', {
+          const cfResponse = await fetch('/api/cloudflare/live-input/create', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
@@ -1343,20 +1337,11 @@ function CreatorLiveSession({ live, onEndingChange }) {
             body: JSON.stringify({
               streamId: live.id,
               title: live.title || live.experienceTitle || live.name || live.id,
-              useRelay: RTMPS_RELAY_ENABLED,
             }),
           });
           if (cfResponse.ok) {
-            cfData = await cfResponse.json();
-            console.log('[CLOUDFLARE] createLiveInput response:', JSON.stringify({
-              liveInputId: cfData.liveInputId,
-              playbackUrl: cfData.playbackUrl,
-              hlsManifestUrl: cfData.hlsManifestUrl,
-              whepUrl: cfData.whepUrl,
-              ingestUrl: cfData.ingestUrl,
-              webRTCUrl: cfData.webRTCUrl ? 'present' : null,
-              streamKey: cfData.streamKey ? 'present' : null,
-            }));
+            const cfData = await cfResponse.json();
+            console.log('[CLOUDFLARE] createLiveInput response:', JSON.stringify(cfData));
             if (cfData.liveInputId) cloudflareLiveInputId = cfData.liveInputId;
             if (cfData.webRTCUrl && cfData.streamKey) {
               whipCredentials = { url: cfData.webRTCUrl, key: cfData.streamKey };
@@ -1370,28 +1355,17 @@ function CreatorLiveSession({ live, onEndingChange }) {
           console.warn('[CLOUDFLARE] Cloudflare setup failed:', cfErr.message);
         }
 
-        const existingStream = getCreatedLiveStream(live.id);
-        const shouldUseRelay = RTMPS_RELAY_ENABLED && RTMPS_RELAY_URL && cfResponse?.ok;
-        if (shouldUseRelay && cfData?.liveInputId) {
-          relayCredentials = { liveInputId: cfData.liveInputId };
-          console.log('[RTMPS-RELAY] relay credentials ready — liveInputId:', cfData.liveInputId);
-        }
-
-        const stream = shouldUseRelay && relayCredentials
-          ? await startRtmpRelayBroadcast(live.id, user.uid, existingStream, RTMPS_RELAY_URL)
-          : await startBroadcast(live.id, user.uid, existingStream, whipCredentials?.url, whipCredentials?.key);
+        const stream = await startBroadcast(live.id, user.uid, getCreatedLiveStream(live.id), whipCredentials?.url, whipCredentials?.key);
         if (!active) {
           stream?.getTracks?.().forEach((track) => track.stop());
           return;
         }
         if (stream) {
-          ingestModeRef.current = shouldUseRelay ? 'rtmps-relay' : 'whip';
           await updateDoc(doc(db, 'activeLives', live.id), {
             cloudflareLiveInputId,
             liveStartedAt: serverTimestamp(),
             recordingStatus: 'recording',
             updatedAt: serverTimestamp(),
-            broadcastIngestMode: shouldUseRelay ? 'rtmps-relay' : 'whip',
           });
         }
       } catch (err) {
@@ -1405,11 +1379,7 @@ function CreatorLiveSession({ live, onEndingChange }) {
 
     return () => {
       active = false;
-      if (ingestModeRef.current === 'rtmps-relay') {
-        stopRtmpRelayBroadcastSync();
-      } else {
-        closePeer();
-      }
+      closePeer();
       onEndingChange?.(false, live.id);
     };
   }, [live?.id, onEndingChange, user?.uid]);
@@ -1432,11 +1402,7 @@ function CreatorLiveSession({ live, onEndingChange }) {
     if (!live?.id) return undefined;
     const handleBeforeUnload = () => {
       console.log('[CLOUDFLARE] broadcast ending (unload)');
-      if (ingestModeRef.current === 'rtmps-relay') {
-        stopRtmpRelayBroadcastSync();
-      } else {
-        stopBroadcastSync();
-      }
+      stopBroadcastSync();
     };
     window.addEventListener('beforeunload', handleBeforeUnload);
     return () => window.removeEventListener('beforeunload', handleBeforeUnload);
@@ -1641,12 +1607,8 @@ function CreatorLiveSession({ live, onEndingChange }) {
     }
 
     try {
-      if (ingestModeRef.current === 'rtmps-relay') {
-        await stopRtmpRelayBroadcast(live.id);
-      } else {
-        await stopBroadcast(live.id);
-        closePeer();
-      }
+      await stopBroadcast(live.id);
+      closePeer();
     } catch (err) {
       console.error('[endLive] Failed to stop broadcast:', err);
     }
