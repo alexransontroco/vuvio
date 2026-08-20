@@ -15,7 +15,7 @@ import { trackStreamEvent } from './analytics/trackStreamEvent.js';
 import { ingestEvents } from './analytics/ingestEvents.js';
 import { aggregateStreamStats, aggregateCreatorStats, aggregateCategoryStats, aggregateUserAnalytics } from './analytics/aggregateStats.js';
 import { cloudflareWebhook } from './cloudflare/cloudflareWebhook.js';
-import { getCloudflareConfig, getCloudflareInputs, postCreateTestInput } from './cloudflare/testRouteHandlers.js';
+import { getCloudflareConfig, getCloudflareInputs, postCreateTestInput, getRawLiveInput, getRawVideos } from './cloudflare/testRouteHandlers.js';
 import { createLiveInputHandler } from './cloudflare/createLiveInputHandler.js';
 import { monitorStreamHeartbeats } from './streams/monitorStreamHeartbeats.js';
 import { cleanupStaleLives } from './streams/cleanupStaleLives.js';
@@ -27,6 +27,7 @@ import { cancelHighlight } from './highlights/cancelHighlight.js';
 import { highlightConfig } from './highlights/highlightConfig.js';
 import { processHighlights } from './highlights/processHighlights.js';
 import { createUploadUrl } from './streams/createUploadUrl.js';
+import { ogMetaHandler } from './og/ogMetaHandler.js';
 import { getReplayStatus } from './streams/getReplayStatus.js';
 import { processVideoAnalysisJob } from './videoProcessing/processVideoAnalysisJob.js';
 
@@ -54,6 +55,10 @@ export const api = onRequest({
 
   try {
     const parts = pathParts(req.path);
+
+    // Open Graph share preview routes
+    if (req.method === 'GET' && parts[0] === 'share' && parts[1] === 'live' && parts[3] === 'recap') return await ogMetaHandler(req, res, parts[2], true);
+    if (req.method === 'GET' && parts[0] === 'share' && parts[1] === 'live' && parts[2]) return await ogMetaHandler(req, res, parts[2]);
 
     if (req.method === 'POST' && parts[0] === 'streams' && parts.length === 1) return await createStream(req, res);
     if (req.method === 'GET' && parts[0] === 'streams' && parts[1] === 'live') return await listLiveStreams(req, res);
@@ -85,6 +90,8 @@ export const api = onRequest({
     // Cloudflare routes
     if (req.method === 'POST' && parts[0] === 'cloudflare' && parts[1] === 'live-input' && parts[2] === 'create') return await createLiveInputHandler(req, res);
     if (req.method === 'GET' && parts[0] === 'cloudflare' && parts[1] === 'config') return await getCloudflareConfig(req, res);
+    if (req.method === 'GET' && parts[0] === 'cloudflare' && parts[1] === 'raw-input') return await getRawLiveInput(req, res);
+    if (req.method === 'GET' && parts[0] === 'cloudflare' && parts[1] === 'raw-videos') return await getRawVideos(req, res);
     if (req.method === 'GET' && parts[0] === 'cloudflare' && parts[1] === 'inputs') return await getCloudflareInputs(req, res);
     if (req.method === 'POST' && parts[0] === 'cloudflare' && parts[1] === 'create-test-input') return await postCreateTestInput(req, res);
 

@@ -58,6 +58,28 @@ export async function getCloudflareInputs(req: Request, res: Response) {
   }
 }
 
+export async function getRawVideos(req: Request, res: Response) {
+  const liveInputId = typeof req.query.id === 'string' ? req.query.id : '';
+  if (!liveInputId) { res.status(400).json({ error: 'Missing ?id=' }); return; }
+  const { accountId, apiToken } = getCloudflareEnv();
+  const response = await fetch(`https://api.cloudflare.com/client/v4/accounts/${accountId}/stream/live_inputs/${liveInputId}/videos`, {
+    headers: { Authorization: `Bearer ${apiToken}` },
+  });
+  const body = await response.json();
+  res.json(body);
+}
+
+export async function getRawLiveInput(req: Request, res: Response) {
+  const liveInputId = typeof req.query.id === 'string' ? req.query.id : '';
+  if (!liveInputId) { res.status(400).json({ error: 'Missing ?id=' }); return; }
+  const { accountId, apiToken } = getCloudflareEnv();
+  const response = await fetch(`https://api.cloudflare.com/client/v4/accounts/${accountId}/stream/live_inputs/${liveInputId}`, {
+    headers: { Authorization: `Bearer ${apiToken}` },
+  });
+  const body = await response.json();
+  res.json(body);
+}
+
 export async function postCreateTestInput(req: Request, res: Response) {
   try {
     const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5);
