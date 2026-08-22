@@ -26,10 +26,12 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import LiveBadge from '../components/LiveBadge.jsx';
 import { streams, upcomingStreams } from '../data/mockStreams.js';
-import { getUnreadConversationCount, subscribeToMessaging } from '../services/messagingService.js';
+import { useMessaging } from '../context/MessagingContext.jsx';
 import { searchCreators, followCreator, unfollowCreator } from '../services/creatorService.js';
 import { useAuth } from '../context/AuthContext.jsx';
+import { subscribeToCreatedLives } from '../services/createdLiveService.js';
 import { getCountdownState } from '../utils/countdown.js';
+import { analyticsService } from '../services/analytics/analyticsService.ts';
 
 const quickFilters = [
   { id: 'for-you', label: 'For you' },
@@ -516,9 +518,7 @@ function ExploreEmptyState({ title, body, action, onAction }) {
 }
 
 function ExploreHeader({ filterCount, onOpenFilter }) {
-  const [msgUnread, setMsgUnread] = useState(() => getUnreadConversationCount());
-
-  useEffect(() => subscribeToMessaging(() => setMsgUnread(getUnreadConversationCount())), []);
+  const { unreadCount: msgUnread } = useMessaging();
 
   return (
     <header className="ep-header">
@@ -586,6 +586,7 @@ export default function ExplorePage() {
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [activeFilters, setActiveFilters] = useState({});
   const [creators, setCreators] = useState([]);
+  const [firestoreLives, setFirestoreLives] = useState([]);
   const searchInputRef = useRef(null);
   const chipsRef = useRef(null);
 
@@ -602,6 +603,7 @@ export default function ExplorePage() {
   }, [user?.uid]);
 
   const handleViewProfile = useCallback((creatorId) => {
+    analyticsService.trackCreatorProfileOpened(creatorId, undefined, 'explore');
     navigate(`/profile/${creatorId}`);
   }, [navigate]);
 
@@ -612,10 +614,23 @@ export default function ExplorePage() {
       .filter((s) => matchesFilters(s, activeFilters));
   }, [search, activeChip, activeFilters]);
 
-  const liveNowStreams = useMemo(
-    () => [...filteredStreams].sort((a, b) => viewerCount(b.viewerLabel) - viewerCount(a.viewerLabel)).slice(0, 10),
-    [filteredStreams],
+  const realLives = useMemo(
+    () => firestoreLives
+      .filter((l) => l.status === 'live')
+      .map((l) => ({
+        ...l,
+        note: l.experienceTitle || l.title || l.name,
+        image: l.image || l.coverImageUrl || l.thumbnailUrl,
+        viewerLabel: l.currentViewerCount ? String(l.currentViewerCount) : '0',
+      })),
+    [firestoreLives],
   );
+
+  const liveNowStreams = useMemo(() => {
+    const mockIds = new Set(realLives.map((l) => l.id));
+    const mocks = filteredStreams.filter((s) => !mockIds.has(s.id)).sort((a, b) => viewerCount(b.viewerLabel) - viewerCount(a.viewerLabel));
+    return [...realLives, ...mocks].slice(0, 10);
+  }, [filteredStreams, realLives]);
 
   const nearbyStreams = useMemo(
     () => [...filteredStreams].sort((a, b) => viewerCount(b.viewerLabel) - viewerCount(a.viewerLabel)).slice(0, 6),
@@ -635,6 +650,8 @@ export default function ExplorePage() {
     selectChip(id);
     searchInputRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   };
+
+  useEffect(() => subscribeToCreatedLives(setFirestoreLives), []);
 
   useEffect(() => {
     const chip = chipsRef.current?.querySelector('[data-chip="for-you"]');
@@ -740,8 +757,11 @@ export default function ExplorePage() {
                   <>
                     <p className="ep-results-count">{filteredStreams.length} perspectives</p>
                     <div className="ep-results-grid">
-                      {filteredStreams.map((stream) => (
-                        <LiveNowCard key={stream.id} stream={stream} onOpen={openStream} />
+                      {filteredStreams.map((stream, index) => (
+                        <LiveNowCard key={stream.id} stream={stream} onOpen={(id) => {
+                          analyticsService.trackStreamImpression(id, stream.creatorId || id, 'explore', index);
+                          openStream(id);
+                        }} />
                       ))}
                     </div>
                   </>
@@ -761,8 +781,11 @@ export default function ExplorePage() {
             <ExploreSection title="Live now" onSeeAll={() => navigate('/explore/live')}>
               {liveNowStreams.length ? (
                 <div className="ep-live-row">
-                  {liveNowStreams.map((stream) => (
-                    <LiveNowCard key={stream.id} stream={stream} onOpen={openStream} />
+                  {liveNowStreams.map((stream, index) => (
+                    <LiveNowCard key={stream.id} stream={stream} onOpen={(id) => {
+                      analyticsService.trackStreamImpression(id, stream.creatorId || id, 'explore', index);
+                      openStream(id);
+                    }} />
                   ))}
                 </div>
               ) : (
@@ -776,8 +799,11 @@ export default function ExplorePage() {
             <ExploreSection title="Live nearby" onSeeAll={() => navigate('/explore/live')}>
               {nearbyStreams.length ? (
                 <div className="ep-nearby-row">
-                  {nearbyStreams.map((stream) => (
-                    <NearbyCard key={stream.id} stream={stream} onOpen={openStream} />
+                  {nearbyStreams.map((stream, index) => (
+                    <NearbyCard key={stream.id} stream={stream} onOpen={(id) => {
+                      analyticsService.trackStreamImpression(id, stream.creatorId || id, 'explore', index);
+                      openStream(id);
+                    }} />
                   ))}
                 </div>
               ) : (

@@ -18,11 +18,11 @@ const LIVE_COLOR = '#ff0066';
 const UPCOMING_COLOR = '#0099ff';
 const ROTATE_DEGREES_PER_SECOND = 1.8;
 const ACTUAL_ROTATION_INTERVAL = 24;
-const SELECTED_LIVE_ZOOM = 4.05;
+const SELECTED_LIVE_ZOOM = 4.0;
 const REQUESTED_LIVE_ZOOM = 4.2;
 const PING_COLOR = '#ff8a1f';
 const PING_TTL_MS = 12000;
-const PULSE_INTERVAL = 160;
+const PULSE_INTERVAL = 240;
 
 const statusColor = [
   'case',
@@ -234,14 +234,14 @@ function drawAtmosphericHalo(canvas, ctx, rotation, time, zoom = 1.4) {
   const globeRadius = baseRadius * zoomScale;
   // If the globe completely fills the canvas, skip all star drawing.
   const halfDiag = Math.hypot(cx, cy);
-  const drawStars = globeRadius < halfDiag * 1.15;
+  const drawStars = globeRadius < halfDiag * 1.15 && zoom < 2.8;
 
   ctx.clearRect(0, 0, w, h);
 
   // Stars with multi-frequency twinkle — driven by RAF time (always animates)
   const t = time * 0.001; // seconds
   const exclusion = globeRadius * 1.08;
-  const starCount = drawStars ? Math.max(150, Math.floor((w * h) / 9000)) : 0;
+  const starCount = drawStars ? Math.max(80, Math.floor((w * h) / 18000)) : 0;
   for (let i = 0; i < starCount; i += 1) {
     const seed = i * 97.37;
     const x = (Math.sin(seed * 12.9898) * 43758.5453) % 1;
@@ -284,93 +284,63 @@ function drawAtmosphericHalo(canvas, ctx, rotation, time, zoom = 1.4) {
     }
   }
 
-  // Shooting stars — 6 slots, time-based so always animate even when globe is paused
-  const shootingSlots = 6;
-  for (let i = 0; i < shootingSlots; i++) {
-    const ss = i * 214.7 + 31.9;
-    const period = 8 + Math.abs(Math.sin(ss * 1.3)) * 14; // 8-22 seconds between shoots
-    const phase = (t + ss * 3.1) % period;
-    const dur = 1.2 + Math.abs(Math.sin(ss * 4.1)) * 1.0; // 1.2-2.2 seconds long
+  // Shooting stars from screen edges
+  if (drawStars) {
+    const shootingSlots = zoom < 2.4 ? 4 : 2;
+    for (let i = 0; i < shootingSlots; i++) {
+      const ss = i * 214.7 + 31.9;
+      const period = 8 + Math.abs(Math.sin(ss * 1.3)) * 14;
+      const phase = (t + ss * 3.1) % period;
+      const dur = 1.2 + Math.abs(Math.sin(ss * 4.1)) * 1.0;
 
-    if (phase > dur) continue;
+      if (phase > dur) continue;
 
-    const progress = phase / dur;
-    const fade = progress < 0.10 ? progress / 0.10 : progress > 0.60 ? (1 - progress) / 0.40 : 1;
-    const alpha = fade * 0.90;
+      const progress = phase / dur;
+      const fade = progress < 0.10 ? progress / 0.10 : progress > 0.60 ? (1 - progress) / 0.40 : 1;
+      const alpha = fade * 0.90;
 
-    if (!drawStars) continue;
+      // Start from a screen edge (top or right side), travel diagonally down-left
+      const edgeSeed = Math.abs(Math.sin(ss * 7.3));
+      let sx, sy;
+      if (edgeSeed < 0.5) {
+        sx = (Math.abs(Math.sin(ss * 3.7)) * 0.8 + 0.1) * w;
+        sy = 0;
+      } else {
+        sx = w;
+        sy = Math.abs(Math.sin(ss * 5.1)) * h * 0.55;
+      }
+      const dirAngle = Math.PI * 0.60 + (Math.abs(Math.sin(ss * 2.1)) - 0.5) * 0.35;
+      const len = (0.25 + Math.abs(Math.sin(ss * 5.7)) * 0.25) * Math.min(w, h);
+      const ex = sx + Math.cos(dirAngle) * len;
+      const ey = sy + Math.sin(dirAngle) * len;
 
-    const startAngle = (ss * 2.61) % (Math.PI * 2);
-    const dirAngle = startAngle + Math.PI * (0.10 + Math.abs(Math.sin(ss * 3.3)) * 0.28);
-    const startR = globeRadius * (1.2 + Math.abs(Math.sin(ss * 2.9)) * 0.6);
-    const sx = cx + Math.cos(startAngle) * startR;
-    const sy = cy + Math.sin(startAngle) * startR * 0.88;
-    const len = globeRadius * (0.30 + Math.abs(Math.sin(ss * 5.7)) * 0.38);
-    const ex = sx + Math.cos(dirAngle) * len;
-    const ey = sy + Math.sin(dirAngle) * len;
+      const headX = sx + (ex - sx) * progress;
+      const headY = sy + (ey - sy) * progress;
+      const tailProgress = Math.max(0, progress - 0.25);
+      const tailX = sx + (ex - sx) * tailProgress;
+      const tailY = sy + (ey - sy) * tailProgress;
 
-    if (Math.hypot(sx - cx, sy - cy) < globeRadius * 1.05 && Math.hypot(ex - cx, ey - cy) < globeRadius * 1.05) continue;
+      const grad = ctx.createLinearGradient(tailX, tailY, headX, headY);
+      grad.addColorStop(0, `rgba(210, 235, 255, 0)`);
+      grad.addColorStop(0.5, `rgba(235, 248, 255, ${alpha * 0.55})`);
+      grad.addColorStop(1, `rgba(255, 255, 255, ${alpha})`);
+      ctx.strokeStyle = grad;
+      ctx.lineWidth = 1.4;
+      ctx.lineCap = 'round';
+      ctx.beginPath();
+      ctx.moveTo(tailX, tailY);
+      ctx.lineTo(headX, headY);
+      ctx.stroke();
 
-    const headX = sx + (ex - sx) * progress;
-    const headY = sy + (ey - sy) * progress;
-    const tailProgress = Math.max(0, progress - 0.25);
-    const tailX = sx + (ex - sx) * tailProgress;
-    const tailY = sy + (ey - sy) * tailProgress;
-
-    const grad = ctx.createLinearGradient(tailX, tailY, headX, headY);
-    grad.addColorStop(0, `rgba(210, 235, 255, 0)`);
-    grad.addColorStop(0.5, `rgba(235, 248, 255, ${alpha * 0.55})`);
-    grad.addColorStop(1, `rgba(255, 255, 255, ${alpha})`);
-    ctx.strokeStyle = grad;
-    ctx.lineWidth = 1.4;
-    ctx.lineCap = 'round';
-    ctx.beginPath();
-    ctx.moveTo(tailX, tailY);
-    ctx.lineTo(headX, headY);
-    ctx.stroke();
-
-    const headGrad = ctx.createRadialGradient(headX, headY, 0, headX, headY, 3.5);
-    headGrad.addColorStop(0, `rgba(255, 255, 255, ${alpha})`);
-    headGrad.addColorStop(1, `rgba(190, 225, 255, 0)`);
-    ctx.fillStyle = headGrad;
-    ctx.beginPath();
-    ctx.arc(headX, headY, 3.5, 0, Math.PI * 2);
-    ctx.fill();
+      const headGrad = ctx.createRadialGradient(headX, headY, 0, headX, headY, 3.5);
+      headGrad.addColorStop(0, `rgba(255, 255, 255, ${alpha})`);
+      headGrad.addColorStop(1, `rgba(190, 225, 255, 0)`);
+      ctx.fillStyle = headGrad;
+      ctx.beginPath();
+      ctx.arc(headX, headY, 3.5, 0, Math.PI * 2);
+      ctx.fill();
+    }
   }
-
-  ctx.save();
-  ctx.translate(cx, cy);
-  ctx.rotate((rotation * Math.PI) / 180);
-
-  const grad1 = ctx.createRadialGradient(0, -globeRadius * 0.12, globeRadius * 0.18, 0, -globeRadius * 0.12, globeRadius * 1.15);
-  grad1.addColorStop(0, 'rgba(80, 170, 230, 0.08)');
-  grad1.addColorStop(1, 'rgba(80, 140, 200, 0)');
-  ctx.fillStyle = grad1;
-  ctx.beginPath();
-  ctx.arc(0, -globeRadius * 0.12, globeRadius * 1.08, 0, Math.PI * 2);
-  ctx.fill();
-
-  ctx.restore();
-
-  const haze = ctx.createRadialGradient(cx, cy * 0.78, globeRadius * 0.48, cx, cy * 0.78, globeRadius * 1.6);
-  haze.addColorStop(0, 'rgba(70, 150, 200, 0.02)');
-  haze.addColorStop(1, 'rgba(60, 140, 180, 0)');
-  ctx.fillStyle = haze;
-  ctx.fillRect(0, 0, w, h);
-
-  const dustCount = Math.max(2, Math.floor((w * h) / 480000));
-  ctx.globalAlpha = 0.015;
-  for (let i = 0; i < dustCount; i++) {
-    const seed = i * 13.7;
-    const x = (cx + Math.cos(rotation * 0.012 + seed) * w * 0.32) % w;
-    const y = (cy + Math.sin(rotation * 0.009 + seed) * h * 0.32) % h;
-    const size = 0.3 + Math.sin(rotation * 0.006 + seed) * 0.15;
-    ctx.fillStyle = `rgba(160, 210, 255, ${0.08 + Math.sin(seed) * 0.04})`;
-    ctx.beginPath();
-    ctx.arc(x, y, size, 0, Math.PI * 2);
-    ctx.fill();
-  }
-  ctx.globalAlpha = 1;
 }
 
 // Thin elegant ring for selected marker — one refined subtle ring only
@@ -453,7 +423,7 @@ function brightenBaseGlobe(map) {
         }
       }
       if (layer.type === 'fill' && (id.includes('land') || sourceLayer.includes('land'))) {
-        map.setPaintProperty(layer.id, 'fill-color', '#ff9933');
+        map.setPaintProperty(layer.id, 'fill-color', '#0f1e30');
         map.setPaintProperty(layer.id, 'fill-opacity', 1);
       }
       if (layer.type === 'line' && (id.includes('boundary') || id.includes('admin') || sourceLayer.includes('boundary'))) {
@@ -587,17 +557,17 @@ export default function CurrentGlobe({ streams, onboarding = false, onOnboarding
       style: variant === 'test3' ? STYLE_URL_GREEN : STYLE_URL,
       center: INITIAL_CENTER,
       zoom: 1.4,
-      pitch: 0,
+      pitch: 50,
       bearing: 0,
       minZoom: 0,
-      maxZoom: 9,
+      maxZoom: 6,
       maxPitch: 80,
       projection: { type: 'globe' },
       attributionControl: false,
       logoPosition: 'bottom-left',
       renderWorldCopies: false,
       fadeDuration: 0,
-      pixelRatio: Math.min(window.devicePixelRatio || 1, 2.0),
+      pixelRatio: Math.min(window.devicePixelRatio || 1, 1.25),
     });
 
     mapRef.current = map;
@@ -656,7 +626,7 @@ export default function CurrentGlobe({ streams, onboarding = false, onOnboarding
         if (searchParams.get('filter') === 'nearby' && navigator.geolocation) {
           navigator.geolocation.getCurrentPosition(
             (pos) => {
-              map.easeTo({ center: [pos.coords.longitude, pos.coords.latitude], zoom: 7.5, duration: 1400 });
+              map.easeTo({ center: [pos.coords.longitude, pos.coords.latitude], zoom: 5.5, duration: 1400 });
             },
             () => {},
             { timeout: 5000 },
@@ -1085,7 +1055,7 @@ export default function CurrentGlobe({ streams, onboarding = false, onOnboarding
         center,
         zoom,
         bearing: 0,
-        pitch: 0,
+        pitch: 50,
         duration: 1350,
         easing: (t) => 1 - Math.pow(1 - t, 3),
         essential: true,

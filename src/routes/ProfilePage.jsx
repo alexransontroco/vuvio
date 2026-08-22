@@ -33,7 +33,9 @@ import {
   saveOwnCreatorProfile,
 } from '../services/profileService.js';
 import { isFollowingCreator, setFollowingCreator } from '../services/followService.js';
-import { getUnreadConversationCount, subscribeToMessaging } from '../services/messagingService.js';
+import { followCreator, unfollowCreator } from '../services/creatorService.js';
+import { getOrCreateConversation } from '../services/messagingService.js';
+import { useMessaging } from '../context/MessagingContext.jsx';
 import { analyticsService } from '../services/analytics/index.js';
 import { useAuth } from '../context/AuthContext.jsx';
 import {
@@ -94,9 +96,7 @@ function ProfileState({ title, children }) {
 function ProfileCover({ profile, isOwnProfile, onShare, onEditCover }) {
   const navigate = useNavigate();
   const hasCover = Boolean(profile.coverUrl);
-  const [msgUnread, setMsgUnread] = useState(() => getUnreadConversationCount());
-
-  useEffect(() => subscribeToMessaging(() => setMsgUnread(getUnreadConversationCount())), []);
+  const { unreadCount: msgUnread } = useMessaging();
 
   return (
     <header className="creator-cover" style={!hasCover ? { background: 'linear-gradient(135deg, #0f1419 0%, #1a2332 100%)' } : undefined}>
@@ -185,6 +185,7 @@ function ProfileActions({
   onToggleFollow,
   onToggleNotifications,
   onShare,
+  onMessage,
 }) {
   const navigate = useNavigate();
 
@@ -209,7 +210,7 @@ function ProfileActions({
       <button type="button" className={isFollowing ? 'creator-follow-button is-active' : 'creator-follow-button'} onClick={onToggleFollow}>
         {isFollowing ? 'Following' : 'Follow'}
       </button>
-      <button type="button" className="creator-follow-button creator-follow-button--message" onClick={() => navigate('/messages/lena-rousseau')}>
+      <button type="button" className="creator-follow-button creator-follow-button--message" onClick={onMessage}>
         Send message
       </button>
       <button
@@ -252,10 +253,13 @@ function ProfileImageSheet({ type, previewUrl, error, onClose, onSelectFile, onR
 }
 
 function ProfileStats({ profile, isOwnProfile, onViewFollowing }) {
+  const followingCount = Array.isArray(profile.followedCreators)
+    ? profile.followedCreators.length
+    : (profile.followingCount ?? 0);
   const stats = [
     { value: profile.liveCount, label: 'lives' },
     { value: formatCompact(profile.followersCount), label: 'followers' },
-    { value: formatCompact(profile.followingCount), label: 'following', clickable: isOwnProfile },
+    { value: formatCompact(followingCount), label: 'following', clickable: isOwnProfile },
   ];
 
   return (
@@ -870,6 +874,10 @@ export default function ProfilePage() {
 
     try {
       await setFollowingCreator(profile.id, next);
+      if (user?.uid && (profile.uid || profile.id)) {
+        const creatorUid = profile.uid || profile.id;
+        (next ? followCreator : unfollowCreator)(user.uid, creatorUid).catch(() => {});
+      }
       showToast(next ? 'You are following this creator' : 'You are no longer following this creator');
       setFollowStatus('idle');
     } catch {
@@ -946,6 +954,11 @@ export default function ProfilePage() {
             showToast(notificationsEnabled ? 'Notifications disabled' : 'Notifications enabled');
           }}
           onShare={shareProfile}
+          onMessage={async () => {
+            if (!user?.uid || !profile?.id) return;
+            const conv = await getOrCreateConversation(user.uid, profile.id);
+            navigate(`/messages/${conv.id}`);
+          }}
         />
 
         <ProfileStats

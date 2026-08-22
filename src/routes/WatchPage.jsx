@@ -16,13 +16,13 @@ import { LivePresenceOverlay } from '../components/social/LivePresenceOverlay.js
 import { lives } from '../data/lives.js';
 import { mapStreams } from '../data/mapStreams.js';
 import { streams, upcomingStreams } from '../data/mockStreams.js';
-import { getCreatedLives, getCreatedLiveStream, subscribeToCreatedLives, publishLivePing, updateCreatedLive } from '../services/createdLiveService.js';
+import { getCreatedLives, getCreatedLiveStream, registerCreatedLiveStream, subscribeToCreatedLives, publishLivePing, updateCreatedLive } from '../services/createdLiveService.js';
 import { startBroadcast, stopBroadcast, watchBroadcast, closePeer, getLocalStream, getRemoteStream } from '../services/webrtcService.js';
 import { collection, doc, onSnapshot, query, where, getDocs, getDoc, addDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { getDownloadURL, ref as storageRef, uploadString } from 'firebase/storage';
 import { db, storage } from '../firebase.js';
 import { useAuth } from '../context/AuthContext.jsx';
-import { getUnreadConversationCount, subscribeToMessaging } from '../services/messagingService.js';
+import { useMessaging } from '../context/MessagingContext.jsx';
 import { getUpcomingReminders, saveUpcomingReminder } from '../services/upcomingReminderService.js';
 import { demoLiveEquipmentIds } from '../data/equipmentModel.js';
 import { getEquipmentLibrary, getEquipmentLibraryWithProducts, getEquipmentSelection } from '../services/equipmentService.js';
@@ -457,9 +457,7 @@ function SearchSheet({ onClose }) {
 
 function HomeHeader({ onSearchOpen }) {
   const { t } = useTranslation();
-  const [msgUnread, setMsgUnread] = useState(() => getUnreadConversationCount());
-
-  useEffect(() => subscribeToMessaging(() => setMsgUnread(getUnreadConversationCount())), []);
+  const { unreadCount: msgUnread } = useMessaging();
 
   return (
     <header className="home-header">
@@ -1146,8 +1144,8 @@ function formatLiveDuration(totalSeconds) {
   return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
 }
 
-function CreatorCameraSurface({ live, className = '', children, videoRef: externalVideoRef, onVideoReady }) {
-  const stream = getCreatedLiveStream(live.id);
+function CreatorCameraSurface({ live, stream: streamProp, className = '', children, videoRef: externalVideoRef, onVideoReady }) {
+  const stream = streamProp ?? getCreatedLiveStream(live.id);
   const internalRef = useRef(null);
   const videoRef = externalVideoRef || internalRef;
   // Keep onVideoReady in a ref so changing it never re-runs the effect
@@ -1217,6 +1215,7 @@ function CreatorLiveSession({ live, onEndingChange }) {
   const longPressTimer = useRef(null);
   const lastCenterTapRef = useRef({ time: 0, x: 0, y: 0 });
   const broadcastStartedRef = useRef(false);
+  const [broadcastStream, setBroadcastStream] = useState(() => getCreatedLiveStream(live.id));
   const videoElementRef = useRef(null);
   const coverCaptureRef = useRef({ status: 'idle', imageData: null });
   const lastCommentKeyRef = useRef(null);
@@ -1227,6 +1226,45 @@ function CreatorLiveSession({ live, onEndingChange }) {
     if (coverCaptureRef.current.status === 'pending' && !options.force) return null;
 
     coverCaptureRef.current.status = 'pending';
+
+    // Use manual cover photo taken before the live started
+    const manualCoverDataUrl = live?.manualCoverDataUrl;
+    if (manualCoverDataUrl && !options.force) {
+      try {
+        let publicCoverUrl = null;
+        try {
+          publicCoverUrl = await uploadLiveCoverImage(liveId, user?.uid, manualCoverDataUrl);
+        } catch (err) {
+          console.warn('[CreatorLiveSession] Failed to upload manual cover:', err.message);
+        }
+        const shareCoverUrl = publicCoverUrl || manualCoverDataUrl;
+        coverCaptureRef.current = { status: 'captured', imageData: shareCoverUrl };
+        updateCreatedLive(liveId, {
+          image: shareCoverUrl,
+          thumbnailUrl: shareCoverUrl,
+          coverImageUrl: shareCoverUrl,
+          coverImageDataUrl: manualCoverDataUrl,
+          coverSource: 'manual',
+          coverCapturedAt: new Date().toISOString(),
+        });
+        if (publicCoverUrl) {
+          const liveRef = doc(db, 'activeLives', liveId);
+          await updateDoc(liveRef, {
+            image: publicCoverUrl,
+            thumbnailUrl: publicCoverUrl,
+            coverImageUrl: publicCoverUrl,
+            coverSource: 'manual',
+            coverCapturedAt: serverTimestamp(),
+            updatedAt: serverTimestamp(),
+          });
+        }
+        return shareCoverUrl;
+      } catch (err) {
+        coverCaptureRef.current.status = 'idle';
+        console.warn('[CreatorLiveSession] Failed to save manual cover:', err.message);
+      }
+    }
+
     try {
       if (options.delayMs !== 0) {
         await sleep(options.delayMs ?? COVER_CAPTURE_DELAY_MS);
@@ -1361,6 +1399,8 @@ function CreatorLiveSession({ live, onEndingChange }) {
           return;
         }
         if (stream) {
+          registerCreatedLiveStream(live.id, stream);
+          setBroadcastStream(stream);
           await updateDoc(doc(db, 'activeLives', live.id), {
             cloudflareLiveInputId,
             liveStartedAt: serverTimestamp(),
@@ -1745,7 +1785,7 @@ function CreatorLiveSession({ live, onEndingChange }) {
       onPointerCancel={clearLongPress}
       aria-label="Creator live camera"
     >
-      <CreatorCameraSurface live={live} videoRef={videoElementRef} onVideoReady={() => captureAndSaveCoverImage(live.id)} />
+      <CreatorCameraSurface live={live} stream={broadcastStream} videoRef={videoElementRef} onVideoReady={() => captureAndSaveCoverImage(live.id)} />
       <div className="creator-live-hud">
         <div className="creator-live-hud__left">
           <LiveBadge compact pulse />
@@ -2051,8 +2091,9 @@ function LiveViewer({ liveId, creatorMode = false }) {
   }, [creatorMode, activeLiveId, live.creatorUid]);
 
   // Viewer connection — one RTCPeerConnection per viewer instance.
+  // Unauthenticated users fall back to HLS (cannot write watcher docs to Firestore).
   useEffect(() => {
-    if (creatorMode || !activeLiveId || !remoteVideoRef.current) return;
+    if (creatorMode || !activeLiveId || !remoteVideoRef.current || !user) return;
     const video = remoteVideoRef.current;
     let cancelled = false;
     const viewerSessionId = Math.random().toString(36).slice(2, 8);
@@ -2111,10 +2152,36 @@ function LiveViewer({ liveId, creatorMode = false }) {
     };
   }, [creatorMode, activeLiveId, user?.uid]);
 
-  // HLS viewer disabled for the restored one-to-one viewer path.
+  // HLS viewer for unauthenticated users (cannot use P2P WebRTC signaling via Firestore).
   useEffect(() => {
-    return undefined;
-  }, [creatorMode, live?.hlsManifestUrl, live?.whepUrl]);
+    if (creatorMode || user || !live?.hlsManifestUrl || !remoteVideoRef.current) return;
+    const video = remoteVideoRef.current;
+    if (video.srcObject) video.srcObject = null;
+    setRemoteStream('watching');
+    setBroadcastEnded(false);
+
+    let hls = null;
+    if (Hls.isSupported()) {
+      hls = new Hls({ lowLatencyMode: true });
+      hls.loadSource(live.hlsManifestUrl);
+      hls.attachMedia(video);
+      hls.on(Hls.Events.MANIFEST_PARSED, () => {
+        setWatchStatus('connected');
+        attemptVideoPlayback(video);
+      });
+    } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+      video.src = live.hlsManifestUrl;
+      video.addEventListener('loadedmetadata', () => {
+        setWatchStatus('connected');
+        attemptVideoPlayback(video);
+      }, { once: true });
+    }
+
+    return () => {
+      hls?.destroy();
+      video.src = '';
+    };
+  }, [creatorMode, user, live?.hlsManifestUrl]);
 
   // WebRTC P2P — disabled for Cloudflare one-to-many playback.
   useEffect(() => {

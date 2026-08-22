@@ -6,6 +6,7 @@ import { useStreamView } from '../hooks/useStreamView';
 import { analyticsService } from '../services/analytics';
 import BrandMark from '../components/BrandMark.jsx';
 import CreatorLink from '../components/CreatorLink.jsx';
+import ShareLiveSheet from '../components/ShareLiveSheet.jsx';
 import { EquipmentViewerSheet } from '../components/equipment/EquipmentKit.jsx';
 import LiveBadge from '../components/LiveBadge.jsx';
 import SegmentedControl from '../components/SegmentedControl.jsx';
@@ -18,7 +19,7 @@ import { startBroadcast, stopBroadcast, watchBroadcast, closePeer, getLocalStrea
 import { collection, doc, onSnapshot, query, where } from 'firebase/firestore';
 import { db } from '../firebase.js';
 import { useAuth } from '../context/AuthContext.jsx';
-import { getUnreadConversationCount, subscribeToMessaging } from '../services/messagingService.js';
+import { useMessaging } from '../context/MessagingContext.jsx';
 import { getUpcomingReminders, saveUpcomingReminder } from '../services/upcomingReminderService.js';
 import { demoLiveEquipmentIds } from '../data/equipmentModel.js';
 import { getEquipmentLibrary, getEquipmentLibraryWithProducts, getEquipmentSelection } from '../services/equipmentService.js';
@@ -380,9 +381,7 @@ function SearchSheet({ onClose }) {
 
 function HomeHeader({ onSearchOpen }) {
   const { t } = useTranslation();
-  const [msgUnread, setMsgUnread] = useState(() => getUnreadConversationCount());
-
-  useEffect(() => subscribeToMessaging(() => setMsgUnread(getUnreadConversationCount())), []);
+  const { unreadCount: msgUnread } = useMessaging();
 
   return (
     <header className="home-header">
@@ -1127,6 +1126,12 @@ function CreatorLiveSession({ live, onEndingChange }) {
   }, []);
 
   useEffect(() => {
+    const stream = getCreatedLiveStream(live.id);
+    if (!stream) return;
+    stream.getAudioTracks().forEach((track) => { track.enabled = !micMuted; });
+  }, [micMuted, live.id]);
+
+  useEffect(() => {
     if (!live?.id || !user?.uid || broadcastStartedRef.current) return undefined;
     broadcastStartedRef.current = true;
     let active = true;
@@ -1282,9 +1287,8 @@ function CreatorLiveSession({ live, onEndingChange }) {
     window.setTimeout(() => setPhase('processing'), 1100);
     window.setTimeout(() => {
       navigate(`/live/${live.id}/recap`);
-      deleteLiveFromDB(live.id).catch((err) => {
-        console.error('[HomePage] Failed to delete live from database:', err);
-      });
+      // Do NOT delete activeLives doc here — getReplayStatus needs cloudflareLiveInputId for polling.
+      // Deletion happens backend-side after webhook video.ready confirms the recording is ready.
     }, 2900);
   };
 
@@ -1455,6 +1459,7 @@ function LiveViewer({ liveId, creatorMode = false }) {
   const [following, setFollowing] = useState({});
   const [userSheetOpen, setUserSheetOpen] = useState(false);
   const [equipmentSheetOpen, setEquipmentSheetOpen] = useState(false);
+  const [shareLiveSheetOpen, setShareLiveSheetOpen] = useState(false);
   const [chatComposerOpen, setChatComposerOpen] = useState(false);
   const [chatPanelOpen, setChatPanelOpen] = useState(false);
   const [immersive, setImmersive] = useState(false);
@@ -2122,7 +2127,14 @@ function LiveViewer({ liveId, creatorMode = false }) {
           <button type="button" onClick={openChatComposer} aria-label={t('live.privateMessage')}>
             <MessageCircle size={22} strokeWidth={1.8} />
           </button>
-          <button type="button" onClick={recordShared} aria-label={t('common.share')}>
+          <button
+            type="button"
+            onClick={() => {
+              recordShared();
+              setShareLiveSheetOpen(true);
+            }}
+            aria-label={t('common.share')}
+          >
             <Send size={21} strokeWidth={1.8} />
           </button>
           {live.hasVideoAudio && (
@@ -2228,6 +2240,9 @@ function LiveViewer({ liveId, creatorMode = false }) {
           onClose={() => setEquipmentSheetOpen(false)}
           onViewProfile={() => navigate(`/profile/${live.creatorId ?? live.id}?tab=equipment`)}
         />
+      ) : null}
+      {shareLiveSheetOpen ? (
+        <ShareLiveSheet live={live} onClose={() => setShareLiveSheetOpen(false)} />
       ) : null}
     </section>
   );

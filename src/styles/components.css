@@ -322,6 +322,8 @@
 
 .create-sheet__panel {
   width: calc(100% - 28px);
+  max-height: calc(100dvh - var(--nav-height) - var(--nav-bottom) - 30px);
+  overflow-y: auto;
   margin-bottom: calc(var(--nav-height) + var(--nav-bottom) + 10px);
   border: 0.5px solid rgba(255, 255, 255, 0.1);
   border-radius: 24px;
@@ -484,7 +486,7 @@
   color: rgba(255, 255, 255, 0.92);
   padding: 11px 12px;
   font: inherit;
-  font-size: 13px;
+  font-size: 16px;
 }
 
 .create-live-flow textarea {
@@ -792,6 +794,7 @@
 .equipment-quick-add label input {
   width: 100%;
   border-radius: 13px;
+  font-size: 16px;
 }
 
 .equipment-form-actions {
@@ -1300,6 +1303,136 @@
   margin-top: 2px;
 }
 
+/* Cover photo capture */
+
+.live-preview__take-photo {
+  position: absolute;
+  bottom: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 0.5px solid rgba(255, 255, 255, 0.14);
+  border-radius: 999px;
+  color: rgba(242, 247, 246, 0.78);
+  font-size: 11.5px;
+  font-weight: 580;
+  padding: 6px 14px;
+  white-space: nowrap;
+}
+
+.live-preview__countdown-overlay {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: rgba(0, 0, 0, 0.35);
+  border-radius: 16px;
+}
+
+.live-preview__countdown-number {
+  font-size: 88px;
+  font-weight: 800;
+  color: #fff;
+  line-height: 1;
+  letter-spacing: -0.04em;
+  text-shadow: 0 2px 24px rgba(0, 0, 0, 0.5);
+}
+
+.live-preview__flash {
+  position: absolute;
+  inset: 0;
+  background: #fff;
+  border-radius: 16px;
+  opacity: 0;
+  animation: lp-flash 280ms ease-out forwards;
+  pointer-events: none;
+}
+
+@keyframes lp-flash {
+  0%   { opacity: 0.9; }
+  100% { opacity: 0; }
+}
+
+.live-preview__photo-actions {
+  position: absolute;
+  bottom: 16px;
+  left: 0;
+  right: 0;
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  padding: 0 16px;
+}
+
+.live-preview__photo-btn {
+  flex: 1;
+  max-width: 160px;
+  padding: 10px 0;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 650;
+  text-align: center;
+}
+
+.live-preview__photo-btn--ghost {
+  background: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 0.5px solid rgba(255, 255, 255, 0.2);
+  color: rgba(242, 247, 246, 0.85);
+}
+
+.live-preview__photo-btn--accent {
+  background: rgba(53, 227, 220, 0.18);
+  border: 0.5px solid rgba(53, 227, 220, 0.35);
+  color: #35e3dc;
+}
+
+.live-preview__cover-badge {
+  position: absolute;
+  bottom: 10px;
+  left: 12px;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 0.5px solid rgba(53, 227, 220, 0.25);
+  border-radius: 10px;
+  padding: 5px 10px 5px 5px;
+}
+
+.live-preview__cover-thumb {
+  width: 28px;
+  height: 28px;
+  object-fit: cover;
+  border-radius: 6px;
+  flex-shrink: 0;
+}
+
+.live-preview__cover-badge-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: #35e3dc;
+  font-size: 11px;
+  font-weight: 660;
+}
+
+.live-preview__cover-retake {
+  color: rgba(242, 247, 246, 0.45);
+  font-size: 10.5px;
+  font-weight: 550;
+  margin-left: 2px;
+  padding: 0;
+}
+
 @keyframes create-breathe {
   0%, 100% {
     box-shadow:
@@ -1474,6 +1607,27 @@
   font-size: 25px;
   font-weight: 520;
   letter-spacing: 0;
+  animation: splash-name-fade 1400ms ease-out 300ms both;
+}
+
+@keyframes splash-name-fade {
+  0% {
+    opacity: 0;
+    letter-spacing: 6px;
+    filter: blur(4px);
+  }
+
+  60% {
+    opacity: 0.7;
+    letter-spacing: 1px;
+    filter: blur(1px);
+  }
+
+  100% {
+    opacity: 1;
+    letter-spacing: 0;
+    filter: blur(0);
+  }
 }
 
 .splash-screen__title {
@@ -1599,6 +1753,7 @@
   .splash-screen.is-leaving,
   .splash-screen__glow,
   .splash-screen__logo,
+  .splash-screen__logo .brand-mark__name,
   .splash-screen__pulse {
     animation-duration: 1ms;
   }

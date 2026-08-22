@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
 import App from './App.jsx';
 import { AuthProvider } from './context/AuthContext.jsx';
+import { MessagingProvider } from './context/MessagingContext.jsx';
 import { ViewModeProvider } from './context/ViewModeContext.jsx';
 import './i18n/index.js';
 import './styles/tokens.css';
@@ -32,9 +33,11 @@ createRoot(document.getElementById('root')).render(
   <StrictMode>
     <BrowserRouter future={{ v7_relativeSplatPath: true }}>
       <AuthProvider>
-        <ViewModeProvider>
-          <App />
-        </ViewModeProvider>
+        <MessagingProvider>
+          <ViewModeProvider>
+            <App />
+          </ViewModeProvider>
+        </MessagingProvider>
       </AuthProvider>
     </BrowserRouter>
   </StrictMode>,
@@ -43,7 +46,7 @@ createRoot(document.getElementById('root')).render(
 if ('serviceWorker' in navigator) {
   if (import.meta.env.PROD) {
     window.addEventListener('load', () => {
-      navigator.serviceWorker.register('/sw.js');
+      navigator.serviceWorker.register('/sw.js', { updateViaCache: 'none' });
     });
   } else {
     navigator.serviceWorker.getRegistrations().then((registrations) => {
