@@ -5,8 +5,8 @@ service cloud.firestore {
 
     // ── User profiles ──────────────────────────────
     match /users/{uid} {
-      // Authenticated users can read all profiles
-      allow read: if request.auth != null;
+      // Public profiles — readable by anyone
+      allow read: if true;
 
       // Only the owner can create their own document
       allow create: if request.auth != null
@@ -142,10 +142,72 @@ service cloud.firestore {
       allow delete: if false;
     }
 
+    // ── Direct messages ────────────────────────────
+    match /conversations/{conversationId} {
+      allow read: if request.auth != null
+        && (resource == null
+          || request.auth.uid in resource.data.participantIds
+          || resource.data.participants[request.auth.uid] == true);
+
+      allow create: if request.auth != null
+        && request.auth.uid in request.resource.data.participantIds
+        && request.resource.data.participants[request.auth.uid] == true
+        && request.resource.data.participantIds.size() == 2;
+
+      allow update: if request.auth != null
+        && request.auth.uid in resource.data.participantIds;
+
+      allow delete: if request.auth != null
+        && request.auth.uid in resource.data.participantIds;
+
+      match /messages/{messageId} {
+        allow read: if request.auth != null
+          && request.auth.uid in get(/databases/$(database)/documents/conversations/$(conversationId)).data.participantIds;
+
+        allow create: if request.auth != null
+          && request.resource.data.senderId == request.auth.uid
+          && request.auth.uid in get(/databases/$(database)/documents/conversations/$(conversationId)).data.participantIds
+          && request.resource.data.text is string
+          && request.resource.data.text.size() > 0
+          && request.resource.data.text.size() <= 2000;
+
+        allow delete: if false;
+        allow update: if false;
+      }
+    }
+
+    // ── Analytics collections (admin-only read) ────
+    function isAdmin() {
+      return request.auth != null && (
+        request.auth.token.email == 'alexandre.ranson@gmail.com' ||
+        request.auth.token.email.matches('.*@vuvio\\.app')
+      );
+    }
+
+    match /streamStats/{docId} {
+      allow read: if isAdmin();
+      allow write: if false;
+    }
+
+    match /creatorStats/{docId} {
+      allow read: if isAdmin();
+      allow write: if false;
+    }
+
+    match /categoryStats/{docId} {
+      allow read: if isAdmin();
+      allow write: if false;
+    }
+
+    match /analyticsEvents/{docId} {
+      allow read: if isAdmin();
+      allow write: if false;
+    }
+
     // ── Product catalog ────────────────────────────
     match /products/{productId} {
-      // Authenticated users can read products
-      allow read: if request.auth != null;
+      // Public product catalog
+      allow read: if true;
 
       // Authenticated users can create/update products (for seeding and management)
       // In production, restrict to admins only via backend
