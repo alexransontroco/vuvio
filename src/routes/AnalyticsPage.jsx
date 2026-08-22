@@ -144,20 +144,21 @@ export default function AnalyticsPage() {
     try {
       setLoading(true);
 
+      const safe = (p) => p.catch(e => { console.warn('[Analytics]', e.message); return null; });
+
       const [streamsSnap, creatorsSnap, categoriesSnap, usersCount, recentLivesSnap] = await Promise.all([
-        getDocs(query(collection(db, 'streamStats'), orderBy('engagementScore', 'desc'), limit(10))),
-        getDocs(query(collection(db, 'creatorStats'), orderBy('totalViews', 'desc'), limit(10))),
-        getDocs(query(collection(db, 'categoryStats'), orderBy('totalViews', 'desc'), limit(10))),
-        getCountFromServer(collection(db, 'users')),
-        getDocs(query(collection(db, 'activeLives'), orderBy('createdAt', 'desc'), limit(30))),
+        safe(getDocs(query(collection(db, 'streamStats'), orderBy('engagementScore', 'desc'), limit(10)))),
+        safe(getDocs(query(collection(db, 'creatorStats'), orderBy('totalViews', 'desc'), limit(10)))),
+        safe(getDocs(query(collection(db, 'categoryStats'), orderBy('totalViews', 'desc'), limit(10)))),
+        safe(getCountFromServer(collection(db, 'users'))),
+        safe(getDocs(query(collection(db, 'activeLives'), orderBy('createdAt', 'desc'), limit(30)))),
       ]);
 
-      const topStreams = streamsSnap.docs.map(d => d.data());
-      const topCreators = creatorsSnap.docs.map(d => d.data());
-      const topCategories = categoriesSnap.docs.map(d => d.data());
-      const rawLives = recentLivesSnap.docs.map(d => d.data());
+      const topStreams = streamsSnap?.docs.map(d => d.data()) ?? [];
+      const topCreators = creatorsSnap?.docs.map(d => d.data()) ?? [];
+      const topCategories = categoriesSnap?.docs.map(d => d.data()) ?? [];
+      const rawLives = recentLivesSnap?.docs.map(d => d.data()) ?? [];
 
-      // Fetch creator display names for lives that don't have creatorName
       const uidsToFetch = [...new Set(
         rawLives.filter(l => !l.creatorName && l.creatorUid).map(l => l.creatorUid)
       )];
@@ -189,7 +190,7 @@ export default function AnalyticsPage() {
         totalViews,
         totalEvents: topStreams.reduce((sum, s) => sum + (s.impressions || 0), 0),
         activeStreams: topStreams.filter(s => s.status === 'live').length,
-        totalUsers: usersCount.data().count,
+        totalUsers: usersCount?.data().count ?? 0,
         liveNow,
       });
     } catch (error) {

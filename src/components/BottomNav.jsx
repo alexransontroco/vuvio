@@ -1,4 +1,4 @@
-import { CalendarPlus, Camera, ChevronLeft, Compass, Footprints, Globe2, ImagePlus, Pencil, Plane, Play, Sparkles, Tv2, UserRound, Video, Waves, X } from 'lucide-react';
+import { CalendarPlus, Camera, Check, ChevronLeft, Compass, Footprints, Globe2, ImagePlus, Pencil, Plane, Play, Sparkles, Tv2, UserRound, Video, Waves, X } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { NavLink, useLocation, useNavigate } from 'react-router-dom';
@@ -56,7 +56,18 @@ const initialLiveDraft = {
 const privacyOptions = ['Everyone', 'Followers', 'Private'];
 const qualityOptions = ['720p', '1080p', 'Auto'];
 
-function LivePreview({ draft, selectedFamily, equipmentLibrary, onEditGear, onLaunch, locationStatus }) {
+function captureFrameFromVideo(videoEl) {
+  if (!videoEl || videoEl.readyState < 2 || !videoEl.videoWidth) return null;
+  const w = Math.min(720, videoEl.videoWidth);
+  const h = Math.round(w * (videoEl.videoHeight / videoEl.videoWidth));
+  const canvas = document.createElement('canvas');
+  canvas.width = w;
+  canvas.height = h;
+  canvas.getContext('2d').drawImage(videoEl, 0, 0, w, h);
+  return canvas.toDataURL('image/jpeg', 0.85);
+}
+
+function LivePreview({ draft, selectedFamily, equipmentLibrary, onEditGear, onLaunch, manualCoverPhoto, onCoverPhoto }) {
   const selectedItems = getEquipmentSelection(equipmentLibrary, draft.equipmentIds ?? []);
   const captureItems = selectedItems.filter((item) => item.category !== 'activity');
   const activityItems = selectedItems.filter((item) => item.category === 'activity');
@@ -66,6 +77,10 @@ function LivePreview({ draft, selectedFamily, equipmentLibrary, onEditGear, onLa
   const streamRef = useRef(null);
   const launchedRef = useRef(false);
   const [cameraState, setCameraState] = useState('pending');
+  const [photoMode, setPhotoMode] = useState('idle'); // 'idle' | 'countdown' | 'review'
+  const [countdown, setCountdown] = useState(3);
+  const [capturedPhoto, setCapturedPhoto] = useState(null);
+  const [flashActive, setFlashActive] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -76,8 +91,9 @@ function LivePreview({ draft, selectedFamily, equipmentLibrary, onEditGear, onLa
 
     const requestCamera = async () => {
       const attempts = [
-        { video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 } }, audio: false },
-        { video: { width: { ideal: 1280 } }, audio: false },
+        { video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 } }, audio: true },
+        { video: { width: { ideal: 1280 } }, audio: true },
+        { video: true, audio: true },
         { video: true, audio: false },
       ];
 
@@ -111,24 +127,113 @@ function LivePreview({ draft, selectedFamily, equipmentLibrary, onEditGear, onLa
     };
   }, []);
 
+  useEffect(() => {
+    if (photoMode !== 'countdown') return;
+    if (countdown > 0) {
+      const t = setTimeout(() => setCountdown((c) => c - 1), 1000);
+      return () => clearTimeout(t);
+    }
+    const dataUrl = captureFrameFromVideo(videoRef.current);
+    setCapturedPhoto(dataUrl);
+    setFlashActive(true);
+    const flashTimer = setTimeout(() => setFlashActive(false), 280);
+    setPhotoMode('review');
+    return () => clearTimeout(flashTimer);
+  }, [photoMode, countdown]);
+
+  const startCountdown = () => {
+    setCapturedPhoto(null);
+    setCountdown(3);
+    setPhotoMode('countdown');
+  };
+
+  const handleRetake = () => {
+    setCapturedPhoto(null);
+    setCountdown(3);
+    setPhotoMode('idle');
+  };
+
+  const handleUsePhoto = () => {
+    onCoverPhoto(capturedPhoto);
+    setCapturedPhoto(null);
+    setCountdown(3);
+    setPhotoMode('idle');
+  };
+
   const handleLaunch = () => {
     launchedRef.current = true;
     onLaunch(streamRef.current);
   };
 
+  const inReview = photoMode === 'review';
+  const inCountdown = photoMode === 'countdown';
+  const hasCover = Boolean(manualCoverPhoto);
+
   return (
     <div className="live-preview">
       <div className="live-preview__cover">
-        {cameraState === 'active' ? (
-          <video ref={videoRef} className="live-preview__camera" autoPlay muted playsInline />
-        ) : (
+        <video
+          ref={videoRef}
+          className="live-preview__camera"
+          autoPlay
+          muted
+          playsInline
+          style={cameraState !== 'active' || inReview ? { display: 'none' } : undefined}
+        />
+
+        {cameraState !== 'active' && !inReview && (
           <>
-            <video ref={videoRef} style={{ display: 'none' }} autoPlay muted playsInline />
             <Camera size={28} strokeWidth={1.5} />
             <span>{cameraState === 'denied' ? 'Camera access denied' : cameraState === 'insecure' ? 'Camera needs HTTPS or localhost' : cameraState === 'unavailable' ? 'No camera available' : 'Starting camera...'}</span>
           </>
         )}
+
+        {inReview && capturedPhoto && (
+          <img src={capturedPhoto} alt="Cover photo preview" className="live-preview__camera" />
+        )}
+
+        {flashActive && (
+          <div className="live-preview__flash" />
+        )}
+
+        {inCountdown && (
+          <div className="live-preview__countdown-overlay">
+            <span className="live-preview__countdown-number">{countdown || ''}</span>
+          </div>
+        )}
+
+        {inReview && (
+          <div className="live-preview__photo-actions">
+            <button type="button" className="live-preview__photo-btn live-preview__photo-btn--ghost" onClick={handleRetake}>
+              Retake
+            </button>
+            <button type="button" className="live-preview__photo-btn live-preview__photo-btn--accent" onClick={handleUsePhoto}>
+              Use photo
+            </button>
+          </div>
+        )}
+
+        {!inReview && !inCountdown && hasCover && (
+          <div className="live-preview__cover-badge">
+            <img src={manualCoverPhoto} alt="" className="live-preview__cover-thumb" />
+            <span className="live-preview__cover-badge-label">
+              <Check size={10} strokeWidth={3} />
+              Cover set
+            </span>
+            <button type="button" className="live-preview__cover-retake" onClick={startCountdown}>
+              Retake
+            </button>
+          </div>
+        )}
+
+        {!inReview && !inCountdown && !hasCover && cameraState === 'active' && (
+          <button type="button" className="live-preview__take-photo" onClick={startCountdown}>
+            <Camera size={12} strokeWidth={2} />
+            Take cover photo
+          </button>
+        )}
       </div>
+
       <div className="live-preview__meta">
         {selectedFamily && FamilyIcon ? (
           <span className="live-preview__tag" style={{ '--experience-color': selectedFamily.color }}>
@@ -176,11 +281,14 @@ export default function BottomNav({ collapsible = false, collapsed = false, onEx
   const [createMode, setCreateMode] = useState('actions');
   const [draft, setDraft] = useState(initialLiveDraft);
   const [showPreview, setShowPreview] = useState(false);
+  const [manualCoverPhoto, setManualCoverPhoto] = useState(null);
   const [equipmentLibrary, setEquipmentLibrary] = useState(() => getEquipmentLibrary());
   const [quickAddOpen, setQuickAddOpen] = useState(false);
   const [quickAddDraft, setQuickAddDraft] = useState({ category: 'recording', brand: '', model: '' });
   const [locationStatus, setLocationStatus] = useState('loading');
   const [userCoordinates, setUserCoordinates] = useState(null);
+  const [userGeoCity, setUserGeoCity] = useState(null);
+  const [userGeoCountry, setUserGeoCountry] = useState(null);
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -192,8 +300,19 @@ export default function BottomNav({ collapsible = false, collapsed = false, onEx
 
     navigator.geolocation.getCurrentPosition(
       (position) => {
-        setUserCoordinates([position.coords.longitude, position.coords.latitude]);
+        const { longitude, latitude } = position.coords;
+        setUserCoordinates([longitude, latitude]);
         setLocationStatus('ready');
+        fetch(`https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json`, {
+          headers: { 'Accept-Language': 'en' },
+        })
+          .then((r) => r.json())
+          .then((data) => {
+            const addr = data?.address ?? {};
+            setUserGeoCity(addr.city ?? addr.town ?? addr.village ?? addr.county ?? null);
+            setUserGeoCountry(addr.country ?? null);
+          })
+          .catch(() => {});
       },
       () => setLocationStatus('denied'),
       { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 },
@@ -215,6 +334,7 @@ export default function BottomNav({ collapsible = false, collapsed = false, onEx
     setCreateMode('actions');
     setDraft(initialLiveDraft);
     setShowPreview(false);
+    setManualCoverPhoto(null);
   }, [location.pathname]);
 
   const closeCreate = () => {
@@ -222,6 +342,7 @@ export default function BottomNav({ collapsible = false, collapsed = false, onEx
     setCreateMode('actions');
     setDraft(initialLiveDraft);
     setShowPreview(false);
+    setManualCoverPhoto(null);
   };
 
   const selectedFamily = draft.family ? EXPERIENCE_FAMILIES[draft.family] : null;
@@ -237,9 +358,12 @@ export default function BottomNav({ collapsible = false, collapsed = false, onEx
     const selectedIds = draft.equipmentIds ?? [];
     const live = createLocalLive({
       ...draft,
+      manualCoverDataUrl: manualCoverPhoto || null,
       hasCameraStream: Boolean(cameraStream),
       equipment: selectedIds.map((equipmentId) => ({ equipmentId })),
       equipmentSnapshots: buildEquipmentSnapshots(equipmentLibrary, selectedIds),
+      geoCity: userGeoCity,
+      geoCountry: userGeoCountry,
     }, user?.uid, userCoordinates);
     registerCreatedLiveStream(live.id, cameraStream);
     rememberLiveEquipmentSetup(draft.family, selectedIds);
@@ -414,7 +538,7 @@ export default function BottomNav({ collapsible = false, collapsed = false, onEx
                       <input
                         value={draft.location}
                         onChange={(event) => updateDraft('location', event.target.value)}
-                        placeholder="Chamonix, France"
+                        placeholder="City, Country"
                       />
                     </section>
 
@@ -487,6 +611,8 @@ export default function BottomNav({ collapsible = false, collapsed = false, onEx
                     onEditGear={() => setShowPreview(false)}
                     onLaunch={launchLive}
                     locationStatus={locationStatus}
+                    manualCoverPhoto={manualCoverPhoto}
+                    onCoverPhoto={setManualCoverPhoto}
                   />
                 ) : (
                   <button type="button" className="create-live-launch" disabled={!canLaunch} onClick={() => setShowPreview(true)}>
