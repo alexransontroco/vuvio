@@ -1,4 +1,4 @@
-import { Bike, Briefcase, CalendarPlus, Camera, Check, ChevronDown, ChevronLeft, Compass, Footprints, Globe2, ImagePlus, Mountain, MoreHorizontal, Pencil, Plane, Play, Radio, Sparkles, Tv2, UserRound, UtensilsCrossed, Video, Waves, X } from 'lucide-react';
+import { Bike, Briefcase, CalendarPlus, Camera, ChevronDown, ChevronLeft, Compass, Footprints, Globe2, ImagePlus, Mountain, MoreHorizontal, Pencil, Plane, Play, Radio, Tv2, UserRound, UtensilsCrossed, Video, Waves, X } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { NavLink, useLocation, useNavigate } from 'react-router-dom';
@@ -8,15 +8,12 @@ import { EquipmentSelector, QuickAddEquipmentForm } from './equipment/EquipmentK
 import { EXPERIENCE_FAMILIES } from '../data/experienceTaxonomy.js';
 import { SUBCATEGORY_EQUIPMENT_TYPES } from '../data/equipmentModel.js';
 import { createLocalLive, registerCreatedLiveStream } from '../services/createdLiveService.js';
-import { createStream } from '../services/streamApi.ts';
 import {
   addEquipmentItem,
   buildEquipmentSnapshots,
-  equipmentLabel,
   getDefaultEquipmentIds,
   getEquipmentLibrary,
   getEquipmentLibraryWithProducts,
-  getEquipmentSelection,
   getLastLiveEquipmentIds,
   getLastLiveEquipmentIdsBySubcategory,
   getSuggestedEquipmentIds,
@@ -37,265 +34,29 @@ const createActions = [
   { labelKey: 'create.addVideo', icon: ImagePlus },
 ];
 
-const familyIcons = {
-  air: Plane,
-  earth: Footprints,
-  water: Waves,
-};
-
 const initialLiveDraft = {
   family: null,
   subcategory: '',
   description: '',
   title: '',
+  location: '',
   privacy: 'Everyone',
   quality: '1080p',
   equipmentIds: [],
-};
-
-const initialScheduleDraft = {
-  family: null,
-  subcategory: '',
-  description: '',
-  title: '',
-  privacy: 'Everyone',
-  date: '',
-  time: '',
 };
 
 const privacyOptions = ['Everyone', 'Followers', 'Private'];
 const qualityOptions = ['720p', '1080p', 'Auto'];
 
 const QUICK_CATEGORIES = [
-  { id: 'Walking',  label: 'Walking',  family: 'earth', subcategory: 'Walking',  icon: Footprints },
-  { id: 'Cooking',  label: 'Cooking',  family: 'earth', subcategory: 'Cooking',  icon: UtensilsCrossed },
-  { id: 'Work',     label: 'Work',     family: 'earth', subcategory: 'Work',     icon: Briefcase },
-  { id: 'Hiking',   label: 'Hiking',   family: 'earth', subcategory: 'Hiking',   icon: Mountain },
-  { id: 'Cycling',  label: 'Cycling',  family: 'earth', subcategory: 'Bicycle',  icon: Bike },
-  { id: 'Surfing',  label: 'Surfing',  family: 'water', subcategory: 'Surfing',  icon: Waves },
+  { id: 'Walking',  label: 'Walking',  family: 'earth', subcategory: 'Walking',     icon: Footprints },
+  { id: 'Cooking',  label: 'Cooking',  family: 'earth', subcategory: 'Cooking',     icon: UtensilsCrossed },
+  { id: 'Work',     label: 'Work',     family: 'earth', subcategory: 'Work',        icon: Briefcase },
+  { id: 'Hiking',   label: 'Hiking',   family: 'earth', subcategory: 'Hiking',      icon: Mountain },
+  { id: 'Cycling',  label: 'Cycling',  family: 'earth', subcategory: 'Bicycle',     icon: Bike },
+  { id: 'Surfing',  label: 'Surfing',  family: 'water', subcategory: 'Surfing',     icon: Waves },
   { id: 'Flying',   label: 'Flying',   family: 'air',   subcategory: 'Paragliding', icon: Plane },
 ];
-
-function captureFrameFromVideo(videoEl) {
-  if (!videoEl || videoEl.readyState < 2 || !videoEl.videoWidth) return null;
-  const w = Math.min(720, videoEl.videoWidth);
-  const h = Math.round(w * (videoEl.videoHeight / videoEl.videoWidth));
-  const canvas = document.createElement('canvas');
-  canvas.width = w;
-  canvas.height = h;
-  canvas.getContext('2d').drawImage(videoEl, 0, 0, w, h);
-  return canvas.toDataURL('image/jpeg', 0.85);
-}
-
-function LivePreview({ draft, selectedFamily, equipmentLibrary, onEditGear, onLaunch, manualCoverPhoto, onCoverPhoto, userGeoCity, userGeoCountry, locationStatus }) {
-  const selectedItems = getEquipmentSelection(equipmentLibrary, draft.equipmentIds ?? []);
-  const captureItems = selectedItems.filter((item) => item.category !== 'activity');
-  const activityItems = selectedItems.filter((item) => item.category === 'activity');
-  const FamilyIcon = selectedFamily ? { air: Plane, earth: Footprints, water: Waves }[selectedFamily.id] : null;
-
-  const videoRef = useRef(null);
-  const streamRef = useRef(null);
-  const launchedRef = useRef(false);
-  const [cameraState, setCameraState] = useState('pending');
-  const [photoMode, setPhotoMode] = useState('idle'); // 'idle' | 'countdown' | 'review'
-  const [countdown, setCountdown] = useState(3);
-  const [capturedPhoto, setCapturedPhoto] = useState(null);
-  const [flashActive, setFlashActive] = useState(false);
-
-  useEffect(() => {
-    let active = true;
-    if (!navigator.mediaDevices?.getUserMedia) {
-      setCameraState(window.isSecureContext ? 'unavailable' : 'insecure');
-      return undefined;
-    }
-
-    const requestCamera = async () => {
-      const attempts = [
-        { video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 } }, audio: true },
-        { video: { width: { ideal: 1280 } }, audio: true },
-        { video: true, audio: true },
-        { video: true, audio: false },
-      ];
-
-      for (const constraints of attempts) {
-        try {
-          const stream = await navigator.mediaDevices.getUserMedia(constraints);
-          if (!active) {
-            stream.getTracks().forEach((t) => t.stop());
-            return;
-          }
-          streamRef.current = stream;
-          if (videoRef.current) videoRef.current.srcObject = stream;
-          setCameraState('active');
-          return;
-        } catch (err) {
-          console.warn('[LivePreview] Camera attempt failed:', err.message);
-        }
-      }
-
-      if (active) setCameraState('denied');
-    };
-
-    requestCamera();
-
-    return () => {
-      active = false;
-      if (!launchedRef.current) {
-        streamRef.current?.getTracks().forEach((t) => t.stop());
-      }
-      streamRef.current = null;
-    };
-  }, []);
-
-  useEffect(() => {
-    if (photoMode !== 'countdown') return;
-    if (countdown > 0) {
-      const t = setTimeout(() => setCountdown((c) => c - 1), 1000);
-      return () => clearTimeout(t);
-    }
-    const dataUrl = captureFrameFromVideo(videoRef.current);
-    setCapturedPhoto(dataUrl);
-    setFlashActive(true);
-    const flashTimer = setTimeout(() => setFlashActive(false), 280);
-    setPhotoMode('review');
-    return () => clearTimeout(flashTimer);
-  }, [photoMode, countdown]);
-
-  const startCountdown = () => {
-    setCapturedPhoto(null);
-    setCountdown(3);
-    setPhotoMode('countdown');
-  };
-
-  const handleRetake = () => {
-    setCapturedPhoto(null);
-    setCountdown(3);
-    setPhotoMode('idle');
-  };
-
-  const handleUsePhoto = () => {
-    onCoverPhoto(capturedPhoto);
-    setCapturedPhoto(null);
-    setCountdown(3);
-    setPhotoMode('idle');
-  };
-
-  const handleLaunch = () => {
-    launchedRef.current = true;
-    onLaunch(streamRef.current);
-  };
-
-  const inReview = photoMode === 'review';
-  const inCountdown = photoMode === 'countdown';
-  const hasCover = Boolean(manualCoverPhoto);
-
-  return (
-    <div className="live-preview">
-      <div className="live-preview__cover">
-        <video
-          ref={videoRef}
-          className="live-preview__camera"
-          autoPlay
-          muted
-          playsInline
-          style={cameraState !== 'active' || inReview ? { display: 'none' } : undefined}
-        />
-
-        {cameraState !== 'active' && !inReview && (
-          <>
-            <Camera size={28} strokeWidth={1.5} />
-            <span>{cameraState === 'denied' ? 'Camera access denied' : cameraState === 'insecure' ? 'Camera needs HTTPS or localhost' : cameraState === 'unavailable' ? 'No camera available' : 'Starting camera...'}</span>
-          </>
-        )}
-
-        {inReview && capturedPhoto && (
-          <img src={capturedPhoto} alt="Cover photo preview" className="live-preview__camera" />
-        )}
-
-        {flashActive && (
-          <div className="live-preview__flash" />
-        )}
-
-        {inCountdown && (
-          <div className="live-preview__countdown-overlay">
-            <span className="live-preview__countdown-number">{countdown || ''}</span>
-          </div>
-        )}
-
-        {inReview && (
-          <div className="live-preview__photo-actions">
-            <button type="button" className="live-preview__photo-btn live-preview__photo-btn--ghost" onClick={handleRetake}>
-              Retake
-            </button>
-            <button type="button" className="live-preview__photo-btn live-preview__photo-btn--accent" onClick={handleUsePhoto}>
-              Use photo
-            </button>
-          </div>
-        )}
-
-        {!inReview && !inCountdown && hasCover && (
-          <div className="live-preview__cover-badge">
-            <img src={manualCoverPhoto} alt="" className="live-preview__cover-thumb" />
-            <span className="live-preview__cover-badge-label">
-              <Check size={10} strokeWidth={3} />
-              Cover set
-            </span>
-            <button type="button" className="live-preview__cover-retake" onClick={startCountdown}>
-              Retake
-            </button>
-          </div>
-        )}
-
-        {!inReview && !inCountdown && !hasCover && cameraState === 'active' && (
-          <button type="button" className="live-preview__take-photo" onClick={startCountdown}>
-            <Camera size={12} strokeWidth={2} />
-            Take cover photo
-          </button>
-        )}
-      </div>
-
-      <div className="live-preview__meta">
-        {selectedFamily && FamilyIcon ? (
-          <span className="live-preview__tag" style={{ '--experience-color': selectedFamily.color }}>
-            <FamilyIcon size={11} strokeWidth={2} />
-            {draft.subcategory}
-          </span>
-        ) : null}
-        <h3 className="live-preview__title">{draft.title}</h3>
-        {draft.description ? <p className="live-preview__desc">{draft.description}</p> : null}
-        <p className="live-preview__desc">
-          {locationStatus === 'loading' ? 'Detecting location…' : locationStatus === 'denied' ? 'Location unavailable' : [userGeoCity, userGeoCountry].filter(Boolean).join(', ') || 'Location unavailable'}
-          {' '}&middot; {draft.privacy} &middot; {draft.quality}
-        </p>
-      </div>
-      <div className="live-preview__gear">
-        {captureItems.length > 0 && (
-          <div className="live-preview__gear-group">
-            <span className="live-preview__gear-label">Capture setup</span>
-            <span className="live-preview__gear-items">{captureItems.map(equipmentLabel).join(' · ')}</span>
-          </div>
-        )}
-        {activityItems.length > 0 && (
-          <div className="live-preview__gear-group">
-            <span className="live-preview__gear-label">Activity equipment</span>
-            <span className="live-preview__gear-items">{activityItems.map(equipmentLabel).join(' · ')}</span>
-          </div>
-        )}
-        {!selectedItems.length && (
-          <span className="live-preview__gear-none">No equipment selected</span>
-        )}
-        <button type="button" className="live-preview__edit-gear" onClick={onEditGear}>
-          <Pencil size={12} strokeWidth={2} />
-          Edit gear
-        </button>
-      </div>
-      <button type="button" className="create-live-launch" onClick={handleLaunch}>
-        <Play size={17} fill="currentColor" strokeWidth={1.8} />
-        Start live
-      </button>
-    </div>
-  );
-}
 
 function StartLiveFlow({
   draft, onUpdateDraft, onLaunch,
@@ -321,9 +82,8 @@ function StartLiveFlow({
     }
     const requestCamera = async () => {
       const attempts = [
-        { video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 } }, audio: true },
-        { video: { width: { ideal: 1280 } }, audio: true },
-        { video: true, audio: true },
+        { video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 } }, audio: false },
+        { video: { width: { ideal: 1280 } }, audio: false },
         { video: true, audio: false },
       ];
       for (const constraints of attempts) {
@@ -434,24 +194,28 @@ function StartLiveFlow({
         </div>
 
         {showFullCategories && (
-          <div className="start-live-full-cats start-live-full-cats--flat">
-            {Object.values(EXPERIENCE_FAMILIES)
-              .flatMap((family) => family.subcategories.map((sub) => ({ sub, familyId: family.id })))
-              .sort((a, b) => a.sub.localeCompare(b.sub))
-              .map(({ sub, familyId }) => (
-                <button
-                  key={sub}
-                  type="button"
-                  className={`start-live-full-cat-chip${draft.subcategory === sub ? ' is-active' : ''}`}
-                  onClick={() => {
-                    onUpdateDraft('family', familyId);
-                    onUpdateDraft('subcategory', sub);
-                    setShowFullCategories(false);
-                  }}
-                >
-                  {sub}
-                </button>
-              ))}
+          <div className="start-live-full-cats">
+            {Object.values(EXPERIENCE_FAMILIES).map((family) => (
+              <div key={family.id} className="start-live-full-cats__group">
+                <span className="start-live-full-cats__group-label">{family.label}</span>
+                <div className="start-live-full-cats__chips">
+                  {family.subcategories.map((sub) => (
+                    <button
+                      key={sub}
+                      type="button"
+                      className={`start-live-full-cat-chip${draft.subcategory === sub ? ' is-active' : ''}`}
+                      onClick={() => {
+                        onUpdateDraft('family', family.id);
+                        onUpdateDraft('subcategory', sub);
+                        setShowFullCategories(false);
+                      }}
+                    >
+                      {sub}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ))}
           </div>
         )}
       </div>
@@ -565,161 +329,18 @@ function StartLiveFlow({
   );
 }
 
-function ScheduleFlow({ draft, onUpdate, status, error, canSubmit, onSubmit, onRetry, onDone }) {
-  const { t } = useTranslation();
-  const scheduleStep = !draft.family ? 1 : !draft.subcategory ? 2 : !draft.title.trim() ? 3 : !draft.date || !draft.time ? 4 : 5;
-  const selectedFamily = draft.family ? EXPERIENCE_FAMILIES[draft.family] : null;
-
-  const today = new Date().toISOString().split('T')[0];
-
-  if (status === 'success') {
-    return (
-      <div className="schedule-success">
-        <div className="schedule-success__icon">
-          <CalendarPlus size={28} strokeWidth={1.6} />
-        </div>
-        <strong>{t('create.scheduleLive')}</strong>
-        <p>
-          {draft.title} &middot; {draft.date} {draft.time}
-        </p>
-        <button type="button" className="create-live-launch" onClick={onDone}>
-          <Check size={17} strokeWidth={2} />
-          Done
-        </button>
-      </div>
-    );
-  }
-
-  return (
-    <div className="create-live-flow">
-      <div className="create-live-flow__steps" style={{ gridTemplateColumns: 'repeat(4, 1fr)' }}>
-        {[1, 2, 3, 4].map((step) => (
-          <i key={step} className={step <= scheduleStep ? 'is-active' : ''} />
-        ))}
-      </div>
-
-      <section className="create-live-flow__section">
-        <h2>{t('create.family')}</h2>
-        <div className="create-live-family-grid">
-          {Object.values(EXPERIENCE_FAMILIES).map((family) => {
-            const Icon = familyIcons[family.id];
-            return (
-              <button
-                key={family.id}
-                type="button"
-                className={draft.family === family.id ? 'is-active' : ''}
-                style={{ '--experience-color': family.color }}
-                onClick={() => onUpdate('family', family.id)}
-              >
-                <Icon size={18} strokeWidth={1.8} />
-                <span>{family.label}</span>
-              </button>
-            );
-          })}
-        </div>
-      </section>
-
-      {selectedFamily ? (
-        <section className="create-live-flow__section">
-          <h2>{t('create.subcategory')}</h2>
-          <div className="create-live-chip-row">
-            {selectedFamily.subcategories.map((sub) => (
-              <button
-                key={sub}
-                type="button"
-                className={draft.subcategory === sub ? 'is-active' : ''}
-                onClick={() => onUpdate('subcategory', sub)}
-              >
-                {sub}
-              </button>
-            ))}
-          </div>
-        </section>
-      ) : null}
-
-      {draft.subcategory ? (
-        <section className="create-live-flow__section">
-          <h2>{t('create.title')}</h2>
-          <input
-            value={draft.title}
-            onChange={(e) => onUpdate('title', e.target.value)}
-            placeholder="Title of your live…"
-            maxLength={120}
-          />
-        </section>
-      ) : null}
-
-      {draft.title.trim() ? (
-        <>
-          <section className="create-live-flow__section">
-            <h2>Date &amp; time</h2>
-            <div className="schedule-datetime-row">
-              <input
-                type="date"
-                value={draft.date}
-                min={today}
-                onChange={(e) => onUpdate('date', e.target.value)}
-              />
-              <input
-                type="time"
-                value={draft.time}
-                onChange={(e) => onUpdate('time', e.target.value)}
-              />
-            </div>
-          </section>
-
-          <section className="create-live-flow__section">
-            <h2>Privacy</h2>
-            <div className="create-live-chip-row">
-              {privacyOptions.map((option) => (
-                <button
-                  key={option}
-                  type="button"
-                  className={draft.privacy === option ? 'is-active' : ''}
-                  onClick={() => onUpdate('privacy', option)}
-                >
-                  {option}
-                </button>
-              ))}
-            </div>
-          </section>
-        </>
-      ) : null}
-
-      {error ? <p className="schedule-error">{error}</p> : null}
-
-      <button
-        type="button"
-        className="create-live-launch"
-        disabled={!canSubmit || status === 'submitting'}
-        onClick={status === 'error' ? onRetry : onSubmit}
-      >
-        <CalendarPlus size={17} strokeWidth={1.8} />
-        {status === 'submitting' ? 'Scheduling…' : status === 'error' ? 'Retry' : 'Schedule live'}
-      </button>
-    </div>
-  );
-}
-
 export default function BottomNav({ collapsible = false, collapsed = false, onExpand, onCollapse }) {
   const { t } = useTranslation();
   const { user } = useAuth();
   const [createOpen, setCreateOpen] = useState(false);
   const [createMode, setCreateMode] = useState('actions');
   const [draft, setDraft] = useState(initialLiveDraft);
-  const [showPreview, setShowPreview] = useState(false);
-  const [manualCoverPhoto, setManualCoverPhoto] = useState(null);
   const [autoCoverEnabled, setAutoCoverEnabled] = useState(true);
-  const [scheduleDraft, setScheduleDraft] = useState(initialScheduleDraft);
-  const [scheduleStatus, setScheduleStatus] = useState('form'); // 'form' | 'submitting' | 'success' | 'error'
-  const [scheduleError, setScheduleError] = useState(null);
   const [equipmentLibrary, setEquipmentLibrary] = useState(() => getEquipmentLibrary());
   const [quickAddOpen, setQuickAddOpen] = useState(false);
   const [quickAddDraft, setQuickAddDraft] = useState({ category: 'recording', brand: '', model: '' });
   const [locationStatus, setLocationStatus] = useState('loading');
   const [userCoordinates, setUserCoordinates] = useState(null);
-  const [userGeoCity, setUserGeoCity] = useState(null);
-  const [userGeoCountry, setUserGeoCountry] = useState(null);
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -728,22 +349,10 @@ export default function BottomNav({ collapsible = false, collapsed = false, onEx
       setLocationStatus('unavailable');
       return;
     }
-
     navigator.geolocation.getCurrentPosition(
       (position) => {
-        const { longitude, latitude } = position.coords;
-        setUserCoordinates([longitude, latitude]);
+        setUserCoordinates([position.coords.longitude, position.coords.latitude]);
         setLocationStatus('ready');
-        fetch(`https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json`, {
-          headers: { 'Accept-Language': 'en' },
-        })
-          .then((r) => r.json())
-          .then((data) => {
-            const addr = data?.address ?? {};
-            setUserGeoCity(addr.city ?? addr.town ?? addr.village ?? addr.county ?? null);
-            setUserGeoCountry(addr.country ?? null);
-          })
-          .catch(() => {});
       },
       () => setLocationStatus('denied'),
       { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 },
@@ -755,56 +364,39 @@ export default function BottomNav({ collapsible = false, collapsed = false, onEx
     getEquipmentLibraryWithProducts().then((items) => {
       if (active) setEquipmentLibrary(items);
     }).catch(() => {});
-    return () => {
-      active = false;
-    };
+    return () => { active = false; };
   }, []);
 
   useEffect(() => {
     setCreateOpen(false);
     setCreateMode('actions');
     setDraft(initialLiveDraft);
-    setShowPreview(false);
-    setManualCoverPhoto(null);
   }, [location.pathname]);
 
   const closeCreate = () => {
     setCreateOpen(false);
     setCreateMode('actions');
     setDraft(initialLiveDraft);
-    setShowPreview(false);
-    setManualCoverPhoto(null);
-    setScheduleDraft(initialScheduleDraft);
-    setScheduleStatus('form');
-    setScheduleError(null);
   };
-
-  const selectedFamily = draft.family ? EXPERIENCE_FAMILIES[draft.family] : null;
-  const launchStep = !draft.family ? 1 : !draft.subcategory ? 2 : !draft.description.trim() ? 3 : !draft.title.trim() ? 4 : showPreview ? 6 : 5;
-  const canLaunch = draft.family && draft.subcategory && draft.description.trim() && draft.title.trim();
 
   const updateDraft = (key, value) => {
     setDraft((current) => ({ ...current, [key]: value }));
   };
 
   const launchLive = (cameraStream = null) => {
-    const fallbackTitle = userGeoCity ? `Live from ${userGeoCity}` : 'Live stream';
     const effectiveDraft = {
       ...draft,
       family: draft.family || 'earth',
       subcategory: draft.subcategory || 'Walking',
-      title: draft.title.trim() || fallbackTitle,
-      description: draft.description.trim() || draft.title.trim() || fallbackTitle,
+      title: draft.title.trim() || 'Live stream',
+      description: draft.description.trim() || draft.title.trim() || 'Live stream',
     };
     const selectedIds = effectiveDraft.equipmentIds ?? [];
     const live = createLocalLive({
       ...effectiveDraft,
-      manualCoverDataUrl: manualCoverPhoto || null,
       hasCameraStream: Boolean(cameraStream),
       equipment: selectedIds.map((equipmentId) => ({ equipmentId })),
       equipmentSnapshots: buildEquipmentSnapshots(equipmentLibrary, selectedIds),
-      geoCity: userGeoCity,
-      geoCountry: userGeoCountry,
     }, user?.uid, userCoordinates);
     registerCreatedLiveStream(live.id, cameraStream);
     rememberLiveEquipmentSetup(effectiveDraft.family, selectedIds);
@@ -813,40 +405,9 @@ export default function BottomNav({ collapsible = false, collapsed = false, onEx
     navigate(`/live/${encodeURIComponent(live.id)}`);
   };
 
-  const updateScheduleDraft = (key, value) => {
-    setScheduleDraft((current) => ({ ...current, [key]: value }));
-  };
-
-  const canSchedule = scheduleDraft.family && scheduleDraft.subcategory && scheduleDraft.title.trim() && scheduleDraft.date && scheduleDraft.time;
-
-  const submitSchedule = async () => {
-    if (!canSchedule) return;
-    const scheduledStartAt = new Date(`${scheduleDraft.date}T${scheduleDraft.time}:00`).toISOString();
-    const selectedFamily = EXPERIENCE_FAMILIES[scheduleDraft.family];
-    const environment = selectedFamily?.environment ?? 'land';
-    setScheduleStatus('submitting');
-    setScheduleError(null);
-    try {
-      await createStream({
-        title: scheduleDraft.title.trim(),
-        description: scheduleDraft.description.trim() || undefined,
-        category: scheduleDraft.subcategory,
-        subcategories: [scheduleDraft.subcategory],
-        environment,
-        visibility: scheduleDraft.privacy === 'Followers' ? 'followers' : scheduleDraft.privacy === 'Private' ? 'private' : 'public',
-        city: userGeoCity ?? undefined,
-        scheduledStartAt,
-      });
-      setScheduleStatus('success');
-    } catch (err) {
-      setScheduleStatus('error');
-      setScheduleError(err.message ?? 'Failed to schedule live');
-    }
-  };
-
   const applyPreviousSetup = () => {
     const previous = getLastLiveEquipmentIds(draft.family);
-    const defaults  = getDefaultEquipmentIds(equipmentLibrary);
+    const defaults = getDefaultEquipmentIds(equipmentLibrary);
     updateDraft('equipmentIds', previous.length ? previous : defaults);
   };
 
@@ -907,7 +468,7 @@ export default function BottomNav({ collapsible = false, collapsed = false, onEx
         <div className="create-sheet" role="dialog" aria-label={t('create.dialog')}>
           <div className="create-sheet__panel">
             <div className="create-sheet__header">
-              {createMode === 'launch' || createMode === 'schedule' ? (
+              {createMode === 'launch' ? (
                 <button type="button" onClick={() => setCreateMode('actions')} aria-label={t('common.back')}>
                   <ChevronLeft size={18} strokeWidth={1.9} />
                 </button>
@@ -915,23 +476,11 @@ export default function BottomNav({ collapsible = false, collapsed = false, onEx
                 <BrandMark size={22} showName useLegacy />
               )}
               {createMode === 'launch' ? <strong>Start a live</strong> : null}
-              {createMode === 'schedule' ? <strong>{t('create.scheduleLive')}</strong> : null}
               <button type="button" onClick={closeCreate} aria-label={t('common.close')}>
                 <X size={17} strokeWidth={1.9} />
               </button>
             </div>
-            {createMode === 'schedule' ? (
-              <ScheduleFlow
-                draft={scheduleDraft}
-                onUpdate={updateScheduleDraft}
-                status={scheduleStatus}
-                error={scheduleError}
-                canSubmit={canSchedule}
-                onSubmit={submitSchedule}
-                onRetry={() => { setScheduleStatus('form'); setScheduleError(null); }}
-                onDone={closeCreate}
-              />
-            ) : createMode === 'launch' ? (
+            {createMode === 'launch' ? (
               <StartLiveFlow
                 draft={draft}
                 onUpdateDraft={updateDraft}
@@ -957,11 +506,7 @@ export default function BottomNav({ collapsible = false, collapsed = false, onEx
                   <button
                     key={labelKey}
                     type="button"
-                    onClick={() => {
-                      if (actionMode === 'launch') setCreateMode('launch');
-                      else if (labelKey === 'create.scheduleLive') setCreateMode('schedule');
-                      else closeCreate();
-                    }}
+                    onClick={() => (actionMode === 'launch' ? setCreateMode('launch') : closeCreate())}
                   >
                     <Icon size={18} strokeWidth={1.8} />
                     <span>{t(labelKey)}</span>
