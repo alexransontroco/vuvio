@@ -17,7 +17,7 @@ import { lives } from '../data/lives.js';
 import { mapStreams } from '../data/mapStreams.js';
 import { streams, upcomingStreams } from '../data/mockStreams.js';
 import { getCreatedLives, getCreatedLiveStream, registerCreatedLiveStream, subscribeToCreatedLives, publishLivePing, updateCreatedLive } from '../services/createdLiveService.js';
-import { startBroadcast, stopBroadcast, watchBroadcast, closePeer, getLocalStream, getRemoteStream } from '../services/webrtcService.js';
+import { startBroadcast, stopBroadcast, watchBroadcast, closePeer, getLocalStream, getRemoteStream, startRtmpRelayBroadcast, stopRtmpRelayBroadcast, stopRtmpRelayBroadcastSync, startWhipConnection } from '../services/webrtcService.js';
 import { collection, doc, onSnapshot, query, where, getDocs, getDoc, addDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { getDownloadURL, ref as storageRef, uploadString } from 'firebase/storage';
 import { db, storage } from '../firebase.js';
@@ -49,6 +49,7 @@ const demoVideoLiveIds = [
   'guitar-solo-pov-paris',
   'metal-drummer-pov-berlin',
   'piano-pov-dubai',
+  'feuchaterton-live-paris',
   'chef-michelin-paris',
   'motorbike-srinagar',
   'horseback-cappadocia',
@@ -1215,6 +1216,7 @@ function CreatorLiveSession({ live, onEndingChange }) {
   const longPressTimer = useRef(null);
   const lastCenterTapRef = useRef({ time: 0, x: 0, y: 0 });
   const broadcastStartedRef = useRef(false);
+  const ingestModeRef = useRef('whip');
   const [broadcastStream, setBroadcastStream] = useState(() => getCreatedLiveStream(live.id));
   const videoElementRef = useRef(null);
   const coverCaptureRef = useRef({ status: 'idle', imageData: null });
@@ -1362,54 +1364,121 @@ function CreatorLiveSession({ live, onEndingChange }) {
 
     const setupBroadcast = async () => {
       let whipCredentials = null;
+      let relayCredentials = null;
       let cloudflareLiveInputId = live.cloudflareLiveInputId || null;
       try {
+        // ── Step 1: Create Cloudflare live input ──
         try {
           const token = await user.getIdToken();
           const cfResponse = await fetch('/api/cloudflare/live-input/create', {
             method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${token}`,
-            },
-            body: JSON.stringify({
-              streamId: live.id,
-              title: live.title || live.experienceTitle || live.name || live.id,
-            }),
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+            body: JSON.stringify({ streamId: live.id, title: live.title || live.experienceTitle || live.name || live.id }),
           });
           if (cfResponse.ok) {
             const cfData = await cfResponse.json();
-            console.log('[CLOUDFLARE] createLiveInput response:', JSON.stringify(cfData));
+            console.log('[INGEST] Cloudflare live input created — liveInputId:', cfData.liveInputId, '| webRTCUrl:', cfData.webRTCUrl || 'MISSING', '| relayUrl:', cfData.relayUrl || 'none');
             if (cfData.liveInputId) cloudflareLiveInputId = cfData.liveInputId;
-            if (cfData.webRTCUrl && cfData.streamKey) {
+            if (cfData.webRTCUrl) {
               whipCredentials = { url: cfData.webRTCUrl, key: cfData.streamKey };
-              console.log('[CLOUDFLARE] WHIP credentials ready — url:', cfData.webRTCUrl);
-            } else {
-              console.error('[CLOUDFLARE] ❌ Missing WHIP credentials. webRTCUrl:', cfData.webRTCUrl ?? 'NULL', '| streamKey present:', !!cfData.streamKey);
             }
-            // whepUrl is already stored in Firestore by createLiveInputHandler
+            if (cfData.relayUrl && cfData.rtmpsIngestUrl && cfData.rtmpsStreamKey) {
+              relayCredentials = { relayUrl: cfData.relayUrl, ingestUrl: cfData.rtmpsIngestUrl, streamKey: cfData.rtmpsStreamKey };
+            }
+
+            // ── Local relay dev override ──
+            // Enable via URL: ?relayLocal=1 (uses http://localhost:8787)
+            // Optionally inject RTMPS creds directly: &rtmpsIngestUrl=...&rtmpsStreamKey=...
+            // Needed because functions/createLiveInputHandler returns webRTC.streamKey as rtmpsStreamKey (wrong).
+            try {
+              const params = new URLSearchParams(window.location.search);
+              const overrideRelay = params.get('relayLocal');
+              const overrideIngest = params.get('rtmpsIngestUrl');
+              const overrideKey = params.get('rtmpsStreamKey');
+              if (overrideRelay || overrideIngest || overrideKey) {
+                const relayUrl = overrideRelay ? 'http://localhost:8787' : (cfData.relayUrl || 'http://localhost:8787');
+                const ingestUrl = overrideIngest || cfData.rtmpsIngestUrl;
+                const streamKey = overrideKey || cfData.rtmpsStreamKey;
+                if (relayUrl && ingestUrl && streamKey) {
+                  relayCredentials = { relayUrl, ingestUrl, streamKey };
+                  console.log('[INGEST][OVERRIDE] Using local relay override — relayUrl:', relayUrl, '| ingestUrl:', ingestUrl, '| streamKey present:', !!streamKey);
+                }
+              }
+            } catch (_) {}
+
+            if (!whipCredentials && !relayCredentials) {
+              console.warn('[INGEST] No relay or WHIP credentials returned — recording will be unavailable');
+            }
+          } else {
+            console.warn('[INGEST] Cloudflare live input creation failed — HTTP', cfResponse.status);
           }
         } catch (cfErr) {
-          console.warn('[CLOUDFLARE] Cloudflare setup failed:', cfErr.message);
+          console.warn('[INGEST] Cloudflare setup error:', cfErr.message);
         }
 
-        const stream = await startBroadcast(live.id, user.uid, getCreatedLiveStream(live.id), whipCredentials?.url, whipCredentials?.key);
-        if (!active) {
-          stream?.getTracks?.().forEach((track) => track.stop());
-          return;
+        // ── Standalone relay-override path (works even if Function above failed) ──
+        try {
+          const params = new URLSearchParams(window.location.search);
+          const overrideRelay = params.get('relayLocal');
+          const overrideIngest = params.get('rtmpsIngestUrl');
+          const overrideKey = params.get('rtmpsStreamKey');
+          const overrideLiveInput = params.get('liveInputId');
+          if ((overrideRelay || overrideIngest || overrideKey) && (!relayCredentials)) {
+            const relayUrl = overrideRelay ? 'http://localhost:8787' : 'http://localhost:8787';
+            const ingestUrl = overrideIngest;
+            const streamKey = overrideKey;
+            if (relayUrl && ingestUrl && streamKey) {
+              relayCredentials = { relayUrl, ingestUrl, streamKey };
+              if (overrideLiveInput) cloudflareLiveInputId = overrideLiveInput;
+              console.log('[INGEST][OVERRIDE-STANDALONE] Function call was skipped/failed. Using URL params — relayUrl:', relayUrl, '| ingestUrl:', ingestUrl);
+            } else {
+              console.warn('[INGEST][OVERRIDE-STANDALONE] Missing rtmpsIngestUrl or rtmpsStreamKey URL param — cannot build relay creds');
+            }
+          }
+        } catch (_) {}
+
+        // ── Step 2: Acquire camera stream + start P2P signaling ──
+        const existingStream = getCreatedLiveStream(live.id);
+        const stream = await startBroadcast(live.id, user.uid, existingStream);
+        if (!active) { stream?.getTracks?.().forEach((t) => t.stop()); return; }
+
+        // ── Step 3: Start ingest to Cloudflare (relay → WHIP fallback) ──
+        let ingestMode = 'none';
+        if (relayCredentials) {
+          console.log('[INGEST] trying relay —', relayCredentials.relayUrl);
+          try {
+            await startRtmpRelayBroadcast(live.id, user.uid, stream, relayCredentials.relayUrl, relayCredentials.ingestUrl, relayCredentials.streamKey);
+            ingestMode = 'rtmps-relay';
+            console.log('[INGEST] relay connected');
+          } catch (relayErr) {
+            console.warn('[INGEST] relay failed:', relayErr.message, '— falling back to WHIP');
+          }
         }
+        if (ingestMode === 'none' && whipCredentials) {
+          try {
+            await startWhipConnection(stream, whipCredentials.url, whipCredentials.key);
+            ingestMode = 'whip';
+          } catch (whipErr) {
+            console.error('[INGEST] WHIP failed:', whipErr.message);
+          }
+        }
+        console.log('[INGEST] FINAL MODE:', ingestMode);
+
+        // ── Step 4: Update Firestore ──
         if (stream) {
+          ingestModeRef.current = ingestMode === 'rtmps-relay' ? 'rtmps-relay' : 'whip';
           registerCreatedLiveStream(live.id, stream);
           setBroadcastStream(stream);
           await updateDoc(doc(db, 'activeLives', live.id), {
             cloudflareLiveInputId,
             liveStartedAt: serverTimestamp(),
-            recordingStatus: 'recording',
+            recordingStatus: ingestMode !== 'none' ? 'recording' : 'ingest_failed',
+            broadcastIngestMode: ingestMode,
             updatedAt: serverTimestamp(),
           });
         }
       } catch (err) {
-        console.error('[CLOUDFLARE] Broadcast setup failed:', err.message);
+        console.error('[INGEST] Broadcast setup failed:', err.message);
         setToast('Broadcast connection failed');
         window.setTimeout(() => setToast(null), 1800);
       }
@@ -1419,7 +1488,8 @@ function CreatorLiveSession({ live, onEndingChange }) {
 
     return () => {
       active = false;
-      closePeer();
+      if (ingestModeRef.current === 'rtmps-relay') stopRtmpRelayBroadcastSync();
+      else closePeer();
       onEndingChange?.(false, live.id);
     };
   }, [live?.id, onEndingChange, user?.uid]);
@@ -1442,7 +1512,8 @@ function CreatorLiveSession({ live, onEndingChange }) {
     if (!live?.id) return undefined;
     const handleBeforeUnload = () => {
       console.log('[CLOUDFLARE] broadcast ending (unload)');
-      stopBroadcast(live.id).catch(() => {});
+      if (ingestModeRef.current === 'rtmps-relay') stopRtmpRelayBroadcastSync();
+      else stopBroadcast(live.id).catch(() => {});
     };
     window.addEventListener('beforeunload', handleBeforeUnload);
     return () => window.removeEventListener('beforeunload', handleBeforeUnload);
@@ -1647,8 +1718,12 @@ function CreatorLiveSession({ live, onEndingChange }) {
     }
 
     try {
-      await stopBroadcast(live.id);
-      closePeer();
+      if (ingestModeRef.current === 'rtmps-relay') {
+        await stopRtmpRelayBroadcast(live.id);
+      } else {
+        await stopBroadcast(live.id);
+        closePeer();
+      }
     } catch (err) {
       console.error('[endLive] Failed to stop broadcast:', err);
     }
@@ -1916,6 +1991,14 @@ function LiveViewer({ liveId, creatorMode = false }) {
       return true;
     });
 
+    // Deduplicate by ID (multiple mock sources can have the same ID)
+    const seen = new Set();
+    combined = combined.filter((s) => {
+      if (seen.has(s.id)) return false;
+      seen.add(s.id);
+      return true;
+    });
+
     // If a specific stream is requested, always put it first
     if (liveId) {
       const requestedIdx = combined.findIndex((s) => s.id === liveId);
@@ -2090,18 +2173,90 @@ function LiveViewer({ liveId, creatorMode = false }) {
     };
   }, [creatorMode, activeLiveId, live.creatorUid]);
 
-  // Viewer connection — one RTCPeerConnection per viewer instance.
-  // Unauthenticated users fall back to HLS (cannot write watcher docs to Firestore).
+  // Viewer connection. Priority: HLS (Cloudflare, all users) → P2P WebRTC (auth users, no HLS).
   useEffect(() => {
-    if (creatorMode || !activeLiveId || !remoteVideoRef.current || !user) return;
+    if (creatorMode || !activeLiveId || !remoteVideoRef.current) return;
     const video = remoteVideoRef.current;
+
+    // Ended lives: prefer replayUrl (VOD, permanent). If none, replay isn't ready — show ended UI.
+    const isEnded = live.status === 'ended' || Boolean(live.liveEndedAt);
+    if (isEnded && !live.replayUrl) {
+      setBroadcastEnded(true);
+      return;
+    }
+    const hlsSource = isEnded ? live.replayUrl : live.hlsManifestUrl;
+
+    // --- Path A: HLS (Cloudflare) — preferred when available, works for all viewers ---
+    if (hlsSource) {
+      let cancelled = false;
+      let hls = null;
+      let retryTimer = null;
+      let retryCount = 0;
+      const MAX_HLS_RETRIES = 8;
+      const HLS_RETRY_DELAY = 3000;
+
+      if (video.srcObject) video.srcObject = null;
+      setRemoteStream('watching');
+      setBroadcastEnded(false);
+
+      const tryHls = () => {
+        if (cancelled) return;
+        hls?.destroy();
+        hls = null;
+
+        if (Hls.isSupported()) {
+          hls = new Hls({ lowLatencyMode: !isEnded });
+          hls.loadSource(hlsSource);
+          hls.attachMedia(video);
+          hls.on(Hls.Events.MANIFEST_PARSED, () => {
+            if (cancelled) return;
+            setWatchStatus('connected');
+            attemptVideoPlayback(video);
+          });
+          hls.on(Hls.Events.ERROR, (_, data) => {
+            if (cancelled || !data.fatal) return;
+            hls?.destroy();
+            hls = null;
+            if (retryCount < MAX_HLS_RETRIES) {
+              retryCount += 1;
+              console.warn('[WatchPage viewer] HLS fatal:', data.details, `(retry ${retryCount}/${MAX_HLS_RETRIES})`);
+              setWatchStatus('retrying');
+              retryTimer = window.setTimeout(tryHls, HLS_RETRY_DELAY);
+            } else {
+              console.warn('[WatchPage viewer] HLS gave up after max retries — treating as ended');
+              setBroadcastEnded(true);
+            }
+          });
+        } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+          video.src = hlsSource;
+          video.addEventListener('loadedmetadata', () => {
+            if (cancelled) return;
+            setWatchStatus('connected');
+            attemptVideoPlayback(video);
+          }, { once: true });
+        }
+      };
+
+      tryHls();
+
+      return () => {
+        cancelled = true;
+        if (retryTimer) window.clearTimeout(retryTimer);
+        hls?.destroy();
+        video.src = '';
+      };
+    }
+
+    // --- Path B: P2P WebRTC — auth users without Cloudflare stream ---
+    if (!user) return;
+
     let cancelled = false;
     const viewerSessionId = Math.random().toString(36).slice(2, 8);
     let viewerSession = null;
     let retryTimer = null;
     let retryCount = 0;
     const MAX_RETRIES = 12;
-    const RETRY_DELAY = 1500;
+    const RETRY_DELAY = 2000;
 
     window.clearTimeout(hlsFallbackTimerRef.current);
     if (video.srcObject) video.srcObject = null;
@@ -2122,8 +2277,9 @@ function LiveViewer({ liveId, creatorMode = false }) {
           window.clearTimeout(hlsFallbackTimerRef.current);
         } else if (status && ['failed', 'disconnected', 'ice:failed', 'ice:disconnected'].includes(status)) {
           console.warn(`[WatchPage viewer ${viewerSessionId}] disconnected`);
-          setWatchStatus('retrying');
-          if (!cancelled) {
+          if (!cancelled && retryCount < MAX_RETRIES) {
+            retryCount += 1;
+            setWatchStatus('retrying');
             retryTimer = window.setTimeout(connect, RETRY_DELAY);
           }
         }
@@ -2131,9 +2287,8 @@ function LiveViewer({ liveId, creatorMode = false }) {
         viewerSession = result;
       }).catch((err) => {
         if (cancelled) return;
-        const message = String(err?.message ?? err);
-        console.warn(`[WatchPage viewer ${viewerSessionId}] failed`, message);
-        if (message.includes('Live broadcast not started yet') && retryCount < MAX_RETRIES) {
+        console.warn(`[WatchPage viewer ${viewerSessionId}] failed`, String(err?.message ?? err));
+        if (retryCount < MAX_RETRIES) {
           retryCount += 1;
           setWatchStatus('retrying');
           retryTimer = window.setTimeout(connect, RETRY_DELAY);
@@ -2150,43 +2305,7 @@ function LiveViewer({ liveId, creatorMode = false }) {
       viewerSession?.close?.();
       closePeer();
     };
-  }, [creatorMode, activeLiveId, user?.uid]);
-
-  // HLS viewer for unauthenticated users (cannot use P2P WebRTC signaling via Firestore).
-  useEffect(() => {
-    if (creatorMode || user || !live?.hlsManifestUrl || !remoteVideoRef.current) return;
-    const video = remoteVideoRef.current;
-    if (video.srcObject) video.srcObject = null;
-    setRemoteStream('watching');
-    setBroadcastEnded(false);
-
-    let hls = null;
-    if (Hls.isSupported()) {
-      hls = new Hls({ lowLatencyMode: true });
-      hls.loadSource(live.hlsManifestUrl);
-      hls.attachMedia(video);
-      hls.on(Hls.Events.MANIFEST_PARSED, () => {
-        setWatchStatus('connected');
-        attemptVideoPlayback(video);
-      });
-    } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
-      video.src = live.hlsManifestUrl;
-      video.addEventListener('loadedmetadata', () => {
-        setWatchStatus('connected');
-        attemptVideoPlayback(video);
-      }, { once: true });
-    }
-
-    return () => {
-      hls?.destroy();
-      video.src = '';
-    };
-  }, [creatorMode, user, live?.hlsManifestUrl]);
-
-  // WebRTC P2P — disabled for Cloudflare one-to-many playback.
-  useEffect(() => {
-    return undefined;
-  }, [creatorMode, activeLiveId, live.creatorUid, live.createdLocally, live.whepUrl, live.hlsManifestUrl]);
+  }, [creatorMode, activeLiveId, user?.uid, live.hlsManifestUrl, live.replayUrl, live.status]);
 
 
 

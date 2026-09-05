@@ -7,6 +7,8 @@ import { createLiveInput, createCloudflareClient } from './cloudflareClient.js';
 import { ApiError } from '../shared/errors.js';
 import { asRecord, stringField } from '../shared/validation.js';
 
+const RTMPS_RELAY_URL = process.env.RTMPS_RELAY_URL || '';
+
 export async function createLiveInputHandler(req: Request, res: Response) {
   try {
     const user = await authenticateUser(req);
@@ -63,14 +65,21 @@ export async function createLiveInputHandler(req: Request, res: Response) {
       }
     });
 
+    const hasRelay = Boolean(RTMPS_RELAY_URL && input.ingestUrl && input.streamKey);
+    console.log(`[CLOUDFLARE] relay check — relayUrl: ${RTMPS_RELAY_URL || 'none'} | rtmpsIngestUrl: ${input.ingestUrl ?? 'none'} | rtmpsStreamKey present: ${!!input.streamKey}`);
+
     res.json({
       liveInputId: input.uid,
       playbackUrl: input.playbackUrl,
       hlsManifestUrl: input.hlsManifestUrl,
       whepUrl: input.whepUrl,
       ingestUrl: input.ingestUrl,
-      webRTCUrl: useRelay ? null : input.webRTCUrl,
-      streamKey: useRelay ? null : input.streamKey,
+      webRTCUrl: input.webRTCUrl,
+      streamKey: input.streamKey,
+      // Relay fields — frontend uses these when relay is available
+      relayUrl: hasRelay ? RTMPS_RELAY_URL : null,
+      rtmpsIngestUrl: hasRelay ? input.ingestUrl : null,
+      rtmpsStreamKey: hasRelay ? input.streamKey : null,
     });
   } catch (error) {
     if (error instanceof ApiError) {

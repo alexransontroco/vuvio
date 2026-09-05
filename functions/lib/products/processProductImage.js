@@ -22,6 +22,8 @@ import { getStorage } from 'firebase-admin/storage';
 import fetch from 'node-fetch';
 // Allowed image domains
 const ALLOWED_DOMAINS = [
+    'images.icecat.biz', // Icecat CDN — provider-hosted, hotlinking allowed for registered users
+    'icecat.biz',
     'images.unsplash.com',
     'cdn.shopify.com',
     'images.pexels.com',

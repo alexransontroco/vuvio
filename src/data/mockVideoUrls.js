@@ -50,12 +50,14 @@ export const MOCK_VIDEO_URLS = {
   serrasolses: fb('mock-videos/videos/mockups/Serrasolses_Brothers__Rio_Claro_100%_GoPro_2022__HDs84SRy7i0__clip.mp4'),
 
   // ── music POV streams ─────────────────────────────────────────────────────
-  guitar:  fb('mock-videos/videos/guitar.mp4'),
-  drummer: fb('mock-videos/videos/drummer.mp4'),
-  piano:   fb('mock-videos/videos/piano.mp4'),
-  guitarThumb:  fb('mock-videos/videos/guitar-thumb.jpg'),
-  drummerThumb: fb('mock-videos/videos/drummer-thumb.jpg'),
-  pianoThumb:   fb('mock-videos/videos/piano-thumb.jpg'),
+  guitar:        fb('mock-videos/videos/guitar.mp4'),
+  drummer:       fb('mock-videos/videos/drummer.mp4'),
+  piano:         fb('mock-videos/videos/piano.mp4'),
+  feuchaterton:      fb('mock-videos/videos/feuchaterton.mp4'),
+  guitarThumb:       fb('mock-videos/videos/guitar-thumb.jpg'),
+  drummerThumb:      fb('mock-videos/videos/drummer-thumb.jpg'),
+  pianoThumb:        fb('mock-videos/videos/piano-thumb.jpg'),
+  feuchatertonThumb: fb('mock-videos/videos/feuchaterton-thumb.jpg'),
 };
 
 // ── thumbnails / cover images ──────────────────────────────────────────────────

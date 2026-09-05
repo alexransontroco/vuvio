@@ -3,6 +3,10 @@ import { auth, db } from '../firebase.js';
 
 let localStream = null;
 let peerConnection = null;
+let whipPeerConnection = null;
+let relayPeerConnection = null;
+let relaySessionId = null;
+let relayBaseUrl = null;
 let iceGatheringComplete = false;
 let cachedRtcConfig = null;
 let cachedRtcConfigExpiresAt = 0;
@@ -108,7 +112,106 @@ async function getRtcConfig() {
   return cachedRtcConfig;
 }
 
-export async function startBroadcast(liveId, userId, existingStream = null) {
+async function startRtmpRelayIngest(relayUrl, liveInputId, ingestUrl, streamKey, stream) {
+  if (!relayUrl) throw new Error('Missing RTMPS relay URL');
+  if (!ingestUrl || !streamKey) throw new Error('Missing Cloudflare RTMPS credentials');
+
+  relayBaseUrl = relayUrl.replace(/\/$/, '');
+  console.log('[relay] starting relay session for live:', liveInputId);
+
+  const pc = new RTCPeerConnection({
+    iceServers: [{ urls: 'stun:stun.cloudflare.com:3478' }],
+    bundlePolicy: 'max-bundle',
+  });
+  relayPeerConnection = pc;
+
+  stream.getTracks().forEach((track) => pc.addTrack(track, stream));
+
+  const offer = await pc.createOffer();
+  await pc.setLocalDescription(offer);
+
+  await new Promise((resolve) => {
+    if (pc.iceGatheringState === 'complete') { resolve(); return; }
+    pc.onicegatheringstatechange = () => { if (pc.iceGatheringState === 'complete') resolve(); };
+    setTimeout(resolve, 5000);
+  });
+
+  console.log('[relay] ICE gathered, sending offer to relay...');
+  const response = await fetch(`${relayBaseUrl}/sessions`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ liveInputId, ingestUrl, streamKey, sdpOffer: pc.localDescription.sdp }),
+  });
+
+  if (!response.ok) {
+    const text = await response.text();
+    throw new Error(`[relay] session create failed: ${response.status} ${text.slice(0, 200)}`);
+  }
+
+  const data = await response.json();
+  relaySessionId = data.sessionId || null;
+  await pc.setRemoteDescription({ type: 'answer', sdp: data.sdpAnswer });
+  console.log('[relay] RTMPS relay connected — Cloudflare is recording');
+
+  pc.onconnectionstatechange = () => console.log('[relay] WebRTC state:', pc.connectionState);
+}
+
+async function stopRtmpRelayConnection() {
+  try {
+    if (relayPeerConnection) {
+      relayPeerConnection.onconnectionstatechange = null;
+      relayPeerConnection.close();
+      relayPeerConnection = null;
+    }
+  } finally {
+    if (relayBaseUrl && relaySessionId) {
+      const sessionId = relaySessionId;
+      relaySessionId = null;
+      fetch(`${relayBaseUrl}/sessions/${sessionId}`, { method: 'DELETE' }).catch(() => {});
+    }
+    relayBaseUrl = null;
+  }
+}
+
+export async function startWhipConnection(stream, whipUrl, whipKey) {
+  console.log('[INGEST] trying WHIP —', whipUrl);
+  whipPeerConnection = new RTCPeerConnection({ iceServers: [{ urls: 'stun:stun.cloudflare.com:3478' }] });
+
+  stream.getTracks().forEach((track) => whipPeerConnection.addTrack(track, stream));
+
+  const offer = await whipPeerConnection.createOffer();
+  await whipPeerConnection.setLocalDescription(offer);
+
+  await new Promise((resolve) => {
+    if (whipPeerConnection.iceGatheringState === 'complete') { resolve(); return; }
+    whipPeerConnection.onicegatheringstatechange = () => {
+      if (whipPeerConnection.iceGatheringState === 'complete') resolve();
+    };
+    setTimeout(resolve, 5000);
+  });
+
+  const response = await fetch(whipUrl, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/sdp',
+      ...(whipKey ? { Authorization: `Bearer ${whipKey}` } : {}),
+    },
+    body: whipPeerConnection.localDescription.sdp,
+  });
+
+  if (!response.ok) {
+    const text = await response.text().catch(() => '');
+    whipPeerConnection.close();
+    whipPeerConnection = null;
+    throw new Error(`WHIP POST failed: HTTP ${response.status} — ${text.slice(0, 200)}`);
+  }
+
+  const answerSdp = await response.text();
+  await whipPeerConnection.setRemoteDescription({ type: 'answer', sdp: answerSdp });
+  console.log('[INGEST] WHIP connected — Cloudflare is receiving the stream');
+}
+
+export async function startBroadcast(liveId, userId, existingStream = null, whipUrl = null, whipKey = null) {
   try {
     console.log('[webrtcService] Starting broadcast for live:', liveId);
     const signalSessionId = `signal-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
@@ -125,6 +228,8 @@ export async function startBroadcast(liveId, userId, existingStream = null) {
       });
       console.log('[webrtcService] Camera stream acquired');
     }
+
+    // WHIP is now called explicitly from setupBroadcast — not here
 
     // Create peer connection
     console.log('[webrtcService] Creating peer connection...');
@@ -284,6 +389,11 @@ export async function stopBroadcast(liveId) {
       peerConnection._vuvioCleanup?.();
       peerConnection.close();
       peerConnection = null;
+    }
+
+    if (whipPeerConnection) {
+      whipPeerConnection.close();
+      whipPeerConnection = null;
     }
 
     // Mark the live as ended in Firestore (don't delete, so watchers know it ended)
@@ -475,6 +585,49 @@ export async function watchBroadcast(liveId, onStreamReceived, watcherId = `view
   }
 }
 
+export async function startRtmpRelayBroadcast(liveId, userId, existingStream = null, relayUrl = null, ingestUrl = null, streamKey = null) {
+  try {
+    console.log('[relay] startRtmpRelayBroadcast liveId:', liveId, 'relayUrl:', relayUrl);
+    if (existingStream?.getTracks?.().length) {
+      localStream = existingStream;
+    } else {
+      localStream = await navigator.mediaDevices.getUserMedia({ video: { width: 1280, height: 720 }, audio: true });
+    }
+    await startRtmpRelayIngest(relayUrl, liveId, ingestUrl, streamKey, localStream);
+    return localStream;
+  } catch (err) {
+    console.error('[relay] Relay broadcast failed (WHIP still active):', err.message);
+    throw err;
+  }
+}
+
+export async function stopRtmpRelayBroadcast(liveId) {
+  try {
+    console.log('[relay] stopping relay broadcast');
+    if (localStream) { localStream.getTracks().forEach(t => t.stop()); localStream = null; }
+    await stopRtmpRelayConnection();
+    await updateDoc(doc(db, 'activeLives', liveId), { status: 'ended', endedAt: new Date().toISOString() });
+    console.log('[relay] live marked ended');
+  } catch (err) {
+    console.error('[relay] Failed to stop relay broadcast:', err.message);
+    throw err;
+  }
+}
+
+export function stopRtmpRelayBroadcastSync() {
+  try {
+    if (localStream) { localStream.getTracks().forEach(t => t.stop()); localStream = null; }
+    if (relayPeerConnection) { relayPeerConnection.close(); relayPeerConnection = null; }
+    if (relayBaseUrl && relaySessionId) {
+      fetch(`${relayBaseUrl}/sessions/${relaySessionId}`, { method: 'DELETE' }).catch(() => {});
+      relaySessionId = null; relayBaseUrl = null;
+    }
+    console.log('[relay] No active relay session to stop');
+  } catch (err) {
+    console.warn('[relay] sync cleanup error:', err.message);
+  }
+}
+
 export function getLocalStream() {
   return localStream;
 }
@@ -489,6 +642,10 @@ export function closePeer() {
     peerConnection._vuvioCleanup?.();
     peerConnection.close();
     peerConnection = null;
+  }
+  if (whipPeerConnection) {
+    whipPeerConnection.close();
+    whipPeerConnection = null;
   }
   if (localStream) {
     localStream.getTracks().forEach(track => track.stop());

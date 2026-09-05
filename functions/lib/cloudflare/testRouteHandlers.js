@@ -51,6 +51,32 @@ export async function getCloudflareInputs(req, res) {
         res.status(500).json({ error: `Failed to list live inputs: ${error.message}` });
     }
 }
+export async function getRawVideos(req, res) {
+    const liveInputId = typeof req.query.id === 'string' ? req.query.id : '';
+    if (!liveInputId) {
+        res.status(400).json({ error: 'Missing ?id=' });
+        return;
+    }
+    const { accountId, apiToken } = getCloudflareEnv();
+    const response = await fetch(`https://api.cloudflare.com/client/v4/accounts/${accountId}/stream/live_inputs/${liveInputId}/videos`, {
+        headers: { Authorization: `Bearer ${apiToken}` },
+    });
+    const body = await response.json();
+    res.json(body);
+}
+export async function getRawLiveInput(req, res) {
+    const liveInputId = typeof req.query.id === 'string' ? req.query.id : '';
+    if (!liveInputId) {
+        res.status(400).json({ error: 'Missing ?id=' });
+        return;
+    }
+    const { accountId, apiToken } = getCloudflareEnv();
+    const response = await fetch(`https://api.cloudflare.com/client/v4/accounts/${accountId}/stream/live_inputs/${liveInputId}`, {
+        headers: { Authorization: `Bearer ${apiToken}` },
+    });
+    const body = await response.json();
+    res.json(body);
+}
 export async function postCreateTestInput(req, res) {
     try {
         const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5);

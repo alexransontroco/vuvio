@@ -273,8 +273,9 @@ export default function LiveRecapPageSimple() {
             setReplayState('no_footage');
           } else if ((data.videosFound ?? 1) === 0) {
             emptyPollStreakRef.current += 1;
-            // After 5 consecutive polls (75s) with no Cloudflare videos at all → no footage
-            if (emptyPollStreakRef.current >= 5) {
+            // After 20 consecutive polls (5 min) with no Cloudflare videos at all → no footage
+            // Cloudflare needs several minutes after WHIP stream ends to finalize the recording
+            if (emptyPollStreakRef.current >= 20) {
               replayStateRef.current = 'no_footage';
               setReplayState('no_footage');
             }

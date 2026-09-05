@@ -4,6 +4,8 @@ import { ApiError } from '../shared/errors.js';
 import { verifyCloudflareWebhook } from './verifyCloudflareWebhook.js';
 import { addStreamEvent } from '../streams/streamHelpers.js';
 import { endStream } from '../streams/endStream.js';
+import { getCloudflareEnv } from '../config/env.js';
+import { createCloudflareClient } from './cloudflareClient.js';
 const eventMap = {
     'live_input.connected': 'input_connected',
     'live_input.disconnected': 'input_disconnected',
@@ -25,6 +27,20 @@ function extractEvent(body) {
     const meta = data.meta && typeof data.meta === 'object' ? data.meta : {};
     const streamId = String(data.streamId ?? meta.streamId ?? body.streamId ?? '');
     return { id, type, mapped: eventMap[type] ?? type, streamId, data };
+}
+function extractLiveInputUid(body, data) {
+    const meta = data.meta && typeof data.meta === 'object' ? data.meta : {};
+    return String(data.liveInput
+        ?? data.liveInputUid
+        ?? data.live_input
+        ?? data.live_input_uid
+        ?? meta.liveInput
+        ?? meta.liveInputUid
+        ?? body.liveInput
+        ?? body.liveInputUid
+        ?? body.live_input
+        ?? body.live_input_uid
+        ?? '');
 }
 export async function cloudflareWebhook(req, res) {
     const signature = req.header('cf-webhook-signature') ?? req.header('webhook-signature') ?? req.header('x-cloudflare-signature') ?? undefined;
@@ -50,6 +66,47 @@ export async function cloudflareWebhook(req, res) {
     if (!accepted) {
         res.status(200).json({ accepted: true, deduped: true });
         return;
+    }
+    if (event.mapped === 'video_ready') {
+        const { customerCode } = getCloudflareEnv();
+        const recordingUid = String(body.uid ?? '');
+        const liveInputUid = extractLiveInputUid(body, event.data);
+        console.log(`[cloudflare-webhook] video.ready — recordingUid=${recordingUid} liveInputUid=${liveInputUid}`);
+        const recordingUrl = recordingUid
+            ? `https://customer-${customerCode}.cloudflarestream.com/${recordingUid}/manifest/video.m3u8`
+            : '';
+        if (recordingUid) {
+            // Try cloudflareLiveInputId first, then liveInputId (set by WatchPage frontend)
+            let snap = await db.collection('activeLives')
+                .where('cloudflareLiveInputId', '==', liveInputUid)
+                .limit(1)
+                .get();
+            if (snap.empty && liveInputUid) {
+                snap = await db.collection('activeLives')
+                    .where('liveInputId', '==', liveInputUid)
+                    .limit(1)
+                    .get();
+            }
+            if (!snap.empty) {
+                const liveRef = snap.docs[0].ref;
+                const liveData = snap.docs[0].data();
+                await liveRef.set({ replayUrl: recordingUrl, recordingStatus: 'ready', recordingUid, cloudflareVideoId: recordingUid, updatedAt: FieldValue.serverTimestamp(), replayCleanupPending: false }, { merge: true });
+                const liveInputId = typeof liveData.cloudflareLiveInputId === 'string' && liveData.cloudflareLiveInputId
+                    ? liveData.cloudflareLiveInputId
+                    : typeof liveData.liveInputId === 'string' && liveData.liveInputId
+                        ? liveData.liveInputId
+                        : liveInputUid;
+                if (liveInputId && liveData.replayCleanupPending !== false) {
+                    await createCloudflareClient().deleteLiveInput(liveInputId).catch((err) => {
+                        console.warn(`[cloudflare-webhook] failed to delete live input ${liveInputId}:`, err instanceof Error ? err.message : err);
+                    });
+                }
+                console.log(`[cloudflare-webhook] video.ready saved for liveInput=${liveInputUid} uid=${recordingUid}`);
+            }
+            else {
+                console.warn(`[cloudflare-webhook] video.ready — no activeLives doc found for liveInputUid=${liveInputUid} recordingUid=${recordingUid}`);
+            }
+        }
     }
     if (event.streamId) {
         const streamRef = db.collection(collections.streams).doc(event.streamId);

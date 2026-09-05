@@ -1,7 +1,12 @@
 import { lazy, Suspense } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Navigate, Route, Routes, useLocation } from 'react-router-dom';
+import { Navigate, Route, Routes, useLocation, useParams } from 'react-router-dom';
 import AppShell from './components/AppShell.jsx';
+
+function ShareLiveRedirect() {
+  const { liveId } = useParams();
+  return <Navigate to={`/watch?live=${encodeURIComponent(liveId)}&mode=view`} replace />;
+}
 import ProtectedRoute, { PublicOnlyRoute } from './components/ProtectedRoute.jsx';
 import SplashScreen from './components/SplashScreen.jsx';
 import { useAuth } from './context/AuthContext.jsx';
@@ -141,6 +146,7 @@ export default function App() {
         <Route index element={<Navigate to="/watch" replace />} />
         <Route path="/home" element={<Navigate to="/watch" replace />} />
         <Route path="/watch/:liveId" element={<Navigate to="/watch" replace />} />
+        <Route path="/share/live/:liveId" element={<ShareLiveRedirect />} />
         <Route path="/live/:liveId" element={<ProtectedRoute requireOnboarding={false}><Lazy component={LivePage} /></ProtectedRoute>} />
         <Route path="/discover" element={<Lazy component={DiscoverFeedPage} />} />
 

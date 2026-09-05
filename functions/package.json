@@ -12,8 +12,10 @@
     "test:build": "tsc -p tsconfig.json && node --test \"lib/test/**/*.test.js\""
   },
   "dependencies": {
+    "ffmpeg-static": "^5.3.0",
     "firebase-admin": "^13.0.0",
-    "firebase-functions": "^6.0.1"
+    "firebase-functions": "^6.0.1",
+    "openai": "^6.49.0"
   },
   "devDependencies": {
     "@types/node": "^22.10.2",

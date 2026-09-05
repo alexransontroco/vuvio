@@ -115,3 +115,5 @@ export function getLiveStreams(filters: Record<string, string | number | undefin
 export function getGlobeStreams() {
   return apiRequest<{ streams: unknown[] }>('/globe/streams', { authRequired: false });
 }
+
+export const finishStream = endStream;

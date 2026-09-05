@@ -252,3 +252,13 @@ export function subscribeToMessaging(callback) {
   win.addEventListener(EVENT_NAME, listener);
   return () => win.removeEventListener(EVENT_NAME, listener);
 }
+
+export function subscribeToConversations(_uid, callback) {
+  const win = safeWindow();
+  if (!win) { callback([]); return () => {}; }
+
+  callback(readConversations().sort((a, b) => b.updatedAt - a.updatedAt));
+  const listener = () => callback(readConversations().sort((a, b) => b.updatedAt - a.updatedAt));
+  win.addEventListener(EVENT_NAME, listener);
+  return () => win.removeEventListener(EVENT_NAME, listener);
+}
