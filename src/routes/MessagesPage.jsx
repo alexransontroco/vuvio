@@ -4,9 +4,11 @@ import { useNavigate } from 'react-router-dom';
 import {
   getConversations,
   getMessageLive,
+  getOrCreateConversation,
   getOtherParticipant,
   getUnreadConversationCount,
   searchConversations,
+  searchUsers,
   subscribeToMessaging,
 } from '../services/messagingService.js';
 
@@ -125,6 +127,79 @@ function MessageRequestCard({ conversation }) {
   );
 }
 
+function NewConversationSheet({ onClose }) {
+  const navigate = useNavigate();
+  const [query, setQuery] = useState('');
+  const [results, setResults] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const inputRef = useRef(null);
+  const timerRef = useRef(null);
+
+  useEffect(() => { inputRef.current?.focus(); }, []);
+
+  useEffect(() => {
+    clearTimeout(timerRef.current);
+    if (!query.trim()) { setResults([]); return; }
+    setLoading(true);
+    timerRef.current = setTimeout(async () => {
+      const found = await searchUsers(query);
+      setResults(found);
+      setLoading(false);
+    }, 280);
+    return () => clearTimeout(timerRef.current);
+  }, [query]);
+
+  const handleSelect = async (user) => {
+    const conv = await getOrCreateConversation(user.id);
+    onClose();
+    navigate(`/messages/${conv.id}`);
+  };
+
+  return (
+    <div className="msg-sheet" role="dialog" aria-modal="true" aria-label="New conversation">
+      <button type="button" className="msg-sheet__backdrop" onClick={onClose} aria-label="Close" />
+      <div className="msg-sheet__panel">
+        <header className="msg-sheet__header">
+          <h2>New message</h2>
+          <button type="button" onClick={onClose} aria-label="Close"><X size={17} strokeWidth={2} /></button>
+        </header>
+        <div className="messages-search" style={{ margin: '4px 0 8px' }}>
+          <Search size={15} strokeWidth={1.8} />
+          <input
+            ref={inputRef}
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Search by name or username"
+            type="search"
+          />
+          {query ? (
+            <button type="button" className="messages-search__clear" onClick={() => setQuery('')} aria-label="Clear">
+              <X size={13} strokeWidth={2.5} />
+            </button>
+          ) : null}
+        </div>
+        {loading ? (
+          <span className="conv-skeleton" style={{ margin: '4px 0' }} />
+        ) : results.length > 0 ? (
+          results.map((user) => (
+            <button key={user.id} type="button" className="new-conv-user-row" onClick={() => handleSelect(user)}>
+              <img src={user.avatar} alt="" className="new-conv-user-row__avatar" />
+              <span className="new-conv-user-row__info">
+                <strong>{user.name}</strong>
+                {user.profession ? <small>{user.profession}</small> : <small>@{user.username}</small>}
+              </span>
+            </button>
+          ))
+        ) : query.trim() ? (
+          <p className="new-conv-empty">No users found</p>
+        ) : (
+          <p className="new-conv-empty">Start typing a name or username</p>
+        )}
+      </div>
+    </div>
+  );
+}
+
 function EmptyState({ filter, hasQuery, onExplore }) {
   const title = hasQuery
     ? 'No results found'
@@ -159,6 +234,7 @@ export default function MessagesPage() {
   const [version, setVersion] = useState(0);
   const [loading, setLoading] = useState(true);
   const [searchOpen, setSearchOpen] = useState(false);
+  const [newConvOpen, setNewConvOpen] = useState(false);
   const searchRef = useRef(null);
 
   useEffect(() => subscribeToMessaging(() => setVersion((v) => v + 1)), []);
@@ -203,7 +279,7 @@ export default function MessagesPage() {
             <button type="button" className="messages-icon-btn" aria-label="Search" onClick={() => setSearchOpen((o) => !o)}>
               <Search size={19} strokeWidth={1.8} />
             </button>
-            <button type="button" className="messages-icon-btn" aria-label="New conversation" onClick={() => navigate('/discover')}>
+            <button type="button" className="messages-icon-btn" aria-label="New conversation" onClick={() => setNewConvOpen(true)}>
               <Edit3 size={19} strokeWidth={1.8} />
             </button>
           </div>
@@ -276,6 +352,8 @@ export default function MessagesPage() {
           <EmptyState filter={filter} hasQuery={query.trim().length > 0} onExplore={() => navigate('/discover')} />
         )}
       </div>
+
+      {newConvOpen ? <NewConversationSheet onClose={() => setNewConvOpen(false)} /> : null}
     </section>
   );
 }

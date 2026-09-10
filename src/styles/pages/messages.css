@@ -1241,6 +1241,61 @@
   color: rgba(242, 247, 246, 0.32);
 }
 
+/* ── New conversation sheet ───────────────────── */
+
+.new-conv-user-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-height: 52px;
+  padding: 6px 4px;
+  border: 0;
+  background: transparent;
+  color: var(--color-text);
+  text-align: left;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.new-conv-user-row:active {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.new-conv-user-row__avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
+  background: rgba(255, 255, 255, 0.07);
+}
+
+.new-conv-user-row__info {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.new-conv-user-row__info strong {
+  font-size: 14.5px;
+  font-weight: 580;
+  color: rgba(245, 248, 252, 0.95);
+}
+
+.new-conv-user-row__info small {
+  font-size: 12.5px;
+  color: rgba(242, 247, 246, 0.46);
+}
+
+.new-conv-empty {
+  margin: 16px 4px 8px;
+  font-size: 13px;
+  color: rgba(242, 247, 246, 0.38);
+  text-align: center;
+}
+
 @keyframes sheet-up {
   from { transform: translateY(22px); opacity: 0; }
 }

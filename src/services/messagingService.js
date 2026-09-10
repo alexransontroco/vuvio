@@ -4,7 +4,9 @@ import {
   deleteDoc,
   doc,
   getDoc,
+  getDocs,
   increment,
+  limit,
   onSnapshot,
   orderBy,
   query,
@@ -493,6 +495,57 @@ export async function deleteConversation(conversationId) {
     await deleteDoc(doc(db, 'conversations', conversationId));
   }
   emitChange();
+}
+
+// ── User search ───────────────────────────────────────────────────
+export async function searchUsers(searchQuery) {
+  const normalized = searchQuery.trim().toLowerCase();
+  if (!normalized) return [];
+
+  if (!currentUid) {
+    return Object.values(Object.fromEntries(profileMap))
+      .filter((p) => p && p.id !== 'current-user' && (
+        p.name?.toLowerCase().includes(normalized) ||
+        p.username?.toLowerCase().includes(normalized)
+      ))
+      .slice(0, 8);
+  }
+
+  try {
+    const [byUsername, byDisplay] = await Promise.all([
+      getDocs(query(
+        collection(db, 'users'),
+        where('usernameNormalized', '>=', normalized),
+        where('usernameNormalized', '<=', normalized + '\uf8ff'),
+        limit(8),
+      )),
+      getDocs(query(
+        collection(db, 'users'),
+        where('displayNameNormalized', '>=', normalized),
+        where('displayNameNormalized', '<=', normalized + '\uf8ff'),
+        limit(8),
+      )),
+    ]);
+
+    const seen = new Set();
+    const results = [];
+    [...byUsername.docs, ...byDisplay.docs].forEach((d) => {
+      if (d.id === currentUid || seen.has(d.id)) return;
+      seen.add(d.id);
+      const data = d.data();
+      results.push({
+        id: d.id,
+        name: data.displayName || 'Unknown',
+        username: data.username || d.id.slice(0, 8),
+        avatar: data.photoURL || '/assets/icons/icon-192.png',
+        profession: data.profession || null,
+      });
+    });
+    return results.slice(0, 8);
+  } catch (err) {
+    console.warn('[messaging] searchUsers failed:', err.message);
+    return [];
+  }
 }
 
 // ── Preferences ───────────────────────────────────────────────────
