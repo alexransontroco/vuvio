@@ -1184,6 +1184,14 @@
   padding: 0;
 }
 
+.msg-sheet__desc {
+  margin: 0 0 12px;
+  color: rgba(242, 247, 246, 0.56);
+  font-size: 13.5px;
+  line-height: 1.45;
+  padding: 0 4px;
+}
+
 .msg-sheet__divider {
   height: 0.5px;
   background: rgba(255, 255, 255, 0.07);

@@ -1,5 +1,6 @@
 import {
   BellOff,
+  BellRing,
   ChevronLeft,
   ChevronDown,
   Ellipsis,
@@ -15,6 +16,7 @@ import {
 } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext.jsx';
 import {
   blockUser,
   deleteConversation,
@@ -25,10 +27,13 @@ import {
   reportUser,
   sendMessage,
   subscribeToMessaging,
+  subscribeToConversationMessages,
+  toggleMute,
   unblockUser,
 } from '../services/messagingService.js';
 
 function LiveContextCard({ live, onDismiss }) {
+  const navigate = useNavigate();
   if (!live) return null;
   const isLive = live.status === 'live';
   const isUpcoming = live.status === 'upcoming';
@@ -47,7 +52,11 @@ function LiveContextCard({ live, onDismiss }) {
         </p>
         <strong className="conv-context-card__title">{live.title}</strong>
         <div className="conv-context-card__actions">
-          <button type="button" className="conv-context-card__action is-primary">
+          <button
+            type="button"
+            className="conv-context-card__action is-primary"
+            onClick={() => navigate('/watch')}
+          >
             {live.actionLabel}
           </button>
           {live.secondaryActionLabel ? (
@@ -66,8 +75,8 @@ function SystemNote({ text }) {
   return <p className="conv-system-note">{text}</p>;
 }
 
-function MessageBubble({ message, prevSenderId, participant }) {
-  const mine = message.senderId === 'current-user';
+function MessageBubble({ message, prevSenderId, participant, currentUid }) {
+  const mine = currentUid ? message.senderId === currentUid : message.senderId === 'current-user';
   const live = message.liveId ? getMessageLive(message.liveId) : null;
   const showAvatar = !mine && prevSenderId !== message.senderId;
   const isSystem = message.type === 'system';
@@ -114,18 +123,18 @@ function MessageBubble({ message, prevSenderId, participant }) {
   );
 }
 
-function ConversationMenu({ participant, onClose, onBlock, onDelete, onReport }) {
+function ConversationMenu({ participant, isMuted, onClose, onBlock, onDelete, onReport, onMute, onViewProfile }) {
   return (
     <div className="msg-sheet" role="dialog" aria-modal="true" aria-label="Conversation options">
       <button type="button" className="msg-sheet__backdrop" onClick={onClose} aria-label="Close" />
       <div className="msg-sheet__panel">
-        <button type="button" onClick={onClose}>
+        <button type="button" onClick={onViewProfile}>
           <UserRound size={17} strokeWidth={1.8} />
           View profile
         </button>
-        <button type="button" onClick={onClose}>
-          <BellOff size={17} strokeWidth={1.8} />
-          Mute notifications
+        <button type="button" onClick={onMute}>
+          {isMuted ? <BellRing size={17} strokeWidth={1.8} /> : <BellOff size={17} strokeWidth={1.8} />}
+          {isMuted ? 'Unmute notifications' : 'Mute notifications'}
         </button>
         <div className="msg-sheet__divider" />
         <button type="button" className="is-danger" onClick={onReport}>
@@ -145,11 +154,26 @@ function ConversationMenu({ participant, onClose, onBlock, onDelete, onReport })
   );
 }
 
+function ConfirmSheet({ title, body, confirmLabel, onConfirm, onClose }) {
+  return (
+    <div className="msg-sheet" role="dialog" aria-modal="true" aria-label={title}>
+      <button type="button" className="msg-sheet__backdrop" onClick={onClose} aria-label="Close" />
+      <div className="msg-sheet__panel">
+        <header className="msg-sheet__header">
+          <h2>{title}</h2>
+          <button type="button" onClick={onClose} aria-label="Close"><X size={17} strokeWidth={2} /></button>
+        </header>
+        {body ? <p className="msg-sheet__desc">{body}</p> : null}
+        <button type="button" className="is-danger" onClick={onConfirm}>{confirmLabel}</button>
+        <button type="button" onClick={onClose}>Cancel</button>
+      </div>
+    </div>
+  );
+}
+
 function PlusSheet({ onClose }) {
   const actions = [
     { label: 'Share a live', icon: Radio },
-    { label: 'Share location', icon: null },
-    { label: 'Collaboration request', icon: null },
   ];
   return (
     <div className="msg-sheet" role="dialog" aria-modal="true" aria-label="Attach content">
@@ -212,6 +236,10 @@ function MessageComposer({ disabled, onSend, prefill, onPlusOpen }) {
   const [value, setValue] = useState(prefill ?? '');
   const inputRef = useRef(null);
 
+  useEffect(() => {
+    if (prefill) setValue(prefill);
+  }, [prefill]);
+
   const submit = () => {
     const trimmed = value.trim();
     if (!trimmed || disabled) return;
@@ -254,17 +282,22 @@ function MessageComposer({ disabled, onSend, prefill, onPlusOpen }) {
 
 export default function ConversationPage() {
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const myUid = user?.uid ?? 'current-user';
   const { conversationId } = useParams();
   const [searchParams] = useSearchParams();
   const [version, setVersion] = useState(0);
   const [menuOpen, setMenuOpen] = useState(false);
   const [reportOpen, setReportOpen] = useState(false);
   const [plusOpen, setPlusOpen] = useState(false);
+  const [blockConfirmOpen, setBlockConfirmOpen] = useState(false);
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [contextDismissed, setContextDismissed] = useState(false);
   const [prefillValue, setPrefillValue] = useState(searchParams.get('prefill') ?? '');
   const endRef = useRef(null);
 
   useEffect(() => subscribeToMessaging(() => setVersion((v) => v + 1)), []);
+  useEffect(() => subscribeToConversationMessages(conversationId), [conversationId]);
 
   const conversation = useMemo(() => getConversation(conversationId), [conversationId, version]);
   const participant = conversation ? getOtherParticipant(conversation) : null;
@@ -291,8 +324,28 @@ export default function ConversationPage() {
 
   const blocked = conversation.blocked;
   const isLive = participant.liveStatus === 'live';
-  const userSentMessages = conversation.messages.filter((m) => m.senderId === 'current-user');
+  const userSentMessages = conversation.messages.filter((m) => m.senderId === myUid);
   const showSuggestions = userSentMessages.length === 0 && participant.suggestedQuestions?.length > 0;
+
+  const handleBlock = async () => {
+    await blockUser(conversation.id);
+    setBlockConfirmOpen(false);
+  };
+
+  const handleDelete = async () => {
+    await deleteConversation(conversation.id);
+    navigate('/messages');
+  };
+
+  const handleMute = async () => {
+    await toggleMute(conversation.id);
+    setMenuOpen(false);
+  };
+
+  const handleViewProfile = () => {
+    setMenuOpen(false);
+    navigate(`/profile/${participant.username || participant.id}`);
+  };
 
   return (
     <section className="conversation-screen" aria-label={`Conversation with ${participant.name}`}>
@@ -314,7 +367,7 @@ export default function ConversationPage() {
           </small>
         </div>
         {isLive ? (
-          <button type="button" className="conv-header__watch-live">
+          <button type="button" className="conv-header__watch-live" onClick={() => navigate('/watch')}>
             Watch live
           </button>
         ) : null}
@@ -345,6 +398,7 @@ export default function ConversationPage() {
             message={message}
             prevSenderId={conversation.messages[index - 1]?.senderId}
             participant={participant}
+            currentUid={myUid}
           />
         ))}
         <div ref={endRef} />
@@ -367,18 +421,33 @@ export default function ConversationPage() {
       {menuOpen ? (
         <ConversationMenu
           participant={participant}
+          isMuted={conversation.muted}
           onClose={() => setMenuOpen(false)}
-          onBlock={() => {
-            if (window.confirm(`Block ${participant.name}?`)) blockUser(conversation.id);
-            setMenuOpen(false);
-          }}
-          onDelete={() => {
-            if (window.confirm('Delete this conversation?')) {
-              deleteConversation(conversation.id);
-              navigate('/messages');
-            }
-          }}
+          onBlock={() => { setMenuOpen(false); setBlockConfirmOpen(true); }}
+          onDelete={() => { setMenuOpen(false); setDeleteConfirmOpen(true); }}
           onReport={() => { setMenuOpen(false); setReportOpen(true); }}
+          onMute={handleMute}
+          onViewProfile={handleViewProfile}
+        />
+      ) : null}
+
+      {blockConfirmOpen ? (
+        <ConfirmSheet
+          title={`Block ${participant.name}?`}
+          body="They won't be able to message you and you won't see their content."
+          confirmLabel="Block"
+          onConfirm={handleBlock}
+          onClose={() => setBlockConfirmOpen(false)}
+        />
+      ) : null}
+
+      {deleteConfirmOpen ? (
+        <ConfirmSheet
+          title="Delete conversation?"
+          body="This will permanently delete the conversation for you."
+          confirmLabel="Delete"
+          onConfirm={handleDelete}
+          onClose={() => setDeleteConfirmOpen(false)}
         />
       ) : null}
 
