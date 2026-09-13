@@ -87,6 +87,36 @@ const FILES = [
       mime:  'image/jpeg',
     },
   ]),
+  {
+    local: 'public/assets/mockups/live-mockups/SAFA_Brian__The_Best_Road_to_Ride_Near_L.A.__ho_lrPU7dPU.mp4',
+    dest:  'mock-videos/live-mockups/SAFA_Brian__The_Best_Road_to_Ride_Near_L.A.__ho_lrPU7dPU.mp4',
+    mime:  'video/mp4',
+  },
+  {
+    local: 'public/assets/mockups/live-mockups/SAFA_Brian__The_Best_Road_to_Ride_Near_L.A.__ho_lrPU7dPU.jpg',
+    dest:  'mock-videos/live-mockups/SAFA_Brian__The_Best_Road_to_Ride_Near_L.A.__ho_lrPU7dPU.jpg',
+    mime:  'image/jpeg',
+  },
+  {
+    local: 'public/assets/mockups/live-mockups/Fallow__POV_-_Head_Chef_at_a_Top_London_Restaurant__Ipe9xJCfuTM__clip.mp4',
+    dest:  'mock-videos/live-mockups/Fallow__POV_-_Head_Chef_at_a_Top_London_Restaurant__Ipe9xJCfuTM__clip.mp4',
+    mime:  'video/mp4',
+  },
+  {
+    local: 'public/assets/mockups/live-mockups/Fallow__POV_-_Head_Chef_at_a_Top_London_Restaurant__Ipe9xJCfuTM__clip.jpg',
+    dest:  'mock-videos/live-mockups/Fallow__POV_-_Head_Chef_at_a_Top_London_Restaurant__Ipe9xJCfuTM__clip.jpg',
+    mime:  'image/jpeg',
+  },
+  {
+    local: 'public/assets/mockups/live-mockups/GoPro__GoPro_Awards_Worlds_Highest_Rock_Climbing_Wall__Ssjp6Wiu3TA.mp4',
+    dest:  'mock-videos/live-mockups/GoPro__GoPro_Awards_Worlds_Highest_Rock_Climbing_Wall__Ssjp6Wiu3TA.mp4',
+    mime:  'video/mp4',
+  },
+  {
+    local: 'public/assets/mockups/live-mockups/GoPro__GoPro_Awards_Worlds_Highest_Rock_Climbing_Wall__Ssjp6Wiu3TA.jpg',
+    dest:  'mock-videos/live-mockups/GoPro__GoPro_Awards_Worlds_Highest_Rock_Climbing_Wall__Ssjp6Wiu3TA.jpg',
+    mime:  'image/jpeg',
+  },
 
   // full-length demo clips
   { local: 'public/assets/videos/biking.mp4',                        dest: 'mock-videos/videos/biking.mp4',                        mime: 'video/mp4' },

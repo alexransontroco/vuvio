@@ -27,7 +27,8 @@ export default function SplashScreen({ leaving = false }) {
       <div className="splash-screen__overlay" />
       <div className="splash-screen__glow" />
       <div className="splash-screen__logo">
-        <BrandMark size={72} showName />
+        <BrandMark size={132} />
+        <span className="brand-mark__name" aria-hidden="true">Vuvio</span>
       </div>
       <span className="splash-screen__pulse" />
     </div>

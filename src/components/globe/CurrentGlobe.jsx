@@ -2,18 +2,22 @@ import { Bell, LocateFixed, Minus, Play, Plus, X } from 'lucide-react';
 import maplibregl from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useSearchParams } from 'react-router-dom';
 import { ACTIVITY_CATEGORIES } from '../../data/activityCategories.js';
 import { enrichExperience } from '../../data/experienceTaxonomy.js';
-import { MARKER_TYPES, decorateGlobeTest3Streams, isRelevantOutsideFilter, shouldFeatureEditorially } from '../../data/globeTest3Data.js';
 import { analyticsService } from '../../services/analytics/analyticsService.ts';
 import MapBottomSheet from '../map/MapBottomSheet.jsx';
 import { ISSLiveCard } from './ISSLiveCard.jsx';
 import '../../styles/components/iss-globe.css';
 
+const MARKER_TYPES = {
+  standard: 'standard',
+  sponsored: 'sponsored',
+  vuvio: 'vuvio',
+};
+
 const INITIAL_CENTER = [14, 20];
 const STYLE_URL = 'https://basemaps.cartocdn.com/gl/positron-nolabels-gl-style/style.json';
-const STYLE_URL_GREEN = 'https://basemaps.cartocdn.com/gl/voyager-nolabels-gl-style/style.json';
 const LIVE_COLOR = '#ff0066';
 const UPCOMING_COLOR = '#0099ff';
 const ROTATE_DEGREES_PER_SECOND = 1.8;
@@ -441,7 +445,6 @@ function brightenBaseGlobe(map) {
 }
 
 export default function CurrentGlobe({ streams, onboarding = false, onOnboardingLiveSelect, variant = 'current' }) {
-  const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const containerRef = useRef(null);
   const mapRef = useRef(null);
@@ -472,10 +475,7 @@ export default function CurrentGlobe({ streams, onboarding = false, onOnboarding
     lastReportTime: performance.now(),
   });
 
-  const enrichedStreams = useMemo(() => {
-    if (variant === 'test3') return decorateGlobeTest3Streams(streams);
-    return streams.map(enrichExperience);
-  }, [streams, variant]);
+  const enrichedStreams = useMemo(() => streams.map(enrichExperience), [streams]);
   const requestedLiveId = searchParams.get('live') ?? '';
   const requestedLive = useMemo(() => {
     if (!requestedLiveId) return null;
@@ -491,25 +491,7 @@ export default function CurrentGlobe({ streams, onboarding = false, onOnboarding
     return statusLiveStreams.filter((stream) => matchesFilters(stream, activeFamily, activeActivities, activeStatuses));
   }, [activeActivities, activeFamily, activeStatuses, statusLiveStreams]);
 
-  const liveStreams = useMemo(() => {
-    if (variant !== 'test3') return standardStreams;
-
-    const userContext = { interests: activeActivities };
-    const sponsoredLives = statusLiveStreams
-      .filter((stream) => stream.markerType === MARKER_TYPES.sponsored)
-      .filter((stream) => matchesFilters(stream, activeFamily, activeActivities, activeStatuses) || isRelevantOutsideFilter(stream, userContext))
-      .slice(0, MAX_SPONSORED_VISIBLE);
-    const vuvioLives = statusLiveStreams
-      .filter((stream) => stream.markerType === MARKER_TYPES.vuvio)
-      .filter((stream) => matchesFilters(stream, activeFamily, activeActivities, activeStatuses) || shouldFeatureEditorially(stream, userContext))
-      .slice(0, MAX_VUVIO_VISIBLE);
-
-    const merged = new Map();
-    [...standardStreams, ...sponsoredLives, ...vuvioLives].forEach((stream) => {
-      merged.set(stream.id, stream);
-    });
-    return [...merged.values()];
-  }, [activeActivities, activeFamily, activeStatuses, standardStreams, statusLiveStreams, variant]);
+  const liveStreams = standardStreams;
 
   const selectedLive = enrichedStreams.find((stream) => stream.id === selectedId) ?? null;
   const watchPathForLive = (live) => {
@@ -554,7 +536,7 @@ export default function CurrentGlobe({ streams, onboarding = false, onOnboarding
 
     const map = new maplibregl.Map({
       container: containerRef.current,
-      style: variant === 'test3' ? STYLE_URL_GREEN : STYLE_URL,
+      style: STYLE_URL,
       center: INITIAL_CENTER,
       zoom: 1.4,
       pitch: 50,
@@ -1119,29 +1101,6 @@ export default function CurrentGlobe({ streams, onboarding = false, onOnboarding
         {mapError ? <div className="test-old-globe__error">Error: {mapError}</div> : null}
 
         {!onboarding ? (
-        <div className="map-engine-switch test-globe-switch" role="group" aria-label="Choose globe">
-          <button type="button" className={variant === 'current' ? 'is-active' : ''} onClick={() => navigate('/globe?switch=1')} aria-pressed={variant === 'current'}>
-            Current
-          </button>
-          <button type="button" className={variant === 'lab' ? 'is-active' : ''} onClick={() => navigate('/globe-lab?switch=1')} aria-pressed={variant === 'lab'}>
-            Lab
-          </button>
-          <button type="button" className={variant === 'cesium' ? 'is-active' : ''} onClick={() => navigate('/globe-cesium?switch=1')} aria-pressed={variant === 'cesium'}>
-            Cesium
-          </button>
-          <button type="button" className={variant === 'test' ? 'is-active' : ''} onClick={() => navigate('/globe-test?switch=1')} aria-pressed={variant === 'test'}>
-            Test
-          </button>
-          <button type="button" className={variant === 'test2' ? 'is-active' : ''} onClick={() => navigate('/globe-test-2?switch=1')} aria-pressed={variant === 'test2'}>
-            Test 2
-          </button>
-          <button type="button" className={variant === 'test3' ? 'is-active' : ''} onClick={() => navigate('/globe-test-3?switch=1')} aria-pressed={variant === 'test3'}>
-            Test 3
-          </button>
-        </div>
-        ) : null}
-
-        {!onboarding ? (
         <div className="test-old-globe__controls" aria-label="Map controls">
           <button type="button" onClick={() => zoomBy(0.72)} aria-label="Zoom in">
             <Plus size={19} />
@@ -1153,14 +1112,6 @@ export default function CurrentGlobe({ streams, onboarding = false, onOnboarding
             <LocateFixed size={19} />
           </button>
         </div>
-        ) : null}
-
-        {!onboarding && variant === 'test3' ? (
-          <div className="test-globe-legend" aria-label="Marker legend">
-            <span><i className="is-standard" /> Standard live</span>
-            <span><i className="is-sponsored" /> Sponsored</span>
-            <span><i className="is-vuvio" /> Vuvio selection</span>
-          </div>
         ) : null}
 
         {false && !onboarding && variant === 'current' && currentZoom < 3.5 ? (
@@ -1216,13 +1167,6 @@ export default function CurrentGlobe({ streams, onboarding = false, onOnboarding
                   <i />
                   {selectedLive.subcategory}
                 </span>
-                {variant === 'test3' && selectedLive.markerType && selectedLive.markerType !== MARKER_TYPES.standard ? (
-                  <span className={`test-globe-card__marker-badge is-${selectedLive.markerType}`}>
-                    {selectedLive.markerType === MARKER_TYPES.sponsored
-                      ? (selectedLive.sponsoredReason || 'Sponsored')
-                      : (selectedLive.featuredReason || 'Vuvio selection')}
-                  </span>
-                ) : null}
                 <h2>{selectedLive.experienceTitle}</h2>
                 <p>{selectedLive.name} · {selectedLive.city}, {selectedLive.country}</p>
                 <strong>{selectedLive.viewers} viewers</strong>

@@ -1,11 +1,11 @@
 import { useEffect, useState } from 'react';
-import GlobeTest2 from '../components/globe/GlobeTest2.jsx';
+import GlobeCinematic from '../components/globe/GlobeCinematic.jsx';
 import { mapStreams } from '../data/mapStreams.js';
 import { getCreatedLives, subscribeToCreatedLives } from '../services/createdLiveService.js';
 import '../styles/pages/globe-lab.css';
 import '../styles/pages/globe-test.css';
 
-export default function GlobeTest2Page() {
+export default function GlobeCinematicPage() {
   const [createdLives, setCreatedLives] = useState([]);
 
   useEffect(() => {
@@ -14,5 +14,5 @@ export default function GlobeTest2Page() {
 
   useEffect(() => subscribeToCreatedLives(setCreatedLives), []);
 
-  return <GlobeTest2 streams={[...createdLives, ...mapStreams]} />;
+  return <GlobeCinematic streams={[...createdLives, ...mapStreams]} />;
 }

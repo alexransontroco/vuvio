@@ -3,6 +3,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link, Navigate, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { useStreamView } from '../hooks/useStreamView';
+import { useScheduledStreams } from '../hooks/useScheduledStreams.ts';
 import { analyticsService } from '../services/analytics';
 import BrandMark from '../components/BrandMark.jsx';
 import CreatorLink from '../components/CreatorLink.jsx';
@@ -828,6 +829,7 @@ function HomePage() {
   const [userLocation, setUserLocation] = useState(fallbackUserLocation);
   const homeLives = useMemo(() => streams.map(toHomeLive).filter((stream) => stream.status === 'live'), []);
   const fallbackLiveStreams = useMemo(() => mapStreams.map(toHomeLive).filter((stream) => stream.status === 'live'), []);
+  const scheduledStreams = useScheduledStreams();
   const cityTourLives = useMemo(() => homeLives.filter((live) => live.category === 'City Tours').slice(0, 6), [homeLives]);
   const followedLives = useMemo(() => homeLives.filter((stream) => followedCreatorNames.includes(stream.name)), [homeLives]);
   const popularLiveLives = useMemo(() => [...homeLives].sort((a, b) => viewerCount(b.viewerLabel) - viewerCount(a.viewerLabel)), [homeLives]);
@@ -891,7 +893,14 @@ function HomePage() {
       .slice(0, 3);
   }, [displayedLives, featuredLive, followedLives, tab, userLocation]);
 
-  const upcomingItems = useMemo(() => (tab === 'for-you' ? upcomingStreams.slice(0, 8) : []), [tab]);
+  const upcomingItems = useMemo(() => {
+    if (tab !== 'for-you') return [];
+    const scheduledIds = new Set(scheduledStreams.map((item) => item.id));
+    return [
+      ...scheduledStreams,
+      ...upcomingStreams.filter((item) => !scheduledIds.has(item.id)),
+    ].slice(0, 8);
+  }, [scheduledStreams, tab]);
 
   const openLive = (id) => navigate(`/discover?live=${encodeURIComponent(id)}`);
 
@@ -1715,14 +1724,15 @@ function LiveViewer({ liveId, creatorMode = false }) {
   };
 
   const onPointerDown = (event) => {
-    if (event.target.closest('button, a, input, textarea, .live-chat-panel, .live-floating-composer')) return;
+    if (equipmentSheetOpen) return;
+    if (event.target.closest('button, a, input, textarea, .live-chat-panel, .live-floating-composer, .equipment-viewer-sheet')) return;
     pointerStart.current = { x: event.clientX, y: event.clientY };
     setIsDragging(true);
     event.currentTarget.setPointerCapture?.(event.pointerId);
   };
 
   const onPointerMove = (event) => {
-    if (!pointerStart.current) return;
+    if (equipmentSheetOpen || !pointerStart.current) return;
     const nextDrag = event.clientY - pointerStart.current.y;
     setDragY(Math.max(-120, Math.min(120, nextDrag)));
   };

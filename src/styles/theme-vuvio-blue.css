@@ -1,0 +1,218 @@
+/* ── Vuvio Blue theme — page & component overrides ────────────────────────
+   Applies when <html data-theme="vuvio-blue"> is set.
+   Overrides hardcoded hex/rgba colors that CSS variable tokens cannot reach.
+   ────────────────────────────────────────────────────────────────────────── */
+
+/* ── Global body ──────────────────────────────────────────────────────────── */
+
+[data-theme="vuvio-blue"] html {
+  background: #1879B5;
+}
+
+[data-theme="vuvio-blue"] body {
+  background: #1879B5;
+}
+
+/* Remove dark atmospheric particles — they look wrong on blue */
+[data-theme="vuvio-blue"] body::before,
+[data-theme="vuvio-blue"] body::after {
+  display: none;
+}
+
+/* ── Desktop sidebar + canvas ─────────────────────────────────────────────── */
+
+[data-theme="vuvio-blue"] .desktop-sidebar-nav {
+  background: rgba(10, 64, 98, 0.97);
+  border-right-color: rgba(255, 255, 255, 0.10);
+  box-shadow: 18px 0 44px rgba(0, 0, 0, 0.16);
+}
+
+[data-theme="vuvio-blue"] .app-canvas--desktop {
+  background: #1879B5;
+}
+
+/* ── Bottom navigation ────────────────────────────────────────────────────── */
+
+[data-theme="vuvio-blue"] .bottom-nav,
+[data-theme="vuvio-blue"] .bottom-nav--floating {
+  background: rgba(10, 64, 98, 0.97);
+  border-top-color: rgba(255, 255, 255, 0.08);
+  box-shadow:
+    inset 0 0.5px 0 rgba(255, 255, 255, 0.06),
+    0 -6px 20px rgba(0, 0, 0, 0.08),
+    0 6px 24px rgba(0, 0, 0, 0.12);
+}
+
+/* ── Home / Watch ─────────────────────────────────────────────────────────── */
+
+[data-theme="vuvio-blue"] .home-screen {
+  background: #1879B5;
+}
+
+[data-theme="vuvio-blue"] .home-header {
+  background: linear-gradient(
+    180deg,
+    rgba(10, 64, 98, 0.97) 0%,
+    rgba(10, 64, 98, 0.82) 68%,
+    rgba(10, 64, 98, 0) 100%
+  );
+}
+
+/* ── Splash screen ────────────────────────────────────────────────────────── */
+
+[data-theme="vuvio-blue"] .splash-screen {
+  background:
+    radial-gradient(72% 42% at 50% 38%, rgba(78, 240, 176, 0.16), transparent 64%),
+    radial-gradient(90% 58% at 50% -8%, rgba(33, 135, 190, 0.28), transparent 62%),
+    #1572AA;
+}
+
+/* ── Auth pages ───────────────────────────────────────────────────────────── */
+
+[data-theme="vuvio-blue"] .auth-loading {
+  background: #1879B5;
+}
+
+[data-theme="vuvio-blue"] .auth-loading__mark {
+  border-color: rgba(255, 255, 255, 0.18);
+  border-top-color: #4EF0B0;
+}
+
+[data-theme="vuvio-blue"] .auth-screen {
+  background:
+    radial-gradient(80% 44% at 50% -6%, rgba(78, 240, 176, 0.10), transparent 56%),
+    #1879B5;
+}
+
+[data-theme="vuvio-blue"] .auth-card {
+  background: rgba(14, 82, 124, 0.60);
+  border-color: rgba(255, 255, 255, 0.14);
+  backdrop-filter: blur(24px);
+}
+
+/* ── Onboarding ───────────────────────────────────────────────────────────── */
+
+[data-theme="vuvio-blue"] .onboarding-shell {
+  background: #1879B5;
+}
+
+/* ── Explore ──────────────────────────────────────────────────────────────── */
+
+[data-theme="vuvio-blue"] .ep-screen {
+  background: #1879B5;
+}
+
+[data-theme="vuvio-blue"] .ep-header {
+  background: rgba(10, 64, 98, 0.97);
+  backdrop-filter: blur(18px);
+}
+
+/* ── Creator profile page ─────────────────────────────────────────────────── */
+
+[data-theme="vuvio-blue"] .creator-profile-screen {
+  --profile-bg:             #126A9F;
+  --profile-surface:        rgba(14, 82, 124, 0.70);
+  --profile-surface-strong: rgba(10, 64, 98, 0.90);
+  --profile-border:         rgba(255, 255, 255, 0.12);
+  background: #1879B5;
+}
+
+[data-theme="vuvio-blue"] .creator-cover__shade {
+  background:
+    linear-gradient(180deg, rgba(10, 60, 90, 0.18) 0%, transparent 30%, rgba(10, 60, 90, 0.62) 62%, rgba(10, 60, 90, 0.97) 86%, #0d3d5a 100%),
+    linear-gradient(90deg, rgba(10, 60, 90, 0.22), transparent 46%, rgba(10, 60, 90, 0.14));
+}
+
+/* ── Settings page ────────────────────────────────────────────────────────── */
+
+[data-theme="vuvio-blue"] .settings-screen {
+  --profile-bg:     #126A9F;
+  --profile-surface: rgba(14, 82, 124, 0.70);
+  --profile-border:  rgba(255, 255, 255, 0.12);
+  background: #1879B5;
+}
+
+[data-theme="vuvio-blue"] .settings-card {
+  background: rgba(14, 82, 124, 0.55);
+  border-color: rgba(255, 255, 255, 0.10);
+}
+
+[data-theme="vuvio-blue"] .settings-row {
+  border-bottom-color: rgba(255, 255, 255, 0.07);
+}
+
+[data-theme="vuvio-blue"] .settings-header button {
+  background: rgba(14, 82, 124, 0.55);
+}
+
+/* ── Edit profile ─────────────────────────────────────────────────────────── */
+
+[data-theme="vuvio-blue"] .edit-profile-screen {
+  --profile-bg:     #126A9F;
+  --profile-border: rgba(255, 255, 255, 0.12);
+  background: #1879B5;
+}
+
+/* ── Equipment ────────────────────────────────────────────────────────────── */
+
+[data-theme="vuvio-blue"] .equipment-manage-screen {
+  --profile-bg:     #126A9F;
+  --profile-border: rgba(255, 255, 255, 0.12);
+}
+
+/* ── Messages ─────────────────────────────────────────────────────────────── */
+
+[data-theme="vuvio-blue"] .messages-screen {
+  background: #1879B5;
+}
+
+[data-theme="vuvio-blue"] .messages-home-header {
+  background: rgba(10, 64, 98, 0.97);
+}
+
+/* ── Pre-live / Go live screen ────────────────────────────────────────────── */
+
+[data-theme="vuvio-blue"] .start-live-screen,
+[data-theme="vuvio-blue"] .create-live-flow {
+  background: #1879B5;
+}
+
+/* ── Share live sheet ─────────────────────────────────────────────────────── */
+
+[data-theme="vuvio-blue"] .sls-panel {
+  background: rgba(10, 64, 98, 0.98);
+  border-top-color: rgba(255, 255, 255, 0.10);
+}
+
+/* ── Modals / action sheets / drawers ─────────────────────────────────────── */
+
+[data-theme="vuvio-blue"] .action-sheet,
+[data-theme="vuvio-blue"] .bottom-sheet,
+[data-theme="vuvio-blue"] .modal-overlay .modal,
+[data-theme="vuvio-blue"] .sheet-panel {
+  background: #126A9F;
+  border-color: rgba(255, 255, 255, 0.10);
+}
+
+/* ── Input fields ─────────────────────────────────────────────────────────── */
+
+[data-theme="vuvio-blue"] input:not([type="radio"]):not([type="checkbox"]),
+[data-theme="vuvio-blue"] textarea {
+  background: rgba(14, 82, 124, 0.55);
+  border-color: rgba(255, 255, 255, 0.14);
+  color: #FFFFFF;
+}
+
+[data-theme="vuvio-blue"] input::placeholder,
+[data-theme="vuvio-blue"] textarea::placeholder {
+  color: rgba(255, 255, 255, 0.48);
+}
+
+/* ── Focus ring ───────────────────────────────────────────────────────────── */
+
+[data-theme="vuvio-blue"] button:focus-visible,
+[data-theme="vuvio-blue"] a:focus-visible,
+[data-theme="vuvio-blue"] input:focus-visible,
+[data-theme="vuvio-blue"] textarea:focus-visible {
+  outline-color: rgba(78, 240, 176, 0.65);
+}

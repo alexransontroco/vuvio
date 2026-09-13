@@ -24,6 +24,7 @@ export function publicStream(stream: StreamDocument) {
     languages: stream.languages,
     playbackUrl: stream.playbackUrl,
     hlsManifestUrl: stream.hlsManifestUrl,
+    scheduledStartAt: stream.scheduledStartAt ?? null,
     startedAt: stream.startedAt,
     endedAt: stream.endedAt,
     durationSeconds: stream.durationSeconds,

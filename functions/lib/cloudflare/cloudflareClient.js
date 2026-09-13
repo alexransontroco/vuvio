@@ -5,11 +5,12 @@ function hlsUrl(customerCode, uid) {
         return null;
     return `https://customer-${customerCode}.cloudflarestream.com/${uid}/manifest/video.m3u8`;
 }
-function whepUrlFor(customerCode, uid, webRTCPlaybackUrl, whipUrl) {
+function whepUrlFor(customerCode, uid, webRTCPlaybackUrl, _whipUrl) {
     if (webRTCPlaybackUrl)
         return webRTCPlaybackUrl;
-    if (whipUrl)
-        return whipUrl.replace('/publish', '/play');
+    // Cloudflare WHEP viewer endpoint — correct format regardless of ingest method
+    if (customerCode && uid)
+        return `https://customer-${customerCode}.cloudflarestream.com/${uid}/webRTC/play`;
     return null;
 }
 function normalizeLiveInput(result, customerCode) {
@@ -93,7 +94,7 @@ export function createCloudflareClient() {
         async createLiveInput(input) {
             const payload = {
                 meta: { name: input.title, streamId: input.streamId },
-                recording: { mode: 'automatic', requireSignedURLs: false, allowedOrigins: [], timeoutSeconds: 0 },
+                recording: { mode: 'automatic', requireSignedURLs: false, allowedOrigins: [], timeoutSeconds: 10 },
                 preferLowLatency: false,
             };
             const url = `https://api.cloudflare.com/client/v4/accounts/${env.accountId}/stream/live_inputs`;
@@ -177,7 +178,7 @@ export function createCloudflareClient() {
                 // recording.mode is already automatic; API create alone does not provision HLS output.
                 const updated = await request(`/live_inputs/${encodeURIComponent(liveInputId)}`, {
                     method: 'PUT',
-                    body: JSON.stringify({ recording: { mode: 'automatic', requireSignedURLs: false, allowedOrigins: [], timeoutSeconds: 0 }, preferLowLatency: false }),
+                    body: JSON.stringify({ recording: { mode: 'automatic', requireSignedURLs: false, allowedOrigins: [], timeoutSeconds: 10 }, preferLowLatency: true }),
                 });
                 const newMode = updated?.recording?.mode;
                 const playback = updated?.playback;

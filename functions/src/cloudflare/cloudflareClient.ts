@@ -47,9 +47,10 @@ function hlsUrl(customerCode: string, uid: string | null) {
   return `https://customer-${customerCode}.cloudflarestream.com/${uid}/manifest/video.m3u8`;
 }
 
-function whepUrlFor(customerCode: string, uid: string | null, webRTCPlaybackUrl: string | null, whipUrl: string | null): string | null {
+function whepUrlFor(customerCode: string, uid: string | null, webRTCPlaybackUrl: string | null, _whipUrl: string | null): string | null {
   if (webRTCPlaybackUrl) return webRTCPlaybackUrl;
-  if (whipUrl) return whipUrl.replace('/publish', '/play');
+  // Cloudflare WHEP viewer endpoint — correct format regardless of ingest method
+  if (customerCode && uid) return `https://customer-${customerCode}.cloudflarestream.com/${uid}/webRTC/play`;
   return null;
 }
 
@@ -139,7 +140,7 @@ export function createCloudflareClient(): CloudflareClient {
     async createLiveInput(input) {
       const payload = {
         meta: { name: input.title, streamId: input.streamId },
-        recording: { mode: 'automatic', requireSignedURLs: false, allowedOrigins: [], timeoutSeconds: 0 },
+        recording: { mode: 'automatic', requireSignedURLs: false, allowedOrigins: [], timeoutSeconds: 10 },
         preferLowLatency: false,
       };
 
@@ -230,7 +231,7 @@ export function createCloudflareClient(): CloudflareClient {
         // recording.mode is already automatic; API create alone does not provision HLS output.
         const updated = await request(`/live_inputs/${encodeURIComponent(liveInputId)}`, {
           method: 'PUT',
-          body: JSON.stringify({ recording: { mode: 'automatic', requireSignedURLs: false, allowedOrigins: [], timeoutSeconds: 0 }, preferLowLatency: false }),
+          body: JSON.stringify({ recording: { mode: 'automatic', requireSignedURLs: false, allowedOrigins: [], timeoutSeconds: 10 }, preferLowLatency: true }),
         });
         const newMode = (updated?.recording as Record<string, unknown> | undefined)?.mode;
         const playback = updated?.playback as Record<string, unknown> | undefined;

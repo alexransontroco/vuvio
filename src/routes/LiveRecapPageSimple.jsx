@@ -19,6 +19,7 @@ function ReplayPlayer({ src, poster }) {
       const hls = new Hls({ enableWorker: true });
       hls.loadSource(src);
       hls.attachMedia(video);
+      hls.on(Hls.Events.MANIFEST_PARSED, () => { video.muted = false; });
       return () => hls.destroy();
     } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
       video.src = src;

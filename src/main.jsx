@@ -4,9 +4,12 @@ import { BrowserRouter } from 'react-router-dom';
 import App from './App.jsx';
 import { AuthProvider } from './context/AuthContext.jsx';
 import { MessagingProvider } from './context/MessagingContext.jsx';
+import { ThemeProvider } from './context/ThemeContext.jsx';
 import { ViewModeProvider } from './context/ViewModeContext.jsx';
 import './i18n/index.js';
 import './styles/tokens.css';
+import './styles/theme-ink-blue.css';
+import './styles/theme-vuvio-blue.css';
 import './styles/base.css';
 import './styles/layout.css';
 import './styles/app-shell-desktop.css';
@@ -26,19 +29,22 @@ import './styles/pages/test-users.css';
 import './styles/pages/following.css';
 import './styles/pages/onboarding.css';
 import './styles/pages/internal-stream-admin.css';
+import './styles/pages/admin-docs.css';
 import './styles/pages/agents.css';
 import './components/social/social.css';
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
-    <BrowserRouter future={{ v7_relativeSplatPath: true }}>
-      <AuthProvider>
-        <MessagingProvider>
-          <ViewModeProvider>
-            <App />
-          </ViewModeProvider>
-        </MessagingProvider>
-      </AuthProvider>
+    <BrowserRouter future={{ v7_relativeSplatPath: true, v7_startTransition: true }}>
+      <ThemeProvider>
+        <AuthProvider>
+          <MessagingProvider>
+            <ViewModeProvider>
+              <App />
+            </ViewModeProvider>
+          </MessagingProvider>
+        </AuthProvider>
+      </ThemeProvider>
     </BrowserRouter>
   </StrictMode>,
 );

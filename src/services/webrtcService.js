@@ -1,6 +1,7 @@
 import { collection, doc, setDoc, getDoc, onSnapshot, updateDoc, deleteDoc, serverTimestamp } from 'firebase/firestore';
 import { auth, db } from '../firebase.js';
 
+
 let localStream = null;
 let peerConnection = null;
 let whipPeerConnection = null;
@@ -112,12 +113,74 @@ async function getRtcConfig() {
   return cachedRtcConfig;
 }
 
+let relayCanvasCleanup = null;
+
+async function createFixedResolutionStream(sourceStream, width = 1280, height = 720, fps = 15) {
+  const canvas = document.createElement('canvas');
+  canvas.width = width;
+  canvas.height = height;
+  const ctx = canvas.getContext('2d');
+
+  const videoEl = document.createElement('video');
+  videoEl.srcObject = sourceStream;
+  videoEl.muted = true;
+  videoEl.playsInline = true;
+  await videoEl.play();
+  // Wait for video to have actual frames before starting canvas capture
+  if (videoEl.readyState < 2) {
+    await new Promise((resolve) => {
+      videoEl.addEventListener('canplay', resolve, { once: true });
+      setTimeout(resolve, 2000); // fallback
+    });
+  }
+
+  // Use setInterval instead of requestAnimationFrame so drawing continues when tab is in background.
+  let animFrameId;
+  function draw() {
+    if (videoEl.readyState >= 2 && videoEl.videoWidth > 0) {
+      const vw = videoEl.videoWidth, vh = videoEl.videoHeight;
+      const videoAR = vw / vh, canvasAR = width / height;
+      let sx = 0, sy = 0, sw = vw, sh = vh;
+      if (videoAR > canvasAR) { sw = vh * canvasAR; sx = (vw - sw) / 2; }
+      else { sh = vw / canvasAR; sy = (vh - sh) / 2; }
+      ctx.drawImage(videoEl, sx, sy, sw, sh, 0, 0, width, height);
+    }
+  }
+  animFrameId = setInterval(draw, 1000 / fps);
+
+  const canvasStream = canvas.captureStream(fps);
+  const videoTrack = canvasStream.getVideoTracks()[0];
+  if (videoTrack) {
+    videoTrack.contentHint = 'motion'; // prefer framerate over resolution in VP8 encoder
+    try {
+      await videoTrack.applyConstraints({ width: { ideal: width }, height: { ideal: height }, frameRate: { max: fps } });
+      console.log('[relay] canvas track constraints applied — %dx%d', width, height);
+    } catch (e) {
+      console.warn('[relay] applyConstraints failed (non-fatal):', e?.message);
+    }
+  }
+  const audioTrack = sourceStream.getAudioTracks()[0];
+  if (audioTrack) canvasStream.addTrack(audioTrack);
+
+  relayCanvasCleanup = () => {
+    clearInterval(animFrameId);
+    videoEl.pause();
+    videoEl.srcObject = null;
+    relayCanvasCleanup = null;
+  };
+
+  console.log('[relay] canvas stream created — fixed %dx%d @ %dfps | audioTrack=%s', width, height, fps, audioTrack ? 'real-mic' : 'NONE');
+  return canvasStream;
+}
+
 async function startRtmpRelayIngest(relayUrl, liveInputId, ingestUrl, streamKey, stream) {
   if (!relayUrl) throw new Error('Missing RTMPS relay URL');
   if (!ingestUrl || !streamKey) throw new Error('Missing Cloudflare RTMPS credentials');
 
   relayBaseUrl = relayUrl.replace(/\/$/, '');
-  console.log('[relay] starting relay session for live:', liveInputId);
+  console.log('[relay-browser] startRtmpRelayIngest called relayUrl=%s vuvioLiveId=%s hasIngestUrl=%s hasStreamKey=%s', relayUrl, liveInputId, !!ingestUrl, !!streamKey);
+
+  const fixedStream = await createFixedResolutionStream(stream, 854, 480, 15);
 
   const pc = new RTCPeerConnection({
     iceServers: [{ urls: 'stun:stun.cloudflare.com:3478' }],
@@ -125,7 +188,41 @@ async function startRtmpRelayIngest(relayUrl, liveInputId, ingestUrl, streamKey,
   });
   relayPeerConnection = pc;
 
-  stream.getTracks().forEach((track) => pc.addTrack(track, stream));
+  const tracks = fixedStream.getTracks();
+  console.log('[relay] adding tracks — count:', tracks.length, 'kinds:', tracks.map((t) => `${t.kind}(enabled=${t.enabled},readyState=${t.readyState})`).join(','));
+
+  // Use addTransceiver with sendEncodings to prevent Chrome VP8 ramp-up (starts at full bitrate immediately)
+  const videoTrack = fixedStream.getVideoTracks()[0];
+  const audioTrack = fixedStream.getAudioTracks()[0];
+  let videoTransceiverRef = null;
+  if (videoTrack) {
+    videoTransceiverRef = pc.addTransceiver(videoTrack, {
+      direction: 'sendonly',
+      sendEncodings: [{ maxBitrate: 2_000_000, scaleResolutionDownBy: 1 }],
+      streams: [fixedStream],
+    });
+  }
+  if (audioTrack) pc.addTransceiver(audioTrack, { direction: 'sendonly', streams: [fixedStream] });
+
+  // Prefer VP8 via setCodecPreferences so wrtc RTCVideoSink can decode frames
+  try {
+    const videoTransceiver = videoTransceiverRef || pc.getTransceivers().find((t) => t.sender?.track?.kind === 'video');
+    if (videoTransceiver && typeof videoTransceiver.setCodecPreferences === 'function' && typeof RTCRtpSender.getCapabilities === 'function') {
+      const codecs = RTCRtpSender.getCapabilities('video')?.codecs || [];
+      const vp8 = codecs.filter((c) => c.mimeType?.toLowerCase() === 'video/vp8');
+      const auxiliary = codecs.filter((c) => { const m = c.mimeType?.toLowerCase() || ''; return m === 'video/rtx' || m.includes('red') || m.includes('fec'); });
+      if (vp8.length) {
+        videoTransceiver.setCodecPreferences([...vp8, ...auxiliary]);
+        console.log('[relay] setCodecPreferences VP8 applied');
+      } else {
+        console.warn('[relay] VP8 not in capabilities, using default codecs');
+      }
+    } else {
+      console.warn('[relay] setCodecPreferences not available, using default codecs');
+    }
+  } catch (e) {
+    console.warn('[relay] setCodecPreferences failed (non-fatal):', e?.message);
+  }
 
   const offer = await pc.createOffer();
   await pc.setLocalDescription(offer);
@@ -136,12 +233,31 @@ async function startRtmpRelayIngest(relayUrl, liveInputId, ingestUrl, streamKey,
     setTimeout(resolve, 5000);
   });
 
-  console.log('[relay] ICE gathered, sending offer to relay...');
-  const response = await fetch(`${relayBaseUrl}/sessions`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ liveInputId, ingestUrl, streamKey, sdpOffer: pc.localDescription.sdp }),
-  });
+  // Fix VP8 ramp-up: force high bitrate after ICE so Chrome starts at full resolution immediately
+  const videoSender = pc.getSenders().find((s) => s.track?.kind === 'video');
+  if (videoSender) {
+    const params = videoSender.getParameters();
+    if (params.encodings?.length) {
+      params.encodings[0].maxBitrate = 1_500_000;
+      params.encodings[0].scaleResolutionDownBy = 1;
+      await videoSender.setParameters(params).catch(() => {});
+      console.log('[relay] forced maxBitrate=1.5Mbps scaleResolutionDownBy=1 on video sender');
+    }
+  }
+
+  console.log('[relay-browser] POST offer -> %s/sessions', relayBaseUrl);
+  let response;
+  try {
+    response = await fetch(`${relayBaseUrl}/sessions`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ liveInputId, ingestUrl, streamKey, sdpOffer: pc.localDescription.sdp }),
+    });
+    console.log('[relay-browser] relay response status=%s', response.status);
+  } catch (fetchErr) {
+    console.error('[relay-browser] relay fetch ERROR name=%s message=%s', fetchErr.name, fetchErr.message);
+    throw fetchErr;
+  }
 
   if (!response.ok) {
     const text = await response.text();
@@ -151,9 +267,42 @@ async function startRtmpRelayIngest(relayUrl, liveInputId, ingestUrl, streamKey,
   const data = await response.json();
   relaySessionId = data.sessionId || null;
   await pc.setRemoteDescription({ type: 'answer', sdp: data.sdpAnswer });
+
   console.log('[relay] RTMPS relay connected — Cloudflare is recording');
 
-  pc.onconnectionstatechange = () => console.log('[relay] WebRTC state:', pc.connectionState);
+  // Lock video resolution once ICE is connected — encodings are only active at that point
+  pc.onconnectionstatechange = () => {
+    console.log('[relay] WebRTC state:', pc.connectionState);
+    if (pc.connectionState === 'connected') {
+      for (const { sender, track } of senders) {
+        if (track.kind === 'video') {
+          // Log negotiated codec
+          sender.getStats().then((stats) => {
+            stats.forEach((report) => {
+              if (report.type === 'outbound-rtp' && report.codecId) {
+                const codec = [...stats.values()].find((r) => r.id === report.codecId);
+                if (codec) console.log('[relay] negotiatedVideoCodec=%s payloadType=%s', codec.mimeType, codec.payloadType);
+              }
+            });
+          }).catch(() => {});
+          try {
+            const params = sender.getParameters();
+            if (params.encodings?.length > 0) {
+              params.encodings[0].scaleResolutionDownBy = 1.0;
+              params.encodings[0].maxBitrate = 3_000_000;
+              sender.setParameters(params).then(() =>
+                console.log('[relay] locked video sender — scaleResolutionDownBy=1 maxBitrate=3Mbps'),
+              ).catch((e) => console.warn('[relay] setParameters failed:', e?.message));
+            } else {
+              console.warn('[relay] no encodings on connected — cannot lock resolution');
+            }
+          } catch (e) {
+            console.warn('[relay] setParameters error:', e?.message);
+          }
+        }
+      }
+    }
+  };
 }
 
 async function stopRtmpRelayConnection() {
@@ -604,6 +753,7 @@ export async function startRtmpRelayBroadcast(liveId, userId, existingStream = n
 export async function stopRtmpRelayBroadcast(liveId) {
   try {
     console.log('[relay] stopping relay broadcast');
+    relayCanvasCleanup?.();
     if (localStream) { localStream.getTracks().forEach(t => t.stop()); localStream = null; }
     await stopRtmpRelayConnection();
     await updateDoc(doc(db, 'activeLives', liveId), { status: 'ended', endedAt: new Date().toISOString() });

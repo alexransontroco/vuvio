@@ -86,3 +86,61 @@
     sans-serif;
   color-scheme: dark;
 }
+
+/* ── Vuvio Blue theme ─────────────────────────────── */
+[data-theme="vuvio-blue"] {
+  --vuvio-bg-deep:        #126A9F;
+  --vuvio-bg:             #1879B5;
+  --vuvio-bg-elevated:    #2187BE;
+  --vuvio-surface:        rgba(24, 121, 181, 0.88);
+  --vuvio-surface-soft:   rgba(33, 135, 190, 0.68);
+  --vuvio-surface-glass:  rgba(14, 82, 124, 0.82);
+
+  --vuvio-text-primary:   #FFFFFF;
+  --vuvio-text-secondary: rgba(255, 255, 255, 0.72);
+  --vuvio-text-muted:     rgba(255, 255, 255, 0.50);
+
+  --vuvio-cyan:           #4EF0B0;
+  --vuvio-cyan-soft:      #7FF5C8;
+  --vuvio-blue:           rgba(255, 255, 255, 0.90);
+  --vuvio-blue-soft:      rgba(255, 255, 255, 0.65);
+
+  --vuvio-border:         rgba(255, 255, 255, 0.13);
+  --vuvio-border-strong:  rgba(255, 255, 255, 0.22);
+
+  --vuvio-shadow-soft:    0 14px 40px rgba(0, 0, 0, 0.12);
+  --vuvio-shadow-card:    0 18px 48px rgba(0, 0, 0, 0.16);
+
+  --color-surface-soft:   rgba(24, 121, 181, 0.75);
+  --color-ink:            #0A4A6E;
+  --glass:                rgba(14, 82, 124, 0.82);
+  --glass-light:          rgba(255, 255, 255, 0.08);
+  --shadow-floating:      0 24px 60px rgba(0, 0, 0, 0.20);
+
+  --color-upcoming:       rgba(255, 255, 255, 0.80);
+  --color-notification:   #FF5252;
+
+  /* Profile local var base */
+  --profile-bg:           #126A9F;
+}
+
+/* ── Ink Blue theme ───────────────────────────────── */
+[data-theme="ink-blue"] {
+  --vuvio-bg-deep:        #0c3347;
+  --vuvio-bg:             #164960;
+  --vuvio-bg-elevated:    #1b5e78;
+  --vuvio-surface:        rgba(22, 73, 96, 0.85);
+  --vuvio-surface-soft:   rgba(27, 94, 120, 0.65);
+  --vuvio-surface-glass:  rgba(12, 51, 71, 0.75);
+
+  --vuvio-border:         rgba(134, 202, 224, 0.20);
+  --vuvio-border-strong:  rgba(134, 202, 224, 0.32);
+
+  --vuvio-shadow-soft:    0 14px 40px rgba(0, 8, 20, 0.32);
+  --vuvio-shadow-card:    0 18px 48px rgba(0, 8, 20, 0.40);
+
+  --color-surface-soft:   rgba(22, 73, 96, 0.75);
+  --color-ink:            #061e2a;
+
+  --shadow-floating:      0 24px 60px rgba(0, 8, 20, 0.48);
+}

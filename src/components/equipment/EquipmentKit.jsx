@@ -16,6 +16,7 @@ import {
   Trash2,
   X,
 } from 'lucide-react';
+import { createPortal } from 'react-dom';
 import { useState } from 'react';
 import { GearThumbnail, GearItemRow } from '../gear/index.js';
 import { AlertCircle } from 'lucide-react';
@@ -393,8 +394,9 @@ export function EquipmentViewerSheet({ items, onClose, onViewProfile }) {
     );
   }
 
-  return (
-    <div className="equipment-viewer-sheet" role="dialog" aria-modal="true" aria-label="Equipment used in this live">
+  const stopProp = (e) => e.stopPropagation();
+  return createPortal(
+    <div className="equipment-viewer-sheet" role="dialog" aria-modal="true" aria-label="Equipment used in this live" onPointerDown={stopProp} onPointerMove={stopProp} onPointerUp={stopProp} onPointerCancel={stopProp}>
       <button type="button" className="equipment-viewer-sheet__backdrop" onClick={onClose} aria-label="Close" />
       <div className="equipment-viewer-sheet__panel">
         <span className="equipment-viewer-sheet__handle" aria-hidden="true" />
@@ -434,7 +436,8 @@ export function EquipmentViewerSheet({ items, onClose, onViewProfile }) {
           </div>
         )}
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
 

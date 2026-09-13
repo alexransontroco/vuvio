@@ -165,6 +165,18 @@ body::after {
   50%       { box-shadow: 0 0 0 1px rgba(53, 227, 220, 0.18), 0 0 28px rgba(53, 227, 220, 0.22); }
 }
 
+/* ── Ink Blue body gradient ────────────────────────── */
+[data-theme="ink-blue"] body {
+  background:
+    radial-gradient(ellipse 100% 44% at 50% -2%, rgba(30, 110, 170, 0.32), transparent 58%),
+    radial-gradient(ellipse 70% 28% at 50% -6%, rgba(53, 227, 220, 0.08), transparent 50%),
+    linear-gradient(180deg, #1c6080 0%, #164960 38%, var(--color-bg) 100%);
+}
+
+[data-theme="ink-blue"] html {
+  background: var(--color-bg);
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

@@ -2,6 +2,7 @@ import type { Timestamp } from 'firebase-admin/firestore';
 
 export type StreamStatus =
   | 'draft'
+  | 'scheduled'
   | 'preparing'
   | 'connecting'
   | 'live'
@@ -34,6 +35,7 @@ export interface StreamDocument {
   cloudflareUid: string | null;
   playbackUrl: string | null;
   hlsManifestUrl: string | null;
+  scheduledStartAt?: Timestamp | null;
   startedAt: Timestamp | null;
   endedAt: Timestamp | null;
   lastHeartbeatAt: Timestamp | null;
@@ -56,6 +58,7 @@ export interface StreamDocument {
   highlightMarkers?: Array<{ timestamp: number; source: string; score: number }>;
   recordingStatus?: 'processing' | 'available' | 'expired' | null;
   recordingExpiresAt?: Timestamp | null;
+  remindersSent?: number[];
   createdAt: Timestamp;
   updatedAt: Timestamp;
 }

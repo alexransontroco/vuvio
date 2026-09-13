@@ -12,5 +12,6 @@ export const collections = {
     streamStats: 'streamStats',
     webhookEvents: 'webhookEvents',
     users: 'users',
+    notifications: 'notifications',
     analyticsEvents: db.collection('analyticsEvents'),
 };

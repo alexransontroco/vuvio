@@ -1,8 +1,9 @@
 import { onRequest } from 'firebase-functions/v2/https';
 import { onSchedule } from 'firebase-functions/v2/scheduler';
 import { sendError, ApiError } from './shared/errors.js';
-import { cloudflareAccountId, cloudflareApiToken, cloudflareCustomerCode, cloudflareWebhookSecret, openaiApiKey, icecatUsername, icecatPassword } from './config/env.js';
+import { cloudflareAccountId, cloudflareApiToken, cloudflareCustomerCode, cloudflareWebhookSecret, openaiApiKey, meteredApiKey, meteredAppName, icecatUsername, icecatPassword } from './config/env.js';
 import { createStream } from './streams/createStream.js';
+import { createScheduledStream } from './streams/createScheduledStream.js';
 import { startStream } from './streams/startStream.js';
 import { heartbeatStream } from './streams/heartbeatStream.js';
 import { endStream } from './streams/endStream.js';
@@ -17,6 +18,7 @@ import { aggregateStreamStats, aggregateCreatorStats, aggregateCategoryStats, ag
 import { cloudflareWebhook } from './cloudflare/cloudflareWebhook.js';
 import { getCloudflareConfig, getCloudflareInputs, postCreateTestInput, getRawLiveInput, getRawVideos } from './cloudflare/testRouteHandlers.js';
 import { createLiveInputHandler } from './cloudflare/createLiveInputHandler.js';
+import { turnCredentialsHandler } from './cloudflare/turnCredentialsHandler.js';
 import { monitorStreamHeartbeats } from './streams/monitorStreamHeartbeats.js';
 import { cleanupStaleLives } from './streams/cleanupStaleLives.js';
 import { processProductImage } from './products/processProductImage.js';
@@ -27,9 +29,12 @@ import { cancelHighlight } from './highlights/cancelHighlight.js';
 import { highlightConfig } from './highlights/highlightConfig.js';
 import { processHighlights } from './highlights/processHighlights.js';
 import { createUploadUrl } from './streams/createUploadUrl.js';
+import { listScheduledStreams } from './streams/listScheduledStreams.js';
+import { activateScheduledStream } from './streams/activateScheduledStream.js';
 import { ogMetaHandler } from './og/ogMetaHandler.js';
 import { getReplayStatus } from './streams/getReplayStatus.js';
 import { processVideoAnalysisJob } from './videoProcessing/processVideoAnalysisJob.js';
+import { remindScheduledStreams } from './streams/remindScheduledStreams.js';
 
 function pathParts(path = '') {
   return path.replace(/^\/api\/?/, '/').split('/').filter(Boolean);
@@ -45,7 +50,7 @@ export const api = onRequest({
   region: 'europe-west1',
   timeoutSeconds: 540,
   memory: '2GiB',
-  secrets: [cloudflareAccountId, cloudflareApiToken, cloudflareWebhookSecret, cloudflareCustomerCode, openaiApiKey, icecatUsername, icecatPassword],
+  secrets: [cloudflareAccountId, cloudflareApiToken, cloudflareWebhookSecret, cloudflareCustomerCode, openaiApiKey, meteredApiKey, meteredAppName, icecatUsername, icecatPassword],
 }, async (req, res) => {
   sendCors(res);
   if (req.method === 'OPTIONS') {
@@ -61,11 +66,14 @@ export const api = onRequest({
     if (req.method === 'GET' && parts[0] === 'share' && parts[1] === 'live' && parts[2]) return await ogMetaHandler(req, res, parts[2]);
 
     if (req.method === 'POST' && parts[0] === 'streams' && parts.length === 1) return await createStream(req, res);
+    if (req.method === 'POST' && parts[0] === 'streams' && parts[1] === 'scheduled') return await createScheduledStream(req, res);
     if (req.method === 'GET' && parts[0] === 'streams' && parts[1] === 'live') return await listLiveStreams(req, res);
+    if (req.method === 'GET' && parts[0] === 'streams' && parts[1] === 'scheduled') return await listScheduledStreams(req, res);
     if (req.method === 'GET' && parts[0] === 'globe' && parts[1] === 'streams') return await listGlobeStreams(req, res);
     if (req.method === 'GET' && parts[0] === 'streams' && parts[2] === 'replay-status') return await getReplayStatus(req, res, parts[1]);
     if (req.method === 'GET' && parts[0] === 'streams' && parts[1]) return await getStream(req, res, parts[1]);
     if (req.method === 'POST' && parts[0] === 'streams' && parts[2] === 'start') return await startStream(req, res, parts[1]);
+    if (req.method === 'POST' && parts[0] === 'streams' && parts[2] === 'activate') return await activateScheduledStream(req, res, parts[1]);
     if (req.method === 'POST' && parts[0] === 'streams' && parts[2] === 'heartbeat') return await heartbeatStream(req, res, parts[1]);
     if (req.method === 'POST' && parts[0] === 'streams' && parts[2] === 'end') return await endStream(req, res, parts[1]);
     if (req.method === 'POST' && parts[0] === 'streams' && parts[2] === 'finish') return await finishStream(req, res, parts[1]);
@@ -88,6 +96,7 @@ export const api = onRequest({
     if (req.method === 'GET' && parts[0] === 'highlight-config') return await highlightConfig(req, res);
 
     // Cloudflare routes
+    if (req.method === 'GET' && parts[0] === 'turn-credentials') return await turnCredentialsHandler(req, res);
     if (req.method === 'POST' && parts[0] === 'cloudflare' && parts[1] === 'live-input' && parts[2] === 'create') return await createLiveInputHandler(req, res);
     if (req.method === 'GET' && parts[0] === 'cloudflare' && parts[1] === 'config') return await getCloudflareConfig(req, res);
     if (req.method === 'GET' && parts[0] === 'cloudflare' && parts[1] === 'raw-input') return await getRawLiveInput(req, res);
@@ -142,4 +151,11 @@ export const processHighlightsScheduled = onSchedule({
   schedule: '* * * * *', // Every minute
 }, async () => {
   await processHighlights();
+});
+
+export const remindScheduledStreamsScheduled = onSchedule({
+  region: 'europe-west1',
+  schedule: 'every 1 minutes',
+}, async () => {
+  await remindScheduledStreams();
 });

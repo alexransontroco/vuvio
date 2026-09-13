@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link, Navigate, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { useStreamView } from '../hooks/useStreamView';
+import { useScheduledStreams } from '../hooks/useScheduledStreams.ts';
 import { analyticsService } from '../services/analytics';
 import BrandMark from '../components/BrandMark.jsx';
 import CreatorLink from '../components/CreatorLink.jsx';
@@ -904,6 +905,7 @@ function WatchPage() {
   const [locationStatus, setLocationStatus] = useState('loading');
   const [userLocation, setUserLocation] = useState(fallbackUserLocation);
   const [firestoreLives, setFirestoreLives] = useState([]);
+  const scheduledStreams = useScheduledStreams();
 
   useEffect(() => subscribeToCreatedLives(setFirestoreLives), []);
 
@@ -980,7 +982,14 @@ function WatchPage() {
       .slice(0, 3);
   }, [displayedLives, featuredLive, followedLives, tab, userLocation]);
 
-  const upcomingItems = useMemo(() => (tab === 'for-you' ? upcomingStreams.slice(0, 8) : []), [tab]);
+  const upcomingItems = useMemo(() => {
+    if (tab !== 'for-you') return [];
+    const scheduledIds = new Set(scheduledStreams.map((item) => item.id));
+    return [
+      ...scheduledStreams,
+      ...upcomingStreams.filter((item) => !scheduledIds.has(item.id)),
+    ].slice(0, 8);
+  }, [scheduledStreams, tab]);
 
   const openLive = (id) => navigate(`/discover?live=${encodeURIComponent(id)}`);
 
@@ -1216,6 +1225,7 @@ function CreatorLiveSession({ live, onEndingChange }) {
   const longPressTimer = useRef(null);
   const lastCenterTapRef = useRef({ time: 0, x: 0, y: 0 });
   const broadcastStartedRef = useRef(false);
+  const broadcastCleanupTimerRef = useRef(null);
   const ingestModeRef = useRef('whip');
   const [broadcastStream, setBroadcastStream] = useState(() => getCreatedLiveStream(live.id));
   const videoElementRef = useRef(null);
@@ -1358,7 +1368,16 @@ function CreatorLiveSession({ live, onEndingChange }) {
   }, [bannerDismissed, viewerCount]);
 
   useEffect(() => {
-    if (!live?.id || !user?.uid || broadcastStartedRef.current) return undefined;
+    if (!live?.id || !user?.uid) return undefined;
+    if (broadcastStartedRef.current) {
+      // Re-mount (likely React StrictMode) — cancel any pending cleanup so we survive
+      if (broadcastCleanupTimerRef.current) {
+        clearTimeout(broadcastCleanupTimerRef.current);
+        broadcastCleanupTimerRef.current = null;
+        console.log('[BROADCAST-LIFECYCLE] cancelled pending cleanup (StrictMode remount)');
+      }
+      return undefined;
+    }
     broadcastStartedRef.current = true;
     let active = true;
 
@@ -1368,6 +1387,8 @@ function CreatorLiveSession({ live, onEndingChange }) {
       let cloudflareLiveInputId = live.cloudflareLiveInputId || null;
       try {
         // ── Step 1: Create Cloudflare live input ──
+        // Always call the backend — never reuse webRTCUrl/streamKey cached in Firestore,
+        // as those credentials may point to a deleted live input.
         try {
           const token = await user.getIdToken();
           const cfResponse = await fetch('/api/cloudflare/live-input/create', {
@@ -1377,7 +1398,7 @@ function CreatorLiveSession({ live, onEndingChange }) {
           });
           if (cfResponse.ok) {
             const cfData = await cfResponse.json();
-            console.log('[INGEST] Cloudflare live input created — liveInputId:', cfData.liveInputId, '| webRTCUrl:', cfData.webRTCUrl || 'MISSING', '| relayUrl:', cfData.relayUrl || 'none');
+            console.log('[INGEST][CREATE-RESPONSE] vuvioLiveId=%s cloudflareLiveInputUid=%s relayUrl=%s hasIngestUrl=%s hasStreamKey=%s hasWebRTCUrl=%s', live.id, cfData.liveInputId || 'MISSING', cfData.relayUrl || 'none', !!(cfData.rtmpsIngestUrl || cfData.ingestUrl), !!(cfData.rtmpsStreamKey || cfData.streamKey), !!cfData.webRTCUrl);
             if (cfData.liveInputId) cloudflareLiveInputId = cfData.liveInputId;
             if (cfData.webRTCUrl) {
               whipCredentials = { url: cfData.webRTCUrl, key: cfData.streamKey };
@@ -1386,22 +1407,32 @@ function CreatorLiveSession({ live, onEndingChange }) {
               relayCredentials = { relayUrl: cfData.relayUrl, ingestUrl: cfData.rtmpsIngestUrl, streamKey: cfData.rtmpsStreamKey };
             }
 
-            // ── Local relay dev override ──
-            // Enable via URL: ?relayLocal=1 (uses http://localhost:8787)
-            // Optionally inject RTMPS creds directly: &rtmpsIngestUrl=...&rtmpsStreamKey=...
-            // Needed because functions/createLiveInputHandler returns webRTC.streamKey as rtmpsStreamKey (wrong).
+            // Push hlsManifestUrl into local live state immediately so viewers can start HLS
+            // without waiting for the Firestore subscription to round-trip.
+            if (cfData.hlsManifestUrl || cfData.whepUrl) {
+              updateCreatedLive(live.id, {
+                hlsManifestUrl: cfData.hlsManifestUrl,
+                whepUrl: cfData.whepUrl || null,
+                cloudflareLiveInputId: cfData.liveInputId || cloudflareLiveInputId,
+                playbackUrl: cfData.playbackUrl || cfData.hlsManifestUrl,
+              });
+            }
+
+            // ?relayLocal=1 overrides the relay URL to localhost:8787
+            // Credentials always come from the backend response, never from sessionStorage
+            // relayLocal is also read from sessionStorage so it survives navigation
             try {
               const params = new URLSearchParams(window.location.search);
-              const overrideRelay = params.get('relayLocal');
-              const overrideIngest = params.get('rtmpsIngestUrl');
-              const overrideKey = params.get('rtmpsStreamKey');
-              if (overrideRelay || overrideIngest || overrideKey) {
-                const relayUrl = overrideRelay ? 'http://localhost:8787' : (cfData.relayUrl || 'http://localhost:8787');
-                const ingestUrl = overrideIngest || cfData.rtmpsIngestUrl;
-                const streamKey = overrideKey || cfData.rtmpsStreamKey;
-                if (relayUrl && ingestUrl && streamKey) {
-                  relayCredentials = { relayUrl, ingestUrl, streamKey };
-                  console.log('[INGEST][OVERRIDE] Using local relay override — relayUrl:', relayUrl, '| ingestUrl:', ingestUrl, '| streamKey present:', !!streamKey);
+              const relayLocalActive = params.get('relayLocal') || sessionStorage.getItem('vuvio.relayLocal');
+              if (relayLocalActive) {
+                const ingestUrl = cfData.rtmpsIngestUrl || cfData.ingestUrl;
+                const streamKey = cfData.rtmpsStreamKey || cfData.streamKey;
+                if (ingestUrl && streamKey) {
+                  relayCredentials = { relayUrl: 'http://localhost:8787', ingestUrl, streamKey };
+                  whipCredentials = null;
+                  console.log('[INGEST][OVERRIDE] relayLocal=1 → using http://localhost:8787');
+                } else {
+                  console.warn('[INGEST][OVERRIDE] relayLocal=1 but backend returned no RTMPS credentials');
                 }
               }
             } catch (_) {}
@@ -1416,36 +1447,17 @@ function CreatorLiveSession({ live, onEndingChange }) {
           console.warn('[INGEST] Cloudflare setup error:', cfErr.message);
         }
 
-        // ── Standalone relay-override path (works even if Function above failed) ──
-        try {
-          const params = new URLSearchParams(window.location.search);
-          const overrideRelay = params.get('relayLocal');
-          const overrideIngest = params.get('rtmpsIngestUrl');
-          const overrideKey = params.get('rtmpsStreamKey');
-          const overrideLiveInput = params.get('liveInputId');
-          if ((overrideRelay || overrideIngest || overrideKey) && (!relayCredentials)) {
-            const relayUrl = overrideRelay ? 'http://localhost:8787' : 'http://localhost:8787';
-            const ingestUrl = overrideIngest;
-            const streamKey = overrideKey;
-            if (relayUrl && ingestUrl && streamKey) {
-              relayCredentials = { relayUrl, ingestUrl, streamKey };
-              if (overrideLiveInput) cloudflareLiveInputId = overrideLiveInput;
-              console.log('[INGEST][OVERRIDE-STANDALONE] Function call was skipped/failed. Using URL params — relayUrl:', relayUrl, '| ingestUrl:', ingestUrl);
-            } else {
-              console.warn('[INGEST][OVERRIDE-STANDALONE] Missing rtmpsIngestUrl or rtmpsStreamKey URL param — cannot build relay creds');
-            }
-          }
-        } catch (_) {}
-
         // ── Step 2: Acquire camera stream + start P2P signaling ──
         const existingStream = getCreatedLiveStream(live.id);
         const stream = await startBroadcast(live.id, user.uid, existingStream);
-        if (!active) { stream?.getTracks?.().forEach((t) => t.stop()); return; }
+        console.log('[INGEST][POST-STARTBROADCAST] stream tracks:', stream?.getTracks?.().length, '| active:', active, '| relayCredentials:', relayCredentials ? 'set' : 'null');
 
         // ── Step 3: Start ingest to Cloudflare (relay → WHIP fallback) ──
+        console.log('[INGEST][ROUTE] usingRelay=%s usingWhip=%s relayUrl=%s cloudflareLiveInputUid=%s', !!relayCredentials, !!whipCredentials, relayCredentials?.relayUrl || 'none', cloudflareLiveInputId || 'MISSING');
         let ingestMode = 'none';
         if (relayCredentials) {
-          console.log('[INGEST] trying relay —', relayCredentials.relayUrl);
+          const keyForLog = relayCredentials.streamKey ? relayCredentials.streamKey.slice(-16) : 'MISSING';
+          console.log('[INGEST][PRE-RELAY] Vuvio live id:', live.id, '| CF liveInputId:', cloudflareLiveInputId || 'MISSING', '| relayUrl:', relayCredentials.relayUrl, '| ingestUrl:', relayCredentials.ingestUrl || 'MISSING', '| streamKey suffix:', keyForLog);
           try {
             await startRtmpRelayBroadcast(live.id, user.uid, stream, relayCredentials.relayUrl, relayCredentials.ingestUrl, relayCredentials.streamKey);
             ingestMode = 'rtmps-relay';
@@ -1487,10 +1499,17 @@ function CreatorLiveSession({ live, onEndingChange }) {
     setupBroadcast();
 
     return () => {
-      active = false;
-      if (ingestModeRef.current === 'rtmps-relay') stopRtmpRelayBroadcastSync();
-      else closePeer();
-      onEndingChange?.(false, live.id);
+      // Delay cleanup so React StrictMode's fake unmount doesn't kill the broadcast.
+      // A real unmount lets the timer fire; a synchronous remount cancels it above.
+      broadcastCleanupTimerRef.current = setTimeout(() => {
+        active = false;
+        broadcastStartedRef.current = false;
+        broadcastCleanupTimerRef.current = null;
+        console.log('[BROADCAST-LIFECYCLE] executing cleanup');
+        if (ingestModeRef.current === 'rtmps-relay') stopRtmpRelayBroadcastSync();
+        else closePeer();
+        onEndingChange?.(false, live.id);
+      }, 500);
     };
   }, [live?.id, onEndingChange, user?.uid]);
 
@@ -2020,6 +2039,7 @@ function LiveViewer({ liveId, creatorMode = false }) {
   const [reactionCounts, setReactionCounts] = useState({});
   const [starBursts, setStarBursts] = useState([]);
   const [starPulse, setStarPulse] = useState(false);
+  const [sendBursts, setSendBursts] = useState([]);
   const [following, setFollowing] = useState(() => {
     // Pre-populate from localStorage so state matches what was persisted
     const init = {};
@@ -2046,6 +2066,7 @@ function LiveViewer({ liveId, creatorMode = false }) {
   const chatSwipeStart = useRef(null);
   const chatSwipeOpened = useRef(false);
   const pointerStart = useRef(null);
+  const pointerVelocity = useRef({ y: 0, time: 0, vy: 0 });
   const lastLiveTap = useRef({ time: 0, x: 0, y: 0 });
   const tapSheetTimer = useRef(null);
   const wheelTimer = useRef(null);
@@ -2173,7 +2194,7 @@ function LiveViewer({ liveId, creatorMode = false }) {
     };
   }, [creatorMode, activeLiveId, live.creatorUid]);
 
-  // Viewer connection. Priority: HLS (Cloudflare, all users) → P2P WebRTC (auth users, no HLS).
+  // Viewer connection. Priority: HLS (Cloudflare) → P2P WebRTC.
   useEffect(() => {
     if (creatorMode || !activeLiveId || !remoteVideoRef.current) return;
     const video = remoteVideoRef.current;
@@ -2185,9 +2206,11 @@ function LiveViewer({ liveId, creatorMode = false }) {
       return;
     }
     const hlsSource = isEnded ? live.replayUrl : live.hlsManifestUrl;
+    const viewerId = `viewer-${activeLiveId}-${Math.random().toString(36).slice(2, 8)}`;
 
     // --- Path A: HLS (Cloudflare) — preferred when available, works for all viewers ---
     if (hlsSource) {
+      console.log(`[VIEWER] playback source: cloudflare | viewerId: ${viewerId} | liveId: ${activeLiveId} | P2P fallback used: false`);
       let cancelled = false;
       let hls = null;
       let retryTimer = null;
@@ -2210,6 +2233,7 @@ function LiveViewer({ liveId, creatorMode = false }) {
           hls.attachMedia(video);
           hls.on(Hls.Events.MANIFEST_PARSED, () => {
             if (cancelled) return;
+            console.log(`[VIEWER] playback started | viewerId: ${viewerId} | liveId: ${activeLiveId} | source: HLS`);
             setWatchStatus('connected');
             attemptVideoPlayback(video);
           });
@@ -2219,11 +2243,11 @@ function LiveViewer({ liveId, creatorMode = false }) {
             hls = null;
             if (retryCount < MAX_HLS_RETRIES) {
               retryCount += 1;
-              console.warn('[WatchPage viewer] HLS fatal:', data.details, `(retry ${retryCount}/${MAX_HLS_RETRIES})`);
+              console.warn(`[VIEWER] HLS fatal: ${data.details} (retry ${retryCount}/${MAX_HLS_RETRIES}) | viewerId: ${viewerId} | liveId: ${activeLiveId}`);
               setWatchStatus('retrying');
               retryTimer = window.setTimeout(tryHls, HLS_RETRY_DELAY);
             } else {
-              console.warn('[WatchPage viewer] HLS gave up after max retries — treating as ended');
+              console.warn(`[VIEWER] HLS gave up after max retries | viewerId: ${viewerId} | liveId: ${activeLiveId}`);
               setBroadcastEnded(true);
             }
           });
@@ -2231,6 +2255,7 @@ function LiveViewer({ liveId, creatorMode = false }) {
           video.src = hlsSource;
           video.addEventListener('loadedmetadata', () => {
             if (cancelled) return;
+            console.log(`[VIEWER] playback started (native HLS) | viewerId: ${viewerId} | liveId: ${activeLiveId}`);
             setWatchStatus('connected');
             attemptVideoPlayback(video);
           }, { once: true });
@@ -2247,8 +2272,17 @@ function LiveViewer({ liveId, creatorMode = false }) {
       };
     }
 
-    // --- Path B: P2P WebRTC — auth users without Cloudflare stream ---
+    // If a Cloudflare live input exists but hlsManifestUrl is not yet available, wait for the
+    // Firestore update instead of falling into P2P. The backend writes hlsManifestUrl in the same
+    // request that creates the live input, so this window is very brief.
+    if (live.cloudflareLiveInputId) {
+      console.log(`[VIEWER] Cloudflare live input detected but hlsManifestUrl not yet set — waiting | liveId: ${activeLiveId} | P2P fallback used: false`);
+      return;
+    }
+
+    // --- Path B: P2P WebRTC — only for lives with no Cloudflare live input ---
     if (!user) return;
+    console.log(`[VIEWER] playback source: p2p | viewerId: ${viewerId} | liveId: ${activeLiveId} | P2P fallback used: true`);
 
     let cancelled = false;
     const viewerSessionId = Math.random().toString(36).slice(2, 8);
@@ -2265,18 +2299,19 @@ function LiveViewer({ liveId, creatorMode = false }) {
 
     const connect = () => {
       if (cancelled) return;
-      console.log(`[WatchPage viewer ${viewerSessionId}] creating`, activeLiveId);
+      console.log(`[VIEWER] P2P connect attempt | viewerId: ${viewerSessionId} | liveId: ${activeLiveId}`);
 
       watchBroadcast(activeLiveId, (stream, status) => {
         if (cancelled) return;
         if (stream) {
+          console.log(`[VIEWER] playback started | viewerId: ${viewerSessionId} | liveId: ${activeLiveId} | source: P2P`);
           video.srcObject = stream;
           attemptVideoPlayback(video);
           setRemoteStream(stream);
           setWatchStatus('connected');
           window.clearTimeout(hlsFallbackTimerRef.current);
         } else if (status && ['failed', 'disconnected', 'ice:failed', 'ice:disconnected'].includes(status)) {
-          console.warn(`[WatchPage viewer ${viewerSessionId}] disconnected`);
+          console.warn(`[VIEWER] P2P disconnected | viewerId: ${viewerSessionId} | liveId: ${activeLiveId} | status: ${status}`);
           if (!cancelled && retryCount < MAX_RETRIES) {
             retryCount += 1;
             setWatchStatus('retrying');
@@ -2287,7 +2322,7 @@ function LiveViewer({ liveId, creatorMode = false }) {
         viewerSession = result;
       }).catch((err) => {
         if (cancelled) return;
-        console.warn(`[WatchPage viewer ${viewerSessionId}] failed`, String(err?.message ?? err));
+        console.warn(`[VIEWER] P2P failed | viewerId: ${viewerSessionId} | liveId: ${activeLiveId} | error: ${err?.message ?? err}`);
         if (retryCount < MAX_RETRIES) {
           retryCount += 1;
           setWatchStatus('retrying');
@@ -2305,7 +2340,7 @@ function LiveViewer({ liveId, creatorMode = false }) {
       viewerSession?.close?.();
       closePeer();
     };
-  }, [creatorMode, activeLiveId, user?.uid, live.hlsManifestUrl, live.replayUrl, live.status]);
+  }, [creatorMode, activeLiveId, user?.uid, live.hlsManifestUrl, live.replayUrl, live.status, live.cloudflareLiveInputId]);
 
 
 
@@ -2342,16 +2377,27 @@ function LiveViewer({ liveId, creatorMode = false }) {
   };
 
   const onPointerDown = (event) => {
-    if (event.target.closest('button, a, input, textarea, .live-chat-panel, .live-floating-composer')) return;
+    if (equipmentSheetOpen) return;
+    if (event.target.closest('button, a, input, textarea, .live-chat-panel, .live-floating-composer, .equipment-viewer-sheet')) return;
     pointerStart.current = { x: event.clientX, y: event.clientY };
+    pointerVelocity.current = { y: event.clientY, time: performance.now(), vy: 0 };
     setIsDragging(true);
     event.currentTarget.setPointerCapture?.(event.pointerId);
   };
 
   const onPointerMove = (event) => {
-    if (!pointerStart.current) return;
+    if (equipmentSheetOpen || !pointerStart.current) return;
+    const now = performance.now();
+    const dt = now - pointerVelocity.current.time;
+    if (dt > 0) {
+      pointerVelocity.current = {
+        y: event.clientY,
+        time: now,
+        vy: (event.clientY - pointerVelocity.current.y) / dt,
+      };
+    }
     const nextDrag = event.clientY - pointerStart.current.y;
-    setDragY(Math.max(-120, Math.min(120, nextDrag)));
+    setDragY(nextDrag);
   };
 
   const toggleImmersive = () => {
@@ -2392,10 +2438,14 @@ function LiveViewer({ liveId, creatorMode = false }) {
   const endPointer = (event) => {
     if (!pointerStart.current) return;
     const moved = Math.hypot(event.clientX - pointerStart.current.x, event.clientY - pointerStart.current.y);
-    if (dragY <= -SWIPE_THRESHOLD) {
+    const vy = pointerVelocity.current.vy; // px/ms, negative = up
+    const VELOCITY_THRESHOLD = 0.3;
+    const shouldGoNext = dragY <= -SWIPE_THRESHOLD || vy < -VELOCITY_THRESHOLD;
+    const shouldGoPrev = dragY >= SWIPE_THRESHOLD || vy > VELOCITY_THRESHOLD;
+    if (shouldGoNext) {
       goTo(1);
       lastLiveTap.current = { time: 0, x: 0, y: 0 };
-    } else if (dragY >= SWIPE_THRESHOLD) {
+    } else if (shouldGoPrev) {
       goTo(-1);
       lastLiveTap.current = { time: 0, x: 0, y: 0 };
     } else {
@@ -2408,6 +2458,7 @@ function LiveViewer({ liveId, creatorMode = false }) {
 
   const wheelDirection = useRef(0);
   const onWheel = (event) => {
+    if (event.target.closest('.equipment-viewer-sheet')) return;
     if (Math.abs(event.deltaY) < WHEEL_THRESHOLD) return;
     // Record the dominant scroll direction for this gesture
     if (wheelTimer.current === null) {
@@ -2604,6 +2655,10 @@ function LiveViewer({ liveId, creatorMode = false }) {
         { who: 'You', text, time: new Intl.DateTimeFormat(undefined, { hour: '2-digit', minute: '2-digit' }).format(new Date()) },
       ],
     }));
+    const burstId = Date.now();
+    setSendBursts((s) => [...s, { id: burstId, text }]);
+    window.setTimeout(() => setSendBursts((s) => s.filter((b) => b.id !== burstId)), 900);
+
     setChatDraft('');
     setChatComposerOpen(false);
     setChatPanelOpen(false);
@@ -2719,6 +2774,9 @@ function LiveViewer({ liveId, creatorMode = false }) {
                     />
                   ) : !creatorMode && isActive && !broadcastEnded && (item.creatorUid || item.createdLocally) ? (
                     <>
+                      <div className="live-slide__poster" aria-hidden="true">
+                        <img src="/assets/logo/vuvio-logo.png" alt="" />
+                      </div>
                       <video
                         ref={(el) => {
                           remoteVideoRef.current = el;
@@ -2729,7 +2787,6 @@ function LiveViewer({ liveId, creatorMode = false }) {
                         muted
                         defaultMuted
                         playsInline
-                        poster={item.image}
                         style={isDragging ? { transform: `scale(1.03) translateY(${dragY * 0.1}px)` } : undefined}
                       />
                       {!remoteStream ? (
@@ -2907,6 +2964,10 @@ function LiveViewer({ liveId, creatorMode = false }) {
         </button>
       )}
 
+      {sendBursts.map((burst) => (
+        <div key={burst.id} className="live-send-burst" aria-hidden="true">{burst.text}</div>
+      ))}
+
       {chatComposerOpen ? (
         <button type="button" className="live-chat-dismiss" aria-label="Close message composer" onClick={closeChatComposer} />
       ) : null}
@@ -3016,6 +3077,15 @@ export default function WatchPageRoute() {
   const [createdLives, setCreatedLives] = useState([]);
   const liveId = searchParams.get('live') ?? '';
   const forcedViewerMode = searchParams.get('mode') === 'view';
+
+  // Persist ?relayLocal=1 to sessionStorage so it survives navigation
+  // (does not persist RTMPS credentials — those always come fresh from the backend)
+  useEffect(() => {
+    try {
+      const v = searchParams.get('relayLocal');
+      if (v) sessionStorage.setItem('vuvio.relayLocal', v);
+    } catch (_) {}
+  }, [searchParams]);
   const resolvedLiveId = createdLives.some((l) => l.id === liveId)
     ? liveId
     : (liveId && /^\d+$/.test(liveId) ? `created-${liveId}` : liveId);

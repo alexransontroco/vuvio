@@ -19,7 +19,7 @@ export type AnalyticsEventType = typeof allowedAnalyticsEvents[number];
 export type StreamEventSource = 'watch' | 'explore' | 'globe' | 'profile' | 'direct';
 
 export interface StreamEventDocument {
-  type: AnalyticsEventType | 'stream_created' | 'stream_started' | 'heartbeat' | 'connection_lost' | 'connection_restored' | 'stream_ended';
+  type: AnalyticsEventType | 'stream_created' | 'stream_scheduled' | 'stream_activated' | 'stream_started' | 'heartbeat' | 'connection_lost' | 'connection_restored' | 'stream_ended';
   userId: string | null;
   anonymousSessionId: string | null;
   source: StreamEventSource | null;

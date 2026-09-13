@@ -13,6 +13,7 @@ import {
   Mail,
   MessageCircle,
   MonitorUp,
+  Palette,
   Shield,
   Siren,
   Trash2,
@@ -22,6 +23,7 @@ import { useNavigate } from 'react-router-dom';
 import { getMessagePreferences, updateMessagePreferences } from '../services/messagingService.js';
 import { useState } from 'react';
 import { useAuth } from '../context/AuthContext.jsx';
+import { useTheme } from '../context/ThemeContext.jsx';
 import { LiveActivityPrivacySettings } from '../components/social/LiveActivityPrivacySettings.jsx';
 
 const getSettingGroups = (userEmail) => [
@@ -89,6 +91,7 @@ function handleDeleteAccount() {
 export default function SettingsPage() {
   const navigate = useNavigate();
   const { logout, user } = useAuth();
+  const { theme, setTheme } = useTheme();
   const [messagePreferences, setMessagePreferences] = useState(() => getMessagePreferences());
   const userEmail = user?.email ?? '';
 
@@ -136,6 +139,44 @@ export default function SettingsPage() {
       </header>
 
       <div className="settings-content">
+        <section className="settings-group" aria-labelledby="settings-appearance">
+          <h2 id="settings-appearance">Appearance</h2>
+          <div className="settings-card">
+            <div className="settings-theme-row">
+              <span className="settings-row__icon" aria-hidden="true">
+                <Palette size={17} strokeWidth={1.8} />
+              </span>
+              <span className="settings-row__copy"><strong>Theme</strong></span>
+              <div className="settings-theme-swatches">
+                <button
+                  type="button"
+                  className={`theme-swatch${theme === 'default' ? ' is-active' : ''}`}
+                  style={{ background: '#071c2b' }}
+                  onClick={() => setTheme('default')}
+                  aria-label="Dark theme"
+                  title="Dark"
+                />
+                <button
+                  type="button"
+                  className={`theme-swatch${theme === 'ink-blue' ? ' is-active' : ''}`}
+                  style={{ background: '#164960' }}
+                  onClick={() => setTheme('ink-blue')}
+                  aria-label="Ink Blue theme"
+                  title="Ink Blue"
+                />
+                <button
+                  type="button"
+                  className={`theme-swatch${theme === 'vuvio-blue' ? ' is-active' : ''}`}
+                  style={{ background: '#1879B5' }}
+                  onClick={() => setTheme('vuvio-blue')}
+                  aria-label="Vuvio Blue theme"
+                  title="Vuvio Blue"
+                />
+              </div>
+            </div>
+          </div>
+        </section>
+
         {getSettingGroups(userEmail).map((group) => (
           <section key={group.id} className="settings-group" aria-labelledby={`settings-${group.id}`}>
             <h2 id={`settings-${group.id}`}>{group.title}</h2>
