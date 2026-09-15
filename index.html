@@ -17,6 +17,9 @@
   </head>
   <body>
     <div id="root"></div>
+    <script>
+      (function(){var t=localStorage.getItem('vuvio-theme');if(t&&t!=='default')document.documentElement.setAttribute('data-theme',t);})();
+    </script>
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>

@@ -175,7 +175,7 @@ export async function getCreatedLives() {
 
 export function createLocalLive(draft, creatorUid = null, userCoordinates = null) {
   const live = {
-    id: `created-${Date.now()}`,
+    id: draft.id || `created-${Date.now()}`,
     status: 'live',
     name: 'Alex',
     streamer: 'Alex',
@@ -199,6 +199,13 @@ export function createLocalLive(draft, creatorUid = null, userCoordinates = null
     experienceTitle: draft.title.trim(),
     title: draft.title.trim(),
     description: draft.description.trim(),
+    backendStreamId: draft.backendStreamId || null,
+    cloudflareLiveInputId: draft.cloudflareLiveInputId || null,
+    hlsManifestUrl: draft.hlsManifestUrl || null,
+    whepUrl: draft.whepUrl || null,
+    playbackUrl: draft.playbackUrl || null,
+    webRTCUrl: draft.webRTCUrl || null,
+    streamKey: draft.streamKey || null,
     chat: [
       { who: 'Vuvio', text: 'Live started' },
       { who: 'Alex', text: draft.description.trim() },

@@ -187,15 +187,7 @@ export default function MapPage() {
     if (nextFamily !== 'all') setActiveActivities([]);
   };
 
-  const setGlobeMode = (nextMode) => {
-    if (nextMode === 'lab') {
-      navigate('/globe-lab');
-      return;
-    }
-    if (nextMode === 'test') {
-      navigate('/globe-test');
-      return;
-    }
+  const resetGlobeView = () => {
     const nextParams = new URLSearchParams(searchParams);
     nextParams.delete('globe');
     setSelectedId(null);
@@ -223,24 +215,10 @@ export default function MapPage() {
         <button
           type="button"
           className="is-active"
-          onClick={() => setGlobeMode('maplibre')}
+          onClick={resetGlobeView}
           aria-pressed="true"
         >
           Current
-        </button>
-        <button
-          type="button"
-          onClick={() => setGlobeMode('lab')}
-          aria-pressed="false"
-        >
-          Lab
-        </button>
-        <button
-          type="button"
-          onClick={() => setGlobeMode('test')}
-          aria-pressed="false"
-        >
-          Test
         </button>
       </div>
 

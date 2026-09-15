@@ -1936,6 +1936,39 @@
   background: transparent;
 }
 
+.settings-theme-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 13px 16px;
+}
+
+.settings-theme-swatches {
+  display: flex;
+  gap: 8px;
+  margin-left: auto;
+}
+
+.theme-swatch {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  padding: 0;
+  cursor: pointer;
+  transition: border-color 180ms ease, transform 140ms ease;
+  outline: none;
+}
+
+.theme-swatch:hover {
+  transform: scale(1.1);
+}
+
+.theme-swatch.is-active {
+  border-color: var(--vuvio-cyan);
+  box-shadow: 0 0 0 3px rgba(53, 227, 220, 0.22);
+}
+
 .settings-footer {
   display: grid;
   gap: 3px;

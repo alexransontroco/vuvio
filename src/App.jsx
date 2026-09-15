@@ -24,18 +24,11 @@ const ForgotPasswordPage  = lazy(() => import('./routes/ForgotPasswordPage.jsx')
 const HelpPage            = lazy(() => import('./routes/HelpPage.jsx'));
 const InternalStreamAdminPage = lazy(() => import('./routes/InternalStreamAdminPage.jsx'));
 const CurrentGlobePage    = lazy(() => import('./routes/CurrentGlobePage.jsx'));
-const GlobeLabPage        = lazy(() => import('./routes/GlobeLabPage.jsx'));
-const GlobeTestPage       = lazy(() => import('./routes/GlobeTestPage.jsx'));
-const GlobeTest2Page      = lazy(() => import('./routes/GlobeTest2Page.jsx'));
-const GlobeTest3Page      = lazy(() => import('./routes/GlobeTest3Page.jsx'));
-const GlobeCesiumPage     = lazy(() => import('./routes/GlobeCesiumPage.jsx'));
-const IconsPreviewPage    = lazy(() => import('./routes/IconsPreviewPage.jsx'));
 const LoginPage           = lazy(() => import('./routes/LoginPage.jsx'));
 const LiveRecapPage       = lazy(() => import('./routes/LiveRecapPageSimple.jsx'));
 const LiveSummaryPage     = lazy(() => import('./routes/LiveSummaryPage.jsx'));
 const MessagesPage        = lazy(() => import('./routes/MessagesPage.jsx'));
 const OnboardingPage      = lazy(() => import('./routes/OnboardingPage.jsx'));
-const OnboardingTestPage  = lazy(() => import('./routes/OnboardingTestPage.jsx'));
 const PrivacyPage         = lazy(() => import('./routes/PrivacyPage.jsx'));
 const ProfilePage         = lazy(() => import('./routes/ProfilePage.jsx'));
 const ReportProblemPage   = lazy(() => import('./routes/ReportProblemPage.jsx'));
@@ -44,13 +37,11 @@ const SignupPage          = lazy(() => import('./routes/SignupPage.jsx'));
 const VerifyEmailPage     = lazy(() => import('./routes/VerifyEmailPage.jsx'));
 const TermsPage           = lazy(() => import('./routes/TermsPage.jsx'));
 const VisionPage          = lazy(() => import('./routes/VisionPage.jsx'));
-const SocialDemoPage      = lazy(() => import('./routes/SocialDemoPage.jsx'));
-const TestUsersPage       = lazy(() => import('./routes/TestUsersPage.jsx'));
 const FollowingPage       = lazy(() => import('./routes/FollowingPage.jsx'));
 const AnalyticsPage       = lazy(() => import('./routes/AnalyticsPage.jsx'));
+const AdminDocsPage       = lazy(() => import('./routes/AdminDocsPage.jsx'));
+const AdminInvestorCrmPage = lazy(() => import('./routes/AdminInvestorCrmPage.jsx'));
 const DesktopLayout       = lazy(() => import('./components/desktop/DesktopLayout.jsx'));
-const SplashTestPage      = lazy(() => import('./routes/SplashTestPage.jsx'));
-const CloudflareTestPage  = lazy(() => import('./routes/CloudflareTestPage.jsx'));
 const AgentsPage          = lazy(() => import('./routes/AgentsPage.jsx'));
 
 function RouteFallback() {
@@ -85,11 +76,11 @@ export default function App() {
       <Route path="/agents" element={<Lazy component={AgentsPage} />} />
       <Route path="/live/:liveId/summary" element={<Lazy component={LiveSummaryPage} />} />
       <Route path="/live/:liveId/recap" element={<Lazy component={LiveRecapPage} />} />
-      <Route path="/test/live-recap" element={<Lazy component={LiveRecapPage} />} />
       <Route path="/desktop" element={<Lazy component={DesktopLayout} />} />
-      <Route path="/cloudflare-test" element={<Lazy component={CloudflareTestPage} />} />
-      <Route path="/onboarding-test" element={<Lazy component={OnboardingTestPage} />} />
-      <Route path="/splash-test" element={<Lazy component={SplashTestPage} />} />
+      <Route path="/admin" element={<Navigate to="/admin/docs" replace />} />
+      <Route path="/admin/docs" element={<Lazy component={AdminDocsPage} />} />
+      <Route path="/admin/investor-crm" element={<Lazy component={AdminInvestorCrmPage} />} />
+      <Route path="/admin/analytics" element={<Lazy component={AnalyticsPage} />} />
 
       {/* ── Auth pages (redirect if already logged in) ── */}
       <Route
@@ -156,25 +147,9 @@ export default function App() {
         <Route path="/explore/live" element={<Lazy component={AllLivesPage} />} />
         <Route path="/globe"        element={<Lazy component={CurrentGlobePage} />} />
         <Route path="/map"          element={<Lazy component={CurrentGlobePage} />} />
-        <Route path="/globe-lab"    element={<Lazy component={GlobeLabPage} />} />
-        <Route path="/globe-test"   element={<Lazy component={GlobeTestPage} />} />
-        <Route path="/globe-test-2" element={<Lazy component={GlobeTest2Page} />} />
-        <Route path="/globe-test-3" element={<Lazy component={GlobeTest3Page} />} />
-        <Route path="/globe-cesium" element={<Lazy component={GlobeCesiumPage} />} />
         <Route path="/terms"      element={<Lazy component={TermsPage} />} />
         <Route path="/privacy"    element={<Lazy component={PrivacyPage} />} />
         <Route path="/help"       element={<Lazy component={HelpPage} />} />
-        <Route path="/icons"      element={<Lazy component={IconsPreviewPage} />} />
-        <Route path="/demo/social" element={<Lazy component={SocialDemoPage} />} />
-        <Route path="/test/users" element={<Lazy component={TestUsersPage} />} />
-        <Route
-          path="/admin/analytics"
-          element={
-            <ProtectedRoute>
-              <Lazy component={AnalyticsPage} />
-            </ProtectedRoute>
-          }
-        />
         <Route
           path="/internal/streams"
           element={

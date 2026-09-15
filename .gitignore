@@ -37,7 +37,30 @@ _asset-inbox/
 
 *.tmp
 
-# Large video files
-public/assets/videos/*.mp4
-**/*_2160_3840*.mp4
+# Large binary files — keep local, don't track in git
+public/assets/videos/
+public/assets/mockups/
+public/assets/firefighter-goproraw.mp4
+*.mp4
+*.mov
+*.mp3
+*.wav
+*.avi
+*.mkv
+*.webm
+# Sensitive documents
+certs/
+*.docx
+*.xlsx
+*.numbers
+*.numbers.zip
+*.pdf
+*.paint
+# Root-level screenshots and design files
+VuvioScreen/
+_design-directions/
+# Generated/temp files
+Terminal\ Saved\ Output
+vuvio_catalog_official_verified_v1.json
+pov_stock_clip_finder_coverr/
 

@@ -8,6 +8,7 @@ import { EquipmentSelector, QuickAddEquipmentForm } from './equipment/EquipmentK
 import { EXPERIENCE_FAMILIES } from '../data/experienceTaxonomy.js';
 import { SUBCATEGORY_EQUIPMENT_TYPES } from '../data/equipmentModel.js';
 import { createLocalLive, registerCreatedLiveStream } from '../services/createdLiveService.js';
+import { activateScheduledStream, getMyScheduledStreams, scheduleStream, startStream } from '../services/streamApi.ts';
 import {
   addEquipmentItem,
   buildEquipmentSnapshots,
@@ -30,7 +31,7 @@ const navItems = [
 
 const createActions = [
   { labelKey: 'create.startLive', icon: Video, mode: 'launch' },
-  { labelKey: 'create.scheduleLive', icon: CalendarPlus },
+  { labelKey: 'create.scheduleLive', icon: CalendarPlus, mode: 'schedule' },
   { labelKey: 'create.addVideo', icon: ImagePlus },
 ];
 
@@ -47,6 +48,18 @@ const initialLiveDraft = {
 
 const privacyOptions = ['Everyone', 'Followers', 'Private'];
 const qualityOptions = ['720p', '1080p', 'Auto'];
+
+const privacyVisibilityMap = {
+  Everyone: 'public',
+  Followers: 'followers',
+  Private: 'private',
+};
+
+const familyEnvironmentMap = {
+  earth: 'land',
+  water: 'water',
+  air: 'air',
+};
 
 const QUICK_CATEGORIES = [
   { id: 'Walking',  label: 'Walking',  family: 'earth', subcategory: 'Walking',     icon: Footprints },
@@ -82,9 +95,9 @@ function StartLiveFlow({
     }
     const requestCamera = async () => {
       const attempts = [
-        { video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 } }, audio: false },
-        { video: { width: { ideal: 1280 } }, audio: false },
-        { video: true, audio: false },
+        { video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 } }, audio: true },
+        { video: { width: { ideal: 1280 } }, audio: true },
+        { video: true, audio: true },
       ];
       for (const constraints of attempts) {
         try {
@@ -329,6 +342,177 @@ function StartLiveFlow({
   );
 }
 
+function nextLocalDateTime() {
+  const date = new Date(Date.now() + 30 * 60 * 1000);
+  date.setSeconds(0, 0);
+  const pad = (value) => String(value).padStart(2, '0');
+  return {
+    date: `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`,
+    time: `${pad(date.getHours())}:${pad(date.getMinutes())}`,
+  };
+}
+
+function toScheduleIso(date, time) {
+  if (!date || !time) return null;
+  const scheduled = new Date(`${date}T${time}`);
+  if (!Number.isFinite(scheduled.getTime())) return null;
+  return scheduled.toISOString();
+}
+
+function timestampToDate(value) {
+  if (!value) return null;
+  if (typeof value === 'string') return new Date(value);
+  if (typeof value === 'object' && typeof value._seconds === 'number') return new Date(value._seconds * 1000);
+  return null;
+}
+
+function formatScheduledStart(value) {
+  const date = timestampToDate(value);
+  if (!date || !Number.isFinite(date.getTime())) return 'Scheduled';
+  return date.toLocaleString([], { weekday: 'short', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+}
+
+function ScheduledLiveList({ items, loading, startingId, onStart }) {
+  if (loading || !items.length) return null;
+
+  return (
+    <div className="scheduled-live-list">
+      <span className="scheduled-live-list__label">Scheduled</span>
+      {items.slice(0, 3).map((item) => (
+        <div key={item.id} className="scheduled-live-item">
+          <div>
+            <strong>{item.title || 'Scheduled live'}</strong>
+            <small>{formatScheduledStart(item.scheduledStartAt)}</small>
+          </div>
+          <button type="button" disabled={startingId === item.id} onClick={() => onStart(item)}>
+            {startingId === item.id ? 'Starting…' : 'Start now'}
+          </button>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function ScheduleLiveFlow({ draft, onUpdateDraft, onSchedule, status, error }) {
+  const initialDateTime = useRef(nextLocalDateTime());
+  const [date, setDate] = useState(initialDateTime.current.date);
+  const [time, setTime] = useState(initialDateTime.current.time);
+  const [showFullCategories, setShowFullCategories] = useState(false);
+  const scheduledIso = toScheduleIso(date, time);
+  const isTooSoon = scheduledIso ? new Date(scheduledIso).getTime() < Date.now() + 5 * 60 * 1000 : true;
+  const canSchedule = !isTooSoon && status !== 'saving';
+
+  return (
+    <div className="schedule-live-flow">
+      <div>
+        <label className="start-live-label">What are you planning?</label>
+        <div className="start-live-input-wrap">
+          <Pencil size={15} strokeWidth={1.8} className="start-live-input-icon" />
+          <input
+            className="start-live-input"
+            value={draft.title}
+            onChange={(e) => {
+              const v = e.target.value;
+              onUpdateDraft('title', v);
+              onUpdateDraft('description', v);
+            }}
+            placeholder="Sunset walk in Lisbon"
+            maxLength={120}
+          />
+        </div>
+      </div>
+
+      <div>
+        <label className="start-live-label">Date and time</label>
+        <div className="schedule-datetime-row">
+          <input type="date" value={date} min={initialDateTime.current.date} onChange={(e) => setDate(e.target.value)} />
+          <input type="time" value={time} onChange={(e) => setTime(e.target.value)} />
+        </div>
+      </div>
+
+      <div>
+        <label className="start-live-label">Category</label>
+        <div className="start-live-cats">
+          {QUICK_CATEGORIES.map((cat) => {
+            const CatIcon = cat.icon;
+            const isActive = draft.subcategory === cat.subcategory;
+            return (
+              <button
+                key={cat.id}
+                type="button"
+                className={`start-live-cat${isActive ? ' is-active' : ''}`}
+                onClick={() => {
+                  onUpdateDraft('family', cat.family);
+                  onUpdateDraft('subcategory', cat.subcategory);
+                  setShowFullCategories(false);
+                }}
+              >
+                <CatIcon size={20} strokeWidth={1.6} />
+                <span>{cat.label}</span>
+              </button>
+            );
+          })}
+          <button
+            type="button"
+            className={`start-live-cat${showFullCategories ? ' is-active' : ''}`}
+            onClick={() => setShowFullCategories((v) => !v)}
+          >
+            <MoreHorizontal size={20} strokeWidth={1.6} />
+            <span>More</span>
+          </button>
+        </div>
+        {showFullCategories && (
+          <div className="start-live-full-cats">
+            {Object.values(EXPERIENCE_FAMILIES).map((family) => (
+              <div key={family.id} className="start-live-full-cats__group">
+                <span className="start-live-full-cats__group-label">{family.label}</span>
+                <div className="start-live-full-cats__chips">
+                  {family.subcategories.map((sub) => (
+                    <button
+                      key={sub}
+                      type="button"
+                      className={`start-live-full-cat-chip${draft.subcategory === sub ? ' is-active' : ''}`}
+                      onClick={() => {
+                        onUpdateDraft('family', family.id);
+                        onUpdateDraft('subcategory', sub);
+                        setShowFullCategories(false);
+                      }}
+                    >
+                      {sub}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      <div className="start-live-quick">
+        {privacyOptions.map((opt) => (
+          <button
+            key={opt}
+            type="button"
+            className={`schedule-live-privacy${draft.privacy === opt ? ' is-active' : ''}`}
+            onClick={() => onUpdateDraft('privacy', opt)}
+          >
+            {opt}
+          </button>
+        ))}
+      </div>
+
+      {isTooSoon ? <p className="schedule-error">Pick a time at least 5 minutes from now.</p> : null}
+      {error ? <p className="schedule-error">{error}</p> : null}
+      {status === 'saved' ? <p className="schedule-success">Live scheduled.</p> : null}
+
+      <button type="button" className="start-live-go" disabled={!canSchedule} onClick={() => onSchedule(scheduledIso)}>
+        <CalendarPlus size={18} strokeWidth={2} />
+        {status === 'saving' ? 'Scheduling…' : 'Schedule Live'}
+      </button>
+    </div>
+  );
+}
+
 export default function BottomNav({ collapsible = false, collapsed = false, onExpand, onCollapse }) {
   const { t } = useTranslation();
   const { user } = useAuth();
@@ -339,6 +523,11 @@ export default function BottomNav({ collapsible = false, collapsed = false, onEx
   const [equipmentLibrary, setEquipmentLibrary] = useState(() => getEquipmentLibrary());
   const [quickAddOpen, setQuickAddOpen] = useState(false);
   const [quickAddDraft, setQuickAddDraft] = useState({ category: 'recording', brand: '', model: '' });
+  const [scheduleStatus, setScheduleStatus] = useState('idle');
+  const [scheduleError, setScheduleError] = useState('');
+  const [scheduledLives, setScheduledLives] = useState([]);
+  const [scheduledLivesLoading, setScheduledLivesLoading] = useState(false);
+  const [startingScheduledId, setStartingScheduledId] = useState(null);
   const [locationStatus, setLocationStatus] = useState('loading');
   const [userCoordinates, setUserCoordinates] = useState(null);
   const location = useLocation();
@@ -367,16 +556,37 @@ export default function BottomNav({ collapsible = false, collapsed = false, onEx
     return () => { active = false; };
   }, []);
 
+  const refreshScheduledLives = () => {
+    if (!user) {
+      setScheduledLives([]);
+      return;
+    }
+    setScheduledLivesLoading(true);
+    getMyScheduledStreams({ limit: 3 })
+      .then(({ streams: items }) => setScheduledLives(Array.isArray(items) ? items : []))
+      .catch(() => setScheduledLives([]))
+      .finally(() => setScheduledLivesLoading(false));
+  };
+
+  useEffect(() => {
+    if (!createOpen || createMode !== 'actions') return;
+    refreshScheduledLives();
+  }, [createOpen, createMode, user?.uid]);
+
   useEffect(() => {
     setCreateOpen(false);
     setCreateMode('actions');
     setDraft(initialLiveDraft);
+    setScheduleStatus('idle');
+    setScheduleError('');
   }, [location.pathname]);
 
   const closeCreate = () => {
     setCreateOpen(false);
     setCreateMode('actions');
     setDraft(initialLiveDraft);
+    setScheduleStatus('idle');
+    setScheduleError('');
   };
 
   const updateDraft = (key, value) => {
@@ -403,6 +613,69 @@ export default function BottomNav({ collapsible = false, collapsed = false, onEx
     rememberLiveEquipmentSetupBySubcategory(effectiveDraft.subcategory, selectedIds);
     closeCreate();
     navigate(`/live/${encodeURIComponent(live.id)}`);
+  };
+
+  const scheduleLive = async (scheduledStartAt) => {
+    if (scheduleStatus === 'saving') return;
+    setScheduleStatus('saving');
+    setScheduleError('');
+    const family = draft.family || 'earth';
+    const subcategory = draft.subcategory || 'Walking';
+    try {
+      await scheduleStream({
+        title: draft.title.trim() || 'Scheduled live',
+        description: draft.description.trim() || draft.title.trim() || 'Scheduled live',
+        category: subcategory,
+        subcategories: [subcategory],
+        environment: familyEnvironmentMap[family] ?? 'other',
+        visibility: privacyVisibilityMap[draft.privacy] ?? 'public',
+        scheduledStartAt,
+        approximateLocation: userCoordinates ? { longitude: userCoordinates[0], latitude: userCoordinates[1] } : undefined,
+        gearIds: draft.equipmentIds ?? [],
+      });
+      setScheduleStatus('saved');
+      refreshScheduledLives();
+      setTimeout(closeCreate, 700);
+    } catch (err) {
+      setScheduleStatus('idle');
+      setScheduleError(err instanceof Error ? err.message : 'Could not schedule this live');
+    }
+  };
+
+  const startScheduledLive = async (item) => {
+    if (startingScheduledId) return;
+    setStartingScheduledId(item.id);
+    try {
+      const activated = await activateScheduledStream(item.id);
+      await startStream(item.id);
+      const stream = activated.stream ?? {};
+      const ingest = activated.ingest ?? {};
+      const family = item.environment === 'water' ? 'water' : item.environment === 'air' ? 'air' : 'earth';
+      const subcategory = item.subcategories?.[0] || item.category || 'Walking';
+      const live = createLocalLive({
+        id: item.id,
+        backendStreamId: item.id,
+        family,
+        subcategory,
+        title: item.title || 'Scheduled live',
+        description: item.description || item.title || 'Scheduled live',
+        privacy: item.visibility === 'private' ? 'Private' : item.visibility === 'followers' ? 'Followers' : 'Everyone',
+        quality: draft.quality || '1080p',
+        location: [item.city, item.countryCode].filter(Boolean).join(', '),
+        hasCameraStream: true,
+        cloudflareLiveInputId: stream.cloudflareLiveInputId || null,
+        hlsManifestUrl: stream.hlsManifestUrl || null,
+        playbackUrl: stream.playbackUrl || null,
+        webRTCUrl: ingest.webRTCUrl || null,
+        streamKey: ingest.streamKey || null,
+      }, user?.uid, item.approximateLocation ? [item.approximateLocation.longitude, item.approximateLocation.latitude] : userCoordinates);
+      closeCreate();
+      navigate(`/live/${encodeURIComponent(live.id)}`);
+    } catch (err) {
+      setScheduleError(err instanceof Error ? err.message : 'Could not start this live');
+    } finally {
+      setStartingScheduledId(null);
+    }
   };
 
   const applyPreviousSetup = () => {
@@ -476,6 +749,7 @@ export default function BottomNav({ collapsible = false, collapsed = false, onEx
                 <BrandMark size={22} showName useLegacy />
               )}
               {createMode === 'launch' ? <strong>Start a live</strong> : null}
+              {createMode === 'schedule' ? <strong>Schedule a live</strong> : null}
               <button type="button" onClick={closeCreate} aria-label={t('common.close')}>
                 <X size={17} strokeWidth={1.9} />
               </button>
@@ -500,18 +774,33 @@ export default function BottomNav({ collapsible = false, collapsed = false, onEx
                 onCancelQuickAdd={() => setQuickAddOpen(false)}
                 hasPreviousSetup={getLastLiveEquipmentIdsBySubcategory(draft.subcategory).length > 0}
               />
+            ) : createMode === 'schedule' ? (
+              <ScheduleLiveFlow
+                draft={draft}
+                onUpdateDraft={updateDraft}
+                onSchedule={scheduleLive}
+                status={scheduleStatus}
+                error={scheduleError}
+              />
             ) : (
               <div className="create-sheet__actions">
                 {createActions.map(({ labelKey, icon: Icon, mode: actionMode }) => (
                   <button
                     key={labelKey}
                     type="button"
-                    onClick={() => (actionMode === 'launch' ? setCreateMode('launch') : closeCreate())}
+                    onClick={() => (actionMode ? setCreateMode(actionMode) : closeCreate())}
                   >
                     <Icon size={18} strokeWidth={1.8} />
                     <span>{t(labelKey)}</span>
                   </button>
                 ))}
+                <ScheduledLiveList
+                  items={scheduledLives}
+                  loading={scheduledLivesLoading}
+                  startingId={startingScheduledId}
+                  onStart={startScheduledLive}
+                />
+                {scheduleError ? <p className="schedule-error">{scheduleError}</p> : null}
               </div>
             )}
           </div>

@@ -1,6 +1,6 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
-import { copyFileSync, existsSync, mkdirSync, readdirSync, statSync } from 'node:fs';
+import { readFileSync, copyFileSync, existsSync, mkdirSync, readdirSync, statSync } from 'node:fs';
 import { dirname, join, relative, resolve } from 'node:path';
 
 const isDiagBuild = process.env.VITE_DIAG_BUILD === '1';
@@ -81,17 +81,22 @@ function copyAllowedPublicFiles(publicRoot, outputRoot, currentDir = publicRoot)
   });
 }
 
-export default defineConfig({
-  publicDir: false,
+export default defineConfig(({ command }) => ({
+  publicDir: command === 'serve' ? 'public' : false,
   plugins: [react(), copyProductionPublicAssets()],
+  esbuild: command === 'build' && !isDiagBuild ? { drop: ['console', 'debugger'] } : undefined,
   server: {
     host: '0.0.0.0',
     port: 5173,
+    https: existsSync('certs/cert.pem') ? {
+      key: readFileSync('certs/key.pem'),
+      cert: readFileSync('certs/cert.pem'),
+    } : undefined,
     proxy: {
       '/api': {
-        target: 'http://localhost:5001',
+        target: 'http://127.0.0.1:5001',
         changeOrigin: true,
-        rewrite: (path) => path,
+        rewrite: (path) => `/vuvio-bf328/europe-west1${path}`,
       },
     },
   },
@@ -114,9 +119,8 @@ export default defineConfig({
           react: ['react', 'react-dom', 'react-router-dom'],
           icons: ['lucide-react'],
           maps: ['maplibre-gl'],
-          globe: ['react-globe.gl', 'three', 'cesium'],
         },
       },
     },
   },
-});
+}));

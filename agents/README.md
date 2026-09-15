@@ -1,5 +1,7 @@
 # 🤖 Agents Vuvio - Version Simple
 
+> Source copy lives in `agents/`. The mirrored public copy in `public/assets/agents/` must be kept in sync when these files change.
+
 Outils pour décisions rapides. Tout en français.
 
 ---

@@ -47,6 +47,7 @@ import {
   normalizeEquipmentItem,
   subscribeToEquipment,
 } from '../services/equipmentService.js';
+import { getMyScheduledStreams, getScheduledStreams } from '../services/streamApi.ts';
 
 function formatCompact(value = 0) {
   if (value >= 1000) {
@@ -68,6 +69,29 @@ function formatCreatedAt(createdAt) {
   }
   if (createdAt instanceof Date) return createdAt.getFullYear().toString();
   return '';
+}
+
+function scheduledTimestampToDate(value) {
+  if (!value) return null;
+  if (typeof value === 'string') return new Date(value);
+  if (typeof value === 'object' && typeof value._seconds === 'number') return new Date(value._seconds * 1000);
+  if (value.toDate && typeof value.toDate === 'function') return value.toDate();
+  return null;
+}
+
+function toProfileUpcomingLive(raw) {
+  const date = scheduledTimestampToDate(raw.scheduledStartAt);
+  if (!date || !Number.isFinite(date.getTime())) return null;
+  const location = [raw.city, raw.countryCode].filter(Boolean).join(', ') || 'Location to be confirmed';
+  return {
+    id: raw.id,
+    status: 'scheduled',
+    title: raw.title || 'Scheduled live',
+    location,
+    scheduledAt: date.toLocaleDateString('en', { weekday: 'short', month: 'short', day: 'numeric' }),
+    time: date.toLocaleTimeString('en', { hour: '2-digit', minute: '2-digit' }),
+    thumbnailUrl: '/icons/icon-512.png',
+  };
 }
 
 function ProfileSkeleton() {
@@ -703,6 +727,7 @@ export default function ProfilePage() {
   const [imageSheet, setImageSheet] = useState(null);
   const [equipmentLibrary, setEquipmentLibrary] = useState(() => getEquipmentLibrary());
   const [profileEquipmentEnriched, setProfileEquipmentEnriched] = useState([]);
+  const [scheduledProfileLives, setScheduledProfileLives] = useState([]);
 
   useEffect(() => {
     window.scrollTo({ top: 0, left: 0 });
@@ -853,6 +878,33 @@ export default function ProfilePage() {
     return !creatorId || state.currentUser.id === state.viewedProfile.id;
   }, [state.currentUser, state.viewedProfile, user, creatorId]);
 
+  useEffect(() => {
+    const profileId = state.viewedProfile?.id;
+    if (!profileId) {
+      setScheduledProfileLives([]);
+      return;
+    }
+
+    let active = true;
+    const request = isOwnProfile
+      ? getMyScheduledStreams({ limit: 12 })
+      : getScheduledStreams({ creatorId: profileId, limit: 12 });
+
+    request
+      .then(({ streams }) => {
+        if (!active) return;
+        const lives = (Array.isArray(streams) ? streams : [])
+          .map(toProfileUpcomingLive)
+          .filter(Boolean);
+        setScheduledProfileLives(lives);
+      })
+      .catch(() => {
+        if (active) setScheduledProfileLives([]);
+      });
+
+    return () => { active = false; };
+  }, [isOwnProfile, state.viewedProfile?.id]);
+
   const notifyLive = (id) => {
     if (!id) return;
     setNotifiedIds((current) => {
@@ -917,7 +969,12 @@ export default function ProfilePage() {
   if (!state.currentUser) return <ProfileState title="Sign-in required">Sign in to view your profile.</ProfileState>;
   if (!state.viewedProfile) return <ProfileState title="Profile not found">This creator does not exist or is no longer available.</ProfileState>;
 
-  const profile = state.viewedProfile;
+  const profile = {
+    ...state.viewedProfile,
+    upcomingLives: scheduledProfileLives.length
+      ? scheduledProfileLives
+      : state.viewedProfile.upcomingLives,
+  };
   const profileEquipment = isOwnProfile
     ? equipmentLibrary
     : (profile.equipment?.length ? profileEquipmentEnriched : equipmentLibrary.filter((item) => item.isPublic));

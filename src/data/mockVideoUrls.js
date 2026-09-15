@@ -33,6 +33,9 @@ export const MOCK_VIDEO_URLS = {
   liveLoop14: fb('mock-videos/live-mockups/mockup_14.mp4'),
   liveLoop15: fb('mock-videos/live-mockups/mockup_15.mp4'),
   liveLoop16: fb('mock-videos/live-mockups/mockup_16.mp4'),
+  safaBrianRoad: fb('mock-videos/live-mockups/SAFA_Brian__The_Best_Road_to_Ride_Near_L.A.__ho_lrPU7dPU.mp4'),
+  fallowHeadChef: fb('mock-videos/live-mockups/Fallow__POV_-_Head_Chef_at_a_Top_London_Restaurant__Ipe9xJCfuTM__clip.mp4'),
+  goproClimbingWall: fb('mock-videos/live-mockups/GoPro__GoPro_Awards_Worlds_Highest_Rock_Climbing_Wall__Ssjp6Wiu3TA.mp4'),
 
   // ── full-length demo streams ────────────────────────────────────────────────
   biking:      fb('mock-videos/videos/biking.mp4'),
@@ -78,6 +81,9 @@ export const MOCK_THUMBNAILS = {
   liveLoop14: fb('mock-videos/live-mockups/mockup_14-thumb.jpg'),
   liveLoop15: fb('mock-videos/live-mockups/mockup_15-thumb.jpg'),
   liveLoop16: fb('mock-videos/live-mockups/mockup_16-thumb.jpg'),
+  safaBrianRoad: fb('mock-videos/live-mockups/SAFA_Brian__The_Best_Road_to_Ride_Near_L.A.__ho_lrPU7dPU.jpg'),
+  fallowHeadChef: fb('mock-videos/live-mockups/Fallow__POV_-_Head_Chef_at_a_Top_London_Restaurant__Ipe9xJCfuTM__clip.jpg'),
+  goproClimbingWall: fb('mock-videos/live-mockups/GoPro__GoPro_Awards_Worlds_Highest_Rock_Climbing_Wall__Ssjp6Wiu3TA.jpg'),
 
   biking:    fb('mock-videos/videos/biking-cover.jpg'),
   pexels1:   fb('mock-videos/videos/11963745-uhd_2160_3840_60fps-cover.jpg'),

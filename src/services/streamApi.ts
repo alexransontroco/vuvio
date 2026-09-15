@@ -56,6 +56,10 @@ export type CreateStreamInput = {
   gearIds?: string[];
 };
 
+export type ScheduleStreamInput = CreateStreamInput & {
+  scheduledStartAt: string;
+};
+
 export function createStream(input: CreateStreamInput) {
   return apiRequest<{ stream: { id: string; status: string; playbackUrl: string | null; hlsManifestUrl: string | null }; ingest: { url: string | null; streamKey: string | null } }>('/streams', {
     method: 'POST',
@@ -63,8 +67,31 @@ export function createStream(input: CreateStreamInput) {
   });
 }
 
+export function scheduleStream(input: ScheduleStreamInput) {
+  return apiRequest<{ stream: { id: string; status: string; scheduledStartAt: unknown } }>('/streams/scheduled', {
+    method: 'POST',
+    body: input,
+  });
+}
+
+export function getScheduledStreams(filters: Record<string, string | number | undefined> = {}) {
+  const params = new URLSearchParams();
+  Object.entries(filters).forEach(([key, value]) => {
+    if (value !== undefined && value !== '') params.set(key, String(value));
+  });
+  return apiRequest<{ streams: unknown[]; nextCursor: string | null }>(`/streams/scheduled${params.size ? `?${params}` : ''}`, { authRequired: false });
+}
+
+export function getMyScheduledStreams(filters: Record<string, string | number | undefined> = {}) {
+  return getScheduledStreams({ ...filters, creator: 'me' });
+}
+
 export function startStream(streamId: string) {
   return apiRequest<{ stream: { id: string; status: string } }>(`/streams/${encodeURIComponent(streamId)}/start`, { method: 'POST', body: {} });
+}
+
+export function activateScheduledStream(streamId: string) {
+  return apiRequest<{ stream: { id: string; status: string; cloudflareLiveInputId: string | null; playbackUrl: string | null; hlsManifestUrl: string | null }; ingest: { url: string | null; webRTCUrl: string | null; streamKey: string | null } }>(`/streams/${encodeURIComponent(streamId)}/activate`, { method: 'POST', body: {} });
 }
 
 export function sendStreamHeartbeat(streamId: string, input: { networkStatus?: 'good' | 'unstable'; viewerCount?: number; bitrateKbps?: number } = {}) {

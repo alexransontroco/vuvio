@@ -1,13 +1,13 @@
 # Vuvio — Agent Instructions
 
-Vuvio is a mobile-first POV live streaming app. React 18 / Vite 6 / React Router v6, deployed on Firebase Hosting + Cloud Functions (Node 18).
+Vuvio is a mobile-first POV live streaming app. React 19 / Vite 6 / React Router v6, deployed on Firebase Hosting + Cloud Functions (Node 20).
 
 ## Stack
 
-- Frontend: React 18, Vite 6, React Router v6, i18next
-- Backend: Firebase Cloud Functions v2 (TypeScript, compiled to `functions/lib/`)
+- Frontend: React 19, Vite 6, React Router v6, i18next
+- Backend: Firebase Cloud Functions v2 on Node 20 (TypeScript, compiled to `functions/lib/`)
 - Database: Firestore (`activeLives`, `users` collections)
-- Video: Cloudflare Stream (WHIP ingest, HLS playback, automatic recording)
+- Video: Cloudflare Stream (WHIP ingest, HLS playback; recording/replay path must be verified before replay changes)
 - Storage: Firebase Storage (mock/demo videos at `storage.googleapis.com/vuvio-bf328.firebasestorage.app/`)
 - Auth: Firebase Auth (email/password + Google popup)
 
@@ -60,7 +60,7 @@ firebase deploy --only functions        # Deploy backend
 1. Broadcaster → WHIP (`webRTC.url` from Cloudflare) → Cloudflare ingests
 2. `createLiveInputHandler` stores `whepUrl`, `hlsManifestUrl`, `cloudflareLiveInputId` in Firestore `activeLives/{streamId}`
 3. Viewers → HLS (`hlsManifestUrl`) via Cloudflare CDN — unlimited concurrent viewers
-4. Replay: Cloudflare records automatically (`recording.mode: automatic`). After live ends, backend polls `listVideosByLiveInput` until `readyToStream: true`.
+4. Replay: keep `activeLives/{liveId}` available after live end so backend replay/highlight jobs can read `cloudflareLiveInputId`; current recording availability must be verified against the active Cloudflare ingest path before changing replay behavior.
 
 ### Explore feed (DiscoverFeedPage.jsx)
 - Real Firestore lives (`createdLives`) are pinned to the top of the feed, sorted by `startedAt` descending.
