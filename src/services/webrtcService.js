@@ -268,13 +268,16 @@ async function startRtmpRelayIngest(relayUrl, liveInputId, ingestUrl, streamKey,
   relaySessionId = data.sessionId || null;
   await pc.setRemoteDescription({ type: 'answer', sdp: data.sdpAnswer });
 
-  console.log('[relay] RTMPS relay connected — Cloudflare is recording');
-
   // Lock video resolution once ICE is connected — encodings are only active at that point
-  pc.onconnectionstatechange = () => {
+  const connectionPromise = new Promise((resolve, reject) => {
+    const timeout = setTimeout(() => reject(new Error('Relay ICE connection timeout')), 15000);
+    pc.onconnectionstatechange = () => {
     console.log('[relay] WebRTC state:', pc.connectionState);
     if (pc.connectionState === 'connected') {
-      for (const { sender, track } of senders) {
+      clearTimeout(timeout);
+      for (const sender of pc.getSenders()) {
+        const track = sender.track;
+        if (!track) continue;
         if (track.kind === 'video') {
           // Log negotiated codec
           sender.getStats().then((stats) => {
@@ -301,8 +304,15 @@ async function startRtmpRelayIngest(relayUrl, liveInputId, ingestUrl, streamKey,
           }
         }
       }
+      resolve();
+    } else if (pc.connectionState === 'failed' || pc.connectionState === 'closed') {
+      clearTimeout(timeout);
+      reject(new Error(`Relay WebRTC ${pc.connectionState}`));
     }
   };
+  });
+  await connectionPromise;
+  console.log('[relay] RTMPS relay connected — Cloudflare is recording');
 }
 
 async function stopRtmpRelayConnection() {

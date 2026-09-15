@@ -1428,9 +1428,11 @@ function CreatorLiveSession({ live, onEndingChange }) {
                 const ingestUrl = cfData.rtmpsIngestUrl || cfData.ingestUrl;
                 const streamKey = cfData.rtmpsStreamKey || cfData.streamKey;
                 if (ingestUrl && streamKey) {
-                  relayCredentials = { relayUrl: 'http://localhost:8787', ingestUrl, streamKey };
+                  const relayProtocol = window.location.protocol === 'https:' ? 'https:' : 'http:';
+                  const relayHost = window.location.hostname || 'localhost';
+                  relayCredentials = { relayUrl: `${relayProtocol}//${relayHost}:8787`, ingestUrl, streamKey };
                   whipCredentials = null;
-                  console.log('[INGEST][OVERRIDE] relayLocal=1 → using http://localhost:8787');
+                  console.log('[INGEST][OVERRIDE] relayLocal=1 → using %s', relayCredentials.relayUrl);
                 } else {
                   console.warn('[INGEST][OVERRIDE] relayLocal=1 but backend returned no RTMPS credentials');
                 }

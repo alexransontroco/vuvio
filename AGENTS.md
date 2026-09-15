@@ -37,6 +37,7 @@ firebase deploy --only functions        # Deploy backend
 - **Never call `deleteLiveFromDB(live.id)` inside `endLive`** in WatchPage.jsx or anywhere in the end-live flow.
 - The `activeLives/{liveId}` document must persist after the live ends so the replay polling backend can read `cloudflareLiveInputId`.
 - Document cleanup is handled server-side by `checkStreamHeartbeats` Cloud Function only.
+- Local replay validation uses the HTTPS RTMPS relay at `https://<dev-host>:8787` with `/watch?relayLocal=1`. The Cloud Run relay URL is not a reliable browser WebRTC relay target because Cloud Run does not expose the UDP/ICE path required by this relay flow.
 
 ### Functions dependencies
 - Any new `import` of a third-party package in `functions/src/` must be added to `functions/package.json` dependencies.
@@ -61,6 +62,7 @@ firebase deploy --only functions        # Deploy backend
 2. `createLiveInputHandler` stores `whepUrl`, `hlsManifestUrl`, `cloudflareLiveInputId` in Firestore `activeLives/{streamId}`
 3. Viewers → HLS (`hlsManifestUrl`) via Cloudflare CDN — unlimited concurrent viewers
 4. Replay: keep `activeLives/{liveId}` available after live end so backend replay/highlight jobs can read `cloudflareLiveInputId`; current recording availability must be verified against the active Cloudflare ingest path before changing replay behavior.
+5. Local replay test path: Vite HTTPS (`https://<dev-host>:5173/watch?relayLocal=1`) → local HTTPS relay (`https://<dev-host>:8787`) → Cloudflare RTMPS. Expected logs: relay override to the LAN relay URL, WebRTC `connected`, FFmpeg started, then Cloudflare replay polling returns `replayUrl` after processing.
 
 ### Explore feed (DiscoverFeedPage.jsx)
 - Real Firestore lives (`createdLives`) are pinned to the top of the feed, sorted by `startedAt` descending.

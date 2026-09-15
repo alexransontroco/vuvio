@@ -143,4 +143,9 @@ export function getGlobeStreams() {
   return apiRequest<{ streams: unknown[] }>('/globe/streams', { authRequired: false });
 }
 
-export const finishStream = endStream;
+export function finishStream(streamId: string, reason = 'creator_finished') {
+  return apiRequest<{ stream: { id: string; status: string } }>(`/streams/${encodeURIComponent(streamId)}/finish`, {
+    method: 'POST',
+    body: { reason },
+  });
+}

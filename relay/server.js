@@ -1,7 +1,9 @@
 import express from 'express';
 import { spawn } from 'node:child_process';
 import { randomUUID } from 'node:crypto';
-import { createWriteStream } from 'node:fs';
+import { createWriteStream, existsSync, readFileSync } from 'node:fs';
+import http from 'node:http';
+import https from 'node:https';
 import wrtc from '@roamhq/wrtc';
 
 const { RTCPeerConnection, nonstandard } = wrtc;
@@ -22,6 +24,8 @@ const sessions = new Map();
 const ffmpegPath = process.env.FFMPEG_PATH || '/usr/local/bin/ffmpeg';
 const host = process.env.RTMPS_RELAY_HOST || '0.0.0.0';
 const port = Number(process.env.PORT || process.env.RTMPS_RELAY_PORT || 8787);
+const certPath = process.env.RTMPS_RELAY_CERT || '../certs/cert.pem';
+const keyPath = process.env.RTMPS_RELAY_KEY || '../certs/key.pem';
 const INACTIVITY_MS = Number(process.env.RTMPS_RELAY_INACTIVITY_MS || 2000);
 const INPUT_FPS = 15;
 const OUTPUT_FPS = 30; // RTMPS output fps — FFmpeg duplicates frames to fill
@@ -454,6 +458,11 @@ app.delete('/sessions/:sessionId', (req, res) => {
   res.status(ok ? 200 : 404).json({ ok });
 });
 
-app.listen(port, host, () => {
-  console.log(`[relay] listening on http://${host}:${port} — ffmpeg=${ffmpegPath} fps=${INPUT_FPS} mode=cfr`);
+const server = existsSync(certPath) && existsSync(keyPath)
+  ? https.createServer({ key: readFileSync(keyPath), cert: readFileSync(certPath) }, app)
+  : http.createServer(app);
+const protocol = server instanceof https.Server ? 'https' : 'http';
+
+server.listen(port, host, () => {
+  console.log(`[relay] listening on ${protocol}://${host}:${port} — ffmpeg=${ffmpegPath} fps=${INPUT_FPS} mode=cfr`);
 });

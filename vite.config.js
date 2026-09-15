@@ -5,6 +5,9 @@ import { dirname, join, relative, resolve } from 'node:path';
 
 const isDiagBuild = process.env.VITE_DIAG_BUILD === '1';
 const disableCopyPublic = process.env.VITE_DISABLE_COPY_PUBLIC === '1';
+const forceDevHttp = process.env.VITE_DEV_HTTP === '1';
+const apiProxyTarget = process.env.VITE_API_PROXY_TARGET || 'https://api-4clo52m3sq-ew.a.run.app';
+const useLocalFunctionsProxy = apiProxyTarget.includes('127.0.0.1:5001') || apiProxyTarget.includes('localhost:5001');
 
 const excludedPublicPatterns = [
   /\.DS_Store$/i,
@@ -88,15 +91,17 @@ export default defineConfig(({ command }) => ({
   server: {
     host: '0.0.0.0',
     port: 5173,
-    https: existsSync('certs/cert.pem') ? {
+    https: !forceDevHttp && existsSync('certs/cert.pem') ? {
       key: readFileSync('certs/key.pem'),
       cert: readFileSync('certs/cert.pem'),
     } : undefined,
     proxy: {
       '/api': {
-        target: 'http://127.0.0.1:5001',
+        target: apiProxyTarget,
         changeOrigin: true,
-        rewrite: (path) => `/vuvio-bf328/europe-west1${path}`,
+        rewrite: (path) => useLocalFunctionsProxy
+          ? `/vuvio-bf328/europe-west1${path}`
+          : path.replace(/^\/api\/?/, '/'),
       },
     },
   },
