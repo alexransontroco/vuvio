@@ -144,7 +144,7 @@ class AnalyticsQueue {
     try {
       const batch = Array.from(this.queue.values())
         .slice(0, ANALYTICS_CONFIG.BATCH_SIZE)
-        .map((q) => ({ ...q.event }));
+        .map((q) => ({ ...q.event, id: q.id, timestamp: q.timestamp }));
 
       if (batch.length === 0) {
         return;
@@ -153,10 +153,9 @@ class AnalyticsQueue {
       const response = await analyticsClient.submitEvents(batch);
 
       if (response.success) {
-        batch.forEach((event, index) => {
-          const eventId = this.generateEventId(event);
-          this.queue.delete(eventId);
-        });
+        Array.from(this.queue.keys())
+          .slice(0, batch.length)
+          .forEach((eventId) => this.queue.delete(eventId));
         this.saveQueue();
       } else {
         console.warn('[Analytics] Batch submission returned success=false');
@@ -175,7 +174,7 @@ class AnalyticsQueue {
 
     const batch = Array.from(this.queue.values())
       .slice(0, ANALYTICS_CONFIG.BATCH_SIZE)
-      .map((q) => ({ ...q.event }));
+      .map((q) => ({ ...q.event, id: q.id, timestamp: q.timestamp }));
 
     if (batch.length > 0) {
       analyticsClient.sendBeacon(batch);

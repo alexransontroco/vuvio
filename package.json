@@ -5,6 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "dev:relay": "npm --prefix relay start",
+    "dev:replay": "sh -c 'npm run dev:relay & relay_pid=$!; npm run dev -- --host 0.0.0.0 --port 5173; kill $relay_pid'",
     "build": "vite build",
     "preview": "vite preview"
   },

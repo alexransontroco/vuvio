@@ -73,7 +73,9 @@ function normalizeTurnPayload(payload) {
 }
 
 async function fetchTurnConfig() {
-  const endpoint = import.meta.env.VITE_TURN_CREDENTIALS_URL || '/api/turn-credentials';
+  const endpoint = import.meta.env.VITE_TURN_CREDENTIALS_URL;
+  if (!endpoint) return null;
+
   const controller = new AbortController();
   const timeout = window.setTimeout(() => controller.abort(), 1200);
 

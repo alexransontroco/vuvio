@@ -50,7 +50,13 @@ class AnalyticsClient {
           throw new Error(`HTTP ${response.status}: ${errorText}`);
         }
 
-        const result = (await response.json()) as BatchEventResponse;
+        const data = (await response.json()) as BatchEventResponse & { errors?: unknown };
+        const errorCount = typeof data.errors === 'number' ? data.errors : Array.isArray(data.errors) ? data.errors.length : 0;
+        const result = {
+          ...data,
+          success: data.success ?? errorCount === 0,
+          errors: Array.isArray(data.errors) ? data.errors : undefined,
+        } as BatchEventResponse;
         console.log(
           `[Analytics] Submitted ${events.length} events (accepted: ${result.accepted}, deduped: ${result.deduped})`
         );
