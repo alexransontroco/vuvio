@@ -26,7 +26,7 @@ const host = process.env.RTMPS_RELAY_HOST || '0.0.0.0';
 const port = Number(process.env.PORT || process.env.RTMPS_RELAY_PORT || 8787);
 const certPath = process.env.RTMPS_RELAY_CERT || '../certs/cert.pem';
 const keyPath = process.env.RTMPS_RELAY_KEY || '../certs/key.pem';
-const INACTIVITY_MS = Number(process.env.RTMPS_RELAY_INACTIVITY_MS || 15000);
+const INACTIVITY_MS = Number(process.env.RTMPS_RELAY_INACTIVITY_MS || 30000);
 const INPUT_FPS = 15;
 const OUTPUT_FPS = 30; // RTMPS output fps — FFmpeg duplicates frames to fill
 
@@ -256,18 +256,19 @@ function startSession({ liveInputId, ingestUrl, streamKey, sdpOffer, title }) {
         if (!frame || session.stopping) return;
         if (_frameLogCount < 3) { console.log('[relay] frame#%d session=%s size=%dx%d bytes=%d', ++_frameLogCount, session.id, frame.width, frame.height, frame.data?.byteLength ?? -1); }
 
-        // Canvas-fixed source: resolution must be constant 1280x720 from browser.
-        // Start FFmpeg on first frame once audio is also ready. No stability wait needed.
+        // Start FFmpeg on the first usable frame. Mobile browsers can emit low-res
+        // warm-up frames and then pause before the canvas track reaches target size.
         if (!session.ffmpeg && session.rtmpTarget) {
           const now = Date.now();
           if (!session.firstVideoAt) session.firstVideoAt = now;
-          if (typeof frame.width === 'number') session.videoWidth = frame.width;
-          if (typeof frame.height === 'number') session.videoHeight = frame.height;
+          const hasFrameSize = Number.isFinite(frame.width) && Number.isFinite(frame.height) && frame.width > 0 && frame.height > 0;
+          if (hasFrameSize) {
+            session.videoWidth = frame.width;
+            session.videoHeight = frame.height;
+          }
           const waited = now - session.firstVideoAt;
-          const minResMet = session.videoWidth >= 840;
-          const timedOut = waited > 20000;
           const audioReady = session.hasAudio || waited > 1000;
-          if (audioReady && (minResMet || timedOut)) {
+          if (hasFrameSize && audioReady) {
             const audioSource = session.hasAudio ? 'webrtc' : 'silence';
             console.log('[relay] starting ffmpeg — session=%s res=%dx%d audioSource=%s waited=%dms ffmpegStart#%d',
               session.id, session.videoWidth, session.videoHeight, audioSource, waited, ++session.ffmpegStartCount);
