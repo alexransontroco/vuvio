@@ -52,9 +52,10 @@ class AnalyticsClient {
 
         const data = (await response.json()) as BatchEventResponse & { errors?: unknown };
         const errorCount = typeof data.errors === 'number' ? data.errors : Array.isArray(data.errors) ? data.errors.length : 0;
+        const handledCount = (data.accepted ?? 0) + (data.deduped ?? 0) + errorCount;
         const result = {
           ...data,
-          success: data.success ?? errorCount === 0,
+          success: data.success ?? (errorCount === 0 || handledCount >= events.length),
           errors: Array.isArray(data.errors) ? data.errors : undefined,
         } as BatchEventResponse;
         console.debug(

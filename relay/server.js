@@ -26,7 +26,7 @@ const host = process.env.RTMPS_RELAY_HOST || '0.0.0.0';
 const port = Number(process.env.PORT || process.env.RTMPS_RELAY_PORT || 8787);
 const certPath = process.env.RTMPS_RELAY_CERT || '../certs/cert.pem';
 const keyPath = process.env.RTMPS_RELAY_KEY || '../certs/key.pem';
-const INACTIVITY_MS = Number(process.env.RTMPS_RELAY_INACTIVITY_MS || 2000);
+const INACTIVITY_MS = Number(process.env.RTMPS_RELAY_INACTIVITY_MS || 15000);
 const INPUT_FPS = 15;
 const OUTPUT_FPS = 30; // RTMPS output fps — FFmpeg duplicates frames to fill
 
@@ -455,7 +455,7 @@ app.post('/sessions', async (req, res) => {
 
 app.delete('/sessions/:sessionId', (req, res) => {
   const ok = stopSession(req.params.sessionId);
-  res.status(ok ? 200 : 404).json({ ok });
+  res.status(200).json({ ok, alreadyClosed: !ok });
 });
 
 const server = existsSync(certPath) && existsSync(keyPath)

@@ -158,7 +158,7 @@ class AnalyticsQueue {
           .forEach((eventId) => this.queue.delete(eventId));
         this.saveQueue();
       } else {
-        console.warn('[Analytics] Batch submission returned success=false');
+        console.debug('[Analytics] Batch submission returned success=false');
       }
     } catch (error) {
       console.error('[Analytics] Flush error', error);
