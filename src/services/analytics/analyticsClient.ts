@@ -57,7 +57,7 @@ class AnalyticsClient {
           success: data.success ?? errorCount === 0,
           errors: Array.isArray(data.errors) ? data.errors : undefined,
         } as BatchEventResponse;
-        console.log(
+        console.debug(
           `[Analytics] Submitted ${events.length} events (accepted: ${result.accepted}, deduped: ${result.deduped})`
         );
         return result;

@@ -81,7 +81,7 @@ class AnalyticsQueue {
     const eventId = this.generateEventId(event);
 
     if (this.isDuplicate(eventId)) {
-      console.log(`[Analytics] Duplicate event detected: ${eventId}`);
+      console.debug(`[Analytics] Duplicate event detected: ${eventId}`);
       return eventId;
     }
 

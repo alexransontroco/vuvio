@@ -59,8 +59,22 @@ certs/
 # Root-level screenshots and design files
 VuvioScreen/
 _design-directions/
+7a96690d-9574-49eb-9a79-e824269b177b.png
+9fc8a0b2-f1c4-4a70-87e5-eb789cbf96c0.png
+Share.png
+lightvuvio.png
+lightvuvio2.png
+live mockup.png
+sharebrodcaster.png
+vuvio mockups/
+VuVio logos ideas.html
+*.cpgz
 # Generated/temp files
 Terminal\ Saved\ Output
+functions/functions.yaml
+relay/server.a*.js
+relay/server.diag.js
+relay/cf-test.sh
+relay/test-synthetic.sh
 vuvio_catalog_official_verified_v1.json
 pov_stock_clip_finder_coverr/
-

@@ -231,6 +231,7 @@ export default function LiveRecapPageSimple() {
   const [exporting, setExporting] = useState(false);
   const [pctComplete, setPctComplete] = useState(null);
   const [replayState, setReplayState] = useState('processing'); // 'processing' | 'no_footage' | 'timeout'
+  const [replayPollInfo, setReplayPollInfo] = useState(null);
   const liveDataRef = useRef(null);
   const cardRef = useRef(null);
   const pollCountRef = useRef(0);
@@ -259,13 +260,33 @@ export default function LiveRecapPageSimple() {
       if (pollCountRef.current > 80) {
         replayStateRef.current = 'timeout';
         setReplayState('timeout');
+        setReplayPollInfo((prev) => prev ? { ...prev, recordingStatus: 'timeout', state: 'timeout', checkedAt: Date.now() } : prev);
         return;
       }
       try {
         const res = await fetch(`/api/streams/${encodeURIComponent(liveId)}/replay-status`);
         if (res.ok) {
           const data = await res.json();
-          console.log('[LiveRecapSimple] poll #' + pollCountRef.current + ':', data.recordingStatus, data.replayUrl || '', '| liveInputUid:', data.liveInputUid || 'MISSING', '| cloudflareUid:', data.cloudflareUid || 'none', '| pctComplete:', data.pctComplete ?? '—', '| state:', data.state || '—', '| videosFound:', data.videosFound ?? '—');
+          setReplayPollInfo({
+            pollCount: pollCountRef.current,
+            recordingStatus: data.recordingStatus || 'processing',
+            state: data.state || 'processing',
+            liveInputUid: data.liveInputUid || '',
+            cloudflareUid: data.cloudflareUid || data.cloudflareVideoId || '',
+            videosFound: data.videosFound ?? null,
+            pctComplete: data.pctComplete ?? null,
+            readyToStream: data.readyToStream === true,
+            checkedAt: Date.now(),
+          });
+          console.debug('[LiveRecapSimple] replay poll', {
+            pollCount: pollCountRef.current,
+            recordingStatus: data.recordingStatus,
+            liveInputUid: data.liveInputUid,
+            cloudflareUid: data.cloudflareUid,
+            pctComplete: data.pctComplete,
+            state: data.state,
+            videosFound: data.videosFound,
+          });
           if (data.replayUrl) {
             liveDataRef.current = { ...liveDataRef.current, replayUrl: data.replayUrl, recordingStatus: 'ready' };
             setLiveData(prev => prev ? { ...prev, replayUrl: data.replayUrl, recordingStatus: 'ready' } : prev);
@@ -454,6 +475,22 @@ export default function LiveRecapPageSimple() {
   const minutes = Math.floor(duration / 60);
   const seconds = duration % 60;
   const isProcessing = !liveData.replayUrl && replayState === 'processing';
+  const replayStatus = liveData.replayUrl
+    ? { tone: '#22c55e', label: 'Replay ready', detail: 'Your recording is ready to watch and share.' }
+    : replayState === 'no_footage'
+      ? { tone: '#f97316', label: 'No recording found', detail: CLOUDFARE_REPLAY_DISABLED_TEXT }
+      : replayState === 'timeout'
+        ? { tone: '#f97316', label: 'Processing timeout', detail: 'Cloudflare did not expose the recording in time.' }
+        : replayPollInfo?.videosFound === 0
+          ? { tone: '#38bdf8', label: 'Recording finalizing', detail: 'Cloudflare has not listed the replay video yet.' }
+          : { tone: '#38bdf8', label: 'Processing replay', detail: 'Waiting for Cloudflare to make the replay streamable.' };
+  const replayDebugRows = [
+    ['Status', replayPollInfo?.recordingStatus || liveData.recordingStatus || (liveData.replayUrl ? 'ready' : 'processing')],
+    ['Live input', replayPollInfo?.liveInputUid || liveData.cloudflareLiveInputId || liveData.liveInputId || 'missing'],
+    ['Video ID', replayPollInfo?.cloudflareUid || liveData.recordingUid || liveData.cloudflareVideoId || 'pending'],
+    ['Videos found', replayPollInfo?.videosFound ?? 'unknown'],
+    ['Poll', replayPollInfo?.pollCount ? `#${replayPollInfo.pollCount}` : 'waiting'],
+  ];
 
   const statValues = {
     duration: `${minutes}:${String(seconds).padStart(2, '0')}`,
@@ -555,6 +592,29 @@ export default function LiveRecapPageSimple() {
           </div>
 
           {/* Messages */}
+          <div style={S.card}>
+            <div style={S.replayStatusHeader}>
+              <span style={{ ...S.replayStatusDot, background: replayStatus.tone }} />
+              <div>
+                <h3 style={S.cardTitleNoMargin}>{replayStatus.label}</h3>
+                <p style={S.replayStatusDetail}>{replayStatus.detail}</p>
+              </div>
+            </div>
+            {isProcessing && pctComplete != null && (
+              <div style={S.progressTrack}>
+                <div style={{ ...S.progressFill, width: `${Math.max(0, Math.min(100, pctComplete))}%` }} />
+              </div>
+            )}
+            <div style={S.replayDebugGrid}>
+              {replayDebugRows.map(([label, value]) => (
+                <div key={label} style={S.replayDebugRow}>
+                  <span>{label}</span>
+                  <strong style={S.replayDebugValue}>{String(value)}</strong>
+                </div>
+              ))}
+            </div>
+          </div>
+
           {comments.length > 0 && (
             <div style={S.card}>
               <h3 style={S.cardTitle}>
@@ -848,6 +908,65 @@ const S = {
     display: 'flex',
     alignItems: 'center',
     gap: 7,
+  },
+  cardTitleNoMargin: {
+    margin: 0,
+    fontSize: 14,
+    fontWeight: 750,
+    color: '#fff',
+  },
+  replayStatusHeader: {
+    display: 'flex',
+    alignItems: 'flex-start',
+    gap: 10,
+    marginBottom: 14,
+  },
+  replayStatusDot: {
+    width: 10,
+    height: 10,
+    borderRadius: '50%',
+    marginTop: 4,
+    boxShadow: '0 0 18px currentColor',
+    flexShrink: 0,
+  },
+  replayStatusDetail: {
+    margin: '4px 0 0',
+    color: 'rgba(226,234,244,0.55)',
+    fontSize: 13,
+    lineHeight: 1.4,
+  },
+  progressTrack: {
+    width: '100%',
+    height: 5,
+    borderRadius: 999,
+    background: 'rgba(255,255,255,0.08)',
+    overflow: 'hidden',
+    marginBottom: 14,
+  },
+  progressFill: {
+    height: '100%',
+    borderRadius: 999,
+    background: 'linear-gradient(90deg,#38bdf8,#22c55e)',
+  },
+  replayDebugGrid: {
+    display: 'grid',
+    gap: 8,
+  },
+  replayDebugRow: {
+    display: 'grid',
+    gridTemplateColumns: '92px minmax(0, 1fr)',
+    gap: 10,
+    alignItems: 'baseline',
+    fontSize: 12,
+    color: 'rgba(226,234,244,0.46)',
+  },
+  replayDebugValue: {
+    minWidth: 0,
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
+    whiteSpace: 'nowrap',
+    color: 'rgba(226,234,244,0.82)',
+    fontWeight: 650,
   },
   messagesList: {
     display: 'flex',

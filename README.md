@@ -18,12 +18,26 @@ The product centers discovery around location-first live streams, creator profil
 
 ```bash
 npm run dev
+npm run dev:replay
 npm run build
 firebase deploy --only hosting
 firebase deploy --only functions
 ```
 
 Always run `npm run build` before considering changes complete.
+
+`npm run dev:replay` starts the local HTTPS RTMPS relay and Vite dev server for replay validation. Open `/watch?relayLocal=1` from the HTTPS dev URL.
+
+## Replay Relay
+
+Local replay validation uses:
+
+```txt
+https://<dev-host>:5173/watch?relayLocal=1
+https://<dev-host>:8787
+```
+
+The Cloud Run relay URL is not a production-ready browser WebRTC relay target for this flow. A production relay needs a network path that supports WebRTC ICE media, such as a VM with a public IP and required UDP ports open, or a validated TURN-backed strategy.
 
 ## Documentation Map
 
