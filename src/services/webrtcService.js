@@ -136,8 +136,11 @@ async function createFixedResolutionStream(sourceStream, width = 1280, height = 
     });
   }
 
+  const canvasStream = canvas.captureStream(fps);
+
   // Use setInterval instead of requestAnimationFrame so drawing continues when tab is in background.
   let animFrameId;
+  let framePulse = false;
   function draw() {
     if (videoEl.readyState >= 2 && videoEl.videoWidth > 0) {
       const vw = videoEl.videoWidth, vh = videoEl.videoHeight;
@@ -146,11 +149,17 @@ async function createFixedResolutionStream(sourceStream, width = 1280, height = 
       if (videoAR > canvasAR) { sw = vh * canvasAR; sx = (vw - sw) / 2; }
       else { sh = vw / canvasAR; sy = (vh - sh) / 2; }
       ctx.drawImage(videoEl, sx, sy, sw, sh, 0, 0, width, height);
+    } else {
+      ctx.fillStyle = '#050505';
+      ctx.fillRect(0, 0, width, height);
     }
+    framePulse = !framePulse;
+    ctx.fillStyle = framePulse ? 'rgba(0,0,0,0.02)' : 'rgba(255,255,255,0.02)';
+    ctx.fillRect(width - 2, height - 2, 2, 2);
+    canvasStream?.getVideoTracks?.()[0]?.requestFrame?.();
   }
   animFrameId = setInterval(draw, 1000 / fps);
 
-  const canvasStream = canvas.captureStream(fps);
   const videoTrack = canvasStream.getVideoTracks()[0];
   if (videoTrack) {
     videoTrack.contentHint = 'motion'; // prefer framerate over resolution in VP8 encoder

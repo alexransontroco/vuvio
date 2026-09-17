@@ -333,6 +333,11 @@ function startSession({ liveInputId, ingestUrl, streamKey, sdpOffer, title }) {
         if (!session.inactivityTimer) {
           session.inactivityTimer = setInterval(() => {
             if (Date.now() - session.lastVideoFrameAt > INACTIVITY_MS) {
+              if (session.ffmpeg && session.latestFrameBuf) {
+                console.warn('[relay] video frame gap=%dms; keeping ffmpeg alive with last frame session=%s', Date.now() - session.lastVideoFrameAt, session.id);
+                session.lastVideoFrameAt = Date.now();
+                return;
+              }
               console.log('[relay] inactivity timeout gap=%dms session=%s', Date.now() - session.lastVideoFrameAt, session.id);
               stopSession(session.id);
             }
