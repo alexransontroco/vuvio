@@ -15,12 +15,12 @@ Vuvio is a mobile-first POV live streaming app. React 19 / Vite 6 / React Router
 
 ```bash
 npm run dev        # Vite dev server
-npm run build      # Production build — always run after changes to verify
+npm run build      # Production build — run for final validation/deploy, not after every small edit
 firebase deploy --only hosting          # Deploy frontend
 firebase deploy --only functions        # Deploy backend
 ```
 
-**Always run `npm run build` before reporting a task done.** Errors only surface at build time.
+Do not run `npm run build` after every small change. Group edits first, use lighter checks during iteration, and run the production build only for final validation/deploy or when explicitly requested.
 
 ## Critical rules — do NOT break these
 

@@ -1642,11 +1642,11 @@
 .splash-screen__glow {
   position: absolute;
   z-index: 1;
-  width: 220px;
-  height: 220px;
+  width: 320px;
+  height: 320px;
   border-radius: 50%;
-  background: radial-gradient(circle, rgba(43, 217, 200, 0.24), rgba(43, 217, 200, 0.06) 42%, transparent 70%);
-  filter: blur(4px);
+  background: radial-gradient(circle, rgba(43, 217, 200, 0.32), rgba(59, 130, 246, 0.14) 42%, transparent 70%);
+  filter: blur(24px);
   animation: splash-glow 1800ms ease-in-out both;
 }
 
@@ -1674,6 +1674,23 @@
   font-weight: 520;
   letter-spacing: 0;
   text-transform: none;
+  animation: splash-name-fade 1400ms ease-out 300ms both;
+}
+
+.splash-screen__logo-img {
+  width: 160px;
+  height: 160px;
+  object-fit: contain;
+  animation: splash-logo 1000ms ease-out both;
+  filter: drop-shadow(0 0 32px rgba(43, 217, 200, 0.4));
+}
+
+.splash-screen__brand-name {
+  color: rgba(247, 249, 252, 0.95);
+  font-size: 28px;
+  font-weight: 600;
+  letter-spacing: 6px;
+  text-transform: uppercase;
   animation: splash-name-fade 1400ms ease-out 300ms both;
 }
 

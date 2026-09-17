@@ -1,8 +1,17 @@
 # Gear System - Quick Start
 
+Status: MVP testing quickstart, partially current  
+Last reviewed: 2026-09-05  
+Read before coding: Use with [README.md](README.md) and verify current routes before testing.
+
+Current reality:
+- `/profile/gear` and `/profile/equipment` may represent related but different gear/equipment flows.
+- Keep UI copy in English.
+- Run `npm run build` after changes.
+
 ## What Was Built
 
-A **complete, production-ready gear management system** for Vuvio that lets users organize their equipment by activity with structured categories and brands.
+An MVP gear management system for Vuvio that lets users organize their equipment by activity with structured categories and brands.
 
 ## How to Test
 

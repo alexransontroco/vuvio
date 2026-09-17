@@ -1,5 +1,14 @@
 # Product Thumbnails System - Implementation Guide
 
+Status: Thumbnail-pipeline reference, partially current  
+Last reviewed: 2026-09-05  
+Read before coding: Yes, for product image rendering or processing changes.
+
+Current reality:
+- Thumbnail UI must handle missing, processing, ready, and failed image states.
+- Build currently uses React 19.
+- Verify Storage paths and Cloud Function routes before deployment work.
+
 ## ✅ What's been built
 
 ### Phase 1: Data Model & Services (Complete)
@@ -256,5 +265,4 @@ Firebase Console → Storage → products/{productId}/
 
 ---
 
-**Built with:** React 18, Firebase, Sharp, WebP, Cloud Functions
-
+**Built with:** React 19, Firebase, Sharp, WebP, Cloud Functions

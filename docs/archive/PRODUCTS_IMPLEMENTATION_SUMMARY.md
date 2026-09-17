@@ -1,5 +1,14 @@
 # Product Thumbnails System - Implementation Summary
 
+Status: Historical implementation summary, partially current  
+Last reviewed: 2026-09-05  
+Read before coding: Use for context, not as the source of truth.
+
+Current reality:
+- This document summarizes a past implementation pass.
+- Prefer [PRODUCTS_SYSTEM_GUIDE.md](PRODUCTS_SYSTEM_GUIDE.md) for current product-system behavior.
+- Verify current code before assuming every listed feature is still active.
+
 **Status:** ✅ Phase 1 & 2 Complete (Commit: 5a6bf20)  
 **Date:** July 30, 2026  
 **Size:** 3,064 LOC across 12 files
@@ -376,14 +385,14 @@ firebase deploy --only functions:api
 
 ## Conclusion
 
-A production-ready product thumbnails system has been implemented with:
+A product thumbnails system was implemented with:
 - 12 files (3,064 LOC) of clean, well-documented code
 - Complete frontend components and backend API
 - Comprehensive documentation (1,029 LOC)
 - Security-first design with validation at every step
 - Extensible architecture for future features
 
-The system is ready for Phase 3 implementation (production thumbnail generation) and can be deployed immediately.
+Before deployment or Phase 3 work, verify the current code paths, provider credentials, backend dependencies, and thumbnail processing behavior.
 
 ---
 

@@ -1,5 +1,14 @@
 # Globe Test Premium - Changelog
 
+Status: Globe experiment note, partially current  
+Last reviewed: 2026-09-05  
+Read before coding: Use for visual/history context, not as production route source of truth.
+
+Current reality:
+- GlobeTest2 remains experimental unless explicitly promoted.
+- `/globe` production behavior must be checked in current routes before changing navigation.
+- Clustering needs incremental validation because previous count/zoom bugs existed.
+
 ## Overview
 Transformed the Globe Test (mode="test") into a premium, premium interactive globe using `react-globe.gl` with Three.js rendering, enhanced lighting, and professional styling.
 

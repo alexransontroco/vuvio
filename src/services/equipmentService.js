@@ -138,27 +138,8 @@ export async function initEquipmentService(userId) {
   if (!win) return;
 
   // Merge: remote is source of truth, local items without remote counterpart get migrated up
-  const remoteIds = new Set(remoteItems.map((i) => i.id));
-  let localItems = [];
-  try {
-    localItems = JSON.parse(win.localStorage.getItem(EQUIPMENT_KEY) ?? '[]');
-  } catch { /* */ }
-
-  const localOnly = localItems.filter((i) => i && i.id && !remoteIds.has(i.id));
-
-  // Migrate local-only items to Firestore
-  for (const item of localOnly) {
-    const normalized = normalizeLegacyEquipment(item);
-    if (normalized) {
-      await writeToFirestore(normalized, userId);
-    }
-  }
-
-  // Write merged set to localStorage as cache
-  const merged = [
-    ...remoteItems.map(normalizeLegacyEquipment).filter(Boolean),
-    ...localOnly.map(normalizeLegacyEquipment).filter(Boolean),
-  ];
+  // Firestore is source of truth — overwrite localStorage cache unconditionally
+  const merged = remoteItems.map(normalizeLegacyEquipment).filter(Boolean);
   win.localStorage.setItem(EQUIPMENT_KEY, JSON.stringify(merged));
   win.dispatchEvent(new CustomEvent(EQUIPMENT_EVENT, { detail: merged }));
 }
@@ -172,7 +153,7 @@ export function resetEquipmentService() {
 
 // ── Core CRUD ─────────────────────────────────────────────────────────────────
 
-export function getEquipmentLibrary(seedItems = demoEquipmentItems) {
+export function getEquipmentLibrary(seedItems = []) {
   const win = safeWindow();
   if (!win) return seedItems.map(normalizeEquipmentItem).filter(Boolean);
 
@@ -226,7 +207,7 @@ export async function enrichEquipmentWithProducts(items, options = {}) {
   return enriched;
 }
 
-export async function getEquipmentLibraryWithProducts(seedItems = demoEquipmentItems, options = {}) {
+export async function getEquipmentLibraryWithProducts(seedItems = [], options = {}) {
   return enrichEquipmentWithProducts(getEquipmentLibrary(seedItems), options);
 }
 

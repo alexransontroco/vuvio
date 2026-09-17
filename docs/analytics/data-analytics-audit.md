@@ -631,7 +631,7 @@ Internal tooling:
 
 Docs:
 
-- `docs/data-analytics-audit.md`
+- `docs/analytics/data-analytics-audit.md`
 - `docs/data-analytics-architecture.md`
 - `docs/analytics-events.md`
 - `docs/analytics-metrics.md`

@@ -4,40 +4,8 @@ Vuvio is a mobile-first POV live streaming app for outdoor, adventure, craft, an
 
 The product centers discovery around location-first live streams, creator profiles, replay/recap flows, and creator equipment/gear as a community and monetization layer.
 
-## Current Stack
-
-- Frontend: React 19, Vite 6, React Router v6, i18next
-- Backend: Firebase Cloud Functions v2, Node.js 20, TypeScript
-- Hosting: Firebase Hosting, project `vuvio-bf328`
-- Database: Firestore
-- Auth: Firebase Auth, email/password and Google popup
-- Video: Cloudflare Stream, WHIP ingest and HLS playback
-- Storage: Firebase Storage for mock/demo video assets
-
-## Commands
-
-```bash
-npm run dev
-npm run dev:replay
-npm run build
-firebase deploy --only hosting
-firebase deploy --only functions
-```
-
-Always run `npm run build` before considering changes complete.
-
-`npm run dev:replay` starts the local HTTPS RTMPS relay and Vite dev server for replay validation. Open `/watch?relayLocal=1` from the HTTPS dev URL.
-
-## Replay Relay
-
-Local replay validation uses:
-
-```txt
-https://<dev-host>:5173/watch?relayLocal=1
-https://<dev-host>:8787
-```
-
-The Cloud Run relay URL is not a production-ready browser WebRTC relay target for this flow. A production relay needs a network path that supports WebRTC ICE media, such as a VM with a public IP and required UDP ports open, or a validated TURN-backed strategy.
+Stack, commands, and critical rules → [AGENTS.md](AGENTS.md).  
+Architecture, decisions, open questions → [journal.architecture.md](journal.architecture.md).
 
 ## Documentation Map
 

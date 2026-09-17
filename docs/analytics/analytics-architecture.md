@@ -1,5 +1,14 @@
 # Analytics Architecture — Vuvio
 
+Status: Architecture reference, partially current  
+Last reviewed: 2026-09-05  
+Read before coding: Yes, for analytics event, queue, session, or backend ingestion changes.
+
+Current reality:
+- This architecture explains the intended analytics layers.
+- Verify current service files, event schemas, and deployed backend availability before relying on implementation status.
+- Watch/Explore event changes must avoid duplicate event spam during rerenders and navigation.
+
 **Phase 1: Foundation (Event Queue & Session Management)**
 
 ---

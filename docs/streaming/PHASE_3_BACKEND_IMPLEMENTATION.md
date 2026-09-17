@@ -1,5 +1,19 @@
 # Phase 3: Real Highlight Generation - Backend Implementation Guide
 
+Status: Backend implementation guide, requires current-code verification  
+Last reviewed: 2026-09-05  
+Read before coding: Yes, for highlight API work.
+
+Current reality:
+- This file describes the intended backend shape for real highlight generation.
+- Confirm the current Cloudflare recording/replay path before relying on automatic recording.
+- Keep `activeLives/{liveId}` available after live end so backend replay/highlight jobs can read stream metadata.
+
+Do not regress:
+- Do not move dependencies into local installs only; deployed functions need `functions/package.json`.
+- Do not make highlight generation depend on client-side deletion timing.
+- Do not expose creator-only highlight endpoints to unauthorized users.
+
 ## Overview
 Phase 3 infrastructure is ready. Frontend now:
 - ✅ Detects if backend API is available

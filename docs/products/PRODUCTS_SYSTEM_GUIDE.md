@@ -1,5 +1,19 @@
 # Vuvio Product Thumbnails System
 
+Status: Product-system reference, partially current  
+Last reviewed: 2026-09-05  
+Read before coding: Yes, for product catalog, thumbnails, image processing, or provider changes.
+
+Current reality:
+- Product data supports creator gear and future monetization.
+- Provider availability and backend routes should be verified against current code before deployment work.
+- Affiliate fields exist, but full commission attribution/reporting should not be assumed complete.
+
+Do not regress:
+- Preserve thumbnail fallback behavior for missing, processing, failed, and ready image states.
+- Keep provider credentials out of source.
+- Add any new backend dependency to `functions/package.json`.
+
 Complete guide for the product image thumbnail system for Vuvio.
 
 ## Overview

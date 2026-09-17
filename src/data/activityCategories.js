@@ -47,7 +47,7 @@ export const ACTIVITY_CATEGORIES = [
     id: 'aviation',
     label: 'Aviation',
     icon: Plane,
-    color: '#5b9fff',
+    color: '#FF8A1F',
     subcategories: ['Drone', 'Airplane', 'Helicopter', 'Paragliding', 'Hot-air balloon', 'Wingsuit'],
   },
   {

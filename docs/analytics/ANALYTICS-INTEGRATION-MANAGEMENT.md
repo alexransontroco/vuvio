@@ -558,8 +558,8 @@ src/
     └── HomePage.jsx                   ← Watch page (integrated)
 
 docs/
-├── README-ANALYTICS.md                ← Quick index
-├── ANALYTICS-GUIDE-SIMPLE.md          ← Simple explanations
+├── ../archive/README-ANALYTICS.md     ← Quick index (archived)
+├── ../archive/ANALYTICS-GUIDE-SIMPLE.md ← Simple explanations (archived)
 ├── ANALYTICS-INTEGRATION-MANAGEMENT.md ← THIS FILE
 ├── PHASE-2-COMPLETE.md                ← What was built
 ├── PHASE-2-INTEGRATION.md             ← Integration examples
@@ -652,4 +652,4 @@ analyticsQueue.clear()
 For more details, see:
 - [PHASE-2-INTEGRATION.md](./PHASE-2-INTEGRATION.md) - Code examples
 - [analytics-architecture.md](./analytics-architecture.md) - Deep technical dive
-- [README-ANALYTICS.md](./README-ANALYTICS.md) - Master index
+- [../archive/README-ANALYTICS.md](../archive/README-ANALYTICS.md) - Master index (archived)

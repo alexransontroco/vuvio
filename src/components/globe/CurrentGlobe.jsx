@@ -2,7 +2,7 @@ import { Bell, LocateFixed, Minus, Play, Plus, X } from 'lucide-react';
 import maplibregl from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { ACTIVITY_CATEGORIES } from '../../data/activityCategories.js';
 import { enrichExperience } from '../../data/experienceTaxonomy.js';
 import { analyticsService } from '../../services/analytics/analyticsService.ts';
@@ -16,12 +16,13 @@ const MARKER_TYPES = {
   vuvio: 'vuvio',
 };
 
-const INITIAL_CENTER = [14, 20];
+const INITIAL_CENTER = [14, 10];
 const STYLE_URL = 'https://basemaps.cartocdn.com/gl/positron-nolabels-gl-style/style.json';
 const LIVE_COLOR = '#ff0066';
 const UPCOMING_COLOR = '#0099ff';
 const ROTATE_DEGREES_PER_SECOND = 1.8;
 const ACTUAL_ROTATION_INTERVAL = 24;
+const INITIAL_ZOOM = 1.15;
 const SELECTED_LIVE_ZOOM = 4.0;
 const REQUESTED_LIVE_ZOOM = 4.2;
 const PING_COLOR = '#ff8a1f';
@@ -104,8 +105,8 @@ function livePointOpacity(clock, selectedId = '') {
   return [
     'case',
     ['==', ['get', 'id'], selectedId],
-    ['+', 0.90, ['*', wave, 0.10]],
-    ['+', 0.82, ['*', wave, 0.15]],
+    ['+', 0.72, ['*', wave, 0.28]],
+    ['+', 0.38, ['*', wave, 0.62]],
   ];
 }
 
@@ -118,18 +119,18 @@ function livePointRadius(clock, selectedId = '') {
     [
       'case',
       ['==', ['get', 'markerType'], MARKER_TYPES.sponsored],
-      ['+', ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 2.0, 300, 5.0, 800, 10.0, 1500, 16.0], ['*', wave, ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 1.0, 800, 1.5, 1500, 1.9]]],
+      ['+', ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 3.6, 300, 5.6, 800, 10.0, 1500, 16.0], ['*', wave, ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 1.4, 800, 2.2, 1500, 3.0]]],
       ['==', ['get', 'markerType'], MARKER_TYPES.vuvio],
-      ['+', ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 2.2, 300, 5.5, 800, 11.0, 1500, 17.0], ['*', wave, ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 1.1, 800, 1.6, 1500, 2.0]]],
-      ['+', ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 1.8, 300, 4.5, 800, 9.0, 1500, 15.0], ['*', wave, ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 0.9, 800, 1.4, 1500, 1.8]]],
+      ['+', ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 3.8, 300, 6.0, 800, 10.8, 1500, 17.0], ['*', wave, ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 1.5, 800, 2.3, 1500, 3.1]]],
+      ['+', ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 3.2, 300, 5.2, 800, 9.5, 1500, 15.0], ['*', wave, ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 1.2, 800, 2.0, 1500, 2.8]]],
     ],
     [
       'case',
       ['==', ['get', 'markerType'], MARKER_TYPES.sponsored],
-      ['+', ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 1.5, 300, 3.5, 800, 7.0, 1500, 12.0], ['*', wave, ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 0.7, 800, 1.0, 1500, 1.3]]],
+      ['+', ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 3.0, 300, 4.8, 800, 8.5, 1500, 13.5], ['*', wave, ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 1.2, 800, 1.8, 1500, 2.6]]],
       ['==', ['get', 'markerType'], MARKER_TYPES.vuvio],
-      ['+', ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 1.7, 300, 4.0, 800, 8.0, 1500, 13.0], ['*', wave, ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 0.76, 800, 1.1, 1500, 1.4]]],
-      ['+', ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 1.3, 300, 3.0, 800, 6.0, 1500, 11.0], ['*', wave, ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 0.6, 800, 0.9, 1500, 1.2]]],
+      ['+', ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 3.2, 300, 5.0, 800, 9.0, 1500, 14.5], ['*', wave, ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 1.3, 800, 1.9, 1500, 2.7]]],
+      ['+', ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 2.7, 300, 4.4, 800, 8.0, 1500, 12.8], ['*', wave, ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 1.0, 800, 1.6, 1500, 2.4]]],
     ],
   ];
 }
@@ -140,10 +141,10 @@ function liveColorGlowRadius(clock) {
     '+',
     ['case',
       ['==', ['get', 'markerType'], MARKER_TYPES.sponsored],
-      ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 3.0, 300, 4.0, 800, 5.5, 1500, 7.5],
+      ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 8.0, 300, 12.0, 800, 18.0, 1500, 26.0],
       ['==', ['get', 'markerType'], MARKER_TYPES.vuvio],
-      ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 3.2, 300, 4.2, 800, 6.0, 1500, 8.5],
-      ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 2.8, 300, 3.8, 800, 5.0, 1500, 7.0],
+      ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 9.0, 300, 13.0, 800, 19.0, 1500, 28.0],
+      ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 7.0, 300, 11.0, 800, 17.0, 1500, 25.0],
     ],
     ['*', wave, ['case',
       ['==', ['get', 'markerType'], MARKER_TYPES.sponsored],
@@ -161,10 +162,10 @@ function liveColorGlowOpacity(clock) {
     '+',
     ['case',
       ['==', ['get', 'markerType'], MARKER_TYPES.sponsored],
-      ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 0.38, 300, 0.50, 800, 0.62, 1500, 0.74],
+      ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 0.42, 300, 0.56, 800, 0.70, 1500, 0.82],
       ['==', ['get', 'markerType'], MARKER_TYPES.vuvio],
-      ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 0.40, 300, 0.52, 800, 0.65, 1500, 0.78],
-      ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 0.34, 300, 0.44, 800, 0.56, 1500, 0.68],
+      ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 0.46, 300, 0.60, 800, 0.74, 1500, 0.86],
+      ['interpolate', ['linear'], ['get', 'viewersNumber'], 0, 0.40, 300, 0.54, 800, 0.68, 1500, 0.80],
     ],
     ['*', wave, ['case',
       ['==', ['get', 'markerType'], MARKER_TYPES.sponsored],
@@ -445,6 +446,7 @@ function brightenBaseGlobe(map) {
 }
 
 export default function CurrentGlobe({ streams, onboarding = false, onOnboardingLiveSelect, variant = 'current' }) {
+  const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const containerRef = useRef(null);
   const mapRef = useRef(null);
@@ -538,8 +540,8 @@ export default function CurrentGlobe({ streams, onboarding = false, onOnboarding
       container: containerRef.current,
       style: STYLE_URL,
       center: INITIAL_CENTER,
-      zoom: 1.4,
-      pitch: 50,
+      zoom: INITIAL_ZOOM,
+      pitch: 35,
       bearing: 0,
       minZoom: 0,
       maxZoom: 6,
@@ -615,8 +617,7 @@ export default function CurrentGlobe({ streams, onboarding = false, onOnboarding
           );
         }
 
-        const isMobile = window.innerHeight < 900;
-        map.setPadding({ top: isMobile ? 40 : -30, bottom: isMobile ? 80 : 180, left: 0, right: 0 });
+        map.setPadding({ top: 0, bottom: 135, left: 0, right: 0 });
 
         map.addSource('vuvio-test-lives', {
           type: 'geojson',
@@ -688,8 +689,8 @@ export default function CurrentGlobe({ streams, onboarding = false, onOnboarding
           paint: {
             'circle-color': markerColorExpression(),
             'circle-radius': livePointRadius(0, selectedId ?? ''),
-            'circle-blur': 1.6,
-            'circle-opacity': ['case', ['==', ['get', 'id'], selectedId ?? ''], 1.0, 0.88],
+            'circle-blur': 0.75,
+            'circle-opacity': livePointOpacity(0, selectedId ?? ''),
           },
         });
 
@@ -703,7 +704,7 @@ export default function CurrentGlobe({ streams, onboarding = false, onOnboarding
             'circle-color': 'rgba(43,217,200,0)',
             'circle-radius': liveRingRadius(0, selectedId ?? '', hoveredId),
             'circle-stroke-color': markerStrokeColorExpression(),
-            'circle-stroke-width': 0.7,
+            'circle-stroke-width': 0.8,
             'circle-stroke-opacity': liveRingOpacity(selectedId ?? '', hoveredId),
             'circle-opacity': 0,
           },
@@ -1037,14 +1038,14 @@ export default function CurrentGlobe({ streams, onboarding = false, onOnboarding
         center,
         zoom,
         bearing: 0,
-        pitch: 50,
+        pitch: 35,
         duration: 1350,
         easing: (t) => 1 - Math.pow(1 - t, 3),
         essential: true,
       });
     };
 
-    fly(INITIAL_CENTER, 1.4);
+    fly(INITIAL_CENTER, INITIAL_ZOOM);
   };
 
   const tiltBy = (delta) => {

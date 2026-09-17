@@ -62,7 +62,7 @@ export default function SignupPage() {
     const result = await signUp(email.trim(), password, displayName.trim());
     setSubmitting(false);
     if (result.success) {
-      navigate('/verify-email', { replace: true });
+      navigate(returnTo, { replace: true });
     } else {
       setError(result.error);
     }

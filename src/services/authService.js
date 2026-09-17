@@ -205,14 +205,6 @@ export async function signUpWithEmail(email, password, displayName) {
   }
   await createUserProfileIfMissing(credential.user, { displayName, provider: 'password' });
 
-  // Send email verification
-  try {
-    await sendEmailVerification(credential.user);
-    console.log('[authService] Verification email sent to:', email);
-  } catch (err) {
-    console.error('[authService] Failed to send verification email:', err.message);
-  }
-
   return credential.user;
 }
 

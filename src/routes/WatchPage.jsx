@@ -45,7 +45,7 @@ const homeTabs = [
 ];
 const followedCreatorNames = ['Noah Perrin', 'Maya Afonso', 'Luka Marino'];
 const fallbackUserLocation = { latitude: 48.8566, longitude: 2.3522 };
-const fallbackCover = '/icons/icon-512.png';
+const fallbackCover = '/assets/icons/icon-512.png';
 const demoVideoLiveIds = [
   'guitar-solo-pov-paris',
   'metal-drummer-pov-berlin',
@@ -60,6 +60,10 @@ const demoVideoLiveIds = [
   'biking-dolomites',
   'buggy-marrakesh',
   'glacier-guide-iceland',
+  'gopro-firefighters-la',
+  'hailey-equestrian-tryon',
+  'mrt-burgerbar-manchester',
+  'muaythai-training-phuket',
 ];
 const CLOCK_TICK_MS = 1000;
 const COVER_CAPTURE_DELAY_MS = 2000;
@@ -318,7 +322,7 @@ function toHomeLive(stream) {
     city: mapStream?.city ?? stream.city ?? city,
     country: mapStream?.country ?? stream.country ?? country,
     locationLabel: mapStream ? `${mapStream.city}, ${mapStream.country}` : stream.place ?? `${stream.city}, ${stream.country}`,
-    coordinates: mapStream?.coordinates ?? null,
+    coordinates: mapStream?.coordinates ?? stream.coordinates ?? null,
     status: mapStream?.status ?? 'live',
     subcategory: mapStream?.subcategory ?? stream.category,
     family: mapStream?.family ?? null,
@@ -1204,6 +1208,7 @@ function CreatorLiveSession({ live, onEndingChange }) {
   const { user } = useAuth();
   const [phase, setPhase] = useState('live');
   const [elapsed, setElapsed] = useState(0);
+  const [recordingActive, setRecordingActive] = useState(false);
   const [viewerCount, setViewerCount] = useState(1);
   const [peakViewers, setPeakViewers] = useState(1);
   const [stars, setStars] = useState(0);
@@ -1463,6 +1468,7 @@ function CreatorLiveSession({ live, onEndingChange }) {
           try {
             await startRtmpRelayBroadcast(live.id, user.uid, stream, relayCredentials.relayUrl, relayCredentials.ingestUrl, relayCredentials.streamKey);
             ingestMode = 'rtmps-relay';
+            setRecordingActive(true);
             console.log('[INGEST] relay connected');
           } catch (relayErr) {
             console.warn('[INGEST] relay failed:', relayErr.message, '— falling back to WHIP');
@@ -1472,6 +1478,7 @@ function CreatorLiveSession({ live, onEndingChange }) {
           try {
             await startWhipConnection(stream, whipCredentials.url, whipCredentials.key);
             ingestMode = 'whip';
+            setRecordingActive(true);
           } catch (whipErr) {
             console.error('[INGEST] WHIP failed:', whipErr.message);
           }
@@ -1541,10 +1548,10 @@ function CreatorLiveSession({ live, onEndingChange }) {
   }, [live?.id]);
 
   useEffect(() => {
-    if (phase !== 'live') return undefined;
+    if (phase !== 'live' || !recordingActive) return undefined;
     const timer = window.setInterval(() => setElapsed((value) => value + 1), 1000);
     return () => window.clearInterval(timer);
-  }, [phase]);
+  }, [phase, recordingActive]);
 
   useEffect(() => {
     if (phase !== 'live') return undefined;
@@ -1963,6 +1970,7 @@ function LiveViewer({ liveId, creatorMode = false }) {
   const [remoteStream, setRemoteStream] = useState(null);
   const [watchStatus, setWatchStatus] = useState('');
   const [watchRetry, setWatchRetry] = useState(0);
+  const [hlsFailure, setHlsFailure] = useState(null);
   const [broadcastEnded, setBroadcastEnded] = useState(false);
   const localVideoRef = useRef(null);
   const remoteVideoRef = useRef(null);
@@ -2208,10 +2216,12 @@ function LiveViewer({ liveId, creatorMode = false }) {
       return;
     }
     const hlsSource = isEnded ? live.replayUrl : live.hlsManifestUrl;
+    const hlsFailureKey = hlsSource ? `${activeLiveId}:${hlsSource}` : null;
+    const hlsFailed = hlsFailureKey && hlsFailure?.key === hlsFailureKey;
     const viewerId = `viewer-${activeLiveId}-${Math.random().toString(36).slice(2, 8)}`;
 
     // --- Path A: HLS (Cloudflare) — preferred when available, works for all viewers ---
-    if (hlsSource) {
+    if (hlsSource && !hlsFailed) {
       console.log(`[VIEWER] playback source: cloudflare | viewerId: ${viewerId} | liveId: ${activeLiveId} | P2P fallback used: false`);
       let cancelled = false;
       let hls = null;
@@ -2237,20 +2247,27 @@ function LiveViewer({ liveId, creatorMode = false }) {
             if (cancelled) return;
             console.log(`[VIEWER] playback started | viewerId: ${viewerId} | liveId: ${activeLiveId} | source: HLS`);
             setWatchStatus('connected');
+            setWatchRetry(0);
             attemptVideoPlayback(video);
           });
           hls.on(Hls.Events.ERROR, (_, data) => {
             if (cancelled || !data.fatal) return;
             hls?.destroy();
             hls = null;
-            if (retryCount < MAX_HLS_RETRIES) {
+            if (data.details === 'manifestParsingError') {
+              console.warn(`[VIEWER] HLS manifest invalid; falling back to P2P | viewerId: ${viewerId} | liveId: ${activeLiveId}`);
+              setWatchStatus('fallback');
+              setHlsFailure({ key: hlsFailureKey, details: data.details });
+            } else if (retryCount < MAX_HLS_RETRIES) {
               retryCount += 1;
               console.warn(`[VIEWER] HLS fatal: ${data.details} (retry ${retryCount}/${MAX_HLS_RETRIES}) | viewerId: ${viewerId} | liveId: ${activeLiveId}`);
               setWatchStatus('retrying');
+              setWatchRetry(retryCount);
               retryTimer = window.setTimeout(tryHls, HLS_RETRY_DELAY);
             } else {
-              console.warn(`[VIEWER] HLS gave up after max retries | viewerId: ${viewerId} | liveId: ${activeLiveId}`);
-              setBroadcastEnded(true);
+              console.warn(`[VIEWER] HLS gave up after max retries; falling back to P2P | viewerId: ${viewerId} | liveId: ${activeLiveId}`);
+              setWatchStatus('fallback');
+              setHlsFailure({ key: hlsFailureKey, details: data.details });
             }
           });
         } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
@@ -2259,6 +2276,7 @@ function LiveViewer({ liveId, creatorMode = false }) {
             if (cancelled) return;
             console.log(`[VIEWER] playback started (native HLS) | viewerId: ${viewerId} | liveId: ${activeLiveId}`);
             setWatchStatus('connected');
+            setWatchRetry(0);
             attemptVideoPlayback(video);
           }, { once: true });
         }
@@ -2277,13 +2295,12 @@ function LiveViewer({ liveId, creatorMode = false }) {
     // If a Cloudflare live input exists but hlsManifestUrl is not yet available, wait for the
     // Firestore update instead of falling into P2P. The backend writes hlsManifestUrl in the same
     // request that creates the live input, so this window is very brief.
-    if (live.cloudflareLiveInputId) {
+    if (live.cloudflareLiveInputId && !hlsFailed) {
       console.log(`[VIEWER] Cloudflare live input detected but hlsManifestUrl not yet set — waiting | liveId: ${activeLiveId} | P2P fallback used: false`);
       return;
     }
 
-    // --- Path B: P2P WebRTC — only for lives with no Cloudflare live input ---
-    if (!user) return;
+    // --- Path B: P2P WebRTC — final fallback when Cloudflare HLS is unavailable ---
     console.log(`[VIEWER] playback source: p2p | viewerId: ${viewerId} | liveId: ${activeLiveId} | P2P fallback used: true`);
 
     let cancelled = false;
@@ -2317,6 +2334,7 @@ function LiveViewer({ liveId, creatorMode = false }) {
           if (!cancelled && retryCount < MAX_RETRIES) {
             retryCount += 1;
             setWatchStatus('retrying');
+            setWatchRetry(retryCount);
             retryTimer = window.setTimeout(connect, RETRY_DELAY);
           }
         }
@@ -2328,6 +2346,7 @@ function LiveViewer({ liveId, creatorMode = false }) {
         if (retryCount < MAX_RETRIES) {
           retryCount += 1;
           setWatchStatus('retrying');
+          setWatchRetry(retryCount);
           retryTimer = window.setTimeout(connect, RETRY_DELAY);
         }
       });
@@ -2342,7 +2361,7 @@ function LiveViewer({ liveId, creatorMode = false }) {
       viewerSession?.close?.();
       closePeer();
     };
-  }, [creatorMode, activeLiveId, user?.uid, live.hlsManifestUrl, live.replayUrl, live.status, live.cloudflareLiveInputId]);
+  }, [creatorMode, activeLiveId, user?.uid, live.hlsManifestUrl, live.replayUrl, live.status, live.cloudflareLiveInputId, hlsFailure]);
 
 
 
@@ -2756,6 +2775,7 @@ function LiveViewer({ liveId, creatorMode = false }) {
                   } : null}
                   className="live-slide__media live-slide__media--video"
                   src={isActive ? item.video : undefined}
+                  poster={item.image}
                   muted={true}
                   loop
                   playsInline
@@ -2787,7 +2807,6 @@ function LiveViewer({ liveId, creatorMode = false }) {
                         className="live-slide__media live-slide__media--pov"
                         autoPlay
                         muted
-                        defaultMuted
                         playsInline
                         style={isDragging ? { transform: `scale(1.03) translateY(${dragY * 0.1}px)` } : undefined}
                       />

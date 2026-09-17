@@ -29,6 +29,36 @@ const keyPath = process.env.RTMPS_RELAY_KEY || '../certs/key.pem';
 const INACTIVITY_MS = Number(process.env.RTMPS_RELAY_INACTIVITY_MS || 30000);
 const INPUT_FPS = 15;
 const OUTPUT_FPS = 30; // RTMPS output fps — FFmpeg duplicates frames to fill
+const TARGET_WIDTH = 854;
+const TARGET_HEIGHT = 480;
+
+function scaleI420(srcBuf, srcW, srcH, dstW, dstH) {
+  if (srcW === dstW && srcH === dstH) return srcBuf;
+  const srcUVW = Math.ceil(srcW / 2), srcUVH = Math.ceil(srcH / 2);
+  const dstUVW = Math.ceil(dstW / 2), dstUVH = Math.ceil(dstH / 2);
+  const dst = Buffer.allocUnsafe(dstW * dstH + dstUVW * dstUVH * 2);
+  for (let y = 0; y < dstH; y++) {
+    const sy = Math.floor(y * srcH / dstH);
+    for (let x = 0; x < dstW; x++) {
+      dst[y * dstW + x] = srcBuf[sy * srcW + Math.floor(x * srcW / dstW)];
+    }
+  }
+  const srcUOff = srcW * srcH, dstUOff = dstW * dstH;
+  for (let y = 0; y < dstUVH; y++) {
+    const sy = Math.floor(y * srcUVH / dstUVH);
+    for (let x = 0; x < dstUVW; x++) {
+      dst[dstUOff + y * dstUVW + x] = srcBuf[srcUOff + sy * srcUVW + Math.floor(x * srcUVW / dstUVW)];
+    }
+  }
+  const srcVOff = srcUOff + srcUVW * srcUVH, dstVOff = dstUOff + dstUVW * dstUVH;
+  for (let y = 0; y < dstUVH; y++) {
+    const sy = Math.floor(y * srcUVH / dstUVH);
+    for (let x = 0; x < dstUVW; x++) {
+      dst[dstVOff + y * dstUVW + x] = srcBuf[srcVOff + sy * srcUVW + Math.floor(x * srcUVW / dstUVW)];
+    }
+  }
+  return dst;
+}
 
 function buildRtmpTarget(ingestUrl, streamKey) {
   if (!ingestUrl || !streamKey) return '';
@@ -45,7 +75,7 @@ function createFfmpegProcess(session) {
     '-thread_queue_size', '512',
     '-f', 'rawvideo',
     '-pix_fmt', 'yuv420p',
-    '-s', `${session.videoWidth}x${session.videoHeight}`,
+    '-s', `${TARGET_WIDTH}x${TARGET_HEIGHT}`,
     '-framerate', String(INPUT_FPS),
     '-r', String(INPUT_FPS),
     '-i', 'pipe:3',
@@ -263,8 +293,8 @@ function startSession({ liveInputId, ingestUrl, streamKey, sdpOffer, title }) {
           if (!session.firstVideoAt) session.firstVideoAt = now;
           const hasFrameSize = Number.isFinite(frame.width) && Number.isFinite(frame.height) && frame.width > 0 && frame.height > 0;
           if (hasFrameSize) {
-            session.videoWidth = frame.width;
-            session.videoHeight = frame.height;
+            session.videoWidth = TARGET_WIDTH;
+            session.videoHeight = TARGET_HEIGHT;
           }
           const waited = now - session.firstVideoAt;
           const audioReady = session.hasAudio || waited > 1000;
@@ -285,30 +315,26 @@ function startSession({ liveInputId, ingestUrl, streamKey, sdpOffer, title }) {
         const ew = session.videoWidth, eh = session.videoHeight;
         const expectedSize = ew * eh + Math.ceil(ew / 2) * Math.ceil(eh / 2) * 2;
 
+        let pipeData;
         if (byteLen !== expectedSize) {
-          const isUpgrade = typeof frame.width === 'number' && frame.width > session.videoWidth;
-          if (isUpgrade && session.ffmpegStartCount < 5) {
-            // Resolution improved during ramp-up — restart FFmpeg at higher resolution.
-            // Gap is <1s; timeoutSeconds=10 ensures Cloudflare merges into same video.
-            console.log('[relay] resolution upgrade %dx%d → %dx%d — restarting ffmpeg (t=%dms) ffmpegStart#%d',
-              session.videoWidth, session.videoHeight, frame.width, frame.height,
-              Date.now() - session.ffmpegStartedAt, ++session.ffmpegStartCount);
-            session.videoWidth = frame.width;
-            session.videoHeight = frame.height;
-            session.latestFrameBuf = null;
-            restartFfmpeg(session);
+          const fw = typeof frame.width === 'number' ? frame.width : 0;
+          const fh = typeof frame.height === 'number' ? frame.height : 0;
+          if (fw > 0 && fh > 0) {
+            const src = Buffer.from(frame.data.buffer, frame.data.byteOffset ?? 0, byteLen);
+            pipeData = scaleI420(src, fw, fh, TARGET_WIDTH, TARGET_HEIGHT);
+            if (_frameLogCount <= 3) console.log('[relay] scaled frame %dx%d → %dx%d session=%s', fw, fh, TARGET_WIDTH, TARGET_HEIGHT, session.id);
           } else {
-            console.error('[relay] dropping frame %dx%d≠%dx%d (upgrade=%s ffmpegStartCount=%d) session=%s',
-              session.videoWidth, session.videoHeight, frame.width, frame.height, isUpgrade, session.ffmpegStartCount, session.id);
+            return;
           }
-          return;
+        } else {
+          pipeData = Buffer.allocUnsafe(byteLen);
+          pipeData.set(new Uint8Array(frame.data.buffer, frame.data.byteOffset ?? 0, byteLen));
         }
 
-        // In-place copy into pre-allocated buffer to avoid per-frame GC pressure.
-        if (!session.latestFrameBuf || session.latestFrameBuf.length !== byteLen) {
-          session.latestFrameBuf = Buffer.allocUnsafe(byteLen);
+        if (!session.latestFrameBuf || session.latestFrameBuf.length !== pipeData.length) {
+          session.latestFrameBuf = Buffer.allocUnsafe(pipeData.length);
         }
-        session.latestFrameBuf.set(new Uint8Array(frame.data.buffer, frame.data.byteOffset ?? 0, byteLen));
+        pipeData.copy(session.latestFrameBuf);
 
         // Primary rate-limited write: one frame per target interval.
         // More reliable than setInterval under event-loop load since this runs in the WebRTC callback.
@@ -316,7 +342,7 @@ function startSession({ liveInputId, ingestUrl, streamKey, sdpOffer, title }) {
           const elapsed = Date.now() - session.timerStartedAt;
           const targetFrames = Math.floor(elapsed / (1000 / INPUT_FPS));
           if (targetFrames > session.framesWritten) {
-            const writeBuf = Buffer.allocUnsafe(byteLen);
+            const writeBuf = Buffer.allocUnsafe(session.latestFrameBuf.length);
             session.latestFrameBuf.copy(writeBuf);
             session.videoPipe.write(writeBuf);
             session.framesWritten++;

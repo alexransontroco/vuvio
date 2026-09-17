@@ -16,11 +16,31 @@ function ReplayPlayer({ src, poster }) {
     const video = videoRef.current;
 
     if (Hls.isSupported()) {
-      const hls = new Hls({ enableWorker: true });
-      hls.loadSource(src);
-      hls.attachMedia(video);
-      hls.on(Hls.Events.MANIFEST_PARSED, () => { video.muted = false; });
-      return () => hls.destroy();
+      let hls = null;
+      let retryTimer = null;
+      let destroyed = false;
+
+      const load = () => {
+        if (destroyed) return;
+        hls = new Hls({ enableWorker: true });
+        hls.loadSource(src);
+        hls.attachMedia(video);
+        hls.on(Hls.Events.MANIFEST_PARSED, () => { video.muted = false; });
+        hls.on(Hls.Events.ERROR, (_, data) => {
+          if (data.fatal && data.response?.code === 424) {
+            hls.destroy();
+            hls = null;
+            retryTimer = setTimeout(load, 5000);
+          }
+        });
+      };
+
+      load();
+      return () => {
+        destroyed = true;
+        clearTimeout(retryTimer);
+        hls?.destroy();
+      };
     } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
       video.src = src;
     }

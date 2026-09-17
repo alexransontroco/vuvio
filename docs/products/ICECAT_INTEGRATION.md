@@ -1,5 +1,14 @@
 # Icecat Product Integration
 
+Status: Integration reference, requires credential and current-code verification  
+Last reviewed: 2026-09-05  
+Read before coding: Yes, for Icecat/provider work.
+
+Current reality:
+- Icecat work depends on configured backend credentials.
+- Do not commit credentials or sample secrets.
+- Any new provider dependency must be declared in `functions/package.json`.
+
 This document describes the Icecat integration for importing real product data and images.
 
 ## Overview

@@ -75,17 +75,20 @@ const getSettingGroups = (userEmail) => [
   },
 ];
 
-function confirmSignOut() {
-  return window.confirm('Do you really want to sign out?');
-}
-
-function confirmAccountDeletion() {
-  return window.confirm('Delete your Vuvio account? This action will need to be confirmed again once Firebase Auth is connected.');
-}
-
-function handleDeleteAccount() {
-  if (!confirmAccountDeletion()) return;
-  // Firebase Auth is not wired here yet. Keep destructive account deletion isolated.
+function ConfirmModal({ title, message, confirmLabel, danger, onConfirm, onCancel }) {
+  return (
+    <div className="settings-confirm-modal" role="dialog" aria-modal="true" aria-labelledby="settings-confirm-title">
+      <button type="button" className="settings-confirm-modal__backdrop" onClick={onCancel} aria-label="Cancel" />
+      <div className="settings-confirm-modal__panel">
+        <h3 id="settings-confirm-title">{title}</h3>
+        <p>{message}</p>
+        <div className="settings-confirm-modal__actions">
+          <button type="button" className="settings-confirm-modal__cancel" onClick={onCancel}>Cancel</button>
+          <button type="button" className={`settings-confirm-modal__confirm${danger ? ' is-danger' : ''}`} onClick={onConfirm}>{confirmLabel}</button>
+        </div>
+      </div>
+    </div>
+  );
 }
 
 export default function SettingsPage() {
@@ -93,10 +96,10 @@ export default function SettingsPage() {
   const { logout, user } = useAuth();
   const { theme, setTheme } = useTheme();
   const [messagePreferences, setMessagePreferences] = useState(() => getMessagePreferences());
+  const [pendingAction, setPendingAction] = useState(null);
   const userEmail = user?.email ?? '';
 
   const handleSignOut = async () => {
-    if (!confirmSignOut()) return;
     await logout();
     navigate('/login', { replace: true });
   };
@@ -110,7 +113,7 @@ export default function SettingsPage() {
     }
 
     if (item.action === 'sign-out') {
-      handleSignOut();
+      setPendingAction('sign-out');
       return;
     }
 
@@ -120,7 +123,17 @@ export default function SettingsPage() {
     }
 
     if (item.action === 'delete-account') {
-      handleDeleteAccount();
+      setPendingAction('delete-account');
+    }
+  };
+
+  const handleConfirm = async () => {
+    if (pendingAction === 'sign-out') {
+      setPendingAction(null);
+      await handleSignOut();
+    } else if (pendingAction === 'delete-account') {
+      setPendingAction(null);
+      // Firebase Auth not wired yet — placeholder
     }
   };
 
@@ -129,6 +142,26 @@ export default function SettingsPage() {
   };
 
   return (
+    <>
+    {pendingAction === 'sign-out' && (
+      <ConfirmModal
+        title="Sign out"
+        message="End the session on this device?"
+        confirmLabel="Sign out"
+        onConfirm={handleConfirm}
+        onCancel={() => setPendingAction(null)}
+      />
+    )}
+    {pendingAction === 'delete-account' && (
+      <ConfirmModal
+        title="Delete account"
+        message="This will permanently delete your Vuvio account. This action cannot be undone."
+        confirmLabel="Delete account"
+        danger
+        onConfirm={handleConfirm}
+        onCancel={() => setPendingAction(null)}
+      />
+    )}
     <section className="screen-scroll settings-screen" aria-label="Settings">
       <header className="settings-header">
         <button type="button" onClick={() => navigate(-1)} aria-label="Back">
@@ -258,5 +291,6 @@ export default function SettingsPage() {
         </footer>
       </div>
     </section>
+    </>
   );
 }

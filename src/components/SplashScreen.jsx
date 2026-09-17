@@ -1,5 +1,4 @@
 import { useEffect, useRef } from 'react';
-import BrandMark from './BrandMark.jsx';
 
 export default function SplashScreen({ leaving = false }) {
   const videoRef = useRef(null);
@@ -27,8 +26,8 @@ export default function SplashScreen({ leaving = false }) {
       <div className="splash-screen__overlay" />
       <div className="splash-screen__glow" />
       <div className="splash-screen__logo">
-        <BrandMark size={132} />
-        <span className="brand-mark__name" aria-hidden="true">Vuvio</span>
+        <img src="/assets/logo/vuvio-logo.png" alt="Vuvio" className="splash-screen__logo-img" />
+        <span className="splash-screen__brand-name" aria-hidden="true">Vuvio</span>
       </div>
       <span className="splash-screen__pulse" />
     </div>

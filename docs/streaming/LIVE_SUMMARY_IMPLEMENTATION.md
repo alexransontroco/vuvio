@@ -1,10 +1,24 @@
 # Live Summary & Highlight Feature - Phase 1 Implementation
 
+Status: Partially current, implementation note  
+Last reviewed: 2026-09-05  
+Read before coding: Yes, but verify current code before assuming every Phase 1 detail still applies.
+
+Current reality:
+- This document describes the first live-summary/highlight scaffolding.
+- Backend highlight generation and replay availability must be checked against the current Cloudflare recording path before product commitments.
+- Treat "Phase 1" language as historical context, not proof that the full replay/highlight product is complete.
+
+Not implemented or requires verification:
+- Real backend highlight generation for every live.
+- Reliable automatic replay availability after the RTMPS relay revert.
+- End-to-end creator highlight publishing and analytics.
+
 ## Overview
 Phase 1 implements the core infrastructure for post-live experience with MVP highlight generation.
 
-**Status**: ✅ Core scaffolding complete  
-**Build**: In progress  
+**Original status**: Core scaffolding complete  
+**Current build status**: Verify with `npm run build`  
 **Next**: Phase 2 (Backend highlight generation)
 
 ---

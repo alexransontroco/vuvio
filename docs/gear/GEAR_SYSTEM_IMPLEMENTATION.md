@@ -1,12 +1,26 @@
 # Gear System Implementation Guide
 
+Status: MVP implementation reference, partially current  
+Last reviewed: 2026-09-05  
+Read before coding: Yes, for structured gear-management work.
+
+Current reality:
+- The structured gear system exists, but persistence and product integration should be checked against current code before assuming full production behavior.
+- Some gear functionality is localStorage-oriented.
+- Firestore sync, affiliate click tracking, and commission attribution are still open areas unless implemented elsewhere.
+
+Do not regress:
+- Preserve public gear display and live gear snapshots.
+- Preserve sponsor/affiliate disclosure where monetized gear appears.
+- Keep UI copy in English.
+
 ## Overview
 
-A complete, production-ready gear management system has been implemented for Vuvio. This system allows users to build a structured gear collection organized by activity, with support for categories, subcategories, brands, and models.
+An MVP gear management system has been implemented for Vuvio. This system allows users to build a structured gear collection organized by activity, with support for categories, subcategories, brands, and models.
 
 The system is built on a clean, reusable architecture that can be easily extended and integrated with Firestore for backend persistence.
 
-**Status:** ✅ Fully Implemented (MVP - Phase 1)  
+**Original status:** Fully Implemented (MVP - Phase 1)  
 **Date:** July 30, 2026  
 **Total Files Created:** 24  
 **Total Lines of Code:** ~3,500

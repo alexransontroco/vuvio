@@ -150,6 +150,20 @@ const FILES = [
     dest:  'mock-videos/videos/mockups/Serrasolses_Brothers__Rio_Claro_100%_GoPro_2022__HDs84SRy7i0__clip.mp4',
     mime:  'video/mp4',
   },
+  // ── new live-mockup clips ─────────────────────────────────────────────────
+  { local: 'public/assets/mockups/live-mockups/GoPro__Firefighters_Raw_POV__mphHFk5IXsQ.mp4', dest: 'mock-videos/live-mockups/gopro-firefighters.mp4', mime: 'video/mp4' },
+  { local: 'public/assets/mockups/live-mockups/gopro-firefighters-thumb.jpg',                  dest: 'mock-videos/live-mockups/gopro-firefighters-thumb.jpg', mime: 'image/jpeg' },
+  { local: 'public/assets/mockups/live-mockups/Hailey_Royce__Ride_along_with_me_on_Sonic_Boom_during_the_25000_Tryon_Grand_Prix_-_GoPro_Helmet_Cam__Oe-pvvUhvTg.mp4', dest: 'mock-videos/live-mockups/hailey-equestrian.mp4', mime: 'video/mp4' },
+  { local: 'public/assets/mockups/live-mockups/hailey-equestrian-thumb.jpg',                   dest: 'mock-videos/live-mockups/hailey-equestrian-thumb.jpg', mime: 'image/jpeg' },
+  { local: 'public/assets/mockups/live-mockups/MrT__Burger_bar_33_minutes_of_POV_service___O14bbpvy2x0.mp4', dest: 'mock-videos/live-mockups/mrt-burgerbar.mp4', mime: 'video/mp4' },
+  { local: 'public/assets/mockups/live-mockups/mrt-burgerbar-thumb.jpg',                       dest: 'mock-videos/live-mockups/mrt-burgerbar-thumb.jpg', mime: 'image/jpeg' },
+  { local: 'public/assets/mockups/live-mockups/boxthaitraining.mp4',                           dest: 'mock-videos/live-mockups/boxthaitraining.mp4', mime: 'video/mp4' },
+  { local: 'public/assets/mockups/live-mockups/boxthaitraining-thumb.jpg',                     dest: 'mock-videos/live-mockups/boxthaitraining-thumb.jpg', mime: 'image/jpeg' },
+
+  // ── music POV + demo thumbnails ───────────────────────────────────────────
+  { local: 'public/assets/mockups/live-mockups/feuchaterton2-thumb.jpg', dest: 'mock-videos/videos/feuchaterton2-thumb.jpg', mime: 'image/jpeg' },
+  { local: 'public/assets/mockups/live-mockups/dubai-thumb.jpg',         dest: 'mock-videos/videos/dubai-thumb.jpg',         mime: 'image/jpeg' },
+
   // ── music POV streams ──────────────────────────────────────────────────────
   { local: 'public/assets/videos/povguitarsololive.mp4', dest: 'mock-videos/videos/guitar.mp4', mime: 'video/mp4' },
   {

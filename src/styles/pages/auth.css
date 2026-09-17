@@ -412,6 +412,8 @@
   width: min(480px, 100%);
   margin: 0 auto;
   gap: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
 }
 
 .onboarding-step {
@@ -419,7 +421,145 @@
   display: flex;
   flex-direction: column;
   gap: 24px;
+  min-height: 0;
 }
+
+/* ─── Activities step (step 3) ───────────────────── */
+.onboarding-activities {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-content: flex-start;
+  overflow-y: auto;
+  padding-bottom: 8px;
+  scrollbar-width: none;
+}
+
+.onboarding-activities::-webkit-scrollbar { display: none; }
+
+.onboarding-activity {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  border: 0.5px solid rgba(126, 156, 184, 0.2);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.04);
+  color: #98a9b8;
+  padding: 7px 13px;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 490;
+  cursor: pointer;
+  transition: background 120ms, border-color 120ms, color 120ms;
+  white-space: nowrap;
+}
+
+.onboarding-activity.is-selected {
+  background: rgba(19, 200, 204, 0.12);
+  border-color: rgba(19, 200, 204, 0.44);
+  color: #13C8CC;
+  font-weight: 580;
+}
+
+/* ─── Gear step v2 (step 4) ──────────────────────── */
+.onboarding-gear-v2 {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  overflow-y: auto;
+  scrollbar-width: none;
+}
+
+.onboarding-gear-v2::-webkit-scrollbar { display: none; }
+
+.onboarding-gear-v2__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.onboarding-gear-v2__row {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border: 0.5px solid rgba(126, 156, 184, 0.14);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.036);
+  color: #c8d8e8;
+  padding: 12px 14px;
+  font: inherit;
+  font-size: 13.5px;
+  cursor: pointer;
+  text-align: left;
+  transition: background 120ms, border-color 120ms;
+}
+
+.onboarding-gear-v2__row.is-checked {
+  border-color: rgba(19, 200, 204, 0.36);
+  background: rgba(19, 200, 204, 0.07);
+}
+
+.onboarding-gear-v2__checkbox {
+  flex-shrink: 0;
+  width: 18px;
+  height: 18px;
+  display: grid;
+  place-items: center;
+  border: 1px solid rgba(126, 156, 184, 0.3);
+  border-radius: 5px;
+  background: transparent;
+  color: transparent;
+  transition: background 120ms, border-color 120ms, color 120ms;
+}
+
+.onboarding-gear-v2__checkbox.is-checked {
+  background: #13C8CC;
+  border-color: #13C8CC;
+  color: #03212a;
+}
+
+.onboarding-gear-v2__icon {
+  flex-shrink: 0;
+  color: rgba(126, 156, 184, 0.6);
+}
+
+.onboarding-gear-v2__info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+
+.onboarding-gear-v2__info strong {
+  font-size: 13.5px;
+  font-weight: 570;
+  color: #dce8f4;
+}
+
+.onboarding-gear-v2__info small {
+  font-size: 11px;
+  color: rgba(126, 156, 184, 0.6);
+}
+
+.onboarding-gear-v2__add-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 0;
+  background: transparent;
+  color: rgba(126, 156, 184, 0.6);
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+  padding: 8px 0;
+}
+
+.onboarding-gear-v2__add-toggle:hover { color: #98a9b8; }
 
 .onboarding-step__eyebrow {
   margin: 0 0 4px;
@@ -636,4 +776,110 @@
   .onboarding-categories {
     grid-template-columns: repeat(2, 1fr);
   }
+}
+
+/* ─── Custom gear list (added items) ────────────── */
+.onboarding-gear__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.onboarding-gear__item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border: 0.5px solid rgba(126, 156, 184, 0.14);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.03);
+  padding: 10px 12px;
+  color: #c8d8e8;
+  font-size: 13px;
+}
+
+.onboarding-gear__item-icon { flex-shrink: 0; color: rgba(126, 156, 184, 0.5); }
+
+.onboarding-gear__item-label { flex: 1; font-weight: 530; }
+
+.onboarding-gear__item-cat {
+  font-size: 11px;
+  color: rgba(126, 156, 184, 0.5);
+  margin-right: 4px;
+}
+
+.onboarding-gear__item-remove {
+  border: 0;
+  background: transparent;
+  color: rgba(126, 156, 184, 0.4);
+  cursor: pointer;
+  padding: 2px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  transition: color 120ms;
+}
+
+.onboarding-gear__item-remove:hover { color: rgba(220, 80, 80, 0.8); }
+
+/* ─── Add custom gear form ───────────────────────── */
+.onboarding-gear__form {
+  display: grid;
+  grid-template-columns: 1fr 1fr auto;
+  gap: 8px;
+  align-items: center;
+}
+
+.onboarding-gear__cats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.onboarding-gear__cat {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  border: 0.5px solid rgba(126, 156, 184, 0.18);
+  border-radius: 999px;
+  background: transparent;
+  color: rgba(126, 156, 184, 0.6);
+  padding: 4px 10px;
+  font: inherit;
+  font-size: 11.5px;
+  cursor: pointer;
+  transition: background 100ms, border-color 100ms, color 100ms;
+}
+
+.onboarding-gear__cat.is-active {
+  border-color: rgba(19, 200, 204, 0.44);
+  background: rgba(19, 200, 204, 0.1);
+  color: #13C8CC;
+}
+
+.onboarding-gear__input {
+  font-size: 13px !important;
+  min-height: 40px !important;
+  padding: 8px 12px !important;
+}
+
+.onboarding-gear__add-btn {
+  width: 40px;
+  height: 40px;
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  border: 0.5px solid rgba(19, 200, 204, 0.3);
+  border-radius: 12px;
+  background: rgba(19, 200, 204, 0.1);
+  color: #13C8CC;
+  cursor: pointer;
+  transition: background 120ms;
+}
+
+.onboarding-gear__add-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
 }

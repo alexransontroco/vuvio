@@ -1,5 +1,14 @@
 # Product Thumbnails System - Quick Start
 
+Status: Product-system quickstart, partially current  
+Last reviewed: 2026-09-05  
+Read before coding: Use with [PRODUCTS_SYSTEM_GUIDE.md](PRODUCTS_SYSTEM_GUIDE.md) and verify current routes/services.
+
+Current reality:
+- Product search and thumbnails should be validated against current fallback behavior.
+- Icecat/provider work may require backend secrets and deployed-function checks.
+- Run `npm run build` after changes.
+
 Fast-track guide to using the product system in Vuvio.
 
 ## 5-Minute Setup

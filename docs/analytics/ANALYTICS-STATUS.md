@@ -1,5 +1,14 @@
 # Vuvio Analytics System — Current Status & Roadmap
 
+Status: Historical status report, partially current  
+Last reviewed: 2026-09-05  
+Read before coding: Use for rollout context, but verify current code and Firebase deployment state.
+
+Current reality:
+- This file was written as a point-in-time status report.
+- Phrases like "Production Ready" below reflect the original rollout note, not a guarantee of current production behavior.
+- Backend deployment, billing plan, event schemas, and admin access must be verified before analytics changes.
+
 **Date:** 2026-08-01 (Updated)  
 **Overall Status:** 🟡 Partial Deployment (Frontend Ready, Backend Blocked)  
 **Frontend (Phases 1, 2, 2.5):** ✅ Production Ready & Deployed  
@@ -92,7 +101,7 @@
    - Track equipment clicks
    - Fire `creator_profile_opened` events
 
-**Status:** 🔜 Documented in `docs/PHASE-2.5-DISCOVERY-TRACKING.md`  
+**Status:** Documented historically in `docs/archive/PHASE-2.5-DISCOVERY-TRACKING.md`  
 **Effort:** 2-3 days  
 **Risk:** Very Low (isolated pages, no existing code changes)
 
@@ -283,7 +292,7 @@ trackGearItemOpened()
 - ✅ Firestore schema validated
 - ✅ Deduplication working
 - ✅ Stats updates atomic
-- ✅ Code is production-ready
+- ✅ Original implementation note marked code as production-ready
 - ❌ **CANNOT DEPLOY** - Firebase on Spark plan
 - ❌ Endpoint `/api/analytics/events` **DOES NOT EXIST** in production
 
@@ -306,8 +315,8 @@ trackGearItemOpened()
 
 | File | Purpose | Status |
 |------|---------|--------|
-| `README-ANALYTICS.md` | Master index & quick start | ✅ Complete |
-| `ANALYTICS-GUIDE-SIMPLE.md` | Beginner-friendly explanation | ✅ Complete |
+| `../archive/README-ANALYTICS.md` | Master index & quick start | Archived |
+| `../archive/ANALYTICS-GUIDE-SIMPLE.md` | Beginner-friendly explanation | Archived |
 | `ANALYTICS-INTEGRATION-MANAGEMENT.md` | How to manage the system | ✅ Complete |
 | `PHASE-1-COMPLETE.md` | Phase 1 details (queue, session) | ✅ Complete |
 | `PHASE-2-COMPLETE.md` | Phase 2 details (view tracking) | ✅ Complete |
@@ -321,8 +330,8 @@ trackGearItemOpened()
 ## 🎓 Learning Path
 
 **For Understanding:**
-1. Start: `ANALYTICS-GUIDE-SIMPLE.md` (plain language)
-2. Then: `README-ANALYTICS.md` (overview)
+1. Start: `../archive/ANALYTICS-GUIDE-SIMPLE.md` (plain language, archived)
+2. Then: `../archive/README-ANALYTICS.md` (overview, archived)
 3. Then: `ANALYTICS-INTEGRATION-MANAGEMENT.md` (how to use)
 
 **For Development:**

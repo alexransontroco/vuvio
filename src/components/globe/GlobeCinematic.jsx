@@ -10,7 +10,7 @@ const INITIAL_POV = { lat: 28, lng: 14, altitude: 1.8 };
 const FAMILY_COLORS = {
   earth: '#18F064',
   water: '#18D9D1',
-  air: '#1677FF',
+  air: '#FF8A1F',
 };
 
 const TRAIL_KEYWORDS = ['cycling', 'hiking', 'sailing', 'kayak', 'ski', 'boat', 'run', 'board'];

@@ -3,10 +3,10 @@ const APP_SHELL = [
   '/',
   '/index.html',
   '/manifest.webmanifest',
-  '/icons/apple-touch-icon.png',
-  '/icons/icon-192.png',
-  '/icons/icon-512.png',
-  '/icons/icon-512-maskable.png',
+  '/assets/icons/apple-touch-icon.png',
+  '/assets/icons/icon-192.png',
+  '/assets/icons/icon-512.png',
+  '/assets/icons/icon-512-maskable.png',
 ];
 
 async function cacheAppShell() {
