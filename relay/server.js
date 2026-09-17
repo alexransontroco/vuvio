@@ -287,8 +287,7 @@ function startSession({ liveInputId, ingestUrl, streamKey, sdpOffer, title }) {
 
         if (byteLen !== expectedSize) {
           const isUpgrade = typeof frame.width === 'number' && frame.width > session.videoWidth;
-          const withinGrace = (Date.now() - session.ffmpegStartedAt) < 30000;
-          if (isUpgrade && withinGrace) {
+          if (isUpgrade && session.ffmpegStartCount < 5) {
             // Resolution improved during ramp-up — restart FFmpeg at higher resolution.
             // Gap is <1s; timeoutSeconds=10 ensures Cloudflare merges into same video.
             console.log('[relay] resolution upgrade %dx%d → %dx%d — restarting ffmpeg (t=%dms) ffmpegStart#%d',
@@ -299,8 +298,8 @@ function startSession({ liveInputId, ingestUrl, streamKey, sdpOffer, title }) {
             session.latestFrameBuf = null;
             restartFfmpeg(session);
           } else {
-            console.error('[relay] dropping frame %dx%d≠%dx%d (upgrade=%s grace=%s) session=%s',
-              session.videoWidth, session.videoHeight, frame.width, frame.height, isUpgrade, withinGrace, session.id);
+            console.error('[relay] dropping frame %dx%d≠%dx%d (upgrade=%s ffmpegStartCount=%d) session=%s',
+              session.videoWidth, session.videoHeight, frame.width, frame.height, isUpgrade, session.ffmpegStartCount, session.id);
           }
           return;
         }
