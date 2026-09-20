@@ -140,16 +140,18 @@ export default function AllLivesPage() {
       ) : null}
 
       <div className="alp-categories" role="group" aria-label="Filter by category">
-        {categories.map((cat) => (
-          <button
-            key={cat}
-            type="button"
-            className={activeCategory === cat ? 'alp-cat-chip is-active' : 'alp-cat-chip'}
-            onClick={() => setActiveCategory(cat)}
-          >
-            {cat}
-          </button>
-        ))}
+        <div className="alp-categories__scroll">
+          {categories.map((cat) => (
+            <button
+              key={cat}
+              type="button"
+              className={activeCategory === cat ? 'alp-cat-chip is-active' : 'alp-cat-chip'}
+              onClick={() => setActiveCategory(cat)}
+            >
+              {cat}
+            </button>
+          ))}
+        </div>
       </div>
 
       <div className="alp-count">

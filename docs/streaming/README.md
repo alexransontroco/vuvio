@@ -3,15 +3,17 @@
 Live streaming, post-live summary, replay, and backend streaming implementation notes.
 
 Status: Current index  
-Last reviewed: 2026-09-05  
+Last reviewed: 2026-09-18  
 Read before coding: Yes, for any live, replay, watch, Cloudflare, or highlight change.
 
 ## Current Reality
 
-- Creator ingest currently uses Cloudflare WHIP.
+- Creator ingest uses Cloudflare WHIP (direct) + RTMPS relay (local) in parallel.
 - Viewer playback must use HLS first.
 - WHEP is not suitable as the primary multi-viewer path because Cloudflare live inputs are 1-to-1 for WHEP viewing.
-- The RTMPS relay was reverted and should be treated as historical unless a new replay-recording decision explicitly reintroduces it.
+- **Replay requires the RTMPS relay** — Cloudflare does not record WHIP streams. The relay (Browser→WebRTC→relay→RTMPS→Cloudflare) is the only path that produces a replay.
+- The relay works locally (`https://localhost:8787`). Cloud Run is NOT compatible (blocks UDP/ICE). Production deployment requires a VPS (OVH planned).
+- When no relay is active (prod/WHIP-only), `replayUrl` is never set → replay section is hidden in `LiveRecapPage`.
 - Replay/highlight behavior depends on preserving `activeLives/{liveId}` after the live ends.
 
 ## Do Not Regress
@@ -25,6 +27,7 @@ Read before coding: Yes, for any live, replay, watch, Cloudflare, or highlight c
 ## Start Here
 
 - [../backend/backend-stream-lifecycle.md](../backend/backend-stream-lifecycle.md) — current stream lifecycle reference.
+- [relay-infrastructure.md](relay-infrastructure.md) — relay architecture, why Cloud Run fails, VPS plan (OVH), fallback behavior.
 - [LIVE_SUMMARY_IMPLEMENTATION.md](LIVE_SUMMARY_IMPLEMENTATION.md) — live summary and highlight feature notes.
 - [PHASE_3_BACKEND_IMPLEMENTATION.md](PHASE_3_BACKEND_IMPLEMENTATION.md) — backend implementation notes.
 - [ai-post-live-analysis.md](ai-post-live-analysis.md) — post-live AI analysis.

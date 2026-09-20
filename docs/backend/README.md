@@ -3,7 +3,7 @@
 Backend, Firestore, messaging, and stream lifecycle references.
 
 Status: Current index  
-Last reviewed: 2026-09-05  
+Last reviewed: 2026-09-18  
 Read before coding: Yes, for Cloud Functions, Firestore, stream lifecycle, or messaging changes.
 
 ## Current Reality

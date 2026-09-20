@@ -1,4 +1,4 @@
-const CACHE_NAME = 'vuvio-static-v20';
+const CACHE_NAME = 'vuvio-static-v21';
 const APP_SHELL = [
   '/',
   '/index.html',
@@ -9,12 +9,21 @@ const APP_SHELL = [
   '/assets/icons/icon-512-maskable.png',
 ];
 
+function isCacheable(response, url) {
+  if (response.status !== 200) return false;
+  const ct = response.headers.get('content-type') || '';
+  const path = url.pathname;
+  // Don't cache HTML responses for non-HTML requests (SPA 404 fallback poisoning)
+  if (path.match(/\.(js|css|woff2?|png|jpg|webp|svg)(\?.*)?$/) && ct.includes('text/html')) return false;
+  return true;
+}
+
 async function cacheAppShell() {
   const cache = await caches.open(CACHE_NAME);
   await Promise.allSettled(APP_SHELL.map((path) => cache.add(path)));
 
   const response = await fetch('/', { cache: 'no-store' });
-  if (!response.ok) return;
+  if (response.status !== 200) return;
 
   const html = await response.clone().text();
   await cache.put('/', response.clone());
@@ -51,11 +60,13 @@ self.addEventListener('fetch', (event) => {
     event.respondWith(
       fetch(request)
         .then((response) => {
-          const copy = response.clone();
-          caches.open(CACHE_NAME).then((cache) => {
-            cache.put('/', copy.clone());
-            cache.put('/index.html', copy);
-          });
+          if (response.status === 200) {
+            const copy = response.clone();
+            caches.open(CACHE_NAME).then((cache) => {
+              cache.put('/', copy.clone());
+              cache.put('/index.html', copy);
+            });
+          }
           return response;
         })
         .catch(() => caches.match('/') || caches.match('/index.html')),
@@ -67,7 +78,7 @@ self.addEventListener('fetch', (event) => {
     caches.match(request).then((cached) => {
       const fetched = fetch(request)
         .then((response) => {
-          if (response.ok) {
+          if (isCacheable(response, url)) {
             const copy = response.clone();
             caches.open(CACHE_NAME).then((cache) => cache.put(request, copy));
           }

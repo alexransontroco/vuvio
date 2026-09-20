@@ -32,7 +32,6 @@ const navItems = [
 const createActions = [
   { labelKey: 'create.startLive', icon: Video, mode: 'launch' },
   { labelKey: 'create.scheduleLive', icon: CalendarPlus, mode: 'schedule' },
-  { labelKey: 'create.addVideo', icon: ImagePlus },
 ];
 
 const initialLiveDraft = {
@@ -813,7 +812,15 @@ export default function BottomNav({ collapsible = false, collapsed = false, onEx
           </button>
         ) : null}
         {navItems.slice(0, 2).map(({ to, labelKey, icon: Icon }) => (
-          <NavLink key={to} to={to} className="bottom-nav__item" aria-label={t(labelKey)} onClick={() => setCreateOpen(false)}>
+          <NavLink
+            key={to}
+            to={to}
+            className="bottom-nav__item"
+            aria-label={t(labelKey)}
+            onClick={() => setCreateOpen(false)}
+            onMouseEnter={to === '/watch' ? () => import('../routes/WatchPage.jsx') : undefined}
+            onTouchStart={to === '/watch' ? () => import('../routes/WatchPage.jsx') : undefined}
+          >
             <span className="bottom-nav__icon">
               <Icon size={23} strokeWidth={1.9} />
             </span>
@@ -830,7 +837,15 @@ export default function BottomNav({ collapsible = false, collapsed = false, onEx
           <span className="bottom-nav__create-badge" aria-hidden="true">+</span>
         </button>
         {navItems.slice(2).map(({ to, labelKey, icon: Icon }) => (
-          <NavLink key={to} to={to} className="bottom-nav__item" aria-label={t(labelKey)} onClick={() => setCreateOpen(false)}>
+          <NavLink
+            key={to}
+            to={to}
+            className="bottom-nav__item"
+            aria-label={t(labelKey)}
+            onClick={() => setCreateOpen(false)}
+            onMouseEnter={to === '/globe' ? () => import('../routes/CurrentGlobePage.jsx') : undefined}
+            onTouchStart={to === '/globe' ? () => import('../routes/CurrentGlobePage.jsx') : undefined}
+          >
             <span className="bottom-nav__icon">
               <Icon size={23} strokeWidth={1.9} />
             </span>

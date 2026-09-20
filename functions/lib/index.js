@@ -1,7 +1,7 @@
 import { onRequest } from 'firebase-functions/v2/https';
 import { onSchedule } from 'firebase-functions/v2/scheduler';
 import { sendError, ApiError } from './shared/errors.js';
-import { cloudflareAccountId, cloudflareApiToken, cloudflareCustomerCode, cloudflareWebhookSecret, openaiApiKey, meteredApiKey, meteredAppName, icecatUsername, icecatPassword } from './config/env.js';
+import { cloudflareAccountId, cloudflareApiToken, cloudflareCustomerCode, cloudflareWebhookSecret, openaiApiKey, meteredApiKey, meteredAppName, icecatUsername, icecatPassword, amazonPaAccessKey, amazonPaSecretKey, amazonAssociateTagFr, awinApiKey, awinPublisherId } from './config/env.js';
 import { createStream } from './streams/createStream.js';
 import { createScheduledStream } from './streams/createScheduledStream.js';
 import { startStream } from './streams/startStream.js';
@@ -23,6 +23,7 @@ import { monitorStreamHeartbeats } from './streams/monitorStreamHeartbeats.js';
 import { cleanupStaleLives } from './streams/cleanupStaleLives.js';
 import { processProductImage } from './products/processProductImage.js';
 import { searchProductsHandler, getProductHandler, importProductHandler } from './products/productRoutes.js';
+import { resolveAffiliateHandler } from './affiliate/affiliateRoutes.js';
 import { requestHighlight } from './highlights/requestHighlight.js';
 import { getHighlightStatus } from './highlights/getHighlightStatus.js';
 import { cancelHighlight } from './highlights/cancelHighlight.js';
@@ -35,6 +36,8 @@ import { ogMetaHandler } from './og/ogMetaHandler.js';
 import { getReplayStatus } from './streams/getReplayStatus.js';
 import { processVideoAnalysisJob } from './videoProcessing/processVideoAnalysisJob.js';
 import { remindScheduledStreams } from './streams/remindScheduledStreams.js';
+import { cancelScheduledStream } from './streams/cancelScheduledStream.js';
+import { updateAllTrustScores } from './users/updateTrustScore.js';
 function pathParts(path = '') {
     return path.replace(/^\/api\/?/, '/').split('/').filter(Boolean);
 }
@@ -47,7 +50,7 @@ export const api = onRequest({
     region: 'europe-west1',
     timeoutSeconds: 540,
     memory: '2GiB',
-    secrets: [cloudflareAccountId, cloudflareApiToken, cloudflareWebhookSecret, cloudflareCustomerCode, openaiApiKey, meteredApiKey, meteredAppName, icecatUsername, icecatPassword],
+    secrets: [cloudflareAccountId, cloudflareApiToken, cloudflareWebhookSecret, cloudflareCustomerCode, openaiApiKey, meteredApiKey, meteredAppName, icecatUsername, icecatPassword, amazonPaAccessKey, amazonPaSecretKey, amazonAssociateTagFr, awinApiKey, awinPublisherId],
 }, async (req, res) => {
     sendCors(res);
     if (req.method === 'OPTIONS') {
@@ -79,6 +82,8 @@ export const api = onRequest({
             return await startStream(req, res, parts[1]);
         if (req.method === 'POST' && parts[0] === 'streams' && parts[2] === 'activate')
             return await activateScheduledStream(req, res, parts[1]);
+        if (req.method === 'POST' && parts[0] === 'streams' && parts[2] === 'cancel')
+            return await cancelScheduledStream(req, res, parts[1]);
         if (req.method === 'POST' && parts[0] === 'streams' && parts[2] === 'heartbeat')
             return await heartbeatStream(req, res, parts[1]);
         if (req.method === 'POST' && parts[0] === 'streams' && parts[2] === 'end')
@@ -107,6 +112,8 @@ export const api = onRequest({
             return await getProductHandler(req, res, parts[1]);
         if (req.method === 'POST' && parts[0] === 'products' && parts[1] === 'import')
             return await importProductHandler(req, res);
+        if (req.method === 'POST' && parts[0] === 'affiliate' && parts[1] === 'resolve')
+            return await resolveAffiliateHandler(req, res);
         // Highlight generation routes
         if (req.method === 'POST' && parts[0] === 'lives' && parts[2] === 'highlight')
             return await requestHighlight(req, res, parts[1]);
@@ -184,4 +191,15 @@ export const remindScheduledStreamsScheduled = onSchedule({
     schedule: 'every 1 minutes',
 }, async () => {
     await remindScheduledStreams();
+});
+export const updateTrustScoresScheduled = onSchedule({
+    region: 'europe-west1',
+    schedule: 'every 24 hours',
+}, async () => {
+    try {
+        await updateAllTrustScores();
+    }
+    catch (error) {
+        console.error('[trust] scheduled recalculation failed:', error);
+    }
 });

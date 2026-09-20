@@ -6,6 +6,7 @@ import { asRecord } from '../shared/validation.js';
 import { secondsBetween } from '../shared/timestamps.js';
 import { addStreamEvent, streamRef } from './streamHelpers.js';
 import { initializeStats } from '../analytics/stats.js';
+import { updateTrustScore } from '../users/updateTrustScore.js';
 const reasons = new Set(['creator_ended', 'heartbeat_timeout', 'cloudflare_ended', 'error']);
 export async function endStream(req, res, streamId, backendReason) {
     const user = backendReason ? null : await authenticateUser(req);
@@ -14,12 +15,14 @@ export async function endStream(req, res, streamId, backendReason) {
     let status = 'completed';
     let durationSeconds = 0;
     let alreadyEnded = false;
+    let creatorId = '';
     await db.runTransaction(async (tx) => {
         const ref = streamRef(streamId);
         const snap = await tx.get(ref);
         if (!snap.exists)
             throw new ApiError('not_found', 'Stream not found');
         const stream = snap.data();
+        creatorId = stream.creatorId;
         if (user && stream.creatorId !== user.uid)
             throw new ApiError('forbidden', 'Only the creator can end this stream');
         if (['completed', 'failed', 'cancelled'].includes(stream.status)) {
@@ -42,6 +45,8 @@ export async function endStream(req, res, streamId, backendReason) {
     });
     await initializeStats(streamId);
     if (!alreadyEnded) {
+        if (creatorId)
+            updateTrustScore(creatorId).catch((err) => console.error('[trust] update failed:', err));
         addStreamEvent(streamId, {
             type: 'stream_ended',
             userId: user?.uid ?? null,

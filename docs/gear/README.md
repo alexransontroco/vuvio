@@ -3,7 +3,7 @@
 Creator equipment and gear-management documentation.
 
 Status: Current index  
-Last reviewed: 2026-09-05  
+Last reviewed: 2026-09-18  
 Read before coding: Yes, for profile gear, creator equipment, live setup, sponsor, or affiliate changes.
 
 ## Current Reality

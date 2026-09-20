@@ -14,15 +14,7 @@ Do not regress:
 - Keep provider credentials out of source.
 - Add any new backend dependency to `functions/package.json`.
 
-Complete guide for the product image thumbnail system for Vuvio.
-
-## Overview
-
-This system manages product data and thumbnails for use throughout Vuvio. It handles:
-- Product data management (recording equipment, audio gear, activity gear, streaming setup, power/accessories)
-- Image processing and thumbnail generation (160px, 320px, 640px)
-- Firestore storage with localStorage caching
-- Frontend UI components for product selection and search
+Complete reference for the product image thumbnail system: data management, thumbnail generation (160/320/640px), Firestore storage with localStorage caching, and frontend UI components.
 
 ## Architecture
 
@@ -297,92 +289,6 @@ products/
 **Indexes (Optional):**
 - `category` ASC, `brand` ASC (for category listing)
 
-## Usage Examples
-
-### Display Product with Thumbnail
-
-```jsx
-import { ProductThumbnail } from '@/components/product/ProductThumbnail'
-import { getProduct } from '@/services/productService'
-
-export function EquipmentCard({ productId }) {
-  const [product, setProduct] = useState(null)
-
-  useEffect(() => {
-    getProduct(productId).then(setProduct)
-  }, [productId])
-
-  if (!product) return <div>Loading...</div>
-
-  return (
-    <div className="equipment-card">
-      <ProductThumbnail
-        product={product}
-        size="lg"
-        onClick={() => console.log('Selected:', product)}
-      />
-      <h3>{product.brand} {product.name}</h3>
-    </div>
-  )
-}
-```
-
-### Add Image Processing to Product
-
-```javascript
-import { processProductImage } from '@/services/imageProcessingService'
-import { getProduct } from '@/services/productService'
-
-async function addProductImage(productId, imageUrl) {
-  try {
-    // Trigger processing (updates product document)
-    const urls = await processProductImage(productId, imageUrl)
-    
-    // Verify it's complete
-    const product = await getProduct(productId)
-    console.log('Thumbnails ready:', product.imageStatus.urls)
-  } catch (error) {
-    console.error('Image processing failed:', error)
-  }
-}
-```
-
-### Search and Select Product
-
-```jsx
-import { ProductSearch } from '@/components/product/ProductSearch'
-
-export function EquipmentSearch() {
-  const handleSelect = (product) => {
-    console.log('Selected:', product)
-    // Add to stream equipment, etc.
-  }
-
-  const handleNotFound = (query) => {
-    console.log('User couldn\'t find:', query)
-    // Open form to add custom product
-  }
-
-  return (
-    <ProductSearch
-      onSelect={handleSelect}
-      onNotFound={handleNotFound}
-      placeholder="Find your equipment..."
-    />
-  )
-}
-```
-
-### Browse Category
-
-```javascript
-import { getProductsByCategory } from '@/services/productService'
-
-const recordingGear = await getProductsByCategory('recording')
-const audioGear = await getProductsByCategory('audio')
-const bikes = await getProductsByCategory('activity')
-```
-
 ## Image Processing Pipeline
 
 ### Frontend Flow
@@ -522,43 +428,6 @@ const response = await fetch('https://api.example.com/thumbnail', {
 })
 ```
 
-## Testing
-
-### Test Image Processing
-
-```javascript
-// Test with demo product
-const testResult = await processProductImage(
-  'dji-mic-2',
-  'https://images.unsplash.com/photo-1608043152269-423dbba4e7e1'
-)
-console.log('Generated thumbnails:', testResult)
-
-// Verify product updated
-const product = await getProduct('dji-mic-2')
-console.log('Product status:', product.imageStatus)
-```
-
-### Test Search
-
-```javascript
-const results = await searchProducts('GoPro')
-console.assert(results.length > 0, 'Should find GoPro products')
-console.log('Found:', results.map(p => p.name))
-```
-
-### Test Validation
-
-```javascript
-// Valid URL
-const valid = validateImageUrl('https://images.unsplash.com/photo-123')
-console.assert(valid.valid === true)
-
-// Invalid domain (strict mode)
-const invalid = validateImageUrl('https://mysite.com/image.jpg', true)
-console.assert(invalid.valid === false)
-```
-
 ## Troubleshooting
 
 ### Image Processing Hangs
@@ -645,52 +514,6 @@ console.assert(invalid.valid === false)
 - Image content analysis (safety checks)
 - Virus scanning via VirusTotal API
 
-## Metrics & Monitoring
-
-### Key Metrics
-- Products with images ready: `imageStatus.status === 'ready'`
-- Processing failures: `imageStatus.status === 'failed'`
-- Average processing time: Compare `createdAt` to `imageStatus.updatedAt`
-- Cache hit rate: Monitor localStorage hits vs Firestore reads
-
-### Cloud Function Metrics
-- Request latency (P50, P95, P99)
-- Error rate (4xx, 5xx)
-- Image processing time by size
-- Storage usage by category
-
-### Frontend Metrics
-- Search response time
-- Thumbnail load time
-- Cache effectiveness
-
-## Roadmap
-
-### Phase 1 (Complete) ✓
-- Data model & demo products
-- Product service with Firestore/cache
-- Frontend components (ProductThumbnail, ProductSearch)
-- Image processing service
-- Cloud Function skeleton
-
-### Phase 2 (Next)
-- [ ] Production thumbnail generation (Cloud Run or external API)
-- [ ] Batch image processing
-- [ ] Product import tools (CSV/API)
-- [ ] Image optimization analytics
-
-### Phase 3
-- [ ] User-submitted products (with moderation)
-- [ ] Product ratings & reviews
-- [ ] Related products suggestions
-- [ ] Product pricing history
-
-### Phase 4
-- [ ] Affiliate linking & commission tracking
-- [ ] Product analytics (most used gear)
-- [ ] Inventory integration
-- [ ] Multicurrency support
-
 ## Files Reference
 
 **Frontend:**
@@ -708,15 +531,4 @@ console.assert(invalid.valid === false)
 - `/functions/src/types/product.ts` - Type definitions
 - `/functions/src/index.ts` - Updated with product routes
 
-## Support
-
-For issues or questions:
-1. Check troubleshooting section above
-2. Review Cloud Function logs in Firebase Console
-3. Test components in isolation
-4. Verify Firestore schema matches type definitions
-
----
-
-**Last Updated:** 2026-07-30
-**Status:** Phase 1 Complete, Ready for Phase 2 Implementation
+**Status:** Phase 1 Complete. Phase 2 (production thumbnail generation) not yet implemented.

@@ -7,13 +7,10 @@ import { isValidSpotifyPlaylistUrl } from '../services/spotifyService.js';
 
 const languageOptions = ['French', 'English', 'Spanish', 'Italian', 'German', 'Portuguese', 'Arabic', 'Japanese', 'Other'];
 const categoryOptions = ['Craft', 'Cooking', 'Agriculture', 'Sport', 'Transport', 'Music', 'Nature', 'Science', 'Education', 'Construction', 'Creation', 'Other'];
-const usernamePattern = /^[a-zA-Z0-9._]{3,30}$/;
-
 function buildForm(profile) {
   return {
     ...profile,
     displayName: profile.displayName ?? profile.name ?? '',
-    username: profile.username ?? '',
     profession: profile.profession ?? '',
     city: profile.city ?? '',
     country: profile.country ?? '',
@@ -399,11 +396,6 @@ export default function EditProfilePage() {
     displayName: form.displayName.trim().length < 2 || form.displayName.trim().length > 50
       ? 'The display name must contain 2 to 50 characters.'
       : '',
-    username: !form.username.trim()
-      ? ''
-      : usernamePattern.test(form.username.replace(/^@+/, ''))
-        ? ''
-        : 'Username can only contain letters, numbers, dots and underscores.',
     profession: '',
     websiteUrl: isValidOptionalUrl(form.websiteUrl) ? '' : 'Enter a valid URL.',
     instagramUrl: isValidInstagram(form.instagramUrl) ? '' : 'Enter a valid Instagram handle or URL.',
@@ -437,14 +429,11 @@ export default function EditProfilePage() {
     setSaving(true);
     setSaveError('');
     try {
-      const cleanUsername = form.username.replace(/^@+/, '').trim();
       const updated = await saveOwnCreatorProfile({
         ...form,
         id: user?.uid || form.id,
         uid: user?.uid || form.uid,
         name: form.displayName,
-        username: cleanUsername,
-        usernameNormalized: cleanUsername ? cleanUsername.toLowerCase() : null,
       });
       const built = buildForm(updated);
       setForm(built);
@@ -480,7 +469,6 @@ export default function EditProfilePage() {
       <section className="edit-form-section">
         <h2>Public information</h2>
         <Field label="Display name" value={form.displayName} onChange={(value) => update('displayName', value)} error={errors.displayName} required />
-        <Field label="Username" value={form.username.replace(/^@+/, '')} onChange={(value) => update('username', value)} error={errors.username} required prefix="@" />
         <Field label="Profession or activity" value={form.profession} onChange={(value) => update('profession', value)} error={errors.profession} required />
         <Field label="City" value={form.city} onChange={(value) => update('city', value)} />
         <Field label="Country" value={form.country} onChange={(value) => update('country', value)} />

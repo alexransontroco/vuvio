@@ -3,7 +3,7 @@
 Deployment fixes and miscellaneous operational notes.
 
 Status: Current index  
-Last reviewed: 2026-09-05  
+Last reviewed: 2026-09-18  
 Read before coding: Use when changing Firebase deploy, hosting, build, or environment behavior.
 
 ## Current Reality

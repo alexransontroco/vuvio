@@ -34,19 +34,24 @@ export async function listGlobeStreams(_req: Request, res: Response) {
     .get();
 
   const userIds = [...new Set(snap.docs.map((doc) => (doc.data() as StreamDocument).creatorId))];
-  const creators = new Map<string, { displayName: string; photoURL: string | null }>();
+  const creators = new Map<string, { displayName: string; photoURL: string | null; trustTier?: string }>();
   await Promise.all(userIds.map(async (uid) => {
     const userSnap = await db.collection(collections.users).doc(uid).get();
     const data = userSnap.data() ?? {};
     creators.set(uid, {
       displayName: String(data.displayName ?? data.username ?? 'Vuvio creator'),
       photoURL: typeof data.photoURL === 'string' ? data.photoURL : null,
+      trustTier: typeof data.trustTier === 'string' ? data.trustTier : 'standard',
     });
   }));
 
   const streams = snap.docs
     .map((doc) => doc.data() as StreamDocument)
     .filter((stream) => stream.approximateLocation)
+    .filter((stream) => {
+      const tier = creators.get(stream.creatorId)?.trustTier;
+      return tier !== 'at-risk' && tier !== 'suspended';
+    })
     .map((stream) => {
       const creator = creators.get(stream.creatorId) ?? { displayName: 'Vuvio creator', photoURL: null };
       return {

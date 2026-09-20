@@ -475,38 +475,16 @@ Should replace or extend:
 - Current event names should be normalized to requested names while preserving backward compatibility where needed.
 - Current stats incrementer should become a richer aggregator with idempotent session updates.
 
-## Missing Pieces
+## Status of Missing Pieces (as of 2026-09-18)
 
-Required additions:
+Frontend analytics service (`src/services/analytics/*`) and hooks are implemented. Backend batch endpoint (`POST /api/analytics/events`) is code-complete but not deployed (Firebase Spark plan).
 
-- `docs/data-analytics-architecture.md`
-- `docs/analytics-events.md`
-- `docs/analytics-metrics.md`
-- Shared analytics types/config.
-- Frontend analytics service directory:
-  - `src/services/analytics/analyticsTypes.ts`
-  - `src/services/analytics/analyticsSession.ts`
-  - `src/services/analytics/analyticsQueue.ts`
-  - `src/services/analytics/analyticsClient.ts`
-  - `src/services/analytics/streamViewTracker.ts`
-  - optional `src/services/analytics/useImpressionTracker.ts`
-- Backend batch endpoint:
-  - `POST /api/analytics/events`
-- Backend global event collection:
-  - `analyticsEvents/{eventId}`
-- Backend view sessions:
-  - `streamViewSessions/{viewSessionId}`
-- Aggregates:
-  - `streamStats/{streamId}`
-  - `creatorStats/{creatorId}`
-  - `categoryStats/{categoryId}`
-  - `userAnalytics/{userId}`
-- Idempotent rebuild helpers:
-  - `rebuildStreamStats(streamId)`
-  - `rebuildCreatorStats(creatorId)`
-  - `rebuildCategoryStats(categoryId)`
-- Privacy and retention documentation.
-- Tests for dedupe, active time, thresholds, ratios, and security rules.
+Still missing:
+- Deployed backend endpoint (requires Blaze upgrade)
+- `analyticsEvents`, `streamViewSessions` collections (backend-only, post-deploy)
+- `creatorStats`, `categoryStats`, `userAnalytics` aggregates (Phase 3)
+- Idempotent rebuild helpers
+- Privacy/retention documentation
 
 ## Proposed Data Model
 
@@ -597,49 +575,6 @@ userAnalytics/{userId}
 
 `userAnalytics` must be private and backend-written.
 
-## Files Expected To Change
-
-Backend:
-
-- `functions/src/index.ts`
-- `functions/src/shared/firestore.ts`
-- `functions/src/types/analytics.ts`
-- `functions/src/analytics/trackStreamEvent.ts`
-- `functions/src/analytics/stats.ts`
-- new backend analytics files for batch validation, session updates, dedupe, scores, and rebuild helpers.
-- `firestore.rules`
-
-Frontend services:
-
-- `src/services/streamApi.ts`
-- new `src/services/analytics/*`
-
-Frontend pages/components:
-
-- `src/routes/HomePage.jsx`
-- `src/routes/ExplorePage.jsx`
-- `src/routes/AllLivesPage.jsx`
-- `src/components/globe/CurrentGlobe.jsx`
-- `src/routes/ProfilePage.jsx`
-- Gear components/sheets touched by Watch/Profile.
-
-Internal tooling:
-
-- `src/routes/InternalStreamAdminPage.jsx`
-- possibly `src/App.jsx` for `/admin/analytics`
-- new dashboard component/style files.
-
-Docs:
-
-- `docs/analytics/data-analytics-audit.md`
-- `docs/data-analytics-architecture.md`
-- `docs/analytics-events.md`
-- `docs/analytics-metrics.md`
-
-Tests:
-
-- `functions/test/*`
-- frontend tests if test framework is already configured.
 
 ## Implementation Notes
 

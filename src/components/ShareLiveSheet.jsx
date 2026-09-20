@@ -325,7 +325,7 @@ function StoryPreview({ live, styleKey = 'minimal', showViewers, showLocation, s
 const toPublicLiveId = (id) => (id ?? 'demo').replace(/^created-/, '');
 const getShareWatchUrl = (id) => {
   const liveId = toPublicLiveId(id);
-  return `${window.location.origin}/watch?live=${encodeURIComponent(liveId)}&mode=view`;
+  return `${window.location.origin}/share/live/${encodeURIComponent(liveId)}`;
 };
 
 function ShareSheet({ live, onClose, onCustomize, onShare }) {

@@ -6,7 +6,6 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { ACTIVITY_CATEGORIES } from '../data/activityCategories.js';
 import BrandMark from '../components/BrandMark.jsx';
 import { useAuth } from '../context/AuthContext.jsx';
-import { isUsernameAvailable, reserveUsername, validateUsername } from '../services/authService.js';
 import { readImageFile } from '../services/profileService.js';
 import { ref as storageRef, uploadString, getDownloadURL } from 'firebase/storage';
 import { storage } from '../firebase.js';
@@ -63,7 +62,7 @@ function ProgressDots({ step }) {
 }
 
 /* ─── Step 1 — Profile ───────────────────────────── */
-function StepProfile({ displayName, setDisplayName, username, setUsername, usernameError, setUsernameError, avatarPreview, onSelectAvatar }) {
+function StepProfile({ displayName, setDisplayName, avatarPreview, onSelectAvatar }) {
   const fileRef = useRef(null);
 
   return (
@@ -89,32 +88,10 @@ function StepProfile({ displayName, setDisplayName, username, setUsername, usern
         <input ref={fileRef} type="file" accept="image/jpeg,image/png,image/webp" style={{ display: 'none' }} onChange={onSelectAvatar} />
       </div>
 
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-        <div className="auth-field">
-          <label className="auth-field__label" htmlFor="ob-name">Display name</label>
-          <div className="auth-field__control">
-            <input id="ob-name" className="auth-field__input" type="text" autoComplete="name" placeholder="Your name" value={displayName} onChange={(e) => setDisplayName(e.target.value)} />
-          </div>
-        </div>
-        <div className="auth-field">
-          <label className="auth-field__label" htmlFor="ob-username">
-            Username <span style={{ color: 'rgba(111,130,148,0.7)', fontWeight: 430, fontSize: 11 }}>3–24 chars, letters · numbers · _ ·</span>
-          </label>
-          <div className="auth-field__control">
-            <input
-              id="ob-username"
-              className={`auth-field__input${usernameError ? ' has-error' : ''}`}
-              type="text" autoComplete="username" placeholder="yourhandle"
-              value={username}
-              onChange={(e) => {
-                const val = e.target.value.replace(/\s/g, '');
-                setUsername(val);
-                setUsernameError(validateUsername(val) || '');
-              }}
-              maxLength={24}
-            />
-          </div>
-          {usernameError ? <span className="auth-field__error">{usernameError}</span> : null}
+      <div className="auth-field">
+        <label className="auth-field__label" htmlFor="ob-name">Display name</label>
+        <div className="auth-field__control">
+          <input id="ob-name" className="auth-field__input" type="text" autoComplete="name" placeholder="Your name" value={displayName} onChange={(e) => setDisplayName(e.target.value)} />
         </div>
       </div>
     </div>
@@ -392,8 +369,6 @@ export default function OnboardingPage() {
 
   const [step,               setStep]               = useState(1);
   const [displayName,        setDisplayName]        = useState(userProfile?.displayName || user?.displayName || '');
-  const [username,           setUsername]           = useState('');
-  const [usernameError,      setUsernameError]      = useState('');
   const [avatarPreview,      setAvatarPreview]      = useState(userProfile?.photoURL || '');
   const [avatarDataUrl,      setAvatarDataUrl]      = useState('');
   const [selectedCategories, setSelectedCategories] = useState([]);
@@ -435,19 +410,7 @@ export default function OnboardingPage() {
     setError('');
 
     if (step === 1) {
-      if (username) {
-        const err = validateUsername(username);
-        if (err) { setUsernameError(err); return; }
-        setUsernameError('');
-      }
-      setBusy(true);
-      try {
-        if (username) {
-          const avail = await isUsernameAvailable(username);
-          if (!avail) { setUsernameError('Username taken'); setBusy(false); return; }
-        }
-        setStep(2); setBusy(false);
-      } catch (e) { setError(e.message || 'Error'); setBusy(false); }
+      setStep(2);
       return;
     }
 
@@ -469,8 +432,6 @@ export default function OnboardingPage() {
           await uploadString(ref, avatarDataUrl, 'data_url', { contentType: `image/${ext === 'png' ? 'png' : 'jpeg'}` });
           photoURL = await getDownloadURL(ref);
         }
-
-        if (username) await reserveUsername(user.uid, username);
 
         // Profile
         await updateProfile({
@@ -535,8 +496,6 @@ export default function OnboardingPage() {
         {step === 1 && (
           <StepProfile
             displayName={displayName} setDisplayName={setDisplayName}
-            username={username} setUsername={setUsername}
-            usernameError={usernameError} setUsernameError={setUsernameError}
             avatarPreview={avatarPreview} onSelectAvatar={handleSelectAvatar}
           />
         )}

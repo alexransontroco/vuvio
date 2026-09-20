@@ -40,6 +40,9 @@ export const MOCK_VIDEO_URLS = {
   haileyEquestrian:  fb('mock-videos/live-mockups/hailey-equestrian.mp4'),
   mrtBurgerbar:      fb('mock-videos/live-mockups/mrt-burgerbar.mp4'),
   boxThaiTraining:   fb('mock-videos/live-mockups/boxthaitraining.mp4'),
+  f16Cockpit:        fb('mock-videos/live-mockups/f16-cockpit.mp4'),
+  fallowHeadChefFull: fb('mock-videos/live-mockups/fallow-head-chef-full.mp4'),
+  wingsuitTaschhorn:  fb('mock-videos/live-mockups/wingsuit-taschhorn-full.mp4'),
 
   // ── full-length demo streams ────────────────────────────────────────────────
   biking:      fb('mock-videos/videos/biking.mp4'),
@@ -61,7 +64,11 @@ export const MOCK_VIDEO_URLS = {
   drummer:       fb('mock-videos/videos/drummer.mp4'),
   piano:         fb('mock-videos/videos/piano.mp4'),
   feuchaterton:       fb('mock-videos/videos/feuchaterton.mp4'),
+  feuchaterton2:      fb('mock-videos/live-mockups/feuchaterton2.mp4'),
   feuchaterton2Thumb: fb('mock-videos/videos/feuchaterton2-thumb.jpg'),
+  pianoDubai:         fb('mock-videos/live-mockups/piano-dubai.mp4'),
+  mockupDubai:        fb('mock-videos/live-mockups/mockup-dubai.mp4'),
+  mockupDubaiThumb:   fb('mock-videos/live-mockups/mockup-dubai-thumb.jpg'),
   dubaiThumb:         fb('mock-videos/videos/dubai-thumb.jpg'),
   guitarThumb:        fb('mock-videos/videos/guitar-thumb.jpg'),
   drummerThumb:       fb('mock-videos/videos/drummer-thumb.jpg'),
@@ -94,6 +101,9 @@ export const MOCK_THUMBNAILS = {
   haileyEquestrian:  fb('mock-videos/live-mockups/hailey-equestrian-thumb.jpg'),
   mrtBurgerbar:      fb('mock-videos/live-mockups/mrt-burgerbar-thumb.jpg'),
   boxThaiTraining:   fb('mock-videos/live-mockups/boxthaitraining-thumb.jpg'),
+  f16Cockpit:        fb('mock-videos/live-mockups/f16-cockpit-thumb.jpg'),
+  fallowHeadChefFull: fb('mock-videos/live-mockups/fallow-head-chef-full-thumb.jpg'),
+  wingsuitTaschhorn:  fb('mock-videos/live-mockups/wingsuit-taschhorn-full-thumb.jpg'),
 
   biking:    fb('mock-videos/videos/biking-cover.jpg'),
   pexels1:   fb('mock-videos/videos/11963745-uhd_2160_3840_60fps-cover.jpg'),

@@ -382,6 +382,112 @@
   font-weight: 560;
 }
 
+/* ── Schedule Live Sheet ─────────────────────────────────────────────────── */
+
+.schedule-sheet {
+  max-height: min(82dvh, 640px);
+}
+
+.schedule-sheet__form {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  padding-top: 4px;
+}
+
+.schedule-sheet__field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.schedule-sheet__label {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--vuvio-text-secondary);
+}
+
+.schedule-sheet__optional {
+  font-weight: 400;
+  text-transform: none;
+  letter-spacing: 0;
+  color: var(--vuvio-text-muted);
+}
+
+.schedule-sheet__input {
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid var(--vuvio-border);
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--vuvio-text-primary);
+  font-size: 14px;
+  font-family: inherit;
+  color-scheme: dark;
+  box-sizing: border-box;
+}
+
+.schedule-sheet__input::placeholder {
+  color: var(--vuvio-text-muted);
+}
+
+.schedule-sheet__textarea {
+  resize: none;
+  line-height: 1.5;
+}
+
+.schedule-sheet__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.schedule-sheet__chip {
+  padding: 6px 12px;
+  border-radius: 20px;
+  border: 1px solid var(--vuvio-border);
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--vuvio-text-secondary);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+
+.schedule-sheet__chip.is-active {
+  background: rgba(53, 227, 220, 0.15);
+  border-color: var(--vuvio-cyan);
+  color: var(--vuvio-cyan);
+}
+
+.schedule-sheet__error {
+  font-size: 13px;
+  color: #ff4d6a;
+  margin: 0;
+}
+
+.schedule-sheet__submit {
+  width: 100%;
+  padding: 13px;
+  border-radius: 14px;
+  border: none;
+  background: var(--vuvio-cyan);
+  color: #04131f;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+
+.schedule-sheet__submit:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+/* ── /Schedule Live Sheet ────────────────────────────────────────────────── */
+
 .create-live-flow {
   display: grid;
   gap: 14px;
@@ -764,6 +870,33 @@
   display: none;
 }
 
+.equipment-offer-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  border: 0.5px solid rgba(43, 217, 200, 0.35);
+  border-radius: 999px;
+  background: rgba(43, 217, 200, 0.08);
+  color: var(--color-cyan);
+  font-size: 11px;
+  font-weight: 560;
+  white-space: nowrap;
+  transition: background 120ms ease, border-color 120ms ease;
+}
+
+.equipment-offer-btn:hover {
+  background: rgba(43, 217, 200, 0.16);
+  border-color: rgba(43, 217, 200, 0.55);
+}
+
+.equipment-offers {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  align-items: flex-end;
+}
+
 .equipment-viewer-sheet .equipment-item-row__copy strong {
   font-size: 11.5px;
 }
@@ -808,6 +941,139 @@
   border: 0;
   background: var(--color-cyan);
   color: var(--color-ink);
+}
+
+/* Product search in quick-add form */
+.equipment-search-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.equipment-search-input-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.equipment-search-icon {
+  position: absolute;
+  left: 12px;
+  color: rgba(242, 247, 246, 0.4);
+  pointer-events: none;
+}
+
+.equipment-search-input {
+  width: 100%;
+  padding: 10px 12px 10px 34px;
+  border-radius: 13px;
+  background: rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #f2f7f6;
+  font-size: 15px;
+  outline: none;
+}
+
+.equipment-search-input:focus {
+  border-color: rgba(53, 227, 220, 0.4);
+}
+
+.equipment-search-spinner {
+  position: absolute;
+  right: 12px;
+  width: 14px;
+  height: 14px;
+  border: 2px solid rgba(53, 227, 220, 0.3);
+  border-top-color: var(--color-cyan);
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+
+.equipment-search-results {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  background: rgba(4, 19, 31, 0.95);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 13px;
+  overflow: hidden;
+  max-height: 220px;
+  overflow-y: auto;
+}
+
+.equipment-search-result {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 9px 12px;
+  background: transparent;
+  border: 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  color: #f2f7f6;
+  text-align: left;
+  cursor: pointer;
+  font-size: 13px;
+}
+
+.equipment-search-result:hover {
+  background: rgba(53, 227, 220, 0.08);
+}
+
+.equipment-search-result__thumb {
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  object-fit: cover;
+  flex-shrink: 0;
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.equipment-search-result__thumb--empty {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.equipment-search-result__name strong {
+  font-weight: 650;
+}
+
+.equipment-search-selected {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  background: rgba(53, 227, 220, 0.08);
+  border: 1px solid rgba(53, 227, 220, 0.2);
+  font-size: 12.5px;
+  color: rgba(53, 227, 220, 0.9);
+}
+
+.equipment-search-clear {
+  margin-left: auto;
+  background: transparent;
+  border: 0;
+  color: rgba(53, 227, 220, 0.6);
+  cursor: pointer;
+  padding: 2px;
+  display: flex;
+  align-items: center;
+}
+
+.equipment-manual-link {
+  background: transparent;
+  border: 0;
+  color: rgba(242, 247, 246, 0.4);
+  font-size: 11.5px;
+  cursor: pointer;
+  padding: 2px 0;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  align-self: flex-start;
+}
+
+.equipment-manual-link:hover {
+  color: rgba(242, 247, 246, 0.7);
 }
 
 .image-fetch-status {
@@ -1659,7 +1925,7 @@
   justify-content: center;
   gap: 4px;
   transform-origin: center;
-  margin-top: -40vh;
+  margin-top: -52vh;
   animation: splash-logo 1000ms ease-out both;
 }
 
@@ -1842,6 +2108,189 @@
     animation-duration: 1ms;
   }
 }
+
+/* ─── Splash Animation (new SVG-based) ────────────────────────────────────── */
+
+.splash-anim {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: grid;
+  place-items: center;
+  background: #060C17;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+/* Background video — same as original splash */
+.splash-anim__video {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+}
+
+.splash-anim__video::-webkit-media-controls,
+.splash-anim__video::-webkit-media-controls-panel {
+  display: none !important;
+}
+
+/* Dark overlay over video */
+.splash-anim__overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(2, 8, 16, 0.52) 0%, rgba(3, 10, 20, 0.68) 100%);
+  pointer-events: none;
+}
+
+/* Atmospheric radial glow above overlay */
+.splash-anim__bg-glow {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 65% 45% at 50% 44%, rgba(42, 155, 239, 0.14), transparent 58%),
+    radial-gradient(ellipse 38% 28% at 50% 40%, rgba(43, 217, 200, 0.08), transparent 48%);
+  pointer-events: none;
+}
+
+/* Centered group: logo + title stacked */
+.splash-anim__center {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 18px;
+}
+
+/* Logo wrapper */
+.splash-anim__logo {
+  position: relative;
+  display: grid;
+  place-items: center;
+  /* Breath pulse: 1900ms → 2500ms */
+  animation: sa-breath 600ms cubic-bezier(0.22, 1, 0.36, 1) 1900ms both;
+}
+
+.splash-anim__svg {
+  width: 120px;
+  height: 120px;
+  position: relative;
+  z-index: 1;
+}
+
+/* LEFT V: 0ms → 1500ms */
+.splash-anim__left-v {
+  animation: sa-left-v 1500ms cubic-bezier(0.22, 1, 0.36, 1) 0ms both;
+}
+
+/* RIGHT V: same timing */
+.splash-anim__right-v {
+  animation: sa-right-v 1500ms cubic-bezier(0.22, 1, 0.36, 1) 0ms both;
+}
+
+/* DOT: 1100ms → 2050ms */
+.splash-anim__dot {
+  animation: sa-dot 950ms cubic-bezier(0.22, 1, 0.36, 1) 1100ms both;
+}
+
+/* Logo glow — pulses with breath */
+.splash-anim__logo-glow {
+  position: absolute;
+  inset: -56px;
+  border-radius: 50%;
+  background: radial-gradient(circle,
+    rgba(43, 217, 200, 0.18),
+    rgba(47, 159, 244, 0.09) 48%,
+    transparent 68%
+  );
+  filter: blur(20px);
+  opacity: 0;
+  pointer-events: none;
+  animation: sa-glow 600ms ease-in-out 1900ms both;
+}
+
+/* Title below logo — fades in after logo settles */
+.splash-anim__title {
+  font-size: 42px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  line-height: 1;
+  color: #f5fbff;
+  text-shadow: 0 2px 16px rgba(0, 0, 0, 0.36);
+  opacity: 0;
+  animation: sa-title-fade 700ms ease-out 1900ms forwards;
+}
+
+/* Fade out — triggered by leaving state */
+.splash-anim--leave {
+  animation: sa-fade-out 500ms ease-in 0ms forwards;
+}
+
+.splash-anim--leave .splash-anim__logo {
+  animation: sa-scale-out 500ms ease-in 0ms forwards;
+}
+
+/* ── Keyframes ──────────────────────────────────────────────────────────── */
+
+@keyframes sa-left-v {
+  0%   { opacity: 0; transform: translateX(-30px) scale(0.92); }
+  100% { opacity: 1; transform: translateX(0)     scale(1); }
+}
+
+@keyframes sa-right-v {
+  0%   { opacity: 0; transform: translateX(30px) scale(0.92); }
+  100% { opacity: 1; transform: translateX(0)    scale(1); }
+}
+
+@keyframes sa-dot {
+  0%   { opacity: 0; transform: translateY(-35px) scale(0.85); }
+  70%  { opacity: 1; transform: translateY(3px)   scale(1.05); }
+  100% { opacity: 1; transform: translateY(0)     scale(1); }
+}
+
+@keyframes sa-breath {
+  0%   { transform: scale(1); }
+  50%  { transform: scale(1.025); }
+  100% { transform: scale(1); }
+}
+
+@keyframes sa-glow {
+  0%   { opacity: 0; }
+  50%  { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+@keyframes sa-fade-out {
+  0%   { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+@keyframes sa-scale-out {
+  0%   { transform: scale(1); }
+  100% { transform: scale(1.035); }
+}
+
+@keyframes sa-title-fade {
+  0%   { opacity: 0; transform: translateY(8px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .splash-anim__left-v,
+  .splash-anim__right-v,
+  .splash-anim__dot,
+  .splash-anim__logo,
+  .splash-anim__logo-glow,
+  .splash-anim--leave {
+    animation-duration: 1ms !important;
+    animation-delay: 0ms !important;
+  }
+}
+
+/* ─────────────────────────────────────────────────────────────────────────── */
 
 .brand-mark__name {
   color: var(--brand-name-color, #fff);

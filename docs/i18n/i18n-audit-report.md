@@ -1,7 +1,7 @@
 # Vuvio i18n Audit Report
 
-Audit date: 2026-07-24  
-Scope: repository-wide audit only. No application migration was started.
+Audit date: 2026-07-24 (Phase 1 English cleanup also completed same day)  
+Scope: repository-wide audit. Phase 1 cleanup applied (see section 22). No full i18n migration started.
 
 ## 1. Executive summary
 
@@ -382,18 +382,7 @@ Do not translate automatically:
 - The volume of hardcoded English strings is high; this audit gives grouped coverage and representative examples, not a complete line-by-line table for every English sentence.
 - Existing dirty/untracked application changes predate this audit; this report does not attempt to classify ownership of those changes.
 
-## 22. Proposed next action
-
-The smallest safe implementation step after this audit is:
-
-1. Keep the current i18n setup.
-2. Fix only the confirmed French/mixed runtime UI and metadata findings listed in section 3.
-3. Do not rename persistent keys, routes, icon IDs, or category IDs.
-4. Add missing English keys to `src/i18n/locales/en.json` and matching French placeholders only after approval.
-
-No migration was performed during this audit.
-
-## Phase 1 English cleanup results
+## 22. Phase 1 English cleanup results (done)
 
 Date: 2026-07-24
 

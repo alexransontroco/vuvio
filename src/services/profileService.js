@@ -23,13 +23,11 @@ export function creatorSlug(value = '') {
 
 export function normalizeProfile(profile = {}) {
   const displayName = profile.displayName ?? profile.name ?? ownCreatorProfile.displayName;
-  const username = String(profile.username ?? ownCreatorProfile.username).replace(/^@+/, '').trim();
 
   return {
     ...ownCreatorProfile,
     ...profile,
     id: profile.id ?? CURRENT_USER_ID,
-    username,
     displayName,
     name: displayName,
     avatarUrl: profile.avatarUrl ?? null,
@@ -112,7 +110,6 @@ function profileFromContent(content, creatorId) {
 
   return normalizeProfile({
     id,
-    username: creatorSlug(displayName).replaceAll('-', ''),
     displayName,
     name: displayName,
     avatarUrl: image,
@@ -156,7 +153,6 @@ function profileFromContent(content, creatorId) {
 export function normalizeProfileForSave(profile) {
   return normalizeProfile({
     ...profile,
-    username: String(profile.username ?? '').replace(/^@+/, '').trim(),
     websiteUrl: normalizeOptionalUrl(profile.websiteUrl),
     youtubeUrl: normalizeOptionalUrl(profile.youtubeUrl),
     instagramUrl: normalizeInstagram(profile.instagramUrl),
@@ -164,7 +160,6 @@ export function normalizeProfileForSave(profile) {
 }
 
 const EMPTY_PROFILE_BASE = {
-  username: '',
   displayName: '',
   name: '',
   avatarUrl: null,
@@ -263,8 +258,6 @@ export async function saveOwnCreatorProfile(nextProfile) {
   const merged = { ...EMPTY_PROFILE_BASE, ...current, ...nextProfile, id: nextProfile.id ?? current.id };
   const normalized = {
     ...merged,
-    username: String(merged.username ?? '').replace(/^@+/, '').trim(),
-    usernameNormalized: String(merged.username ?? '').replace(/^@+/, '').trim().toLowerCase(),
     websiteUrl: normalizeOptionalUrl(merged.websiteUrl),
     youtubeUrl: normalizeOptionalUrl(merged.youtubeUrl),
     instagramUrl: normalizeInstagram(merged.instagramUrl),

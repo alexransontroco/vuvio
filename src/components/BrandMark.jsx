@@ -74,7 +74,7 @@ export default function BrandMark({ size = 34, showName = false, dark = false, w
 
   const icon = (
     <img
-      src="/assets/logo/vuvio-logo.png"
+      src="/assets/logo/vuvio-logo-dark.png"
       alt="Vuvio"
       width={size}
       height={size}

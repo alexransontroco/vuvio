@@ -9,17 +9,7 @@ Current reality:
 - Do not commit credentials or sample secrets.
 - Any new provider dependency must be declared in `functions/package.json`.
 
-This document describes the Icecat integration for importing real product data and images.
-
-## Overview
-
-The Icecat service provides a structured catalog of consumer electronics products with authorized images and specifications. This integration allows Vuvio to:
-
-- Search for real products by brand and model
-- Import product data (name, specs, identifiers)
-- Use official product images (with proper licensing)
-- Avoid duplicate entries via GTIN/EAN/MPN matching
-- Fallback to local placeholders if Icecat is unavailable
+Icecat provides a structured catalog of consumer electronics with authorized images. Vuvio uses it to search/import real products, avoid duplicates (GTIN/EAN/MPN), and fall back to local placeholders when unavailable.
 
 ## Setup
 
@@ -319,17 +309,8 @@ if (results.length > 0) {
 - MIME types checked
 - Size limits enforced
 
-## Future Enhancements
-
-- [ ] Batch import (multiple products at once)
-- [ ] Auto-update existing products weekly
-- [ ] Use Icecat's advanced search (commercial API)
-- [ ] Support local image caching on CDN
-- [ ] Category mapping improvements
-- [ ] Specs extraction and display
-
 ## References
 
-- Icecat Documentation: https://icecat.biz/en/publish/xml-p-datasheet
+- Icecat docs: https://icecat.biz/en/publish/xml-p-datasheet
 - Icecat API: https://icecat.biz/en/api
-- Product Schema: See `types/product.ts`
+- Product schema: `functions/src/types/product.ts`

@@ -3,7 +3,7 @@
 Internationalization references.
 
 Status: Current index  
-Last reviewed: 2026-09-05  
+Last reviewed: 2026-09-18  
 Read before coding: Yes, for visible UI text or locale behavior.
 
 ## Current Reality

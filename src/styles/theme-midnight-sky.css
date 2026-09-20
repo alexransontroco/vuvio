@@ -1,0 +1,496 @@
+/* ── Midnight Sky theme — refined ──────────────────────────────────────────
+   Deep atmospheric blue. Subtle night sky. Cinematic, restrained, premium.
+   Applies when <html data-theme="midnight-sky"> is set.
+   ────────────────────────────────────────────────────────────────────────── */
+
+/* ── Root: one continuous atmospheric background ──────────────────────────── */
+
+[data-theme="midnight-sky"] {
+  background:
+    radial-gradient(ellipse at 78% 8%,  rgba(40, 110, 170, 0.12), transparent 38%),
+    radial-gradient(ellipse at 14% 62%, rgba(25, 105, 160, 0.10), transparent 45%),
+    linear-gradient(165deg,
+      #06162D 0%,
+      #071A38 25%,
+      #092A50 60%,
+      #0B3A64 100%
+    );
+}
+
+/* ── Body: barely-there tint, keep the gradient ───────────────────────────── */
+
+[data-theme="midnight-sky"] body {
+  background: rgba(3, 10, 22, 0.22);
+  min-height: 100vh;
+}
+
+[data-theme="midnight-sky"] body::before,
+[data-theme="midnight-sky"] body::after {
+  display: none;
+}
+
+/* ── All layout containers → transparent ──────────────────────────────────── */
+
+[data-theme="midnight-sky"] .app-canvas,
+[data-theme="midnight-sky"] .app-canvas--desktop,
+[data-theme="midnight-sky"] .phone-stage,
+[data-theme="midnight-sky"] .screen,
+[data-theme="midnight-sky"] .route-fallback {
+  background: transparent;
+}
+
+/* ── Desktop sidebar ──────────────────────────────────────────────────────── */
+
+[data-theme="midnight-sky"] .desktop-sidebar-nav {
+  background: rgba(4, 12, 26, 0.96);
+  border-right-color: rgba(100, 170, 220, 0.10);
+  box-shadow: 18px 0 44px rgba(0, 0, 0, 0.30);
+}
+
+/* ── Bottom navigation ────────────────────────────────────────────────────── */
+
+[data-theme="midnight-sky"] .bottom-nav,
+[data-theme="midnight-sky"] .bottom-nav--floating {
+  background: rgba(3, 17, 32, 0.92);
+  border-top-color: rgba(100, 170, 220, 0.08);
+  box-shadow:
+    inset 0 0.5px 0 rgba(100, 170, 220, 0.05),
+    0 -4px 20px rgba(0, 0, 0, 0.22);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+/* Inactive: muted blue-grey */
+[data-theme="midnight-sky"] .bottom-nav__item {
+  color: rgba(195, 220, 240, 0.50);
+}
+
+/* Active: restrained teal-blue */
+[data-theme="midnight-sky"] .bottom-nav__item.active {
+  color: #31BFD9;
+  background: rgba(49, 191, 217, 0.08);
+}
+
+[data-theme="midnight-sky"] .bottom-nav__item.active .bottom-nav__icon {
+  background: rgba(49, 191, 217, 0.10);
+  animation: ms-nav-halo 4s ease-in-out infinite;
+}
+
+@keyframes ms-nav-halo {
+  0%, 100% { box-shadow: 0 0 0 0px rgba(49, 191, 217, 0); }
+  50%       { box-shadow: 0 0 0 5px rgba(49, 191, 217, 0.05); }
+}
+
+/* ── LIVE badge: muted ocean blue, no green ───────────────────────────────── */
+
+[data-theme="midnight-sky"] .live-badge {
+  background: #3A8FD8;
+  color: #FFFFFF;
+  box-shadow: 0 0 0 1px rgba(58, 143, 216, 0.18);
+}
+
+[data-theme="midnight-sky"] .live-badge__dot {
+  background: #E5F5FF;
+}
+
+[data-theme="midnight-sky"] .live-badge--pulse .live-badge__dot {
+  background: rgba(229, 245, 255, 0.90);
+}
+
+/* ── Home / Watch ─────────────────────────────────────────────────────────── */
+
+[data-theme="midnight-sky"] .home-screen {
+  background: transparent;
+}
+
+[data-theme="midnight-sky"] .home-header {
+  background: linear-gradient(
+    180deg,
+    rgba(4, 11, 24, 0.86) 0%,
+    rgba(4, 11, 24, 0.66) 68%,
+    rgba(4, 11, 24, 0) 100%
+  );
+}
+
+/* ── Explore page ─────────────────────────────────────────────────────────── */
+
+[data-theme="midnight-sky"] .ep-screen {
+  background: transparent;
+}
+
+/* Header: no separate dark rectangle — flows with the page */
+[data-theme="midnight-sky"] .ep-header {
+  background: rgba(5, 16, 34, 0.58);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-bottom: none;
+}
+
+/* Icon buttons: subtle */
+[data-theme="midnight-sky"] .ep-header__icon-btn--msg {
+  background: rgba(40, 100, 160, 0.16);
+  color: rgba(200, 230, 248, 0.88);
+  box-shadow: inset 0 0 0 1px rgba(40, 100, 160, 0.18);
+}
+
+[data-theme="midnight-sky"] .ep-header__icon-btn--msg:hover {
+  background: rgba(40, 100, 160, 0.24);
+}
+
+/* Notification badge */
+[data-theme="midnight-sky"] .ep-header__badge {
+  background: #3A8FD8;
+  color: #FFFFFF;
+}
+
+/* Filter active */
+[data-theme="midnight-sky"] .ep-header__filter-btn.has-active {
+  color: #31BFD9;
+  border-color: rgba(49, 191, 217, 0.30);
+  background: rgba(49, 191, 217, 0.08);
+}
+
+[data-theme="midnight-sky"] .ep-header__filter-dot {
+  background: #3A8FD8;
+}
+
+/* ── Search: single clean field, no double rectangle ─────────────────────── */
+
+[data-theme="midnight-sky"] .ep-search {
+  background: rgba(4, 24, 48, 0.38);
+  border-color: rgba(110, 175, 225, 0.16);
+  border-radius: 18px;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  height: auto;
+}
+
+/* Input must be transparent — container provides the visual background */
+[data-theme="midnight-sky"] .ep-search .ep-search__input {
+  background: transparent;
+  border: none;
+  height: 42px;
+}
+
+[data-theme="midnight-sky"] .ep-search__icon {
+  color: rgba(220, 240, 255, 0.65);
+}
+
+[data-theme="midnight-sky"] .ep-search .ep-search__input::placeholder {
+  color: rgba(220, 240, 255, 0.45);
+}
+
+[data-theme="midnight-sky"] .ep-search:focus-within {
+  border-color: rgba(58, 143, 216, 0.38);
+  background: rgba(4, 24, 48, 0.55);
+}
+
+/* ── Category chips ───────────────────────────────────────────────────────── */
+
+[data-theme="midnight-sky"] .ep-chip {
+  background: rgba(4, 25, 48, 0.28);
+  border-color: rgba(110, 180, 230, 0.14);
+  color: rgba(255, 255, 255, 0.78);
+}
+
+/* Selected: pale desaturated ice-blue, not green */
+[data-theme="midnight-sky"] .ep-chip.is-active {
+  background: #BCDCE9;
+  border-color: transparent;
+  color: #0B304A;
+  font-weight: 600;
+}
+
+/* ── Section headers ──────────────────────────────────────────────────────── */
+
+/* See all: soft pale blue, clearly secondary */
+[data-theme="midnight-sky"] .ep-section__see-all {
+  color: #7DBFE5;
+  opacity: 1;
+}
+
+/* ── Live Now cards: photo-first, minimal overlay ────────────────────────── */
+
+/* Bottom gradient: natural photo readability only */
+[data-theme="midnight-sky"] .ep-live-card__overlay {
+  background: linear-gradient(to top, rgba(2, 10, 20, 0.78) 0%, transparent 100%);
+}
+
+/* ── Nearby cards: convert to vertical photo-led layout ─────────────────── */
+
+[data-theme="midnight-sky"] .ep-nearby-card {
+  display: flex;
+  flex-direction: column;
+  grid-template-columns: unset;
+  gap: 0;
+  background: transparent;
+  border-color: rgba(100, 170, 220, 0.12);
+  position: relative;
+  overflow: hidden;
+  min-height: 160px;
+}
+
+/* Image fills the card */
+[data-theme="midnight-sky"] .ep-nearby-card__media {
+  height: 130px;
+  flex-shrink: 0;
+}
+
+/* Info: compact, semi-transparent, sits below the photo */
+[data-theme="midnight-sky"] .ep-nearby-card__info {
+  padding: 8px 10px;
+  background: rgba(5, 20, 42, 0.72);
+  flex: 1;
+}
+
+/* Tag chip: blue-toned */
+[data-theme="midnight-sky"] .ep-nearby-card__tag {
+  background: rgba(49, 191, 217, 0.10);
+  color: #31BFD9;
+}
+
+/* ── Upcoming cards: photo-led ───────────────────────────────────────────── */
+
+[data-theme="midnight-sky"] .ep-upcoming-card {
+  background: transparent;
+  border-color: rgba(100, 170, 220, 0.12);
+}
+
+/* Info panel: dark navy translucent */
+[data-theme="midnight-sky"] .ep-upcoming-card__info {
+  background: rgba(5, 20, 42, 0.72);
+}
+
+/* Date badge: dark translucent */
+[data-theme="midnight-sky"] .ep-upcoming-card__badge {
+  background: rgba(4, 20, 38, 0.65);
+  border-color: rgba(100, 170, 220, 0.22);
+  color: rgba(220, 240, 255, 0.88);
+}
+
+/* Notify button active: blue */
+[data-theme="midnight-sky"] .ep-upcoming-card__notify.is-set {
+  border-color: rgba(58, 143, 216, 0.38);
+  background: rgba(58, 143, 216, 0.10);
+  color: #31BFD9;
+}
+
+/* Upcoming time: blue accent */
+[data-theme="midnight-sky"] .ep-upcoming-card__time {
+  color: #31BFD9;
+}
+
+/* ── Category tiles ───────────────────────────────────────────────────────── */
+
+[data-theme="midnight-sky"] .ep-category-tile {
+  background: rgba(5, 22, 46, 0.42);
+  border-color: rgba(100, 170, 220, 0.12);
+}
+
+/* ── Filter sheet ─────────────────────────────────────────────────────────── */
+
+[data-theme="midnight-sky"] .ep-filter-sheet__reset {
+  color: #31BFD9;
+}
+
+[data-theme="midnight-sky"] .ep-filter-chip.is-active {
+  color: #31BFD9;
+}
+
+[data-theme="midnight-sky"] .ep-filter-sheet__apply {
+  background: linear-gradient(135deg, #3A8FD8 0%, #31BFD9 100%);
+}
+
+[data-theme="midnight-sky"] .ep-theme-tile.is-active .ep-theme-tile__icon,
+[data-theme="midnight-sky"] .ep-theme-tile.is-active span {
+  color: #31BFD9;
+}
+
+/* ── Empty states ─────────────────────────────────────────────────────────── */
+
+[data-theme="midnight-sky"] .ep-empty button {
+  color: #31BFD9;
+}
+
+/* ── Creator cards ────────────────────────────────────────────────────────── */
+
+[data-theme="midnight-sky"] .ep-creator-card__follow {
+  color: #31BFD9;
+}
+
+/* ── Splash screen ────────────────────────────────────────────────────────── */
+
+[data-theme="midnight-sky"] .splash-screen {
+  background:
+    radial-gradient(ellipse at 70% 8%, rgba(40, 110, 170, 0.14), transparent 40%),
+    linear-gradient(165deg, #06162D 0%, #071A38 30%, #092A50 70%, #0B3A64 100%);
+}
+
+/* ── Auth pages ───────────────────────────────────────────────────────────── */
+
+[data-theme="midnight-sky"] .auth-loading {
+  background: linear-gradient(165deg, #06162D 0%, #092A50 100%);
+}
+
+[data-theme="midnight-sky"] .auth-loading__mark {
+  border-color: rgba(100, 170, 220, 0.18);
+  border-top-color: #31BFD9;
+}
+
+[data-theme="midnight-sky"] .auth-screen {
+  background:
+    radial-gradient(ellipse at 70% 8%, rgba(40, 110, 170, 0.12), transparent 40%),
+    linear-gradient(165deg, #06162D 0%, #092A50 60%, #0B3A64 100%);
+}
+
+[data-theme="midnight-sky"] .auth-card {
+  background: rgba(6, 22, 48, 0.68);
+  border-color: rgba(100, 170, 220, 0.14);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+}
+
+/* ── Onboarding ───────────────────────────────────────────────────────────── */
+
+[data-theme="midnight-sky"] .onboarding-shell {
+  background: linear-gradient(165deg, #06162D 0%, #092A50 100%);
+}
+
+/* ── Creator profile page ─────────────────────────────────────────────────── */
+
+[data-theme="midnight-sky"] .creator-profile-screen {
+  --profile-bg:             #06162D;
+  --profile-surface:        rgba(9, 42, 80, 0.65);
+  --profile-surface-strong: rgba(4, 11, 24, 0.92);
+  --profile-border:         rgba(100, 170, 220, 0.14);
+  background: transparent;
+}
+
+[data-theme="midnight-sky"] .creator-cover__shade {
+  background:
+    linear-gradient(180deg,
+      rgba(4, 11, 24, 0.14) 0%,
+      transparent 28%,
+      rgba(4, 11, 24, 0.58) 60%,
+      rgba(4, 11, 24, 0.96) 84%,
+      #06162D 100%
+    ),
+    linear-gradient(90deg, rgba(4, 11, 24, 0.18), transparent 46%, rgba(4, 11, 24, 0.10));
+}
+
+/* ── Settings page ────────────────────────────────────────────────────────── */
+
+[data-theme="midnight-sky"] .settings-screen {
+  --profile-bg:      #06162D;
+  --profile-surface: rgba(9, 42, 80, 0.60);
+  --profile-border:  rgba(100, 170, 220, 0.14);
+  background: transparent;
+}
+
+[data-theme="midnight-sky"] .settings-card {
+  background: rgba(6, 22, 48, 0.68);
+  border-color: rgba(100, 170, 220, 0.10);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+[data-theme="midnight-sky"] .settings-row {
+  border-bottom-color: rgba(100, 170, 220, 0.07);
+}
+
+[data-theme="midnight-sky"] .settings-header button {
+  background: rgba(9, 42, 80, 0.50);
+}
+
+/* ── Edit profile ─────────────────────────────────────────────────────────── */
+
+[data-theme="midnight-sky"] .edit-profile-screen {
+  --profile-bg:     #06162D;
+  --profile-border: rgba(100, 170, 220, 0.14);
+  background: transparent;
+}
+
+/* ── Equipment ────────────────────────────────────────────────────────────── */
+
+[data-theme="midnight-sky"] .equipment-manage-screen {
+  --profile-bg:     #06162D;
+  --profile-border: rgba(100, 170, 220, 0.14);
+}
+
+/* ── Messages ─────────────────────────────────────────────────────────────── */
+
+[data-theme="midnight-sky"] .messages-screen {
+  background: transparent;
+}
+
+[data-theme="midnight-sky"] .messages-home-header {
+  background: rgba(4, 12, 26, 0.78);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+}
+
+/* ── Pre-live / Go live ───────────────────────────────────────────────────── */
+
+[data-theme="midnight-sky"] .start-live-screen,
+[data-theme="midnight-sky"] .create-live-flow {
+  background: transparent;
+}
+
+/* ── Sheets / modals ──────────────────────────────────────────────────────── */
+
+[data-theme="midnight-sky"] .sls-panel {
+  background: rgba(5, 16, 34, 0.97);
+  border-top-color: rgba(100, 170, 220, 0.10);
+}
+
+[data-theme="midnight-sky"] .action-sheet,
+[data-theme="midnight-sky"] .bottom-sheet,
+[data-theme="midnight-sky"] .modal-overlay .modal,
+[data-theme="midnight-sky"] .sheet-panel {
+  background: #071A38;
+  border-color: rgba(100, 170, 220, 0.10);
+}
+
+/* ── Input fields ─────────────────────────────────────────────────────────── */
+
+[data-theme="midnight-sky"] input:not([type="radio"]):not([type="checkbox"]),
+[data-theme="midnight-sky"] textarea {
+  background: rgba(5, 22, 48, 0.52);
+  border-color: rgba(100, 170, 220, 0.16);
+  color: #FFFFFF;
+}
+
+[data-theme="midnight-sky"] input::placeholder,
+[data-theme="midnight-sky"] textarea::placeholder {
+  color: rgba(220, 240, 255, 0.42);
+}
+
+/* ── Discover / Globe topbar ──────────────────────────────────────────────── */
+
+[data-theme="midnight-sky"] .discover-topbar > button {
+  background: rgba(4, 14, 30, 0.78);
+  border-color: rgba(100, 170, 220, 0.16);
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.30);
+}
+
+[data-theme="midnight-sky"] .discover-topbar .segmented,
+[data-theme="midnight-sky"] .discover-mode-control {
+  background: rgba(4, 14, 30, 0.74);
+  border-color: rgba(100, 170, 220, 0.14);
+  box-shadow: 0 12px 26px rgba(0, 0, 0, 0.28);
+}
+
+[data-theme="midnight-sky"] .discover-mode-control button.is-active {
+  background: rgba(49, 191, 217, 0.14);
+  color: #31BFD9;
+  box-shadow: inset 0 0 0 0.5px rgba(49, 191, 217, 0.18);
+}
+
+/* ── Focus ring ───────────────────────────────────────────────────────────── */
+
+[data-theme="midnight-sky"] button:focus-visible,
+[data-theme="midnight-sky"] a:focus-visible,
+[data-theme="midnight-sky"] input:focus-visible,
+[data-theme="midnight-sky"] textarea:focus-visible {
+  outline-color: rgba(58, 143, 216, 0.55);
+}

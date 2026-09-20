@@ -37,11 +37,16 @@ export async function listGlobeStreams(_req, res) {
         creators.set(uid, {
             displayName: String(data.displayName ?? data.username ?? 'Vuvio creator'),
             photoURL: typeof data.photoURL === 'string' ? data.photoURL : null,
+            trustTier: typeof data.trustTier === 'string' ? data.trustTier : 'standard',
         });
     }));
     const streams = snap.docs
         .map((doc) => doc.data())
         .filter((stream) => stream.approximateLocation)
+        .filter((stream) => {
+        const tier = creators.get(stream.creatorId)?.trustTier;
+        return tier !== 'at-risk' && tier !== 'suspended';
+    })
         .map((stream) => {
         const creator = creators.get(stream.creatorId) ?? { displayName: 'Vuvio creator', photoURL: null };
         return {

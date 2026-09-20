@@ -14,11 +14,14 @@ import {
   Radio,
   Search,
   Server,
+  ShieldAlert,
   ShieldCheck,
   Wrench,
 } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import { collection, getDocs, orderBy, query } from 'firebase/firestore';
+import { useMemo, useState, useEffect } from 'react';
 import { Navigate } from 'react-router-dom';
+import { db } from '../firebase.js';
 import { useAuth } from '../context/AuthContext.jsx';
 
 const docModules = import.meta.glob([
@@ -95,7 +98,7 @@ const COPY = {
     aria: 'Documentation admin',
     eyebrow: 'Documentation Admin',
     title: 'Manuel opérationnel Vuvio',
-    subtitle: 'Règles actuelles, docs par domaine, notes historiques et références d’implémentation dans une interface admin unique.',
+    subtitle: 'Règles actuelles, docs par domaine, notes historiques et références d\'implémentation dans une interface admin unique.',
     scoreLabel: 'docs actuelles qualifiées',
     criticalRules: 'Règles critiques',
     searchPlaceholder: 'Chercher docs, règles, chemins...',
@@ -112,7 +115,7 @@ const COPY = {
     documentListLabel: 'Liste des documents',
     outlineLabel: 'Plan du document',
     tabsLabel: 'Sections admin',
-    overview: 'Vue d’ensemble',
+    overview: 'Vue d\'ensemble',
     tasks: 'Tâches',
     history: 'Historique',
     docs: 'Docs',
@@ -139,92 +142,15 @@ const COPY = {
 };
 
 const ADMIN_TABS = [
-  { id: 'overview', icon: Layers3, label: { en: 'Overview', fr: 'Vue d’ensemble' } },
+  { id: 'overview', icon: Layers3, label: { en: 'Overview', fr: 'Vue d\'ensemble' } },
   { id: 'tasks', icon: ClipboardList, label: { en: 'Tasks', fr: 'Tâches' } },
   { id: 'history', icon: History, label: { en: 'History', fr: 'Historique' } },
   { id: 'docs', icon: BookOpen, label: { en: 'Docs', fr: 'Docs' } },
   { id: 'rules', icon: ShieldCheck, label: { en: 'Rules', fr: 'Règles' } },
+  { id: 'moderation', icon: ShieldAlert, label: { en: 'Moderation', fr: 'Modération' } },
 ];
 
-const ADMIN_TASKS = [
-  {
-    priority: 'high',
-    area: 'Frontend',
-    title: { en: 'Extract a shared <LiveFeed>', fr: 'Extraire un <LiveFeed> partagé' },
-    context: {
-      en: 'HomePage and WatchPage duplicate swipe handlers, equipment sheet logic, and chat behavior.',
-      fr: 'HomePage et WatchPage dupliquent les handlers de swipe, le sheet équipement et le chat.',
-    },
-    status: { en: 'Open', fr: 'Ouvert' },
-    source: 'ADMIN.md',
-  },
-  {
-    priority: 'high',
-    area: 'Streaming',
-    title: { en: 'Decide replay and recording strategy', fr: 'Décider la stratégie replay/enregistrement' },
-    context: {
-      en: 'RTMPS relay was reverted on 2026-08-20. Current WHIP path must be verified before replay work.',
-      fr: 'Le relay RTMPS a été revert le 2026-08-20. Le chemin WHIP actuel doit être vérifié avant les replays.',
-    },
-    status: { en: 'Decision needed', fr: 'Décision requise' },
-    source: 'ADMIN.md',
-  },
-  {
-    priority: 'medium',
-    area: 'Globe',
-    title: { en: 'Rebuild globe clusters', fr: 'Refaire les clusters du globe' },
-    context: {
-      en: 'Start from altitude-only clustering and verify counts after zoom.',
-      fr: 'Repartir du clustering par altitude et vérifier les counts après zoom.',
-    },
-    status: { en: 'Open', fr: 'Ouvert' },
-    source: 'ADMIN.md',
-  },
-  {
-    priority: 'medium',
-    area: 'Gear',
-    title: { en: 'Migrate gear from localStorage to Firestore', fr: 'Migrer le gear de localStorage vers Firestore' },
-    context: {
-      en: 'Firestore path is prepared, but migration is not implemented.',
-      fr: 'Le chemin Firestore est préparé, mais la migration n’est pas implémentée.',
-    },
-    status: { en: 'Open', fr: 'Ouvert' },
-    source: 'ADMIN.md',
-  },
-  {
-    priority: 'low',
-    area: 'i18n',
-    title: { en: 'Extract 350+ hardcoded strings', fr: 'Extraire 350+ chaînes hardcodées' },
-    context: {
-      en: 'i18next is configured, but many UI strings are still inline.',
-      fr: 'i18next est configuré, mais beaucoup de textes UI sont encore inline.',
-    },
-    status: { en: 'Later', fr: 'Plus tard' },
-    source: 'ADMIN.md',
-  },
-  {
-    priority: 'low',
-    area: 'Gear',
-    title: { en: 'Add equipment affiliate tracking', fr: 'Ajouter le tracking affilié équipement' },
-    context: {
-      en: 'affiliateUrl exists in the model, but click/commission tracking is missing.',
-      fr: 'affiliateUrl existe dans le modèle, mais le tracking clic/commission manque.',
-    },
-    status: { en: 'Later', fr: 'Plus tard' },
-    source: 'ADMIN.md',
-  },
-  {
-    priority: 'low',
-    area: 'Messaging',
-    title: { en: 'Implement Firestore messaging', fr: 'Implémenter la messagerie Firestore' },
-    context: {
-      en: 'Schema is documented, implementation is still pending.',
-      fr: 'Le schéma est documenté, l’implémentation reste à faire.',
-    },
-    status: { en: 'Later', fr: 'Plus tard' },
-    source: 'docs/backend/messaging-firestore.md',
-  },
-];
+const ADMIN_TASKS = parseAdminTasks(docModules['../../ADMIN.md'] || '');
 
 const FALLBACK_HISTORY_ITEMS = [
   {
@@ -253,7 +179,7 @@ const FALLBACK_HISTORY_ITEMS = [
     title: { en: 'Docs consolidation', fr: 'Consolidation docs' },
     body: {
       en: 'Scattered Markdown files were consolidated into an architecture journal and admin entry point.',
-      fr: 'Les fichiers Markdown épars ont été consolidés dans un journal d’architecture et un point d’entrée admin.',
+      fr: 'Les fichiers Markdown épars ont été consolidés dans un journal d\'architecture et un point d\'entrée admin.',
     },
     files: ['journal.architecture.md'],
   },
@@ -354,66 +280,6 @@ Single entry point for navigating project documentation.
 
 **Production URL:** https://vuvio-bf328.web.app`,
   },
-  'CHANGELOG.md': {
-    en: `# Changelog — Vuvio
-
-Work session history, newest first.
-
----
-
-## 2026-09-09 — Admin docs cockpit redesign
-\`UX\` | \`AdminDocsPage.jsx\` \`admin-docs.css\` \`CHANGELOG.md\`
-
-**Context:** The \`/admin/docs\` page was hard to read because it mostly opened as a raw Markdown reader.
-
-**Fix:**
-- Added \`Overview\`, \`Tasks\`, \`History\`, \`Docs\`, \`Rules\` tabs
-- Promoted open tasks, sources of truth, critical rules, and recent history
-- Connected the history timeline directly to \`CHANGELOG.md\`
-
-**Build:** ✓
-
----
-
-## 2026-09-09 — Mobile equipment scroll fix
-\`Bug\` | \`HomePage.jsx\` \`EquipmentKit.jsx\` \`components.css\`
-
-**Problem:** On mobile, scrolling the equipment sheet triggered live feed swipe navigation.
-
-**Cause:** \`HomePage.jsx\` has its own copy of the swipeable live feed and its own \`onPointerDown\`, without protection for the equipment sheet. React portals bubble events through the React tree, so pointer events from the sheet still reached the Home feed handler.
-
-**Fix:**
-- \`HomePage.jsx\` \`onPointerDown\`: added \`if (equipmentSheetOpen) return;\` and \`.equipment-viewer-sheet\` to \`closest()\`
-- \`HomePage.jsx\` \`onPointerMove\`: added \`if (equipmentSheetOpen || !pointerStart.current) return;\`
-- \`EquipmentKit.jsx\`: added \`stopPropagation\` on all pointer events for the sheet container
-
-**Tested:** iPhone
-
-**Technical debt:** \`HomePage\` and \`WatchPage\` duplicate live feed logic → extract a shared \`<LiveFeed>\` component. Tracked in \`ADMIN.md\`.
-
----
-
-## 2026-09-04 — “Start a live” UX simplification
-\`UX\` | \`BottomNav.jsx\` \`components.css\`
-
-**Context:** Make stream launch nearly immediate: + → camera preview → text → category → Go Live.
-
-**Finding:** Most of the work already existed in \`StartLiveFlow\`. Only real change: “More categories” panel now uses a flat alphabetical list instead of Air/Earth/Water group labels.
-
-**Build:** 2475 modules
-
----
-
-## 2026-09-03 — Docs consolidation + architecture journal
-\`Docs\` | \`journal.architecture.md\`
-
-Read memory files and explored the codebase. Consolidated scattered Markdown docs into one architecture journal. Fixed the streaming section after the RTMPS relay revert on 2026-08-20, commit \`6d49ac3\`.
-
----
-
-## Undocumented sessions — August to September 2026
-See \`git log\` for detail: analytics Firestore fixes, RTMPS relay ingest, HLS-first playback, webhook fix, analytics resilient queries.`,
-  },
 };
 
 function t(value, lang) {
@@ -469,6 +335,26 @@ function stripMarkdown(text) {
     .replace(/[`*_#>]/g, '')
     .replace(/\[(.*?)\]\((.*?)\)/g, '$1')
     .trim();
+}
+
+function parseAdminTasks(markdown) {
+  const section = markdown.match(/##\s+Tâches ouvertes[\s\S]*?(?=\n##\s|\n---\s*$|$)/)?.[0] || '';
+  const rows = section.split('\n').filter((line) => /^\|\s*[🔴🟡🟠]/.test(line));
+  return rows.map((row) => {
+    const cells = row.split('|').map((c) => c.trim()).filter(Boolean);
+    const priorityRaw = cells[0] || '';
+    const title = stripMarkdown(cells[1] || '');
+    const context = stripMarkdown(cells[2] || '');
+    const priority = priorityRaw.includes('🔴') ? 'high' : priorityRaw.includes('🟡') ? 'medium' : 'low';
+    return {
+      priority,
+      area: '',
+      title,
+      context,
+      status: priority === 'high' ? 'Open' : 'Later',
+      source: 'ADMIN.md',
+    };
+  });
 }
 
 function makeDocs() {
@@ -879,6 +765,121 @@ function RulesPanel({ lang }) {
   );
 }
 
+const TIER_COLOR = {
+  trusted: '#89f0a8',
+  standard: '#35e3dc',
+  new: '#94a3b8',
+  'at-risk': '#ffd166',
+  suspended: '#fca5a5',
+};
+
+function TierBadge({ tier }) {
+  return (
+    <span style={{
+      background: `${TIER_COLOR[tier] ?? '#94a3b8'}22`,
+      color: TIER_COLOR[tier] ?? '#94a3b8',
+      border: `1px solid ${TIER_COLOR[tier] ?? '#94a3b8'}55`,
+      borderRadius: 6,
+      padding: '2px 8px',
+      fontSize: 11,
+      fontWeight: 600,
+      letterSpacing: '0.04em',
+      textTransform: 'uppercase',
+    }}>{tier ?? 'unscored'}</span>
+  );
+}
+
+function ModerationPanel() {
+  const [users, setUsers] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [filter, setFilter] = useState('all');
+
+  useEffect(() => {
+    getDocs(query(collection(db, 'users'), orderBy('trustScore', 'desc')))
+      .then((snap) => {
+        setUsers(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
+      })
+      .catch(console.error)
+      .finally(() => setLoading(false));
+  }, []);
+
+  const filtered = useMemo(() => {
+    if (filter === 'all') return users;
+    return users.filter((u) => u.trustTier === filter);
+  }, [users, filter]);
+
+  const counts = useMemo(() => ({
+    trusted: users.filter((u) => u.trustTier === 'trusted').length,
+    standard: users.filter((u) => u.trustTier === 'standard').length,
+    new: users.filter((u) => u.trustTier === 'new').length,
+    'at-risk': users.filter((u) => u.trustTier === 'at-risk').length,
+    suspended: users.filter((u) => u.trustTier === 'suspended').length,
+    unscored: users.filter((u) => !u.trustTier).length,
+  }), [users]);
+
+  return (
+    <main className="admin-docs-dashboard">
+      <section className="admin-docs-metrics">
+        <MetricPanel label="Total users" value={users.length} />
+        <MetricPanel label="Trusted" value={counts.trusted} detail={`${counts.standard} standard`} />
+        <MetricPanel label="At-risk" value={counts['at-risk']} detail={`${counts.suspended} suspended`} />
+        <MetricPanel label="Unscored" value={counts.unscored} detail="no live yet" />
+      </section>
+
+      <article className="admin-docs-panel">
+        <div style={{ display: 'flex', gap: 8, marginBottom: 16, flexWrap: 'wrap' }}>
+          {['all', 'trusted', 'standard', 'new', 'at-risk', 'suspended'].map((t) => (
+            <button
+              key={t}
+              type="button"
+              onClick={() => setFilter(t)}
+              style={{
+                padding: '4px 12px',
+                borderRadius: 6,
+                border: '1px solid',
+                borderColor: filter === t ? (TIER_COLOR[t] ?? '#35e3dc') : 'rgba(255,255,255,0.1)',
+                background: filter === t ? `${TIER_COLOR[t] ?? '#35e3dc'}22` : 'transparent',
+                color: filter === t ? (TIER_COLOR[t] ?? '#35e3dc') : 'rgba(255,255,255,0.5)',
+                fontSize: 12,
+                cursor: 'pointer',
+              }}
+            >
+              {t} {t !== 'all' ? `(${counts[t] ?? 0})` : `(${users.length})`}
+            </button>
+          ))}
+        </div>
+
+        {loading ? (
+          <p style={{ color: 'rgba(255,255,255,0.4)', padding: '24px 0' }}>Loading…</p>
+        ) : (
+          <div className="admin-docs-task-table">
+            {filtered.map((u) => (
+              <article key={u.id} className="admin-docs-task-row">
+                <div>
+                  <TierBadge tier={u.trustTier} />
+                </div>
+                <div>
+                  <h3 style={{ margin: 0 }}>{u.displayName || u.username || u.id}</h3>
+                  <p style={{ margin: 0, fontSize: 12, opacity: 0.5 }}>{u.id}</p>
+                </div>
+                <div>
+                  <strong style={{ fontSize: 20, color: TIER_COLOR[u.trustTier] ?? '#94a3b8' }}>
+                    {u.trustScore ?? '—'}
+                  </strong>
+                  <small>{u.trustUpdatedAt?.toDate?.()?.toLocaleDateString() ?? 'never'}</small>
+                </div>
+              </article>
+            ))}
+            {filtered.length === 0 && (
+              <p style={{ color: 'rgba(255,255,255,0.3)', padding: '24px 0' }}>No users in this tier.</p>
+            )}
+          </div>
+        )}
+      </article>
+    </main>
+  );
+}
+
 export default function AdminDocsPage() {
   const { user, authLoading } = useAuth();
   const isLocalHost = ['localhost', '127.0.0.1', '0.0.0.0'].includes(window.location.hostname);
@@ -891,7 +892,7 @@ export default function AdminDocsPage() {
   const [showArchive, setShowArchive] = useState(false);
   const [selectedId, setSelectedId] = useState(() => docs.find((doc) => doc.path === 'ADMIN.md')?.id || docs[0]?.id);
 
-  const isAdmin = isLocalDev || user?.email?.endsWith('@vuvio.app') || user?.email === 'alexandre.ranson@gmail.com';
+  const isAdmin = isLocalDev || user?.email?.endsWith('@vuvio.app') || user?.email === 'alexandre.ranson@gmail.com' || user?.email === 'doug.benchetrit@gmail.com' || user?.email === 'cecilia.ranson@outlook.com';
 
   const domains = useMemo(() => {
     const counts = docs.reduce((acc, doc) => {
@@ -1023,6 +1024,7 @@ export default function AdminDocsPage() {
           </div>
           <div className="admin-docs-actions">
             <a href="/admin/docs" className="is-active">{copy.openDocs}</a>
+            <a href="/admin/marketing">Marketing</a>
             <a href="/admin/investor-crm">Investor CRM</a>
             <a href="/admin/analytics">{copy.openAnalytics}</a>
           </div>
@@ -1075,6 +1077,7 @@ export default function AdminDocsPage() {
       {activeView === 'docs' ? docsBrowser : null}
 
       {activeView === 'rules' ? <RulesPanel lang={lang} /> : null}
+      {activeView === 'moderation' ? <ModerationPanel /> : null}
     </section>
   );
 }

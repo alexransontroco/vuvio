@@ -7,8 +7,6 @@ import { ACTIVITY_CATEGORIES } from '../../data/activityCategories.js';
 import { enrichExperience } from '../../data/experienceTaxonomy.js';
 import { analyticsService } from '../../services/analytics/analyticsService.ts';
 import MapBottomSheet from '../map/MapBottomSheet.jsx';
-import { ISSLiveCard } from './ISSLiveCard.jsx';
-import '../../styles/components/iss-globe.css';
 
 const MARKER_TYPES = {
   standard: 'standard',
@@ -423,7 +421,7 @@ function brightenBaseGlobe(map) {
       }
       if ((layer.type === 'fill' || layer.type === 'line' || layer.type === 'symbol') && (id.includes('water') || sourceLayer.includes('water'))) {
         if (layer.type === 'fill') {
-          map.setPaintProperty(layer.id, 'fill-color', '#1155ff');
+          map.setPaintProperty(layer.id, 'fill-color', '#1255a0');
           map.setPaintProperty(layer.id, 'fill-opacity', 1);
         }
       }
@@ -462,20 +460,12 @@ export default function CurrentGlobe({ streams, onboarding = false, onOnboarding
   const [sheetState, setSheetState] = useState('closed');
   const [selectedId, setSelectedId] = useState(null);
   const [hoveredId, setHoveredId] = useState('');
+  const [hoverStream, setHoverStream] = useState(null);
+  const [hoverPos, setHoverPos] = useState({ x: 0, y: 0 });
   const [pingRefreshTick, setPingRefreshTick] = useState(0);
   const [mapError, setMapError] = useState('');
-  const [showISSCard, setShowISSCard] = useState(false);
-  const [currentZoom, setCurrentZoom] = useState(1);
   const [isMapLoaded, setIsMapLoaded] = useState(false);
-
-  // Performance diagnostics
-  const perfRef = useRef({
-    rafCalls: 0,
-    paintCalls: 0,
-    jumpToCalls: 0,
-    startTime: performance.now(),
-    lastReportTime: performance.now(),
-  });
+  const lastHaloZoomRef = useRef(-1);
 
   const enrichedStreams = useMemo(() => streams.map(enrichExperience), [streams]);
   const requestedLiveId = searchParams.get('live') ?? '';
@@ -502,8 +492,12 @@ export default function CurrentGlobe({ streams, onboarding = false, onOnboarding
   };
 
   useEffect(() => {
+    if (selectedLive) import('../../routes/WatchPage.jsx');
+  }, [selectedLive]);
+
+  useEffect(() => {
     if (!enrichedStreams.some((stream) => pingTimestamp(stream) > 0)) return undefined;
-    const timer = window.setInterval(() => setPingRefreshTick((value) => value + 1), 1000);
+    const timer = window.setInterval(() => setPingRefreshTick((value) => value + 1), 5000);
     return () => window.clearInterval(timer);
   }, [enrichedStreams]);
 
@@ -529,8 +523,12 @@ export default function CurrentGlobe({ streams, onboarding = false, onOnboarding
 
   const selectFamily = (nextFamily) => {
     setActiveFamily(nextFamily);
-    setSelectedId(null);
-    if (nextFamily !== 'all') setActiveActivities([]);
+    if (nextFamily !== 'all') {
+      setActiveActivities([]);
+      const sel = enrichedStreams.find((s) => s.id === selectedIdRef.current);
+      if (sel && sel.family !== nextFamily) setSelectedId(null);
+    }
+    // switching to 'all' preserves current selection
   };
 
   useEffect(() => {
@@ -787,11 +785,20 @@ export default function CurrentGlobe({ streams, onboarding = false, onOnboarding
         // });
         map.on('mousemove', 'vuvio-test-live-hit', (event) => {
           const feature = event.features?.[0];
-          setHoveredId(feature?.properties?.id ?? '');
+          const id = feature?.properties?.id ?? '';
+          setHoveredId(id);
+          if (id && !selectedIdRef.current) {
+            const stream = enrichedStreams.find((s) => s.id === id) ?? null;
+            setHoverStream(stream);
+            setHoverPos({ x: event.point.x, y: event.point.y });
+          } else {
+            setHoverStream(null);
+          }
         });
         map.on('mouseleave', 'vuvio-test-live-hit', () => {
           map.getCanvas().style.cursor = '';
           setHoveredId('');
+          setHoverStream(null);
         });
         // OPTIMIZATION 2: Cluster mouse leave handler removed
         // map.on('mouseleave', 'vuvio-test-clusters', () => {
@@ -912,7 +919,6 @@ export default function CurrentGlobe({ streams, onboarding = false, onOnboarding
     let totalRotation = 0;
 
     const tick = (time) => {
-      perfRef.current.rafCalls++;
       if (time - lastPulseTime >= PULSE_INTERVAL) {
         lastPulseTime = time;
         const clock = (time % 2400) / 2400;
@@ -942,7 +948,6 @@ export default function CurrentGlobe({ streams, onboarding = false, onOnboarding
             map.setPaintProperty('vuvio-test-live-selection-ring', 'circle-radius', liveRingRadius(clock, selectedId ?? '', hoveredId));
             map.setPaintProperty('vuvio-test-live-selection-ring', 'circle-stroke-opacity', liveRingOpacity(selectedId ?? '', hoveredId));
           }
-          perfRef.current.paintCalls++;
         } catch {
           // Style/layers can be unavailable during route transitions.
         }
@@ -962,34 +967,16 @@ export default function CurrentGlobe({ streams, onboarding = false, onOnboarding
           lastRotationTime = time;
           lastRotationLng += (ROTATE_DEGREES_PER_SECOND * Math.min(elapsed, 50)) / 1000;
           totalRotation += (ROTATE_DEGREES_PER_SECOND * Math.min(elapsed, 50)) / 1000;
-          perfRef.current.jumpToCalls++;
           map.jumpTo({ center: [lastRotationLng, lastRotationLat] });
         }
       }
 
-      // Render atmospheric halo
+      // Skip halo redraw at high zoom — stars invisible, globe fills viewport
       const haloCanvas = haloCanvasRef.current;
-      if (haloCanvas) {
+      if (haloCanvas && (zoom < 4.0 || Math.abs(zoom - lastHaloZoomRef.current) > 0.05)) {
+        lastHaloZoomRef.current = zoom;
         const ctx = haloCanvas.getContext('2d');
         drawAtmosphericHalo(haloCanvas, ctx, totalRotation, time, zoom);
-      }
-
-      // Track zoom for ISS visibility
-      if (Math.abs(zoom - currentZoom) > 0.1) {
-        setCurrentZoom(zoom);
-      }
-
-      // Report perf every 3 seconds
-      if (time - perfRef.current.lastReportTime > 3000) {
-        const elapsed = (time - perfRef.current.lastReportTime) / 1000;
-        const rafPerSec = (perfRef.current.rafCalls / elapsed).toFixed(1);
-        const paintPerSec = (perfRef.current.paintCalls / elapsed).toFixed(1);
-        const jumpPerSec = (perfRef.current.jumpToCalls / elapsed).toFixed(1);
-        console.log(`📊 PERF: RAF ${rafPerSec}/s | Paint ${paintPerSec}/s | Jump ${jumpPerSec}/s | Points: ${liveStreams.length}`);
-        perfRef.current.rafCalls = 0;
-        perfRef.current.paintCalls = 0;
-        perfRef.current.jumpToCalls = 0;
-        perfRef.current.lastReportTime = time;
       }
 
       animationRef.current = requestAnimationFrame(tick);
@@ -1007,16 +994,13 @@ export default function CurrentGlobe({ streams, onboarding = false, onOnboarding
 
     try {
       if (map.getLayer('vuvio-test-live-points')) {
-        perfRef.current.paintCalls++;
         map.setPaintProperty('vuvio-test-live-points', 'circle-radius', livePointRadius(0.18, selectedId ?? ''));
       }
       if (map.getLayer('vuvio-test-live-broadcast-halo')) {
-        perfRef.current.paintCalls++;
         map.setPaintProperty('vuvio-test-live-broadcast-halo', 'circle-radius', liveBroadcastHaloRadius(0.18, selectedId ?? ''));
         map.setPaintProperty('vuvio-test-live-broadcast-halo', 'circle-opacity', liveBroadcastHaloOpacity(0.18, selectedId ?? ''));
       }
       if (map.getLayer('vuvio-test-live-selection-ring')) {
-        perfRef.current.paintCalls++;
         map.setPaintProperty('vuvio-test-live-selection-ring', 'circle-radius', liveRingRadius(0.18, selectedId ?? '', hoveredId));
         map.setPaintProperty('vuvio-test-live-selection-ring', 'circle-stroke-opacity', liveRingOpacity(selectedId ?? '', hoveredId));
       }
@@ -1098,6 +1082,7 @@ export default function CurrentGlobe({ streams, onboarding = false, onOnboarding
     >
       <div className={`test-old-globe${isMapLoaded ? ' is-loaded' : ''}`}>
         <div ref={containerRef} className="test-old-globe__canvas" />
+        {!isMapLoaded && <div className="test-old-globe__loading-mask" aria-hidden="true" />}
         <div className="test-old-globe__vignette" />
         {mapError ? <div className="test-old-globe__error">Error: {mapError}</div> : null}
 
@@ -1115,32 +1100,20 @@ export default function CurrentGlobe({ streams, onboarding = false, onOnboarding
         </div>
         ) : null}
 
-        {false && !onboarding && variant === 'current' && currentZoom < 3.5 ? (
-          <div className="iss-globe-orbit-container">
-            <button
-              type="button"
-              className="iss-globe-floating"
-              onClick={() => setShowISSCard(true)}
-              aria-label="International Space Station"
-              title="ISS Live"
-            >
-              <svg viewBox="0 0 60 60" xmlns="http://www.w3.org/2000/svg">
-                <rect x="8" y="22" width="3" height="16" fill="#2B7F8F" opacity="0.9"/>
-                <rect x="5" y="20" width="10" height="2" fill="#1B5F6F" opacity="1"/>
-                <rect x="5" y="38" width="10" height="2" fill="#1B5F6F" opacity="1"/>
-                <rect x="49" y="22" width="3" height="16" fill="#2B7F8F" opacity="0.9"/>
-                <rect x="45" y="20" width="10" height="2" fill="#1B5F6F" opacity="1"/>
-                <rect x="45" y="38" width="10" height="2" fill="#1B5F6F" opacity="1"/>
-                <rect x="22" y="18" width="16" height="24" rx="2" fill="#1A5F7F" stroke="#2B8FAF" strokeWidth="0.5"/>
-                <rect x="28" y="10" width="4" height="40" fill="#0F4F6F" opacity="0.8"/>
-                <circle cx="28" cy="26" r="1.5" fill="#2BD9C8" opacity="1"/>
-                <circle cx="32" cy="26" r="1.5" fill="#2BD9C8" opacity="1"/>
-                <circle cx="28" cy="34" r="1.5" fill="#2BD9C8" opacity="0.9"/>
-                <circle cx="32" cy="34" r="1.5" fill="#2BD9C8" opacity="0.9"/>
-              </svg>
-            </button>
+
+        {hoverStream && !selectedLive && !onboarding && (
+          <div
+            className="globe-hover-tooltip"
+            style={{ left: hoverPos.x, top: hoverPos.y }}
+            aria-hidden="true"
+          >
+            <span className="globe-hover-tooltip__tag" style={{ '--exp-color': hoverStream.familyColor }}>
+              <i />{hoverStream.subcategory}
+            </span>
+            <strong>{hoverStream.name || hoverStream.streamer}</strong>
+            <span className="globe-hover-tooltip__viewers">{hoverStream.viewers} viewers</span>
           </div>
-        ) : null}
+        )}
 
         {!onboarding && !selectedLive && (
           <MapBottomSheet
@@ -1200,9 +1173,6 @@ export default function CurrentGlobe({ streams, onboarding = false, onOnboarding
           </aside>
         ) : null}
 
-        {false && !onboarding && showISSCard && variant === 'current' ? (
-          <ISSLiveCard onClose={() => setShowISSCard(false)} />
-        ) : null}
       </div>
     </section>
   );

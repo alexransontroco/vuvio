@@ -86,6 +86,10 @@ export function getMyScheduledStreams(filters: Record<string, string | number | 
   return getScheduledStreams({ ...filters, creator: 'me' });
 }
 
+export function cancelScheduledStream(streamId: string) {
+  return apiRequest<{ stream: { id: string; status: string } }>(`/streams/${encodeURIComponent(streamId)}/cancel`, { method: 'POST', body: {} });
+}
+
 export function startStream(streamId: string) {
   return apiRequest<{ stream: { id: string; status: string } }>(`/streams/${encodeURIComponent(streamId)}/start`, { method: 'POST', body: {} });
 }

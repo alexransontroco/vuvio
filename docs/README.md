@@ -14,7 +14,7 @@ For current project context, start with:
 - [analytics/](analytics/) — analytics architecture, audit, status, and integration notes.
 - [gear/](gear/) — creator gear and equipment system.
 - [products/](products/) — product catalog, Icecat, thumbnails, and affiliate/product references.
-- [streaming/](streaming/) — live summary, backend stream work, replay/highlight notes.
+- [streaming/](streaming/) — relay architecture, live/replay pipeline, Cloudflare, highlights.
 - [globe/](globe/) — globe experiment notes.
 - [i18n/](i18n/) — internationalization audit.
 - [ops/](ops/) — deployment fixes and miscellaneous modification notes.

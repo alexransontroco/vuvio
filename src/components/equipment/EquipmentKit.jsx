@@ -11,17 +11,20 @@ import {
   MoreHorizontal,
   Plus,
   Radio,
+  Search,
   ShieldCheck,
   Sparkles,
   Trash2,
   X,
 } from 'lucide-react';
 import { createPortal } from 'react-dom';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { searchProducts, resolveAffiliateOffers } from '../../services/productSearchService.js';
 import { GearThumbnail, GearItemRow } from '../gear/index.js';
 import { AlertCircle } from 'lucide-react';
 import { EQUIPMENT_CATEGORIES, EQUIPMENT_OWNERSHIP, SUBCATEGORY_EQUIPMENT_TYPES, getCategoryIcon } from '../../data/equipmentModel.js';
 import { equipmentLabel, groupEquipmentByCategory } from '../../services/equipmentService.js';
+import { openOffer } from '../../services/affiliateService.js';
 
 export const categoryIcons = {
   recording: Camera,
@@ -99,7 +102,7 @@ export function EquipmentItemRow({ item, selectable = false, selected = false, o
         <small>{item.equipmentType || 'Equipment'}</small>
         <EquipmentBadge item={item} />
       </span>
-      {item.affiliateUrl ? <span className="equipment-affiliate-pill">Affiliate link</span> : null}
+      {item.offers?.length > 0 ? <span className="equipment-affiliate-pill">Affiliate link</span> : null}
       {actions ? actions : selectable ? <span className={selected ? 'equipment-check is-selected' : 'equipment-check'} aria-hidden="true" /> : <ChevronRight size={17} strokeWidth={1.8} />}
     </>
   );
@@ -129,7 +132,7 @@ export function EquipmentItemRow({ item, selectable = false, selected = false, o
 }
 
 export function EquipmentDisclosure({ items }) {
-  if (!items.some((item) => item.affiliateUrl)) return null;
+  if (!items.some((item) => item.offers?.length > 0)) return null;
   return (
     <section className="equipment-disclosure">
       <Info size={18} strokeWidth={1.8} />
@@ -323,12 +326,59 @@ export function EquipmentSelector({
 export function QuickAddEquipmentForm({ value, onChange, onCancel, onSave, suggestedTypes = [] }) {
   const isActivity = value.category === 'activity';
   const listId = 'equipment-type-list';
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState([]);
+  const [searching, setSearching] = useState(false);
+  const [selectedProduct, setSelectedProduct] = useState(null);
+  const [manualMode, setManualMode] = useState(false);
+  const abortRef = useRef(null);
+
+  useEffect(() => {
+    const q = searchQuery.trim();
+    if (!q || manualMode) {
+      setSearchResults([]);
+      return;
+    }
+    const timer = setTimeout(async () => {
+      abortRef.current?.abort();
+      const controller = new AbortController();
+      abortRef.current = controller;
+      setSearching(true);
+      const results = await searchProducts(q, { signal: controller.signal });
+      setSearching(false);
+      setSearchResults(results);
+    }, 400);
+    return () => clearTimeout(timer);
+  }, [searchQuery, manualMode]);
+
+  function handleSelectProduct(product) {
+    setSelectedProduct(product);
+    setSearchResults([]);
+    setSearchQuery('');
+    onChange({
+      ...value,
+      brand: product.brand ?? value.brand,
+      model: product.name ?? value.model,
+      thumbnailUrl: product.thumbnailUrl ?? null,
+      imageUrl: product.thumbnailUrl ?? null,
+      imageSource: product.imageSource ?? 'product-catalog',
+      productId: product.externalId ?? null,
+    });
+    resolveAffiliateOffers({ brand: product.brand, name: product.name, mpn: product.mpn, gtin: product.gtin, category: value.category })
+      .then((offers) => {
+        if (offers.length > 0) onChange({ ...value, brand: product.brand ?? value.brand, model: product.name ?? value.model, thumbnailUrl: product.thumbnailUrl ?? null, imageUrl: product.thumbnailUrl ?? null, imageSource: product.imageSource ?? 'product-catalog', productId: product.externalId ?? null, offers });
+      });
+  }
+
+  const showSearch = !manualMode;
+
   return (
     <section className="equipment-quick-add" aria-label="Add equipment">
       <header>
         <h2>{isActivity ? 'Add activity equipment' : 'Add equipment'}</h2>
         <p>You can complete the details later from My Equipment.</p>
       </header>
+
       <label>
         Category
         <select value={value.category} onChange={(event) => onChange({ ...value, category: event.target.value, equipmentType: '' })}>
@@ -337,30 +387,87 @@ export function QuickAddEquipmentForm({ value, onChange, onCancel, onSave, sugge
           ))}
         </select>
       </label>
-      {isActivity ? (
-        <label>
-          Equipment type
-          <input
-            list={suggestedTypes.length ? listId : undefined}
-            value={value.equipmentType ?? ''}
-            onChange={(event) => onChange({ ...value, equipmentType: event.target.value })}
-            placeholder={suggestedTypes[0] ? `Example: ${suggestedTypes[0]}` : 'Example: Mountain Bike'}
-          />
-          {suggestedTypes.length ? (
-            <datalist id={listId}>
-              {suggestedTypes.map((type) => <option key={type} value={type} />)}
-            </datalist>
+
+      {showSearch && (
+        <div className="equipment-search-wrap">
+          <div className="equipment-search-input-wrap">
+            <Search size={14} strokeWidth={2} className="equipment-search-icon" />
+            <input
+              className="equipment-search-input"
+              value={searchQuery}
+              onChange={(e) => { setSearchQuery(e.target.value); setSelectedProduct(null); }}
+              placeholder="Search by brand or model…"
+              autoComplete="off"
+            />
+            {searching && <span className="equipment-search-spinner" />}
+          </div>
+
+          {searchResults.length > 0 && (
+            <ul className="equipment-search-results">
+              {searchResults.map((p) => (
+                <li key={`${p.provider}:${p.externalId}`}>
+                  <button type="button" className="equipment-search-result" onClick={() => handleSelectProduct(p)}>
+                    {p.thumbnailUrl ? (
+                      <img src={p.thumbnailUrl} alt="" className="equipment-search-result__thumb" />
+                    ) : (
+                      <div className="equipment-search-result__thumb equipment-search-result__thumb--empty" />
+                    )}
+                    <span className="equipment-search-result__name">
+                      <strong>{p.brand}</strong> {p.name}
+                    </span>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+
+          {selectedProduct && (
+            <div className="equipment-search-selected">
+              {selectedProduct.thumbnailUrl && (
+                <img src={selectedProduct.thumbnailUrl} alt="" className="equipment-search-result__thumb" />
+              )}
+              <span>{selectedProduct.brand} {selectedProduct.name}</span>
+              <button type="button" className="equipment-search-clear" onClick={() => { setSelectedProduct(null); onChange({ ...value, brand: '', model: '', thumbnailUrl: null, imageUrl: null, productId: null, offers: [] }); }}>
+                <X size={12} />
+              </button>
+            </div>
+          )}
+
+          <button type="button" className="equipment-manual-link" onClick={() => setManualMode(true)}>
+            Add manually
+          </button>
+        </div>
+      )}
+
+      {(!showSearch || selectedProduct || manualMode) && (
+        <>
+          {isActivity ? (
+            <label>
+              Equipment type
+              <input
+                list={suggestedTypes.length ? listId : undefined}
+                value={value.equipmentType ?? ''}
+                onChange={(event) => onChange({ ...value, equipmentType: event.target.value })}
+                placeholder={suggestedTypes[0] ? `Example: ${suggestedTypes[0]}` : 'Example: Mountain Bike'}
+              />
+              {suggestedTypes.length ? (
+                <datalist id={listId}>
+                  {suggestedTypes.map((type) => <option key={type} value={type} />)}
+                </datalist>
+              ) : null}
+            </label>
           ) : null}
-        </label>
-      ) : null}
-      <label>
-        Brand
-        <input value={value.brand} onChange={(event) => onChange({ ...value, brand: event.target.value })} placeholder="Example: Canyon" />
-      </label>
-      <label>
-        Model
-        <input value={value.model} onChange={(event) => onChange({ ...value, model: event.target.value })} placeholder="Example: Spectral CF 8" />
-      </label>
+          <label>
+            Brand
+            <input value={value.brand} onChange={(event) => onChange({ ...value, brand: event.target.value })} placeholder="Example: Canyon" />
+          </label>
+          <label>
+            Model
+            <input value={value.model} onChange={(event) => onChange({ ...value, model: event.target.value })} placeholder="Example: Spectral CF 8" />
+          </label>
+        </>
+      )}
+
       <div className="equipment-form-actions">
         <button type="button" onClick={onCancel}>Cancel</button>
         <button type="button" className="is-primary" onClick={onSave} disabled={!value.brand.trim() || !value.model.trim()}>Add and select</button>
@@ -369,12 +476,46 @@ export function QuickAddEquipmentForm({ value, onChange, onCancel, onSave, sugge
   );
 }
 
-export function EquipmentViewerSheet({ items, onClose, onViewProfile }) {
+export function EquipmentViewerSheet({ items, onClose, onViewProfile, context = {} }) {
   const activityItems = items.filter((item) => item.category === 'activity');
   const recordingItems = items.filter((item) => item.category !== 'activity');
-  const hasAffiliateLinks = items.some((item) => item.affiliateUrl);
+  const hasAffiliateLinks = items.some((item) => item.offers?.length > 0);
   const mainActivityId = activityItems[0]?.id;
   const mainRecordingId = recordingItems[0]?.id;
+
+  function renderOfferActions(item) {
+    const offers = item.offers ?? [];
+    if (!offers.length) return null;
+    const itemContext = { ...context, equipmentId: item.id, productId: item.productId };
+    if (offers.length === 1) {
+      return (
+        <button
+          type="button"
+          className="equipment-offer-btn"
+          onClick={(e) => { e.stopPropagation(); openOffer(offers[0], itemContext); }}
+        >
+          View product
+          <ExternalLink size={13} strokeWidth={2} />
+        </button>
+      );
+    }
+    return (
+      <div className="equipment-offers">
+        {offers.map((offer, i) => (
+          <button
+            key={i}
+            type="button"
+            className="equipment-offer-btn"
+            onClick={(e) => { e.stopPropagation(); openOffer(offer, itemContext); }}
+          >
+            {offer.merchant ?? 'Shop'}
+            {offer.country ? ` (${offer.country})` : ''}
+            <ExternalLink size={12} strokeWidth={2} />
+          </button>
+        ))}
+      </div>
+    );
+  }
 
   function renderItem(item, isMain) {
     return (
@@ -383,12 +524,7 @@ export function EquipmentViewerSheet({ items, onClose, onViewProfile }) {
         <EquipmentItemRow
           item={item}
           compact
-          actions={item.productUrl || item.affiliateUrl ? (
-            <a href={item.affiliateUrl || item.productUrl} target="_blank" rel="noreferrer" onClick={(event) => event.stopPropagation()}>
-              View product
-              <ExternalLink size={13} strokeWidth={2} />
-            </a>
-          ) : null}
+          actions={renderOfferActions(item)}
         />
       </div>
     );

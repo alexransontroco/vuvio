@@ -373,7 +373,7 @@ export default function LiveRecapPage() {
         </div>
 
         {/* ── Replay section ────────────────────────────────────── */}
-        <div className="live-recap-section" style={{ marginTop: 28 }}>
+        {replayUrl && <div className="live-recap-section" style={{ marginTop: 28 }}>
           <div className="live-recap-section-heading live-recap--mobile-only">
             <h2>Replay</h2>
             <span className="live-recap-replay-expiry">Available for 24 hours</span>
@@ -403,7 +403,7 @@ export default function LiveRecapPage() {
               <SynchronizedChat messages={chatMessages} activeTime={activeHighlight.timestamp} />
             </div>
           </div>
-        </div>
+        </div>}
 
         {/* ── Bottom section ────────────────────────────────────── */}
         <div className="live-recap-bottom-grid" style={{ marginTop: 20 }}>

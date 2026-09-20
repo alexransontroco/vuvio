@@ -140,12 +140,24 @@ function countActiveFilters(filters) {
   }, 0);
 }
 
+function prefetchManifest(url) {
+  if (!url) return;
+  try {
+    const existing = [...document.querySelectorAll('link[rel="prefetch"]')].some((l) => l.href === url);
+    if (existing) return;
+    const el = document.createElement('link');
+    el.rel = 'prefetch';
+    el.href = url;
+    document.head.appendChild(el);
+  } catch {}
+}
+
 function LiveNowCard({ stream, onOpen }) {
   const title = stream.note ?? stream.role ?? stream.name;
   const location = [stream.city, stream.country].filter(Boolean).join(', ');
 
   return (
-    <article className="ep-live-card" onClick={() => onOpen(stream.id)} role="button" tabIndex={0}>
+    <article className="ep-live-card" onClick={() => onOpen(stream.id)} onMouseEnter={() => prefetchManifest(stream.hlsManifestUrl)} role="button" tabIndex={0}>
       <div className="ep-live-card__media">
         <img
           src={stream.image ?? fallbackImage}
@@ -179,7 +191,7 @@ function NearbyCard({ stream, onOpen }) {
   const location = stream.city ?? stream.place ?? '';
 
   return (
-    <article className="ep-nearby-card" onClick={() => onOpen(stream.id)} role="button" tabIndex={0}>
+    <article className="ep-nearby-card" onClick={() => onOpen(stream.id)} onMouseEnter={() => prefetchManifest(stream.hlsManifestUrl)} role="button" tabIndex={0}>
       <div className="ep-nearby-card__media">
         <img
           src={stream.image ?? fallbackImage}

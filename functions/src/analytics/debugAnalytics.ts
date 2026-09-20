@@ -5,7 +5,7 @@ import { ApiError } from '../shared/errors.js';
 import { collections, db } from '../shared/firestore.js';
 
 function isAdminEmail(email: string | null | undefined) {
-  return email?.endsWith('@vuvio.app') || email === 'alexandre.ranson@gmail.com';
+  return email?.endsWith('@vuvio.app') || email === 'alexandre.ranson@gmail.com' || email === 'doug.benchetrit@gmail.com' || email === 'cecilia.ranson@outlook.com';
 }
 
 async function countCollection(name: string) {

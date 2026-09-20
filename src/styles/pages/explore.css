@@ -1800,21 +1800,24 @@
 
 .alp-categories {
   position: sticky;
-  top: 152px;
+  top: 100px;
   z-index: 17;
-  display: flex;
-  gap: 6px;
-  padding: 10px 0 4px;
   margin: 0 -16px;
-  padding-left: 16px;
-  padding-right: 16px;
-  overflow-x: auto;
-  scrollbar-width: none;
   background: rgba(4, 19, 31, 0.8);
   backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  flex-shrink: 0;
 }
 
-.alp-categories::-webkit-scrollbar { display: none; }
+.alp-categories__scroll {
+  display: flex;
+  gap: 6px;
+  padding: 10px 16px 4px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.alp-categories__scroll::-webkit-scrollbar { display: none; }
 
 .alp-cat-chip {
   flex: none;

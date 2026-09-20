@@ -125,7 +125,7 @@ function AdminGate({ children }) {
   const { user, authLoading } = useAuth();
   const isLocalHost = ['localhost', '127.0.0.1', '0.0.0.0'].includes(window.location.hostname);
   const isLocalDev = import.meta.env.DEV || isLocalHost;
-  const isAdmin = isLocalDev || user?.email?.endsWith('@vuvio.app') || user?.email === 'alexandre.ranson@gmail.com';
+  const isAdmin = isLocalDev || user?.email?.endsWith('@vuvio.app') || user?.email === 'alexandre.ranson@gmail.com' || user?.email === 'doug.benchetrit@gmail.com' || user?.email === 'cecilia.ranson@outlook.com';
 
   if (authLoading && !isLocalDev) return null;
   if (!user && !isLocalDev) return <Navigate to="/login" replace />;

@@ -432,7 +432,7 @@ export default function AnalyticsPage() {
       navigate('/login', { replace: true });
       return;
     }
-    const isAdmin = isLocalDev || user?.email?.endsWith('@vuvio.app') || user?.email === 'alexandre.ranson@gmail.com';
+    const isAdmin = isLocalDev || user?.email?.endsWith('@vuvio.app') || user?.email === 'alexandre.ranson@gmail.com' || user?.email === 'doug.benchetrit@gmail.com' || user?.email === 'cecilia.ranson@outlook.com';
     if (!isAdmin) {
       navigate('/watch', { replace: true });
       return;

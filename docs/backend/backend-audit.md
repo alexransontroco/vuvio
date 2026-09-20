@@ -1,18 +1,13 @@
 # Vuvio Backend Audit
 
-Date: 2026-07-29
+Date: 2026-07-29 (historical, reflects state before Cloud Functions were added)
 
-## Current Architecture
+## Architecture at Audit Time
 
-- Frontend: React + Vite single page app.
-- Firebase client SDK is initialized in `src/firebase.js`.
-- Firebase Authentication is handled in `src/context/AuthContext.jsx` and `src/services/authService.js`.
-- Firestore is used directly from the frontend for user profiles, usernames, and current live signaling.
-- Hosting is configured in `firebase.json`.
-- Firestore rules are configured in `firestore.rules`.
-- Storage rules are configured in `storage.rules`.
-- No `functions/` directory existed before this backend work.
-- No `firestore.indexes.json` existed before this backend work.
+- Frontend: React + Vite SPA. Firebase SDK in `src/firebase.js`. Auth in `src/context/AuthContext.jsx` + `src/services/authService.js`.
+- Firestore used directly from frontend for users, usernames, live signaling.
+- `firebase.json`: Firestore rules, Storage rules, Hosting only. No Cloud Functions yet.
+- No `firestore.indexes.json` existed.
 
 ## Existing Collections Observed
 

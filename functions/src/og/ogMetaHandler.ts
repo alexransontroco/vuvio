@@ -3,8 +3,8 @@ import { db, collections } from '../shared/firestore.js';
 import { cloudflareCustomerCode } from '../config/env.js';
 import type { StreamDocument } from '../types/stream.js';
 
-const APP_URL = 'https://vuvio.app';
-const DEFAULT_IMAGE = `${APP_URL}/icon-512.png`;
+const APP_URL = 'https://vuvio-bf328.web.app';
+const DEFAULT_IMAGE = 'https://storage.googleapis.com/vuvio-bf328.firebasestorage.app/mock-videos/live-mockups/mockup-dubai-thumb.jpg';
 
 function cloudflareThumbnailUrl(uid: string | null | undefined): string | null {
   if (!uid) return null;

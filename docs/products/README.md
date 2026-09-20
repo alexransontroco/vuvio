@@ -3,7 +3,7 @@
 Product catalog, product thumbnails, Icecat integration, and affiliate/product reference docs.
 
 Status: Current index  
-Last reviewed: 2026-09-05  
+Last reviewed: 2026-09-18  
 Read before coding: Yes, for product catalog, product images, Icecat, gear-product mapping, or affiliate changes.
 
 ## Current Reality

@@ -25,11 +25,12 @@ Point d'entrée unique pour naviguer dans la doc du projet.
 
 | Priorité | Tâche | Contexte |
 |----------|-------|---------|
-| 🔴 Haute | Fusionner `HomePage` + `WatchPage` en `<LiveFeed>` partagé | Code live feed dupliqué, bugs asymétriques |
-| 🔴 Haute | Décider la stratégie replay/enregistrement | RTMPS relay revert le 2026-08-20, Cloudflare WHIP n'enregistre pas automatiquement |
+| 🔴 Haute | Déployer le relay sur VPS OVH avant bêta publique | Cloud Run bloque UDP/ICE — replay impossible en prod sans VPS. Voir `docs/streaming/relay-infrastructure.md` |
 | 🟡 Moyenne | Refaire les clusters du globe | Repartir par altitude et vérifier les counts après zoom |
 | 🟡 Moyenne | Bascule `/globe` vers GlobeTest2 | MapLibre encore utilisé sur `/globe` |
 | 🟡 Moyenne | Migration gear localStorage → Firestore | Chemin Firestore préparé, migration non faite |
+| 🟡 Moyenne | Interface admin override trust score | Voir et modifier manuellement le tier d'un créateur |
+| 🟡 Moyenne | Implémentation modération vidéo (Vision API) | Architecture documentée dans `docs/moderation.md` |
 | 🟠 Basse | Extraction i18n — 350+ chaînes hardcodées | Non planifié |
 | 🟠 Basse | Tracking affilié équipement (clics/commission) | `affiliateUrl` présent, backend manquant |
 | 🟠 Basse | Messagerie Firestore | Schéma doc, non implémenté |

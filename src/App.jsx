@@ -1,4 +1,4 @@
-import { lazy, Suspense } from 'react';
+import { lazy, Suspense, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Navigate, Route, Routes, useLocation, useParams } from 'react-router-dom';
 import AppShell from './components/AppShell.jsx';
@@ -24,6 +24,7 @@ const ForgotPasswordPage  = lazy(() => import('./routes/ForgotPasswordPage.jsx')
 const HelpPage            = lazy(() => import('./routes/HelpPage.jsx'));
 const InternalStreamAdminPage = lazy(() => import('./routes/InternalStreamAdminPage.jsx'));
 const CurrentGlobePage    = lazy(() => import('./routes/CurrentGlobePage.jsx'));
+const GlobeTest2Page      = lazy(() => import('./routes/GlobeTest2Page.jsx'));
 const LoginPage           = lazy(() => import('./routes/LoginPage.jsx'));
 const LiveRecapPage       = lazy(() => import('./routes/LiveRecapPageSimple.jsx'));
 const LiveSummaryPage     = lazy(() => import('./routes/LiveSummaryPage.jsx'));
@@ -41,6 +42,7 @@ const FollowingPage       = lazy(() => import('./routes/FollowingPage.jsx'));
 const AnalyticsPage       = lazy(() => import('./routes/AnalyticsPage.jsx'));
 const AdminDocsPage       = lazy(() => import('./routes/AdminDocsPage.jsx'));
 const AdminInvestorCrmPage = lazy(() => import('./routes/AdminInvestorCrmPage.jsx'));
+const AdminMarketingPage   = lazy(() => import('./routes/AdminMarketingPage.jsx'));
 const DesktopLayout       = lazy(() => import('./components/desktop/DesktopLayout.jsx'));
 const AgentsPage          = lazy(() => import('./routes/AgentsPage.jsx'));
 
@@ -61,16 +63,23 @@ function Lazy({ component: Component }) {
   );
 }
 
+// Preload primary route chunks after app boots
+if (typeof window !== 'undefined') {
+  window.addEventListener('load', () => {
+    import('./routes/WatchPage.jsx');
+    import('./routes/CurrentGlobePage.jsx');
+  }, { once: true });
+}
+
 export default function App() {
   const { showSplash } = useAuth();
   const location = useLocation();
-
-  if (showSplash && location.pathname === '/') {
-    return <SplashScreen />;
-  }
+  const initialPath = useRef(location.pathname);
 
   return (
-    <Routes>
+    <>
+      {showSplash && initialPath.current === '/' && <SplashScreen />}
+      <Routes>
       {/* ── Public standalone ── */}
       <Route path="/vision" element={<Lazy component={VisionPage} />} />
       <Route path="/agents" element={<Lazy component={AgentsPage} />} />
@@ -80,6 +89,7 @@ export default function App() {
       <Route path="/admin" element={<Navigate to="/admin/docs" replace />} />
       <Route path="/admin/docs" element={<Lazy component={AdminDocsPage} />} />
       <Route path="/admin/investor-crm" element={<Lazy component={AdminInvestorCrmPage} />} />
+      <Route path="/admin/marketing" element={<Lazy component={AdminMarketingPage} />} />
       <Route path="/admin/analytics" element={<Lazy component={AnalyticsPage} />} />
 
       {/* ── Auth pages (redirect if already logged in) ── */}
@@ -145,8 +155,9 @@ export default function App() {
         <Route path="/watch"         element={<Lazy component={WatchPage} />} />
         <Route path="/explore"      element={<Lazy component={ExplorePage} />} />
         <Route path="/explore/live" element={<Lazy component={AllLivesPage} />} />
-        <Route path="/globe"        element={<Lazy component={CurrentGlobePage} />} />
-        <Route path="/map"          element={<Lazy component={CurrentGlobePage} />} />
+        <Route path="/globe"         element={<Lazy component={CurrentGlobePage} />} />
+        <Route path="/map"           element={<Lazy component={CurrentGlobePage} />} />
+        <Route path="/globe-test-2"  element={<Lazy component={GlobeTest2Page} />} />
         <Route path="/terms"      element={<Lazy component={TermsPage} />} />
         <Route path="/privacy"    element={<Lazy component={PrivacyPage} />} />
         <Route path="/help"       element={<Lazy component={HelpPage} />} />
@@ -239,5 +250,6 @@ export default function App() {
         <Route path="*" element={<Navigate to="/watch" replace />} />
       </Route>
     </Routes>
+    </>
   );
 }

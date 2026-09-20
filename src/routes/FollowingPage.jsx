@@ -1,33 +1,49 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { collection, getDocs, doc, getDoc } from 'firebase/firestore';
+import { doc, getDoc } from 'firebase/firestore';
 import { db } from '../firebase.js';
 import { useAuth } from '../context/AuthContext.jsx';
+import { creatorProfiles } from '../data/creatorProfiles.js';
+import { subscribeToFollowing } from '../services/followService.js';
 import '../styles/pages/following.css';
+
+const mockProfilesById = Object.values(creatorProfiles).reduce((acc, p) => {
+  if (p?.id) acc[p.id] = p;
+  return acc;
+}, {});
 
 export default function FollowingPage() {
   const navigate = useNavigate();
-  const { user, userProfile } = useAuth();
+  const { user } = useAuth();
+  const [followingIds, setFollowingIds] = useState(() => {
+    try { return JSON.parse(localStorage.getItem('vuvio:following-creators') ?? '[]'); } catch { return []; }
+  });
   const [followingUsers, setFollowingUsers] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  useEffect(() => subscribeToFollowing(setFollowingIds), []);
+
   useEffect(() => {
-    if (!userProfile?.followedCreators?.length) {
+    if (!followingIds.length) {
+      setFollowingUsers([]);
       setLoading(false);
       return;
     }
 
     const loadFollowingUsers = async () => {
+      setLoading(true);
       try {
         const users = [];
-        for (const creatorUid of userProfile.followedCreators) {
-          const docSnap = await getDoc(doc(db, 'users', creatorUid));
-          if (docSnap.exists()) {
-            users.push({
-              uid: creatorUid,
-              ...docSnap.data(),
-            });
+        for (const creatorId of followingIds) {
+          const mock = mockProfilesById[creatorId];
+          if (mock) {
+            users.push({ uid: creatorId, displayName: mock.displayName, username: mock.username, bio: mock.bio, avatarUrl: mock.avatarUrl });
+            continue;
           }
+          try {
+            const docSnap = await getDoc(doc(db, 'users', creatorId));
+            if (docSnap.exists()) users.push({ uid: creatorId, ...docSnap.data() });
+          } catch { /* skip */ }
         }
         setFollowingUsers(users);
       } catch (err) {
@@ -38,7 +54,7 @@ export default function FollowingPage() {
     };
 
     loadFollowingUsers();
-  }, [userProfile?.followedCreators]);
+  }, [followingIds]);
 
   if (!user) {
     return (
@@ -71,7 +87,9 @@ export default function FollowingPage() {
                 onClick={() => navigate(`/profile/${followingUser.uid}`)}
               >
                 <div className="following-avatar">
-                  {followingUser.displayName?.[0]?.toUpperCase() || '?'}
+                  {followingUser.avatarUrl
+                    ? <img src={followingUser.avatarUrl} alt={followingUser.displayName} />
+                    : followingUser.displayName?.[0]?.toUpperCase() || '?'}
                 </div>
                 <div className="following-info">
                   <strong>{followingUser.displayName}</strong>

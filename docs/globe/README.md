@@ -3,7 +3,7 @@
 Globe and map experiment notes.
 
 Status: Current index  
-Last reviewed: 2026-09-05  
+Last reviewed: 2026-09-18  
 Read before coding: Yes, for `/globe`, `/map`, GlobeTest2, marker, clustering, or Watch navigation changes.
 
 ## Current Reality

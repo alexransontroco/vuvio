@@ -47,7 +47,8 @@ import {
   normalizeEquipmentItem,
   subscribeToEquipment,
 } from '../services/equipmentService.js';
-import { getMyScheduledStreams, getScheduledStreams } from '../services/streamApi.ts';
+import { getMyScheduledStreams, getScheduledStreams, cancelScheduledStream } from '../services/streamApi.ts';
+import ScheduleLiveSheet from '../components/ScheduleLiveSheet.jsx';
 
 function formatCompact(value = 0) {
   if (value >= 1000) {
@@ -90,7 +91,7 @@ function toProfileUpcomingLive(raw) {
     location,
     scheduledAt: date.toLocaleDateString('en', { weekday: 'short', month: 'short', day: 'numeric' }),
     time: date.toLocaleTimeString('en', { hour: '2-digit', minute: '2-digit' }),
-    thumbnailUrl: '/icons/icon-512.png',
+    thumbnailUrl: null,
   };
 }
 
@@ -156,10 +157,13 @@ function ProfileCover({ profile, isOwnProfile, onShare, onEditCover }) {
   );
 }
 
-function ProfileIdentity({ profile, isOwnProfile, onEditAvatar }) {
+const ADMIN_UIDS = new Set(['22IcpmDqxVeBXHxy3YqdaJ0tJKj1', 'WgovGMq4dFfM6OXwYbtwY1LgHHJ2', 'KIOTxdpPdARO7gDiCCcTWsZYpgD2']);
+
+function ProfileIdentity({ profile, isOwnProfile, onEditAvatar, userId }) {
   const [expanded, setExpanded] = useState(false);
   const bioNeedsToggle = profile.bio.length > 145;
   const avatarUrl = profile.avatarUrl || '/assets/icons/icon-192.png';
+  const showAdminBadge = isOwnProfile && ADMIN_UIDS.has(userId);
 
   return (
     <section className="creator-identity" aria-label="Creator identity">
@@ -181,7 +185,22 @@ function ProfileIdentity({ profile, isOwnProfile, onEditAvatar }) {
             </span>
           ) : null}
         </h1>
-        <p className="creator-identity__username">@{profile.username}</p>
+        {showAdminBadge ? (
+          <Link to="/admin" className="profile-admin-badge" aria-label="Admin panel">
+            <svg width="13" height="13" viewBox="0 0 96 96" fill="none" aria-hidden="true">
+              <defs>
+                <linearGradient id="pb-grad" x1="16" y1="34" x2="80" y2="34" gradientUnits="userSpaceOnUse">
+                  <stop offset="0%" stopColor="#168EF5" />
+                  <stop offset="48%" stopColor="#2BD9C8" />
+                  <stop offset="100%" stopColor="#1EC8BA" />
+                </linearGradient>
+              </defs>
+              <path d="M16 34 L34 66 L48 44 L62 66 L80 34" stroke="url(#pb-grad)" strokeWidth="13" strokeLinecap="round" strokeLinejoin="round" fill="none" />
+              <circle cx="48" cy="24" r="9" fill="#3B82F6" />
+            </svg>
+            Admin
+          </Link>
+        ) : null}
         <p className="creator-identity__meta">
           {profile.profession} · {profile.city}, {profile.country}
         </p>
@@ -325,20 +344,18 @@ function FeaturedLiveCard({ profile, isOwnProfile, notified, onJoin, onNotify, o
 
   return (
     <section className={isLive ? 'featured-live is-live' : 'featured-live'} aria-label={isLive ? 'Live now' : 'Upcoming live'}>
-      <div className="featured-live__thumb">
-        <img src={displayLive.thumbnailUrl} alt="" />
+      <div className={displayLive.thumbnailUrl ? 'featured-live__thumb' : 'featured-live__thumb featured-live__thumb--empty'}>
+        {displayLive.thumbnailUrl ? <img src={displayLive.thumbnailUrl} alt="" /> : null}
         {isLive ? <span className="featured-live__live-dot" aria-hidden="true" /> : <Clock3 size={18} strokeWidth={1.8} />}
       </div>
       <div className="featured-live__content">
-        <span className="featured-live__label">{isLive ? 'LIVE NOW' : 'UPCOMING LIVE'}</span>
+        {isLive && <span className="featured-live__label">LIVE NOW</span>}
         <h2>{displayLive.title}</h2>
-        <p>{displayLive.location}</p>
-        {isLive ? <time>{formatCompact(displayLive.viewers)} viewers</time> : null}
-        {!isLive && displayLive.scheduledAt ? (
-          <time>
-            {displayLive.scheduledAt} · {displayLive.time}
-          </time>
-        ) : null}
+        <p>
+          {isLive
+            ? `${displayLive.location}${displayLive.viewers ? ` · ${formatCompact(displayLive.viewers)} viewers` : ''}`
+            : [displayLive.scheduledAt && displayLive.time ? `${displayLive.scheduledAt} · ${displayLive.time}` : null, displayLive.location].filter(Boolean).join(' · ')}
+        </p>
       </div>
       <button type="button" onClick={isLive ? (isOwnProfile ? onManage : onJoin) : isOwnProfile ? onManage : onNotify}>
         {isLive ? (isOwnProfile ? 'Manage live' : 'Join') : isOwnProfile ? 'Edit' : notified ? 'Notification on' : 'Notify me'}
@@ -500,7 +517,7 @@ function LivesTab({ profile, isOwnProfile, notified, onJoin, onNotify, onManage 
   );
 }
 
-function UpcomingLiveCard({ live, isOwnProfile, notified, onNotify, onManage }) {
+function UpcomingLiveCard({ live, isOwnProfile, notified, onNotify, onManage, onCancel }) {
   return (
     <article className="upcoming-live-card">
       {live.thumbnailUrl ? <img src={live.thumbnailUrl} alt="" /> : null}
@@ -516,8 +533,7 @@ function UpcomingLiveCard({ live, isOwnProfile, notified, onNotify, onManage }) 
         {isOwnProfile ? (
           <>
             <button type="button" onClick={onManage}>Edit</button>
-            <button type="button" onClick={onManage}>Cancel</button>
-            <button type="button" onClick={onManage}>View details</button>
+            <button type="button" className="is-danger" onClick={() => onCancel?.(live.id)}>Cancel</button>
           </>
         ) : (
           <button type="button" className={notified ? 'is-active' : ''} onClick={() => onNotify(live.id)}>
@@ -529,7 +545,7 @@ function UpcomingLiveCard({ live, isOwnProfile, notified, onNotify, onManage }) 
   );
 }
 
-function UpcomingLivesTab({ lives, isOwnProfile, notifiedIds, onNotify, onManage }) {
+function UpcomingLivesTab({ lives, isOwnProfile, notifiedIds, onNotify, onManage, onCancel }) {
   if (!lives?.length) {
     return (
       <div className="profile-empty-state">
@@ -542,7 +558,7 @@ function UpcomingLivesTab({ lives, isOwnProfile, notifiedIds, onNotify, onManage
   return (
     <section className="upcoming-live-list" aria-label="Upcoming lives">
       {lives.map((live) => (
-        <UpcomingLiveCard key={live.id} live={live} isOwnProfile={isOwnProfile} notified={!!notifiedIds[live.id]} onNotify={onNotify} onManage={onManage} />
+        <UpcomingLiveCard key={live.id} live={live} isOwnProfile={isOwnProfile} notified={!!notifiedIds[live.id]} onNotify={onNotify} onManage={onManage} onCancel={onCancel} />
       ))}
     </section>
   );
@@ -728,6 +744,8 @@ export default function ProfilePage() {
   const [equipmentLibrary, setEquipmentLibrary] = useState(() => getEquipmentLibrary());
   const [profileEquipmentEnriched, setProfileEquipmentEnriched] = useState([]);
   const [scheduledProfileLives, setScheduledProfileLives] = useState([]);
+  const [showScheduleSheet, setShowScheduleSheet] = useState(false);
+  const [scheduledRefreshKey, setScheduledRefreshKey] = useState(0);
 
   useEffect(() => {
     window.scrollTo({ top: 0, left: 0 });
@@ -903,7 +921,7 @@ export default function ProfilePage() {
       });
 
     return () => { active = false; };
-  }, [isOwnProfile, state.viewedProfile?.id]);
+  }, [isOwnProfile, state.viewedProfile?.id, scheduledRefreshKey]);
 
   const notifyLive = (id) => {
     if (!id) return;
@@ -983,7 +1001,17 @@ export default function ProfilePage() {
     ? getEquipmentSelection(profileEquipment, liveEquipmentIds)
     : [];
   const shareProfile = () => showToast('Profile link copied');
-  const manageLive = () => showToast('Live management coming soon');
+  const manageLive = () => setShowScheduleSheet(true);
+
+  const handleCancelLive = async (liveId) => {
+    try {
+      await cancelScheduledStream(liveId);
+      setScheduledRefreshKey((k) => k + 1);
+      showToast('Live cancelled');
+    } catch {
+      showToast('Could not cancel live');
+    }
+  };
 
   return (
     <section className="screen-scroll creator-profile-screen" aria-label={`Profile of ${profile.displayName}`}>
@@ -999,6 +1027,7 @@ export default function ProfilePage() {
           profile={profile}
           isOwnProfile={isOwnProfile}
           onEditAvatar={() => setImageSheet({ type: 'avatar', previewUrl: '', error: '' })}
+          userId={user?.uid}
         />
 
         <ProfileActions
@@ -1052,7 +1081,7 @@ export default function ProfilePage() {
             <>
               <AboutTab profile={profile} />
               <PlaylistsSection playlists={profile.playlists} />
-              <UpcomingLivesTab lives={profile.upcomingLives} isOwnProfile={isOwnProfile} notifiedIds={notifiedIds} onNotify={notifyLive} onManage={manageLive} />
+              <UpcomingLivesTab lives={profile.upcomingLives} isOwnProfile={isOwnProfile} notifiedIds={notifiedIds} onNotify={notifyLive} onManage={manageLive} onCancel={handleCancelLive} />
             </>
           ) : null}
           {activeTab === 'equipment' ? (
@@ -1075,6 +1104,12 @@ export default function ProfilePage() {
         {isOwnProfile ? <OwnProfileShortcuts /> : null}
       </div>
 
+      {showScheduleSheet ? (
+        <ScheduleLiveSheet
+          onClose={() => setShowScheduleSheet(false)}
+          onScheduled={() => setScheduledRefreshKey((k) => k + 1)}
+        />
+      ) : null}
       {toast ? <div className="profile-toast" role="status">{toast}</div> : null}
       {imageSheet ? (
         <ProfileImageSheet

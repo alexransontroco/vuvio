@@ -191,19 +191,11 @@ export default function SettingsPage() {
                 />
                 <button
                   type="button"
-                  className={`theme-swatch${theme === 'ink-blue' ? ' is-active' : ''}`}
-                  style={{ background: '#164960' }}
-                  onClick={() => setTheme('ink-blue')}
-                  aria-label="Ink Blue theme"
-                  title="Ink Blue"
-                />
-                <button
-                  type="button"
-                  className={`theme-swatch${theme === 'vuvio-blue' ? ' is-active' : ''}`}
-                  style={{ background: '#1879B5' }}
-                  onClick={() => setTheme('vuvio-blue')}
-                  aria-label="Vuvio Blue theme"
-                  title="Vuvio Blue"
+                  className={`theme-swatch${theme === 'midnight-sky' ? ' is-active' : ''}`}
+                  style={{ background: 'linear-gradient(135deg, #0A1E3A 0%, #123F63 100%)' }}
+                  onClick={() => setTheme('midnight-sky')}
+                  aria-label="Midnight Sky theme"
+                  title="Midnight Sky"
                 />
               </div>
             </div>

@@ -29,9 +29,17 @@ function nowIso() {
   return new Date().toISOString();
 }
 
+function buildOffers(item) {
+  if (Array.isArray(item.offers) && item.offers.length > 0) return item.offers;
+  const url = item.affiliateUrl ?? item.productUrl;
+  if (!url) return [];
+  return [{ merchant: item.merchant ?? null, affiliateUrl: url, country: item.offerCountry ?? null }];
+}
+
 function normalizeLegacyEquipment(item) {
   if (!item) return null;
   const productId = item.productId || EQUIPMENT_PRODUCT_ID_MAP[item.id] || item.id;
+  const offers = buildOffers(item);
   if (item.brand && item.model && item.category && EQUIPMENT_CATEGORIES.some((category) => category.id === item.category)) {
     return {
       userId: 'current-user',
@@ -48,6 +56,7 @@ function normalizeLegacyEquipment(item) {
       updatedAt: nowIso(),
       ...item,
       productId,
+      offers,
     };
   }
 
@@ -153,7 +162,7 @@ export function resetEquipmentService() {
 
 // ── Core CRUD ─────────────────────────────────────────────────────────────────
 
-export function getEquipmentLibrary(seedItems = []) {
+export function getEquipmentLibrary(seedItems = demoEquipmentItems) {
   const win = safeWindow();
   if (!win) return seedItems.map(normalizeEquipmentItem).filter(Boolean);
 

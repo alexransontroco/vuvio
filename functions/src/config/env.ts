@@ -13,6 +13,11 @@ export const icecatUsername = defineSecret('ICECAT_USERNAME');
 // ICECAT_PASSWORD is the account password used for Basic Auth.
 // Falls back to ICECAT_API_KEY for backward compatibility.
 export const icecatPassword = defineSecret('ICECAT_PASSWORD');
+export const amazonPaAccessKey = defineSecret('AMAZON_PA_ACCESS_KEY');
+export const amazonPaSecretKey = defineSecret('AMAZON_PA_SECRET_KEY');
+export const amazonAssociateTagFr = defineSecret('AMAZON_ASSOCIATE_TAG_FR');
+export const awinApiKey = defineSecret('AMAZON_AWIN_API_KEY');
+export const awinPublisherId = defineSecret('AWIN_PUBLISHER_ID');
 export const icecatLanguage = process.env.ICECAT_LANGUAGE || 'en';
 export const icecatMarket = process.env.ICECAT_MARKET || 'GB';
 
@@ -48,5 +53,15 @@ export function getOpenAIEnv() {
     apiKey: openaiApiKey.value() || process.env.OPENAI_API_KEY || '',
     transcriptionModel: process.env.OPENAI_TRANSCRIPTION_MODEL || 'whisper-1',
     analysisModel: process.env.OPENAI_ANALYSIS_MODEL || 'gpt-4o-mini',
+  };
+}
+
+export function getAffiliateEnv() {
+  return {
+    amazonAccessKey: sv(amazonPaAccessKey, 'AMAZON_PA_ACCESS_KEY'),
+    amazonSecretKey: sv(amazonPaSecretKey, 'AMAZON_PA_SECRET_KEY'),
+    amazonAssociateTagFr: sv(amazonAssociateTagFr, 'AMAZON_ASSOCIATE_TAG_FR'),
+    awinApiKey: sv(awinApiKey, 'AMAZON_AWIN_API_KEY'),
+    awinPublisherId: sv(awinPublisherId, 'AWIN_PUBLISHER_ID'),
   };
 }

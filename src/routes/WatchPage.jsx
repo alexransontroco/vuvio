@@ -64,6 +64,10 @@ const demoVideoLiveIds = [
   'hailey-equestrian-tryon',
   'mrt-burgerbar-manchester',
   'muaythai-training-phuket',
+  'f16-pilot-miami',
+  'gopro-climbing-wall',
+  'fallow-head-chef-london',
+  'wingsuit-taschhorn',
 ];
 const CLOCK_TICK_MS = 1000;
 const COVER_CAPTURE_DELAY_MS = 2000;
@@ -1548,10 +1552,10 @@ function CreatorLiveSession({ live, onEndingChange }) {
   }, [live?.id]);
 
   useEffect(() => {
-    if (phase !== 'live' || !recordingActive) return undefined;
+    if (!recordingActive) return undefined;
     const timer = window.setInterval(() => setElapsed((value) => value + 1), 1000);
     return () => window.clearInterval(timer);
-  }, [phase, recordingActive]);
+  }, [recordingActive]);
 
   useEffect(() => {
     if (phase !== 'live') return undefined;
@@ -1972,6 +1976,7 @@ function LiveViewer({ liveId, creatorMode = false }) {
   const [watchRetry, setWatchRetry] = useState(0);
   const [hlsFailure, setHlsFailure] = useState(null);
   const [broadcastEnded, setBroadcastEnded] = useState(false);
+  const [remoteVideoEl, setRemoteVideoEl] = useState(null);
   const localVideoRef = useRef(null);
   const remoteVideoRef = useRef(null);
   const videoPlaybackRef = useRef(null);
@@ -2043,6 +2048,8 @@ function LiveViewer({ liveId, creatorMode = false }) {
     const requestedIndex = liveFeed.findIndex((item) => item.id === liveId);
     return requestedIndex >= 0 ? requestedIndex : 0;
   });
+  const [isCurrentVideoReady, setIsCurrentVideoReady] = useState(false);
+  const videoReadySetRef = useRef(new Set());
   const [dragY, setDragY] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
   const [liked, setLiked] = useState({});
@@ -2140,6 +2147,12 @@ function LiveViewer({ liveId, creatorMode = false }) {
     }
   }, [liveFeed, liveId]);
 
+  useEffect(() => {
+    const item = liveFeed[index];
+    if (item?.kind !== 'video') return;
+    setIsCurrentVideoReady(videoReadySetRef.current.has(item.id));
+  }, [index, liveFeed]);
+
   useEffect(() => subscribeToCreatedLives(setCreatedLives), []);
 
   // WebRTC streaming for broadcaster
@@ -2204,10 +2217,28 @@ function LiveViewer({ liveId, creatorMode = false }) {
     };
   }, [creatorMode, activeLiveId, live.creatorUid]);
 
+  // Prefetch HLS manifests for adjacent feed items so swiping feels instant.
+  useEffect(() => {
+    if (creatorMode) return;
+    const prefetch = (url) => {
+      if (!url) return;
+      const existing = [...document.querySelectorAll('link[rel="prefetch"]')].some((l) => l.href === url);
+      if (existing) return;
+      const el = document.createElement('link');
+      el.rel = 'prefetch';
+      el.href = url;
+      document.head.appendChild(el);
+    };
+    [-1, 1, 2].forEach((offset) => {
+      const item = liveFeed[index + offset];
+      if (item?.hlsManifestUrl) prefetch(item.hlsManifestUrl);
+    });
+  }, [index, liveFeed, creatorMode]);
+
   // Viewer connection. Priority: HLS (Cloudflare) → P2P WebRTC.
   useEffect(() => {
-    if (creatorMode || !activeLiveId || !remoteVideoRef.current) return;
-    const video = remoteVideoRef.current;
+    if (creatorMode || !activeLiveId || !remoteVideoEl) return;
+    const video = remoteVideoEl;
 
     // Ended lives: prefer replayUrl (VOD, permanent). If none, replay isn't ready — show ended UI.
     const isEnded = live.status === 'ended' || Boolean(live.liveEndedAt);
@@ -2240,7 +2271,12 @@ function LiveViewer({ liveId, creatorMode = false }) {
         hls = null;
 
         if (Hls.isSupported()) {
-          hls = new Hls({ lowLatencyMode: !isEnded });
+          hls = new Hls({
+            lowLatencyMode: !isEnded,
+            startFragPrefetch: true,
+            maxBufferLength: isEnded ? 30 : 8,
+            liveSyncDurationCount: 2,
+          });
           hls.loadSource(hlsSource);
           hls.attachMedia(video);
           hls.on(Hls.Events.MANIFEST_PARSED, () => {
@@ -2361,7 +2397,7 @@ function LiveViewer({ liveId, creatorMode = false }) {
       viewerSession?.close?.();
       closePeer();
     };
-  }, [creatorMode, activeLiveId, user?.uid, live.hlsManifestUrl, live.replayUrl, live.status, live.cloudflareLiveInputId, hlsFailure]);
+  }, [creatorMode, activeLiveId, user?.uid, live.hlsManifestUrl, live.replayUrl, live.status, live.cloudflareLiveInputId, hlsFailure, remoteVideoEl]);
 
 
 
@@ -2768,21 +2804,33 @@ function LiveViewer({ liveId, creatorMode = false }) {
               {item.kind === 'camera' && creatorMode ? (
                 <CameraLiveMedia live={item} isActive={isActive} isDragging={isDragging} dragY={dragY} />
               ) : item.kind === 'video' ? (
-                <video
-                  ref={isActive ? (el) => {
-                    videoPlaybackRef.current = el;
-                    videoRefCallback(el);
-                  } : null}
-                  className="live-slide__media live-slide__media--video"
-                  src={isActive ? item.video : undefined}
-                  poster={item.image}
-                  muted={true}
-                  loop
-                  playsInline
-                  autoPlay={isActive}
-                  preload={isActive ? 'auto' : 'metadata'}
-                  style={isActive && isDragging ? { transform: `scale(1.03) translateY(${dragY * 0.1}px)` } : undefined}
-                />
+                <>
+                  {!isActive && item.image
+                    ? <>
+                        <img className="live-slide__media live-slide__media--pov" src={item.image} aria-hidden="true" draggable="false" />
+                        {Math.abs(itemIndex - index) === 1 && item.video && (
+                          <video key={`preload-${item.id}`} src={item.video} preload="auto" muted playsInline style={{ display: 'none' }} />
+                        )}
+                      </>
+                    : <>
+                        <video
+                          ref={isActive ? (el) => { videoPlaybackRef.current = el; videoRefCallback(el); } : null}
+                          className="live-slide__media live-slide__media--video"
+                          src={item.video}
+                          muted={true}
+                          loop
+                          playsInline
+                          autoPlay={isActive}
+                          preload="auto"
+                          onCanPlay={isActive ? () => {
+                            videoReadySetRef.current.add(item.id);
+                            setIsCurrentVideoReady(true);
+                          } : undefined}
+                          style={isActive && isDragging ? { transform: `scale(1.03) translateY(${dragY * 0.1}px)` } : undefined}
+                        />
+                      </>
+                  }
+                </>
               ) : (
                 <>
                   {creatorMode && isActive ? (
@@ -2797,11 +2845,12 @@ function LiveViewer({ liveId, creatorMode = false }) {
                   ) : !creatorMode && isActive && !broadcastEnded && (item.creatorUid || item.createdLocally) ? (
                     <>
                       <div className="live-slide__poster" aria-hidden="true">
-                        <img src="/assets/logo/vuvio-logo.png" alt="" />
+                        <img src="/assets/logo/vuvio-logo-dark.png" alt="" />
                       </div>
                       <video
                         ref={(el) => {
                           remoteVideoRef.current = el;
+                          setRemoteVideoEl(el);
                           if (el) attemptVideoPlayback(el);
                         }}
                         className="live-slide__media live-slide__media--pov"
@@ -2873,9 +2922,7 @@ function LiveViewer({ liveId, creatorMode = false }) {
         <BrandMark size={26} showName />
       </div>
 
-      <div className="live-position-pill" aria-label={`Live ${index + 1} of ${liveFeed.length}`}>
-        {index + 1} / {liveFeed.length}
-      </div>
+
 
       {!broadcastEnded && (
         <div className="live-feed__status">
@@ -3079,6 +3126,7 @@ function LiveViewer({ liveId, creatorMode = false }) {
           items={liveEquipment}
           onClose={() => setEquipmentSheetOpen(false)}
           onViewProfile={() => navigate(`/profile/${creatorProfileIdForLive(live)}?tab=equipment`)}
+          context={{ liveId: live.id, streamerId: live.creatorUid ?? live.creatorId ?? null, viewerId: user?.uid ?? null }}
         />
       ) : null}
     </section>
