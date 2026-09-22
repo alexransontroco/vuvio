@@ -339,7 +339,13 @@ export default function GlobeTest2() {
         return activity?.subcategories.includes(s.subcategory);
       });
     });
-    return buildClusteredStreams(filtered, expandedClusterId);
+    const result = buildClusteredStreams(filtered, expandedClusterId);
+    // Clear expandedClusterId if the cluster no longer exists after data refresh
+    if (expandedClusterId) {
+      const stillExists = result.some((s) => s.type === 'cluster' && s.clusterId === expandedClusterId);
+      if (!stillExists) setExpandedClusterId(null);
+    }
+    return result;
   }, [allLiveStreams, activeFamily, activeActivities, expandedClusterId]);
 
   const streamCounts = useMemo(() => {

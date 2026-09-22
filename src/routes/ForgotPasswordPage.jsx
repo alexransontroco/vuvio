@@ -1,10 +1,12 @@
 import { CheckCircle, Mail } from 'lucide-react';
 import { useState } from 'react';
+import { Trans, useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 import BrandMark from '../components/BrandMark.jsx';
 import { useAuth } from '../context/AuthContext.jsx';
 
 export default function ForgotPasswordPage() {
+  const { t } = useTranslation();
   const { sendReset } = useAuth();
   const [email,      setEmail]      = useState('');
   const [submitting, setSubmitting] = useState(false);
@@ -13,7 +15,7 @@ export default function ForgotPasswordPage() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (submitting || !email.trim()) return;
+    if (submitting || !email.trim()) { setError(t('auth.forgot.emailRequired')); return; }
     setError('');
     setSubmitting(true);
     const result = await sendReset(email.trim());
@@ -21,14 +23,14 @@ export default function ForgotPasswordPage() {
     if (result.success) {
       setSent(true);
     } else {
-      setSent(true);
+      setError(result.error || t('auth.forgot.genericError'));
     }
   };
 
   return (
     <div className="auth-screen">
       <div className="auth-panel">
-        <Link to="/home" className="auth-brand" aria-label="Vuvio home">
+        <Link to="/home" className="auth-brand" aria-label={t('auth.forgot.brandAria')}>
           <BrandMark size={34} showName />
         </Link>
 
@@ -38,33 +40,37 @@ export default function ForgotPasswordPage() {
               <div className="auth-success__icon">
                 <CheckCircle size={26} strokeWidth={1.8} />
               </div>
-              <h1 className="auth-success__title">Check your email</h1>
+              <h1 className="auth-success__title">{t('auth.forgot.checkEmailTitle')}</h1>
               <p className="auth-success__body">
-                If an account exists for <strong>{email}</strong>, a password reset link has been sent.
+                <Trans
+                  i18nKey="auth.forgot.checkEmailBody"
+                  values={{ email }}
+                  components={{ strong: <strong /> }}
+                />
               </p>
               <Link to="/login" className="auth-submit" style={{ textDecoration: 'none', marginTop: 8 }}>
-                Back to login
+                {t('auth.forgot.backToLogin')}
               </Link>
             </div>
           ) : (
             <>
-              <h1 className="auth-card__title">Reset password</h1>
+              <h1 className="auth-card__title">{t('auth.forgot.title')}</h1>
               <p className="auth-card__subtitle">
-                Enter your email and we'll send you a link to reset your password.
+                {t('auth.forgot.subtitle')}
               </p>
 
               {error ? <p className="auth-error" role="alert">{error}</p> : null}
 
               <form className="auth-form" onSubmit={handleSubmit} noValidate>
                 <div className="auth-field">
-                  <label className="auth-field__label" htmlFor="forgot-email">Email</label>
+                  <label className="auth-field__label" htmlFor="forgot-email">{t('auth.forgot.emailLabel')}</label>
                   <div className="auth-field__control">
                     <input
                       id="forgot-email"
                       className="auth-field__input"
                       type="email"
                       autoComplete="email"
-                      placeholder="you@example.com"
+                      placeholder={t('auth.forgot.emailPlaceholder')}
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       required
@@ -75,8 +81,8 @@ export default function ForgotPasswordPage() {
 
                 <button type="submit" className="auth-submit" disabled={submitting || !email}>
                   {submitting
-                    ? <><span className="auth-submit__spinner" aria-hidden="true" /> Sending…</>
-                    : <><Mail size={17} strokeWidth={2} aria-hidden="true" /> Send reset link</>
+                    ? <><span className="auth-submit__spinner" aria-hidden="true" /> {t('auth.forgot.sending')}</>
+                    : <><Mail size={17} strokeWidth={2} aria-hidden="true" /> {t('auth.forgot.sendResetLink')}</>
                   }
                 </button>
               </form>
@@ -85,7 +91,7 @@ export default function ForgotPasswordPage() {
         </div>
 
         <p className="auth-footer">
-          <Link to="/login">Back to login</Link>
+          <Link to="/login">{t('auth.forgot.backToLogin')}</Link>
         </p>
       </div>
     </div>

@@ -1,5 +1,6 @@
 import { Eye, EyeOff, UserPlus } from 'lucide-react';
 import { useState } from 'react';
+import { Trans, useTranslation } from 'react-i18next';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import BrandMark from '../components/BrandMark.jsx';
 import { useAuth } from '../context/AuthContext.jsx';
@@ -16,16 +17,18 @@ function GoogleIcon() {
 }
 
 function PasswordStrength({ password }) {
+  const { t } = useTranslation();
   if (!password) return null;
   const ok = password.length >= 8;
   return (
     <span className={`auth-field__hint${ok ? '' : ' auth-field__error'}`}>
-      {ok ? '✓ At least 8 characters' : 'At least 8 characters required'}
+      {ok ? t('auth.signup.passwordOk') : t('auth.signup.passwordRequired')}
     </span>
   );
 }
 
 export default function SignupPage() {
+  const { t } = useTranslation();
   const navigate  = useNavigate();
   const location  = useLocation();
   const { signUp, signInWithGoogle } = useAuth();
@@ -44,10 +47,10 @@ export default function SignupPage() {
 
   const validate = () => {
     const errs = {};
-    if (!displayName.trim()) errs.displayName = 'Display name is required.';
-    if (!email.trim())        errs.email       = 'Email is required.';
-    if (password.length < 8)  errs.password    = 'At least 8 characters required.';
-    if (password !== confirmPw) errs.confirmPw = 'Passwords do not match.';
+    if (!displayName.trim()) errs.displayName = t('auth.signup.errors.displayNameRequired');
+    if (!email.trim())        errs.email       = t('auth.signup.errors.emailRequired');
+    if (password.length < 8)  errs.password    = t('auth.signup.errors.passwordLength');
+    if (password !== confirmPw) errs.confirmPw = t('auth.signup.errors.passwordMismatch');
     return errs;
   };
 
@@ -77,12 +80,13 @@ export default function SignupPage() {
       // For mobile redirect flow, result is null and redirect happens
       if (result === null) {
         console.log('[SignupPage] Redirect initiated, awaiting Google...');
+        // Don't reset googleBusy — redirect is in progress
         return;
       }
       // For desktop popup flow, result is user object
       if (result?.uid) {
         console.log('[SignupPage] Google Sign-In successful');
-        navigate('/profile', { replace: true });
+        navigate(returnTo || '/watch', { replace: true });
       }
     } catch (err) {
       const message = await new Promise((resolve) => {
@@ -94,6 +98,7 @@ export default function SignupPage() {
       if (message) {
         setError(message);
       }
+    } finally {
       setGoogleBusy(false);
     }
   };
@@ -103,26 +108,26 @@ export default function SignupPage() {
   return (
     <div className="auth-screen">
       <div className="auth-panel">
-        <Link to="/watch" className="auth-brand" aria-label="Vuvio home">
+        <Link to="/watch" className="auth-brand" aria-label={t('auth.signup.brandAria')}>
           <BrandMark size={34} showName />
         </Link>
 
         <div className="auth-card">
-          <h1 className="auth-card__title">Create account</h1>
-          <p className="auth-card__subtitle">Join Vuvio and explore live perspectives.</p>
+          <h1 className="auth-card__title">{t('auth.signup.title')}</h1>
+          <p className="auth-card__subtitle">{t('auth.signup.subtitle')}</p>
 
           {error ? <p className="auth-error" role="alert">{error}</p> : null}
 
           <form className="auth-form" onSubmit={handleSubmit} noValidate>
             <div className="auth-field">
-              <label className="auth-field__label" htmlFor="signup-name">Display name</label>
+              <label className="auth-field__label" htmlFor="signup-name">{t('auth.signup.displayNameLabel')}</label>
               <div className="auth-field__control">
                 <input
                   id="signup-name"
                   className={`auth-field__input${fieldErrors.displayName ? ' has-error' : ''}`}
                   type="text"
                   autoComplete="name"
-                  placeholder="Your name"
+                  placeholder={t('auth.signup.displayNamePlaceholder')}
                   value={displayName}
                   onChange={(e) => setDisplayName(e.target.value)}
                   disabled={busy}
@@ -132,14 +137,14 @@ export default function SignupPage() {
             </div>
 
             <div className="auth-field">
-              <label className="auth-field__label" htmlFor="signup-email">Email</label>
+              <label className="auth-field__label" htmlFor="signup-email">{t('auth.signup.emailLabel')}</label>
               <div className="auth-field__control">
                 <input
                   id="signup-email"
                   className={`auth-field__input${fieldErrors.email ? ' has-error' : ''}`}
                   type="email"
                   autoComplete="email"
-                  placeholder="you@example.com"
+                  placeholder={t('auth.signup.emailPlaceholder')}
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   disabled={busy}
@@ -149,7 +154,7 @@ export default function SignupPage() {
             </div>
 
             <div className="auth-field">
-              <label className="auth-field__label" htmlFor="signup-password">Password</label>
+              <label className="auth-field__label" htmlFor="signup-password">{t('auth.signup.passwordLabel')}</label>
               <div className="auth-field__control">
                 <input
                   id="signup-password"
@@ -165,7 +170,7 @@ export default function SignupPage() {
                   type="button"
                   className="auth-field__toggle"
                   onClick={() => setShowPw((v) => !v)}
-                  aria-label={showPw ? 'Hide password' : 'Show password'}
+                  aria-label={showPw ? t('auth.signup.hidePassword') : t('auth.signup.showPassword')}
                   tabIndex={-1}
                 >
                   {showPw ? <EyeOff size={17} strokeWidth={1.8} /> : <Eye size={17} strokeWidth={1.8} />}
@@ -176,7 +181,7 @@ export default function SignupPage() {
             </div>
 
             <div className="auth-field">
-              <label className="auth-field__label" htmlFor="signup-confirm">Confirm password</label>
+              <label className="auth-field__label" htmlFor="signup-confirm">{t('auth.signup.confirmPasswordLabel')}</label>
               <div className="auth-field__control">
                 <input
                   id="signup-confirm"
@@ -192,7 +197,7 @@ export default function SignupPage() {
                   type="button"
                   className="auth-field__toggle"
                   onClick={() => setShowConfirm((v) => !v)}
-                  aria-label={showConfirm ? 'Hide password' : 'Show password'}
+                  aria-label={showConfirm ? t('auth.signup.hidePassword') : t('auth.signup.showPassword')}
                   tabIndex={-1}
                 >
                   {showConfirm ? <EyeOff size={17} strokeWidth={1.8} /> : <Eye size={17} strokeWidth={1.8} />}
@@ -207,30 +212,34 @@ export default function SignupPage() {
               disabled={busy || !email || !password || !displayName}
             >
               {submitting ? <span className="auth-submit__spinner" aria-hidden="true" /> : <UserPlus size={17} strokeWidth={2} aria-hidden="true" />}
-              {submitting ? 'Creating account…' : 'Create account'}
+              {submitting ? t('auth.signup.submitting') : t('auth.signup.submit')}
             </button>
 
-            <div className="auth-divider">or</div>
+            <div className="auth-divider">{t('auth.signup.or')}</div>
 
             <button type="button" className="auth-google" onClick={handleGoogle} disabled={busy}>
               {googleBusy
                 ? <span className="auth-submit__spinner" aria-hidden="true" />
                 : <GoogleIcon />
               }
-              Continue with Google
+              {t('auth.signup.continueWithGoogle')}
             </button>
 
             <p className="auth-legal">
-              By creating an account, you agree to Vuvio's{' '}
-              <Link to="/terms">Terms</Link> and{' '}
-              <Link to="/privacy">Privacy Policy</Link>.
+              <Trans
+                i18nKey="auth.signup.legal"
+                components={{
+                  terms: <Link to="/terms" />,
+                  privacy: <Link to="/privacy" />,
+                }}
+              />
             </p>
           </form>
         </div>
 
         <p className="auth-footer">
-          Already have an account?{' '}
-          <Link to="/login" state={{ returnTo }}>Log in</Link>
+          {t('auth.signup.haveAccount')}{' '}
+          <Link to="/login" state={{ returnTo }}>{t('auth.signup.logIn')}</Link>
         </p>
       </div>
     </div>

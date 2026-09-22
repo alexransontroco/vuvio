@@ -42,8 +42,15 @@ export default function LivePage() {
 
   const live = createdLives.find((l) => l.id === liveId);
 
-  // Show nothing while loading or if not authorized
-  if (!loaded || !live || live.creatorUid !== user?.uid || (live.status !== 'live' && endingLiveId !== liveId)) {
+  // Show spinner while loading, nothing (redirect pending) once loaded but unauthorized
+  if (!loaded) {
+    return (
+      <div style={{ position: 'fixed', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#000' }}>
+        <span className="auth-submit__spinner" aria-label="Loading…" style={{ width: 28, height: 28 }} />
+      </div>
+    );
+  }
+  if (!live || live.creatorUid !== user?.uid || (live.status !== 'live' && endingLiveId !== liveId)) {
     return null;
   }
 

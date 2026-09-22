@@ -2883,7 +2883,13 @@ function LiveViewer({ liveId, creatorMode = false }) {
                       {!remoteStream ? (
                         <div className="live-slide__connecting">
                           <i aria-hidden="true" />
-                          <span>{watchRetry > 0 ? 'Reconnecting live' : 'Connecting live'}</span>
+                          <span>
+                            {watchStatus === 'fallback'
+                              ? 'Switching to direct connection…'
+                              : watchRetry > 0
+                                ? 'Reconnecting live'
+                                : 'Connecting live'}
+                          </span>
                           {import.meta.env.DEV && watchStatus ? <small>{watchStatus}</small> : null}
                         </div>
                       ) : null}

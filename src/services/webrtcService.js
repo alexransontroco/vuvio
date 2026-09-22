@@ -281,7 +281,7 @@ async function startRtmpRelayIngest(relayUrl, liveInputId, ingestUrl, streamKey,
 
   // Lock video resolution once ICE is connected — encodings are only active at that point
   const connectionPromise = new Promise((resolve, reject) => {
-    const timeout = setTimeout(() => reject(new Error('Relay ICE connection timeout')), 15000);
+    const timeout = setTimeout(() => reject(new Error('Relay ICE connection timeout')), 8000);
     pc.onconnectionstatechange = () => {
     console.log('[relay] WebRTC state:', pc.connectionState);
     if (pc.connectionState === 'connected') {
@@ -392,10 +392,23 @@ export async function startBroadcast(liveId, userId, existingStream = null, whip
     } else {
       // Get camera stream
       console.log('[webrtcService] Requesting camera stream...');
-      localStream = await navigator.mediaDevices.getUserMedia({
-        video: { width: 1280, height: 720 },
-        audio: true,
-      });
+      try {
+        localStream = await navigator.mediaDevices.getUserMedia({
+          video: { width: 1280, height: 720 },
+          audio: true,
+        });
+      } catch (mediaErr) {
+        if (mediaErr.name === 'NotAllowedError' || mediaErr.name === 'PermissionDeniedError') {
+          throw new Error('Camera or microphone permission was denied. Please allow access in your browser settings and try again.');
+        }
+        if (mediaErr.name === 'NotFoundError' || mediaErr.name === 'DevicesNotFoundError') {
+          throw new Error('No camera or microphone found. Please connect a device and try again.');
+        }
+        if (mediaErr.name === 'NotReadableError' || mediaErr.name === 'TrackStartError') {
+          throw new Error('Camera or microphone is already in use by another app. Please close it and try again.');
+        }
+        throw mediaErr;
+      }
       console.log('[webrtcService] Camera stream acquired');
     }
 
