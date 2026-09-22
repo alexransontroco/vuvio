@@ -24,49 +24,15 @@ Point d'entrée unique pour naviguer dans la doc du projet.
 
 ---
 
-## Agents IA disponibles
+## Agents IA
 
-Fichiers dans `.claude/agents/` — invocables dans n'importe quelle conversation Claude Code.
+→ [`docs/agents.md`](./docs/agents.md) — Documentation complète des agents, exemples d'utilisation, flows couverts, historique des audits.
 
-### Comment utiliser un agent
-
-```
-use vuvio-qa
-use vuvio-product
-use vuvio-launch
-```
-
-Ou plus directement : "run a QA audit on the Watch flow" / "evaluate this feature idea: [description]"
-
-### vuvio-qa — Agent QA
-
-**Rôle** : Auditer le code, trouver des bugs, produire des rapports priorisés.
-**Ne fait jamais** : modifier le code, déployer, toucher la prod sans autorisation explicite.
-
-Exemples d'utilisation :
-- Après une session de dev : "run a QA audit on the changes I just made"
-- Avant un déploiement : "check for regressions in Watch and Globe"
-- Sur un flow spécifique : "audit the auth flow for mobile Safari issues"
-
-Format de rapport : sévérité BLOCKING / MAJOR / MINOR, code evidence vs analyse statique, correction proposée.
-
-### vuvio-product — Agent Product Manager
-
-**Rôle** : Évaluer les nouvelles idées, garder le focus MVP, éviter la dispersion.
-**Répond à** : "est-ce que cette feature est dans le scope du lancement ?" / "on a déjà quelque chose pour ça ?"
-
-Exemples :
-- "vuvio-product: évalue l'idée d'ajouter un système de dons en live"
-- "vuvio-product: est-ce que les stories post-live sont pour le MVP ?"
-
-### vuvio-launch — Agent Launch & Growth
-
-**Rôle** : Préparer le lancement public — identifier des créateurs, rédiger des messages d'approche, organiser les actions.
-**Ne fait jamais** : envoyer de messages ou contacter des gens automatiquement.
-
-Exemples :
-- "vuvio-launch: trouve 10 créateurs potentiels dans le sport extrême"
-- "vuvio-launch: propose une séquence de lancement sur 4 semaines"
+| Agent | Rôle | Lancer avec |
+|-------|------|-------------|
+| `vuvio-qa` | Audit code, bug reports, régressions | `"run a QA audit on [feature]"` |
+| `vuvio-product` | Évaluation features, scope MVP | `"vuvio-product: évalue l'idée de [X]"` |
+| `vuvio-launch` | Créateurs, outreach, séquence lancement | `"vuvio-launch: trouve des créateurs [X]"` |
 
 ---
 
