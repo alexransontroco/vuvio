@@ -32,7 +32,7 @@ import { processHighlights } from './highlights/processHighlights.js';
 import { createUploadUrl } from './streams/createUploadUrl.js';
 import { listScheduledStreams } from './streams/listScheduledStreams.js';
 import { activateScheduledStream } from './streams/activateScheduledStream.js';
-import { ogMetaHandler } from './og/ogMetaHandler.js';
+import { ogImageHandler, ogMetaHandler } from './og/ogMetaHandler.js';
 import { getReplayStatus } from './streams/getReplayStatus.js';
 import { processVideoAnalysisJob } from './videoProcessing/processVideoAnalysisJob.js';
 import { remindScheduledStreams } from './streams/remindScheduledStreams.js';
@@ -60,6 +60,10 @@ export const api = onRequest({
     try {
         const parts = pathParts(req.path);
         // Open Graph share preview routes
+        if (req.method === 'GET' && parts[0] === 'share' && parts[1] === 'live' && parts[3] === 'recap' && parts[4] === 'image')
+            return await ogImageHandler(req, res, parts[2], true);
+        if (req.method === 'GET' && parts[0] === 'share' && parts[1] === 'live' && parts[3] === 'image')
+            return await ogImageHandler(req, res, parts[2]);
         if (req.method === 'GET' && parts[0] === 'share' && parts[1] === 'live' && parts[3] === 'recap')
             return await ogMetaHandler(req, res, parts[2], true);
         if (req.method === 'GET' && parts[0] === 'share' && parts[1] === 'live' && parts[2])

@@ -1,3 +1,6 @@
+Status: Current
+Read before coding: Check open tasks and current project decisions before changing docs, admin, globe, or streaming behavior.
+
 # Admin — Vuvio
 
 Point d'entrée unique pour naviguer dans la doc du projet.
@@ -27,13 +30,13 @@ Point d'entrée unique pour naviguer dans la doc du projet.
 |----------|-------|---------|
 | 🔴 Haute | Déployer le relay sur VPS OVH avant bêta publique | Cloud Run bloque UDP/ICE — replay impossible en prod sans VPS. Voir `docs/streaming/relay-infrastructure.md` |
 | 🟡 Moyenne | Refaire les clusters du globe | Repartir par altitude et vérifier les counts après zoom |
-| 🟡 Moyenne | Bascule `/globe` vers GlobeTest2 | MapLibre encore utilisé sur `/globe` |
+| 🟡 Moyenne | Vérifier `/globe` → GlobeTest2 après déploiement | `/globe` et `/map` pointent maintenant vers GlobeTest2 ; vérifier rendu build/prod |
+| 🟡 Moyenne | GlobeTest2 — tuiles carte au zoom proche | Remplacer la texture raster (pixelisée au zoom) par des tuiles MapLibre en projection globe (MapLibre 3+ `projection: 'globe'`). Déjà dans le projet. Garder les étoiles/marqueurs en overlay HTML/CSS. |
 | 🟡 Moyenne | Migration gear localStorage → Firestore | Chemin Firestore préparé, migration non faite |
 | 🟡 Moyenne | Interface admin override trust score | Voir et modifier manuellement le tier d'un créateur |
 | 🟡 Moyenne | Implémentation modération vidéo (Vision API) | Architecture documentée dans `docs/moderation.md` |
 | 🟠 Basse | Extraction i18n — 350+ chaînes hardcodées | Non planifié |
 | 🟠 Basse | Tracking affilié équipement (clics/commission) | `affiliateUrl` présent, backend manquant |
-| 🟠 Basse | Messagerie Firestore | Schéma doc, non implémenté |
 
 ---
 

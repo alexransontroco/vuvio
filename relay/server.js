@@ -153,16 +153,17 @@ function createFfmpegProcess(session) {
     if (!src || !session.videoPipe) return;
     const elapsed = Date.now() - session.timerStartedAt;
     const targetFrames = Math.floor(elapsed / (1000 / INPUT_FPS));
-    const needed = Math.min(targetFrames - session.framesWritten, 4);
-    if (needed <= 0) return;
+    if (targetFrames <= session.framesWritten) return;
     // Backup write: covers gaps when WebRTC stops delivering frames.
+    // 66ms interval guarantees 15fps floor; write up to 2 frames per tick to catch up.
+    const needed = Math.min(targetFrames - session.framesWritten, 2);
     const writeBuf = Buffer.allocUnsafe(src.length);
     src.copy(writeBuf);
     for (let i = 0; i < needed; i++) {
       session.videoPipe.write(writeBuf);
       session.framesWritten++;
     }
-  }, 500); // 500ms backup — primary writes are in onframe
+  }, Math.round(1000 / INPUT_FPS)); // 66ms — fires at 15fps
 }
 
 

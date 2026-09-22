@@ -1,6 +1,156 @@
+Status: Current
+
 # Changelog — Vuvio
 
 Historique des sessions de travail, du plus récent au plus ancien.
+
+---
+
+## 2026-09-22 — Globe Test 2 : redesign marqueurs HTML (clusters + dots)
+`✨ Feature` | Session globe redesign
+
+### GlobeTest2 — marqueurs HTML CSS
+- Remplacé le système `objectsData` + `objectThreeObject` (Three.js Sprites avec glow/halo/ripple) par `htmlElementsData` + `htmlElement` (éléments DOM CSS)
+- **Clusters** : bulle sombre semi-transparente, bordure cyan, chiffre blanc centré — `.gt2-cluster-marker`
+- **Lives individuels** : petit point cyan avec pulse animation — `.gt2-dot-marker`
+- **Tap sur cluster → bottom sheet** (au lieu de zoom-expand) : liste des lives de la zone avec image, titre, meta, bouton Play — `.gt2-cluster-sheet`
+- Supprimé l'animation breathing RAF complexe (Three.js back-face visibility, glow/halo blink/ripple)
+- Conservé : étoiles + étoiles filantes canvas, autorotate, zoom controls, filter bottom sheet, card live sélectionné, rings de sélection
+
+---
+
+## 2026-09-22 — Relay local fonctionnel, fixes relay timing, recap cover & download
+`🐛 Fix` `✨ Feature` | Session live relay + recap
+
+### Relay local — setup complet
+- Identifié que `VITE_API_PROXY_TARGET` doit être passé comme var shell et non dans `.env.local` (Vite ne lit pas `.env.local` dans `vite.config.js`)
+- Commande correcte : `VITE_API_PROXY_TARGET=http://127.0.0.1:5001 npm run dev`
+- `functions/.env.local` : `RTMPS_RELAY_URL=https://localhost:8787` (HTTPS, le relay utilise des certs TLS)
+- Relay tourne en HTTPS sur port 8787, les certs sont dans `certs/`
+
+### Fix write timer relay — drift pendant montée Chrome VP8
+- **Problème :** backup timer à 500ms/max 4 frames = 8fps backup insuffisant pendant la montée en résolution Chrome (318→427→639→854px, ~20-130s). Résultat : replay tronqué + vidéo au ralenti.
+- **Fix (`relay/server.js`) :** timer à 66ms (1000/INPUT_FPS) avec max 2 frames/tick → 15fps garanti même pendant la montée Chrome
+- **Validation :** `written=N elapsed=Xs target=Xs` parfait sur toute la durée, 3 lives consécutifs ✅
+
+### Firebase Storage rules
+- Ajout règle `live-covers/{uid}/{liveId}/{filename}` — 403 corrigé sur l'upload de la photo de couverture
+
+### Page "Live ended" viewer
+- Photo de couverture affichée en fond tamisé sur l'écran "ended their livestream"
+- Styles `.live-ended-screen__cover` ajoutés dans `live.css`
+
+### Recap card — cover image + download
+- `RecapCard` utilisait `liveData.image` (souvent vide) → maintenant `coverImageUrl ?? thumbnailUrl ?? image`
+- Pre-fetch de la cover en data URL au chargement → `toPng` (html-to-image) n'a plus d'erreur CORS
+- Download et Share image fonctionnels
+
+---
+
+## 2026-09-22 — GlobeTest2 par défaut, clusters, texture locale et doc produit
+`✨ Feature` `⚙️ Tweak` `📝 Docs` | Session globe + documentation stratégique
+
+### Routage globe
+- `/globe` et `/map` pointent maintenant vers `GlobeTest2Page`.
+- `CurrentGlobePage` reste accessible via `/globe-current` et `/map-current`.
+- Le switch haut garde le contexte : depuis `/map`, "Current" va vers `/map-current`; depuis `/globe`, il va vers `/globe-current`.
+- Préchargement après boot changé vers `GlobeTest2Page`.
+
+### GlobeTest2 — visuel et interaction
+- Texture externe `three-globe` rapatriée en local : `public/assets/globe/earth-night-threeglobe-4k.jpg`.
+- Texture NASA/GIBS 4K testée puis conservée en asset expérimental : `public/assets/globe/earth-night-4k.jpg`.
+- Retour au look couleur de l'ancien globe, sans filtre CSS canvas.
+- Points live recalibrés en couleurs plus vives : air `#4f8dff`, earth `#45e56a`, water/default `#27ddeb`.
+- Pulsation des points transformée en vrai clignotement de balise : flash court puis retombée nette.
+- Auto-rotation coupée quand un live ou un cluster est sélectionné, reprise au recentrage.
+
+### GlobeTest2 — clusters
+- Ajout d'un regroupement des lives proches par zone.
+- Les zones denses s'affichent comme clusters avec compteur.
+- Clic sur cluster : zoom renforcé vers la zone, arrêt rotation, ouverture du cluster.
+- Les lives du cluster ouvert sont affichés en rosace avec markers compacts pour distinguer les streams proches.
+- La sélection, le ring et la card live utilisent la position visuelle du marker.
+
+### GlobeTest2 — essais abandonnés
+- Mode carte tuilée MapLibre testé puis retiré : visuellement trop éloigné de l'expérience globe.
+- Bump map locale testée puis retirée : rendu globe gris.
+- Couche blanche de clignotement testée puis retirée : effet jugé moins bon que la balise colorée.
+
+### Documentation
+- Ajout d'une tâche ouverte sur le flou au zoom proche : tester swap 4K→8K/16K ou limiter le zoom max.
+- Création du document produit complet Vuvio : storytelling, fonctionnement, architecture, modèle business, go-to-market et roadmap.
+- Intégration des inspirations Strava/Polarsteps : Experiences post-live, profils comme collections, Adventures/Series, globe Discover/mémoire, recap partageable, challenges éditoriaux.
+
+**Build :** non lancé à la demande explicite de ne pas build/deploy sans instruction.
+
+---
+
+## 2026-09-21 — GlobeTest2 tweaks + Splash ralenti
+`⚙️ Tweak` | Petite session polish
+
+### GlobeTest2
+- Points live agrandis : `coreScale` 0.7→1.1 / 1.8→2.6 ; `baseScale` 6.5→9.5 / 10.5→14.5
+- Points désaturés : `#438cff`/`#56df70`/`#32d8e5` → `#8ab3e8`/`#a3d6a9`/`#8fd0d6`
+- Core semi-transparent (opacity 0.75)
+- Clignotement plus rapide et contrasté : `t * 1.2` → `t * 2.4`, halo opacity 0.10–0.65
+- Altitude initiale 4.2 → 3.4 (globe plus grand)
+- Globe descendu de 30px (wrapper `translateY(30px)` inclut le canvas d'étoiles)
+- Étoiles ~2.25x plus nombreuses (divisor 18000→8000, min 80→180)
+- Boutons +/−/center descendus (offset bottom 480→380px)
+- Panneau "GlobeTest2 dev" supprimé + states inutilisés nettoyés
+
+### Splash screen
+- Durée totale +2s : setTimeout 3700→5700ms
+- Animations ralenties : V's 2600→3800ms, Dot delay 1800→2600 / duration 2000→2800, Breath 600→900ms, Glow/Title delay 3000→4400 / duration →1200ms
+
+---
+
+## 2026-09-20 — Follow button, FollowingPage, Edit live, Splash, Bottom nav, color-scheme
+`🐛 Bug` `✨ Feature` `⚙️ Tweak` | Session complète
+
+### Bouton Follow dans WatchPage
+- Animation identique à l'étoile : 3 icônes `UserPlus` cyan s'envolent en rafale (delays 0/80/155ms) au clic
+- `followPulse` + `followBursts` states, keyframe `live-follow-float` dans `live.css`
+- `is-pulsing` sur le bouton (220ms)
+- Follow déjà fonctionnel (localStorage via `setFollowingCreator`) — animation ajoutée seulement
+
+### FollowingPage — affichage 0 following corrigé
+- Cause : `liveCreatorId = live.creatorUid || live.id` donne des IDs comme `surfer-ericeira` que `creatorProfiles` ne connaît pas
+- Fix : lookup supplémentaire dans `newPovStreams` → nom, job, ville, image correctement résolus
+
+### Edit live — bouton Cancel dans le sheet
+- `ScheduleLiveSheet` accepte `existingLive`, `onCancel` props
+- Titre dynamique "Edit live" vs "Schedule a live"
+- Bouton rouge "Cancel this live" (icône Trash2) visible uniquement en mode edit
+- `manageLive(live)` passe le live sélectionné, `editingLive` state dans ProfilePage
+- `UpcomingLiveCard` : `onManage(live)` au lieu de `onManage()`
+
+### Splash screen
+- Animations V : 2100ms → 2600ms
+- Dot/cercle : 1350ms → 2000ms, délai 1500ms → 1800ms (arrive plus lentement)
+- Titre et glow décalés à 3000ms pour suivre le dot
+- Durée totale réduite de 1.5s : fade-out 5200ms → 3700ms, unmount 7000ms → 5500ms
+
+### Bottom nav Midnight Sky
+- Fond `rgba(3, 17, 32, 0.92)` (quasiment noir) → `rgba(7, 26, 54, 0.94)` (navy en accord avec le gradient du thème)
+
+### iOS color-scheme
+- `color-scheme: dark` sur `html` dans `base.css`
+- `<meta name="color-scheme" content="dark">` dans `index.html`
+- Empêche iOS en mode clair système d'appliquer des couleurs claires aux safe-areas
+
+---
+
+## 2026-09-20 — Live Recap : fixes timecodes, étoile, UX
+`🐛 Bug` `✨ UX` | `src/routes/LiveRecapPageSimple.jsx`
+
+- Étoile : couleur `#eab308` (jaune) → `#22c55e` (vert) — cohérent avec la WatchPage
+- Timecodes messages : fallback `timestamp - startedAt` quand `liveElapsedSeconds` vaut 0/null
+- Tous les messages affichés (plus de cap à 5)
+- Debug rows (Live input, Video ID…) déplacés dans le collapsible "Raw data" — pas visibles par défaut
+- Note "Replay only available in relay mode" dans la section replay quand pas de replay
+
+**Build :** ✓
 
 ---
 

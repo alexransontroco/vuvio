@@ -733,7 +733,10 @@ function UpcomingDetailSheet({ item, now, reminderSet, reminderSaving, onNotify,
           {countdown.value ? <strong>{countdown.value}</strong> : null}
         </div>
         <p className="home-upcoming-sheet__description">{item.description ?? 'Details will be available before the live starts.'}</p>
-        <CreatorLink creator={creator} stopPropagation />
+        <div className="home-upcoming-creator">
+          <CreatorLink creator={creator} stopPropagation showMeta metaLabel={`${upcomingPovLabel(item, t)} · ${place}`} />
+          <p>{item.livePlan ?? item.description ?? `${creatorName} will share this POV live from ${place}.`}</p>
+        </div>
         <div className="home-upcoming-sheet__actions">
           <button
             type="button"
@@ -1815,6 +1818,7 @@ function CreatorLiveSession({ live, onEndingChange }) {
         commentCount,
         starCount,
         endedAt: new Date().toISOString(),
+        broadcastIngestMode: ingestModeRef.current,
       };
 
       setPhase('processing');
@@ -2056,6 +2060,8 @@ function LiveViewer({ liveId, creatorMode = false }) {
   const [reactionCounts, setReactionCounts] = useState({});
   const [starBursts, setStarBursts] = useState([]);
   const [starPulse, setStarPulse] = useState(false);
+  const [followBursts, setFollowBursts] = useState([]);
+  const [followPulse, setFollowPulse] = useState(false);
   const [sendBursts, setSendBursts] = useState([]);
   const [following, setFollowing] = useState(() => {
     // Pre-populate from localStorage so state matches what was persisted
@@ -2216,6 +2222,13 @@ function LiveViewer({ liveId, creatorMode = false }) {
       unsubscribe();
     };
   }, [creatorMode, activeLiveId, live.creatorUid]);
+
+  // Auto-navigate to /watch 3s after a live ends (viewer side)
+  useEffect(() => {
+    if (!broadcastEnded || creatorMode) return;
+    const timer = setTimeout(() => navigate('/watch', { replace: true }), 3000);
+    return () => clearTimeout(timer);
+  }, [broadcastEnded, creatorMode, navigate]);
 
   // Prefetch HLS manifests for adjacent feed items so swiping feels instant.
   useEffect(() => {
@@ -2470,13 +2483,13 @@ function LiveViewer({ liveId, creatorMode = false }) {
   };
 
   const handleLiveTap = (event, moved) => {
-    if (moved > 8 || event.target.closest('button, a, input, textarea, .live-chat-panel, .live-floating-composer')) return;
+    if (moved > 18 || event.target.closest('button, a, input, textarea, .live-chat-panel, .live-floating-composer')) return;
 
     const now = Date.now();
     const previous = lastLiveTap.current;
     const distance = Math.hypot(event.clientX - previous.x, event.clientY - previous.y);
 
-    if (now - previous.time < 320 && distance < 42) {
+    if (now - previous.time < 460 && distance < 72) {
       lastLiveTap.current = { time: 0, x: 0, y: 0 };
       toggleImmersive();
       return;
@@ -2489,7 +2502,14 @@ function LiveViewer({ liveId, creatorMode = false }) {
       if (!chatComposerOpen && !chatPanelOpen) {
         setUserSheetOpen(true);
       }
-    }, 340);
+    }, 480);
+  };
+
+  const onLiveDoubleClick = (event) => {
+    if (event.target.closest('button, a, input, textarea, .live-chat-panel, .live-floating-composer, .equipment-viewer-sheet')) return;
+    event.preventDefault();
+    lastLiveTap.current = { time: 0, x: 0, y: 0 };
+    toggleImmersive();
   };
 
   const endPointer = (event) => {
@@ -2793,6 +2813,7 @@ function LiveViewer({ liveId, creatorMode = false }) {
       onPointerMove={onPointerMove}
       onPointerUp={endPointer}
       onPointerCancel={endPointer}
+      onDoubleClick={onLiveDoubleClick}
       onWheel={onWheel}
     >
       <div className={isDragging ? 'live-feed__track is-dragging' : 'live-feed__track'} style={trackStyle}>
@@ -2883,6 +2904,13 @@ function LiveViewer({ liveId, creatorMode = false }) {
               )}
               {broadcastEnded && isActive && !creatorMode && (
                 <div className="live-ended-screen">
+                  {(item.coverImageUrl ?? item.thumbnailUrl ?? item.image) && (
+                    <img
+                      src={item.coverImageUrl ?? item.thumbnailUrl ?? item.image}
+                      alt=""
+                      className="live-ended-screen__cover"
+                    />
+                  )}
                   <div className="live-ended-screen__avatar">
                     {item.avatarUrl ? (
                       <img src={item.avatarUrl} alt="" />
@@ -2919,7 +2947,7 @@ function LiveViewer({ liveId, creatorMode = false }) {
       <div className="live-feed__top-gradient" />
       <div className="live-feed__bottom-gradient" />
       <div className="live-feed__watermark" aria-hidden="true">
-        <BrandMark size={26} showName />
+        <BrandMark size={64} nameSize={18} gap={-8} nameOffsetY={2} showName />
       </div>
 
 
@@ -2965,6 +2993,15 @@ function LiveViewer({ liveId, creatorMode = false }) {
               <Star size={18} strokeWidth={1.8} fill="currentColor" />
             </span>
           ))}
+          {followBursts.map((burst) => (
+            <span
+              key={burst.id}
+              className="live-reaction-follow"
+              style={{ left: `${burst.x}px`, top: `${burst.y}px` }}
+            >
+              <UserPlus size={18} strokeWidth={1.8} />
+            </span>
+          ))}
         </div>
       )}
 
@@ -2981,15 +3018,35 @@ function LiveViewer({ liveId, creatorMode = false }) {
         <div className="live-actions" aria-label="Live actions">
           <button
             type="button"
-            className={isFollowing ? 'is-active' : ''}
-            onClick={() => {
+            className={`${isFollowing ? 'is-active' : ''}${followPulse ? ' is-pulsing' : ''}`}
+            onClick={(event) => {
               const next = !isFollowing;
               setFollowing((state) => ({ ...state, [liveCreatorId]: next }));
               setFollowingCreator(liveCreatorId, next).catch(() => {});
               if (live.creatorUid && user?.uid) {
                 (next ? followCreator : unfollowCreator)(user.uid, live.creatorUid).catch(() => {});
               }
-              if (next) recordCreatorFollowed();
+              if (next) {
+                recordCreatorFollowed();
+                const bounds = feedRef.current?.getBoundingClientRect();
+                const bx = bounds ? event.clientX - bounds.left : event.clientX;
+                const by = bounds ? event.clientY - bounds.top : event.clientY;
+                const now = Date.now();
+                const offsets = [
+                  { dx: 0,   dy: 0,   delay: 0 },
+                  { dx: -14, dy: -10, delay: 80 },
+                  { dx: 12,  dy: -6,  delay: 155 },
+                ];
+                offsets.forEach(({ dx, dy, delay }) => {
+                  const id = `follow-${now}-${delay}`;
+                  window.setTimeout(() => {
+                    setFollowBursts((s) => [...s, { id, x: bx + dx, y: by + dy }]);
+                    window.setTimeout(() => setFollowBursts((s) => s.filter((b) => b.id !== id)), 1200);
+                  }, delay);
+                });
+                setFollowPulse(true);
+                window.setTimeout(() => setFollowPulse(false), 220);
+              }
             }}
             aria-label={isFollowing ? t('common.unfollow') : t('common.follow')}
           >

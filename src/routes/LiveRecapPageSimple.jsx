@@ -61,17 +61,18 @@ const STAT_DEFS = [
   { key: 'duration',    label: 'DURATION',     Icon: Clock,         color: '#3b82f6', bg: 'rgba(59,130,246,0.18)' },
   { key: 'peak',        label: 'PEAK VIEWERS', Icon: Users,         color: '#818cf8', bg: 'rgba(129,140,248,0.18)' },
   { key: 'messages',    label: 'MESSAGES',     Icon: MessageSquare, color: '#22c55e', bg: 'rgba(34,197,94,0.18)'  },
-  { key: 'stars',       label: 'STARS',        Icon: Star,          color: '#eab308', bg: 'rgba(234,179,8,0.18)'  },
+  { key: 'stars',       label: 'STARS',        Icon: Star,          color: '#22c55e', bg: 'rgba(34,197,94,0.18)'  },
 ];
 
 const CLOUDFARE_REPLAY_DISABLED_TEXT = 'Cloudflare replay is disabled for this live input or account.';
 
-function RecapCard({ liveData, statValues, cardRef }) {
+function RecapCard({ liveData, statValues, cardRef, coverDataUrl }) {
+  const cover = coverDataUrl ?? liveData?.coverImageUrl ?? liveData?.thumbnailUrl ?? liveData?.image;
   return (
     <div ref={cardRef} style={SC.card}>
       {/* Background image */}
-      {liveData.image && (
-        <img src={liveData.image} alt="" style={SC.bgImg} crossOrigin="anonymous" />
+      {cover && (
+        <img src={cover} alt="" style={SC.bgImg} />
       )}
       <div style={SC.bgOverlay} />
 
@@ -82,8 +83,8 @@ function RecapCard({ liveData, statValues, cardRef }) {
 
         {/* Thumbnail */}
         <div style={SC.thumbBox}>
-          {liveData.image ? (
-            <img src={liveData.image} alt="" style={SC.thumb} crossOrigin="anonymous" />
+          {cover ? (
+            <img src={cover} alt="" style={SC.thumb} />
           ) : (
             <div style={{ ...SC.thumb, background: '#0c1e34' }} />
           )}
@@ -252,10 +253,24 @@ export default function LiveRecapPageSimple() {
   const [pctComplete, setPctComplete] = useState(null);
   const [replayState, setReplayState] = useState('processing'); // 'processing' | 'no_footage' | 'timeout'
   const [replayPollInfo, setReplayPollInfo] = useState(null);
+  const [coverDataUrl, setCoverDataUrl] = useState(null);
   const liveDataRef = useRef(null);
   const cardRef = useRef(null);
   const pollCountRef = useRef(0);
   const emptyPollStreakRef = useRef(0);
+
+  // Pre-fetch cover image as data URL so html-to-image export works (avoids CORS taint)
+  useEffect(() => {
+    const url = liveData?.coverImageUrl ?? liveData?.thumbnailUrl ?? liveData?.image;
+    if (!url || url.startsWith('data:')) { setCoverDataUrl(url ?? null); return; }
+    let cancelled = false;
+    fetch(url, { mode: 'cors' })
+      .then((r) => r.blob())
+      .then((blob) => new Promise((res) => { const fr = new FileReader(); fr.onload = () => res(fr.result); fr.readAsDataURL(blob); }))
+      .then((dataUrl) => { if (!cancelled) setCoverDataUrl(dataUrl); })
+      .catch(() => { if (!cancelled) setCoverDataUrl(url); });
+    return () => { cancelled = true; };
+  }, [liveData?.coverImageUrl, liveData?.thumbnailUrl, liveData?.image]);
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -270,6 +285,12 @@ export default function LiveRecapPageSimple() {
   useEffect(() => {
     const liveId = location.pathname.split('/')[2];
     if (!liveId) return;
+
+    // WHIP never creates a Cloudflare recording — skip polling immediately
+    if (location.state?.liveData?.broadcastIngestMode === 'whip') {
+      setReplayState('no_footage');
+      return;
+    }
 
     const replayStateRef = { current: 'processing' };
     const poll = async () => {
@@ -625,14 +646,6 @@ export default function LiveRecapPageSimple() {
                 <div style={{ ...S.progressFill, width: `${Math.max(0, Math.min(100, pctComplete))}%` }} />
               </div>
             )}
-            <div style={S.replayDebugGrid}>
-              {replayDebugRows.map(([label, value]) => (
-                <div key={label} style={S.replayDebugRow}>
-                  <span>{label}</span>
-                  <strong style={S.replayDebugValue}>{String(value)}</strong>
-                </div>
-              ))}
-            </div>
           </div>
 
           {comments.length > 0 && (
@@ -642,8 +655,14 @@ export default function LiveRecapPageSimple() {
                 Messages
               </h3>
               <div style={S.messagesList}>
-                {comments.slice(0, 5).map((c, i) => {
-                  const secs = c.liveElapsedSeconds ?? 0;
+                {comments.map((c, i) => {
+                  let secs = c.liveElapsedSeconds ?? null;
+                  if ((secs === null || secs === 0) && c.timestamp && liveData.startedAt) {
+                    const tMs = c.timestamp?.toMillis?.() ?? 0;
+                    const sMs = liveData.startedAt?.toMillis?.() ?? 0;
+                    if (tMs > sMs) secs = Math.round((tMs - sMs) / 1000);
+                  }
+                  secs = secs ?? 0;
                   const mm = String(Math.floor(secs / 60)).padStart(2, '0');
                   const ss = String(secs % 60).padStart(2, '0');
                   const initial = (c.userDisplayName || '?').slice(0, 1).toUpperCase();
@@ -674,7 +693,17 @@ export default function LiveRecapPageSimple() {
               <ChevronDown size={16} style={{ transform: dataOpen ? 'rotate(180deg)' : 'none', transition: 'transform 200ms', opacity: 0.5 }} />
             </button>
             {dataOpen && (
-              <pre style={S.dataPre}>{JSON.stringify(liveData, null, 2)}</pre>
+              <>
+                <div style={{ ...S.replayDebugGrid, marginBottom: 12 }}>
+                  {replayDebugRows.map(([label, value]) => (
+                    <div key={label} style={S.replayDebugRow}>
+                      <span>{label}</span>
+                      <strong style={S.replayDebugValue}>{String(value)}</strong>
+                    </div>
+                  ))}
+                </div>
+                <pre style={S.dataPre}>{JSON.stringify(liveData, null, 2)}</pre>
+              </>
             )}
           </div>
 
@@ -711,7 +740,7 @@ export default function LiveRecapPageSimple() {
 
             {/* The card */}
             <div style={SM.cardScroll}>
-              <RecapCard liveData={liveData} statValues={statValues} cardRef={cardRef} />
+              <RecapCard liveData={liveData} statValues={statValues} cardRef={cardRef} coverDataUrl={coverDataUrl} />
             </div>
 
             <button
