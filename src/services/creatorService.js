@@ -1,4 +1,4 @@
-import { collection, getDocs, query, where, doc, updateDoc, arrayUnion, arrayRemove } from 'firebase/firestore';
+import { collection, getDocs, query, doc, updateDoc, arrayUnion, arrayRemove } from 'firebase/firestore';
 import { db } from '../firebase.js';
 
 export async function searchCreators(searchQuery) {
@@ -34,6 +34,7 @@ export async function followCreator(currentUid, creatorUid) {
     const userRef = doc(db, 'users', currentUid);
     await updateDoc(userRef, {
       followedCreators: arrayUnion(creatorUid),
+      liveNotifications: arrayUnion(creatorUid),
     });
   } catch (err) {
     console.error('[creatorService] Follow failed:', err.message);
@@ -47,8 +48,22 @@ export async function unfollowCreator(currentUid, creatorUid) {
     const userRef = doc(db, 'users', currentUid);
     await updateDoc(userRef, {
       followedCreators: arrayRemove(creatorUid),
+      liveNotifications: arrayRemove(creatorUid),
     });
   } catch (err) {
     console.error('[creatorService] Unfollow failed:', err.message);
+  }
+}
+
+export async function setLiveNotifications(currentUid, creatorUid, enabled) {
+  if (!currentUid || !creatorUid) return;
+
+  try {
+    const userRef = doc(db, 'users', currentUid);
+    await updateDoc(userRef, {
+      liveNotifications: enabled ? arrayUnion(creatorUid) : arrayRemove(creatorUid),
+    });
+  } catch (err) {
+    console.error('[creatorService] setLiveNotifications failed:', err.message);
   }
 }

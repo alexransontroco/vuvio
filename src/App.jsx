@@ -45,6 +45,7 @@ const AdminInvestorCrmPage = lazy(() => import('./routes/AdminInvestorCrmPage.js
 const AdminMarketingPage   = lazy(() => import('./routes/AdminMarketingPage.jsx'));
 const DesktopLayout       = lazy(() => import('./components/desktop/DesktopLayout.jsx'));
 const AgentsPage          = lazy(() => import('./routes/AgentsPage.jsx'));
+const NotificationsPage   = lazy(() => import('./routes/NotificationsPage.jsx'));
 
 function RouteFallback() {
   const { t } = useTranslation();
@@ -67,7 +68,7 @@ function Lazy({ component: Component }) {
 if (typeof window !== 'undefined') {
   window.addEventListener('load', () => {
     import('./routes/WatchPage.jsx');
-    import('./routes/CurrentGlobePage.jsx');
+    import('./routes/GlobeTest2Page.jsx');
   }, { once: true });
 }
 
@@ -155,8 +156,10 @@ export default function App() {
         <Route path="/watch"         element={<Lazy component={WatchPage} />} />
         <Route path="/explore"      element={<Lazy component={ExplorePage} />} />
         <Route path="/explore/live" element={<Lazy component={AllLivesPage} />} />
-        <Route path="/globe"         element={<Lazy component={CurrentGlobePage} />} />
-        <Route path="/map"           element={<Lazy component={CurrentGlobePage} />} />
+        <Route path="/globe"         element={<Lazy component={GlobeTest2Page} />} />
+        <Route path="/map"           element={<Lazy component={GlobeTest2Page} />} />
+        <Route path="/globe-current" element={<Lazy component={CurrentGlobePage} />} />
+        <Route path="/map-current"   element={<Lazy component={CurrentGlobePage} />} />
         <Route path="/globe-test-2"  element={<Lazy component={GlobeTest2Page} />} />
         <Route path="/terms"      element={<Lazy component={TermsPage} />} />
         <Route path="/privacy"    element={<Lazy component={PrivacyPage} />} />
@@ -243,6 +246,14 @@ export default function App() {
           element={
             <ProtectedRoute>
               <Lazy component={ReportProblemPage} />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/notifications"
+          element={
+            <ProtectedRoute>
+              <Lazy component={NotificationsPage} />
             </ProtectedRoute>
           }
         />

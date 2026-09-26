@@ -1,3 +1,6 @@
+Status: Current
+Read before coding: Required before editing core app behavior, streaming, replay, auth, deployment, or Firebase logic.
+
 # Vuvio — Agent Instructions
 
 Vuvio is a mobile-first POV live streaming app. React 19 / Vite 6 / React Router v6, deployed on Firebase Hosting + Cloud Functions (Node 20).

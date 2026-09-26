@@ -15,6 +15,7 @@ import {
   X,
 } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.jsx';
 import {
@@ -34,19 +35,20 @@ import {
 
 function LiveContextCard({ live, onDismiss }) {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   if (!live) return null;
   const isLive = live.status === 'live';
   const isUpcoming = live.status === 'upcoming';
 
   return (
     <div className="conv-context-card">
-      <button type="button" className="conv-context-card__dismiss" onClick={onDismiss} aria-label="Dismiss">
+      <button type="button" className="conv-context-card__dismiss" onClick={onDismiss} aria-label={t('conversation.dismiss')}>
         <X size={14} strokeWidth={2} />
       </button>
       <img className="conv-context-card__thumb" src={live.image} alt="" />
       <div className="conv-context-card__body">
         <p className="conv-context-card__status">
-          {isLive ? <><i className="conv-context-card__live-dot" />Live now</> : null}
+          {isLive ? <><i className="conv-context-card__live-dot" />{t('conversation.liveNow')}</> : null}
           {isUpcoming ? live.statusText : null}
           {!isLive && !isUpcoming ? live.statusText : null}
         </p>
@@ -76,6 +78,7 @@ function SystemNote({ text }) {
 }
 
 function MessageBubble({ message, prevSenderId, participant, currentUid }) {
+  const { t } = useTranslation();
   const mine = currentUid ? message.senderId === currentUid : message.senderId === 'current-user';
   const live = message.liveId ? getMessageLive(message.liveId) : null;
   const showAvatar = !mine && prevSenderId !== message.senderId;
@@ -105,7 +108,7 @@ function MessageBubble({ message, prevSenderId, participant, currentUid }) {
               </div>
             </div>
           ) : (
-            <span className="msg-unavailable">This live is no longer available.</span>
+            <span className="msg-unavailable">{t('conversation.liveUnavailable')}</span>
           )
         ) : (
           <p>{message.text}</p>
@@ -124,30 +127,31 @@ function MessageBubble({ message, prevSenderId, participant, currentUid }) {
 }
 
 function ConversationMenu({ participant, isMuted, onClose, onBlock, onDelete, onReport, onMute, onViewProfile }) {
+  const { t } = useTranslation();
   return (
-    <div className="msg-sheet" role="dialog" aria-modal="true" aria-label="Conversation options">
-      <button type="button" className="msg-sheet__backdrop" onClick={onClose} aria-label="Close" />
+    <div className="msg-sheet" role="dialog" aria-modal="true" aria-label={t('conversation.optionsAria')}>
+      <button type="button" className="msg-sheet__backdrop" onClick={onClose} aria-label={t('common.close')} />
       <div className="msg-sheet__panel">
         <button type="button" onClick={onViewProfile}>
           <UserRound size={17} strokeWidth={1.8} />
-          View profile
+          {t('common.viewProfile')}
         </button>
         <button type="button" onClick={onMute}>
           {isMuted ? <BellRing size={17} strokeWidth={1.8} /> : <BellOff size={17} strokeWidth={1.8} />}
-          {isMuted ? 'Unmute notifications' : 'Mute notifications'}
+          {isMuted ? t('conversation.unmuteNotifications') : t('conversation.muteNotifications')}
         </button>
         <div className="msg-sheet__divider" />
         <button type="button" className="is-danger" onClick={onReport}>
           <Flag size={17} strokeWidth={1.8} />
-          Report
+          {t('common.report')}
         </button>
         <button type="button" className="is-danger" onClick={onBlock}>
           <ShieldBan size={17} strokeWidth={1.8} />
-          Block
+          {t('common.block')}
         </button>
         <button type="button" className="is-danger" onClick={onDelete}>
           <Trash2 size={17} strokeWidth={1.8} />
-          Delete conversation
+          {t('conversation.deleteConversation')}
         </button>
       </div>
     </div>
@@ -155,33 +159,35 @@ function ConversationMenu({ participant, isMuted, onClose, onBlock, onDelete, on
 }
 
 function ConfirmSheet({ title, body, confirmLabel, onConfirm, onClose }) {
+  const { t } = useTranslation();
   return (
     <div className="msg-sheet" role="dialog" aria-modal="true" aria-label={title}>
-      <button type="button" className="msg-sheet__backdrop" onClick={onClose} aria-label="Close" />
+      <button type="button" className="msg-sheet__backdrop" onClick={onClose} aria-label={t('common.close')} />
       <div className="msg-sheet__panel">
         <header className="msg-sheet__header">
           <h2>{title}</h2>
-          <button type="button" onClick={onClose} aria-label="Close"><X size={17} strokeWidth={2} /></button>
+          <button type="button" onClick={onClose} aria-label={t('common.close')}><X size={17} strokeWidth={2} /></button>
         </header>
         {body ? <p className="msg-sheet__desc">{body}</p> : null}
         <button type="button" className="is-danger" onClick={onConfirm}>{confirmLabel}</button>
-        <button type="button" onClick={onClose}>Cancel</button>
+        <button type="button" onClick={onClose}>{t('common.cancel')}</button>
       </div>
     </div>
   );
 }
 
 function PlusSheet({ onClose }) {
+  const { t } = useTranslation();
   const actions = [
-    { label: 'Share a live', icon: Radio },
+    { key: 'shareLive', label: t('conversation.shareALive'), icon: Radio },
   ];
   return (
-    <div className="msg-sheet" role="dialog" aria-modal="true" aria-label="Attach content">
-      <button type="button" className="msg-sheet__backdrop" onClick={onClose} aria-label="Close" />
+    <div className="msg-sheet" role="dialog" aria-modal="true" aria-label={t('conversation.attachContent')}>
+      <button type="button" className="msg-sheet__backdrop" onClick={onClose} aria-label={t('common.close')} />
       <div className="msg-sheet__panel">
-        <p className="msg-sheet__title">Share</p>
+        <p className="msg-sheet__title">{t('common.share')}</p>
         {actions.map((action) => (
-          <button key={action.label} type="button" onClick={onClose}>
+          <button key={action.key} type="button" onClick={onClose}>
             {action.label}
           </button>
         ))}
@@ -191,29 +197,37 @@ function PlusSheet({ onClose }) {
 }
 
 function ReportSheet({ onClose, onSubmit }) {
-  const reasons = ['Spam', 'Harassment', 'Inappropriate content', 'Fake profile', 'Other'];
-  const [reason, setReason] = useState(reasons[0]);
+  const { t } = useTranslation();
+  const reasons = [
+    { key: 'spam', label: t('conversation.reportReasons.spam') },
+    { key: 'harassment', label: t('conversation.reportReasons.harassment') },
+    { key: 'inappropriate', label: t('conversation.reportReasons.inappropriate') },
+    { key: 'fakeProfile', label: t('conversation.reportReasons.fakeProfile') },
+    { key: 'other', label: t('conversation.reportReasons.other') },
+  ];
+  const [reasonKey, setReasonKey] = useState(reasons[0].key);
 
   return (
-    <div className="msg-sheet" role="dialog" aria-modal="true" aria-label="Report">
-      <button type="button" className="msg-sheet__backdrop" onClick={onClose} aria-label="Close" />
+    <div className="msg-sheet" role="dialog" aria-modal="true" aria-label={t('common.report')}>
+      <button type="button" className="msg-sheet__backdrop" onClick={onClose} aria-label={t('common.close')} />
       <div className="msg-sheet__panel">
         <header className="msg-sheet__header">
-          <h2>Report</h2>
-          <button type="button" onClick={onClose} aria-label="Close"><X size={17} strokeWidth={2} /></button>
+          <h2>{t('common.report')}</h2>
+          <button type="button" onClick={onClose} aria-label={t('common.close')}><X size={17} strokeWidth={2} /></button>
         </header>
         {reasons.map((item) => (
-          <button key={item} type="button" className={reason === item ? 'is-selected' : ''} onClick={() => setReason(item)}>
-            {item}
+          <button key={item.key} type="button" className={reasonKey === item.key ? 'is-selected' : ''} onClick={() => setReasonKey(item.key)}>
+            {item.label}
           </button>
         ))}
-        <button type="button" className="is-primary" onClick={() => onSubmit(reason)}>Send report</button>
+        <button type="button" className="is-primary" onClick={() => onSubmit(reasons.find((r) => r.key === reasonKey)?.label)}>{t('conversation.sendReport')}</button>
       </div>
     </div>
   );
 }
 
 function SuggestedQuestions({ questions, onSelect }) {
+  const { t } = useTranslation();
   const [visible, setVisible] = useState(true);
   if (!visible || !questions?.length) return null;
   return (
@@ -225,7 +239,7 @@ function SuggestedQuestions({ questions, onSelect }) {
           </button>
         ))}
       </div>
-      <button type="button" className="msg-suggestions__collapse" onClick={() => setVisible(false)} aria-label="Collapse suggestions">
+      <button type="button" className="msg-suggestions__collapse" onClick={() => setVisible(false)} aria-label={t('conversation.collapseSuggestions')}>
         <ChevronDown size={15} strokeWidth={2} />
       </button>
     </div>
@@ -233,6 +247,7 @@ function SuggestedQuestions({ questions, onSelect }) {
 }
 
 function MessageComposer({ disabled, onSend, prefill, onPlusOpen }) {
+  const { t } = useTranslation();
   const [value, setValue] = useState(prefill ?? '');
   const inputRef = useRef(null);
 
@@ -252,7 +267,7 @@ function MessageComposer({ disabled, onSend, prefill, onPlusOpen }) {
       className="msg-composer"
       onSubmit={(e) => { e.preventDefault(); submit(); }}
     >
-      <button type="button" className="msg-composer__plus" aria-label="Attach" onClick={onPlusOpen} disabled={disabled}>
+      <button type="button" className="msg-composer__plus" aria-label={t('conversation.attach')} onClick={onPlusOpen} disabled={disabled}>
         <Plus size={20} strokeWidth={1.9} />
       </button>
       <div className="msg-composer__input-wrap">
@@ -260,11 +275,11 @@ function MessageComposer({ disabled, onSend, prefill, onPlusOpen }) {
           ref={inputRef}
           value={value}
           onChange={(e) => setValue(e.target.value)}
-          placeholder={disabled ? 'You cannot reply.' : 'Write a message'}
+          placeholder={disabled ? t('conversation.cannotReply') : t('conversation.writeMessage')}
           disabled={disabled}
           onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); submit(); } }}
         />
-        <button type="button" className="msg-composer__emoji" aria-label="Emoji" disabled={disabled}>
+        <button type="button" className="msg-composer__emoji" aria-label={t('conversation.emoji')} disabled={disabled}>
           <Smile size={18} strokeWidth={1.8} />
         </button>
       </div>
@@ -272,7 +287,7 @@ function MessageComposer({ disabled, onSend, prefill, onPlusOpen }) {
         type="submit"
         className={`msg-composer__send${value.trim() ? ' is-active' : ''}`}
         disabled={!value.trim() || disabled}
-        aria-label="Send"
+        aria-label={t('common.send')}
       >
         <Send size={17} strokeWidth={2} />
       </button>
@@ -282,6 +297,7 @@ function MessageComposer({ disabled, onSend, prefill, onPlusOpen }) {
 
 export default function ConversationPage() {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const { user } = useAuth();
   const myUid = user?.uid ?? 'current-user';
   const { conversationId } = useParams();
@@ -315,8 +331,8 @@ export default function ConversationPage() {
     return (
       <section className="conversation-screen">
         <div className="messages-empty">
-          <h2>Conversation not found</h2>
-          <button type="button" onClick={() => navigate('/messages')}>Back to messages</button>
+          <h2>{t('conversation.notFound')}</h2>
+          <button type="button" onClick={() => navigate('/messages')}>{t('conversation.backToMessages')}</button>
         </div>
       </section>
     );
@@ -348,9 +364,9 @@ export default function ConversationPage() {
   };
 
   return (
-    <section className="conversation-screen" aria-label={`Conversation with ${participant.name}`}>
+    <section className="conversation-screen" aria-label={t('conversation.withPerson', { name: participant.name })}>
       <header className="conv-header">
-        <button type="button" className="conv-header__back" onClick={() => navigate('/messages')} aria-label="Back">
+        <button type="button" className="conv-header__back" onClick={() => navigate('/messages')} aria-label={t('common.back')}>
           <ChevronLeft size={22} strokeWidth={1.9} />
         </button>
         <span className="conv-header__avatar-wrap">
@@ -363,15 +379,15 @@ export default function ConversationPage() {
             {participant.profession}{participant.location ? ` · ${participant.location}` : ''}
           </small>
           <small className="conv-header__status">
-            {isLive ? <><i className="conv-header__live-dot" />LIVE now</> : participant.liveStatusText}
+            {isLive ? <><i className="conv-header__live-dot" />{t('conversation.liveNowUpper')}</> : participant.liveStatusText}
           </small>
         </div>
         {isLive ? (
           <button type="button" className="conv-header__watch-live" onClick={() => navigate('/watch')}>
-            Watch live
+            {t('conversation.watchLive')}
           </button>
         ) : null}
-        <button type="button" className="conv-header__menu" onClick={() => setMenuOpen(true)} aria-label="Options">
+        <button type="button" className="conv-header__menu" onClick={() => setMenuOpen(true)} aria-label={t('conversation.options')}>
           <Ellipsis size={19} strokeWidth={1.9} />
         </button>
       </header>
@@ -387,8 +403,8 @@ export default function ConversationPage() {
 
         {blocked ? (
           <div className="conv-blocked-banner">
-            You blocked this user.
-            <button type="button" onClick={() => unblockUser(conversation.id)}>Unblock</button>
+            {t('conversation.blockedBanner')}
+            <button type="button" onClick={() => unblockUser(conversation.id)}>{t('conversation.unblock')}</button>
           </div>
         ) : null}
 
@@ -433,9 +449,9 @@ export default function ConversationPage() {
 
       {blockConfirmOpen ? (
         <ConfirmSheet
-          title={`Block ${participant.name}?`}
-          body="They won't be able to message you and you won't see their content."
-          confirmLabel="Block"
+          title={t('conversation.blockConfirmTitle', { name: participant.name })}
+          body={t('conversation.blockConfirmBody')}
+          confirmLabel={t('common.block')}
           onConfirm={handleBlock}
           onClose={() => setBlockConfirmOpen(false)}
         />
@@ -443,9 +459,9 @@ export default function ConversationPage() {
 
       {deleteConfirmOpen ? (
         <ConfirmSheet
-          title="Delete conversation?"
-          body="This will permanently delete the conversation for you."
-          confirmLabel="Delete"
+          title={t('conversation.deleteConfirmTitle')}
+          body={t('conversation.deleteConfirmBody')}
+          confirmLabel={t('common.delete')}
           onConfirm={handleDelete}
           onClose={() => setDeleteConfirmOpen(false)}
         />

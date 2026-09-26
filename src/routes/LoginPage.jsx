@@ -1,5 +1,6 @@
 import { Eye, EyeOff, LogIn } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import BrandMark from '../components/BrandMark.jsx';
 import { useAuth } from '../context/AuthContext.jsx';
@@ -16,6 +17,7 @@ function GoogleIcon() {
 }
 
 export default function LoginPage() {
+  const { t } = useTranslation();
   const navigate   = useNavigate();
   const location   = useLocation();
   const { user, authLoading, signIn, signInWithGoogle } = useAuth();
@@ -61,7 +63,7 @@ export default function LoginPage() {
         navigate(returnTo, { replace: true });
       }
     } catch (err) {
-      const message = err?.message || 'Google Sign-In failed';
+      const message = err?.message || t('auth.login.googleFailed');
       if (message && message !== '') {
         setError(message);
       }
@@ -75,26 +77,26 @@ export default function LoginPage() {
   return (
     <div className="auth-screen">
       <div className="auth-panel">
-        <Link to="/home" className="auth-brand" aria-label="Vuvio home">
+        <Link to="/home" className="auth-brand" aria-label={t('auth.login.brandAria')}>
           <BrandMark size={34} showName />
         </Link>
 
         <div className="auth-card">
-          <h1 className="auth-card__title">Log in</h1>
-          <p className="auth-card__subtitle">Welcome back to Vuvio.</p>
+          <h1 className="auth-card__title">{t('auth.login.title')}</h1>
+          <p className="auth-card__subtitle">{t('auth.login.subtitle')}</p>
 
           {error ? <p className="auth-error" role="alert">{error}</p> : null}
 
           <form className="auth-form" onSubmit={handleSubmit} noValidate>
             <div className="auth-field">
-              <label className="auth-field__label" htmlFor="login-email">Email</label>
+              <label className="auth-field__label" htmlFor="login-email">{t('auth.login.emailLabel')}</label>
               <div className="auth-field__control">
                 <input
                   id="login-email"
                   className="auth-field__input"
                   type="email"
                   autoComplete="email"
-                  placeholder="you@example.com"
+                  placeholder={t('auth.login.emailPlaceholder')}
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
@@ -104,7 +106,7 @@ export default function LoginPage() {
             </div>
 
             <div className="auth-field">
-              <label className="auth-field__label" htmlFor="login-password">Password</label>
+              <label className="auth-field__label" htmlFor="login-password">{t('auth.login.passwordLabel')}</label>
               <div className="auth-field__control">
                 <input
                   id="login-password"
@@ -121,7 +123,7 @@ export default function LoginPage() {
                   type="button"
                   className="auth-field__toggle"
                   onClick={() => setShowPw((v) => !v)}
-                  aria-label={showPw ? 'Hide password' : 'Show password'}
+                  aria-label={showPw ? t('auth.login.hidePassword') : t('auth.login.showPassword')}
                   tabIndex={-1}
                 >
                   {showPw ? <EyeOff size={17} strokeWidth={1.8} /> : <Eye size={17} strokeWidth={1.8} />}
@@ -129,28 +131,28 @@ export default function LoginPage() {
               </div>
             </div>
 
-            <Link to="/forgot-password" className="auth-forgot">Forgot password?</Link>
+            <Link to="/forgot-password" className="auth-forgot">{t('auth.login.forgotPassword')}</Link>
 
             <button type="submit" className="auth-submit" disabled={busy || !email || !password}>
               {submitting ? <span className="auth-submit__spinner" aria-hidden="true" /> : <LogIn size={17} strokeWidth={2} aria-hidden="true" />}
-              {submitting ? 'Logging in…' : 'Log in'}
+              {submitting ? t('auth.login.submitting') : t('auth.login.submit')}
             </button>
 
-            <div className="auth-divider">or</div>
+            <div className="auth-divider">{t('auth.login.or')}</div>
 
             <button type="button" className="auth-google" onClick={handleGoogle} disabled={busy}>
               {googleBusy
                 ? <span className="auth-submit__spinner" aria-hidden="true" />
                 : <GoogleIcon />
               }
-              Continue with Google
+              {t('auth.login.continueWithGoogle')}
             </button>
           </form>
         </div>
 
         <p className="auth-footer">
-          Don't have an account?{' '}
-          <Link to="/signup" state={{ returnTo }}>Create one</Link>
+          {t('auth.login.noAccount')}{' '}
+          <Link to="/signup" state={{ returnTo }}>{t('auth.login.createOne')}</Link>
         </p>
       </div>
     </div>

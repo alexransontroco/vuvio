@@ -174,6 +174,7 @@ export async function getCreatedLives() {
 }
 
 export function createLocalLive(draft, creatorUid = null, userCoordinates = null) {
+  const locationLabel = draft.location?.trim() || [draft.geoCity, draft.geoCountry].filter(Boolean).join(', ') || null;
   const live = {
     id: draft.id || `created-${Date.now()}`,
     status: 'live',
@@ -184,8 +185,9 @@ export function createLocalLive(draft, creatorUid = null, userCoordinates = null
     job: draft.subcategory,
     city: draft.geoCity ?? null,
     country: draft.geoCountry ?? null,
-    location: draft.location?.trim() || null,
-    locationLabel: draft.location?.trim() || null,
+    countryCode: draft.countryCode ?? null,
+    location: locationLabel,
+    locationLabel,
     privacy: draft.privacy || 'Everyone',
     quality: draft.quality || '1080p',
     viewers: '1',

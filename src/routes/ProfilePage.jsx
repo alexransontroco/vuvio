@@ -2,7 +2,6 @@ import {
   Bell,
   BellRing,
   Bookmark,
-  Camera,
   Check,
   ChevronLeft,
   ChevronRight,
@@ -17,6 +16,7 @@ import {
 } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { getDoc, doc, collection, query, where, getDocs } from 'firebase/firestore';
 import { db } from '../firebase.js';
 import {
@@ -27,13 +27,9 @@ import {
 } from '../components/equipment/EquipmentKit.jsx';
 import { EQUIPMENT_CATEGORIES, demoLiveEquipmentIds } from '../data/equipmentModel.js';
 import PlaylistsSection from '../components/profile/PlaylistsSection.jsx';
-import {
-  getCreatorProfile,
-  readImageFile,
-  saveOwnCreatorProfile,
-} from '../services/profileService.js';
+import { getCreatorProfile } from '../services/profileService.js';
 import { isFollowingCreator, setFollowingCreator } from '../services/followService.js';
-import { followCreator, unfollowCreator } from '../services/creatorService.js';
+import { followCreator, unfollowCreator, setLiveNotifications } from '../services/creatorService.js';
 import { getOrCreateConversation } from '../services/messagingService.js';
 import { useMessaging } from '../context/MessagingContext.jsx';
 import { analyticsService } from '../services/analytics/index.js';
@@ -80,14 +76,14 @@ function scheduledTimestampToDate(value) {
   return null;
 }
 
-function toProfileUpcomingLive(raw) {
+function toProfileUpcomingLive(raw, fallbackLocation = 'Location to be confirmed', fallbackTitle = 'Scheduled live') {
   const date = scheduledTimestampToDate(raw.scheduledStartAt);
   if (!date || !Number.isFinite(date.getTime())) return null;
-  const location = [raw.city, raw.countryCode].filter(Boolean).join(', ') || 'Location to be confirmed';
+  const location = [raw.city, raw.countryCode].filter(Boolean).join(', ') || fallbackLocation;
   return {
     id: raw.id,
     status: 'scheduled',
-    title: raw.title || 'Scheduled live',
+    title: raw.title || fallbackTitle,
     location,
     scheduledAt: date.toLocaleDateString('en', { weekday: 'short', month: 'short', day: 'numeric' }),
     time: date.toLocaleTimeString('en', { hour: '2-digit', minute: '2-digit' }),
@@ -96,8 +92,9 @@ function toProfileUpcomingLive(raw) {
 }
 
 function ProfileSkeleton() {
+  const { t } = useTranslation();
   return (
-    <section className="screen-scroll creator-profile-screen" aria-label="Loading profile">
+    <section className="screen-scroll creator-profile-screen" aria-label={t('profile.loading')}>
       <div className="profile-skeleton profile-skeleton__cover" />
       <div className="creator-profile-content">
         <div className="profile-skeleton profile-skeleton__avatar" />
@@ -118,36 +115,37 @@ function ProfileState({ title, children }) {
   );
 }
 
-function ProfileCover({ profile, isOwnProfile, onShare, onEditCover }) {
+function ProfileCover({ profile, isOwnProfile, onShare }) {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const hasCover = Boolean(profile.coverUrl);
   const { unreadCount: msgUnread } = useMessaging();
 
   return (
     <header className="creator-cover" style={!hasCover ? { background: 'linear-gradient(135deg, #0f1419 0%, #1a2332 100%)' } : undefined}>
-      {hasCover ? <img src={profile.coverUrl} alt="Creator profile cover" /> : null}
+      {hasCover ? <img src={profile.coverUrl} alt={t('profile.coverAlt')} /> : null}
       <div className="creator-cover__shade" />
       <div className="creator-cover__topbar">
-        <button type="button" className="creator-icon-button" onClick={() => (isOwnProfile ? navigate('/discover') : navigate(-1))} aria-label="Back">
+        <button type="button" className="creator-icon-button" onClick={() => (isOwnProfile ? navigate('/discover') : navigate(-1))} aria-label={t('common.back')}>
           <ChevronLeft size={20} strokeWidth={1.9} />
         </button>
         <div className="creator-cover__actions">
-          <Link to="/messages" className="creator-icon-button creator-icon-button--msg" aria-label="Messages">
+          <Link to="/messages" className="creator-icon-button creator-icon-button--msg" aria-label={t('navigation.messages')}>
             <MessageCircle size={20} strokeWidth={2} />
             {msgUnread > 0 ? (
-              <span className="creator-icon-button__badge" aria-label={`${msgUnread} unread`}>
+              <span className="creator-icon-button__badge" aria-label={t('profile.unreadCount', { count: msgUnread })}>
                 {msgUnread > 9 ? '9+' : msgUnread}
               </span>
             ) : null}
           </Link>
-          <button type="button" className="creator-icon-button" aria-label="Notifications">
+          <button type="button" className="creator-icon-button" aria-label={t('home.notifications')}>
             <Bell size={18} strokeWidth={1.8} />
           </button>
-          <button type="button" className="creator-icon-button" onClick={onShare} aria-label="Share profile">
+          <button type="button" className="creator-icon-button" onClick={onShare} aria-label={t('profile.shareProfile')}>
             <Share2 size={18} strokeWidth={1.8} />
           </button>
           {isOwnProfile ? (
-            <button type="button" className="creator-icon-button" onClick={() => navigate('/settings')} aria-label="Settings">
+            <button type="button" className="creator-icon-button" onClick={() => navigate('/settings')} aria-label={t('common.settings')}>
               <Settings size={18} strokeWidth={1.8} />
             </button>
           ) : null}
@@ -159,34 +157,30 @@ function ProfileCover({ profile, isOwnProfile, onShare, onEditCover }) {
 
 const ADMIN_UIDS = new Set(['22IcpmDqxVeBXHxy3YqdaJ0tJKj1', 'WgovGMq4dFfM6OXwYbtwY1LgHHJ2', 'KIOTxdpPdARO7gDiCCcTWsZYpgD2']);
 
-function ProfileIdentity({ profile, isOwnProfile, onEditAvatar, userId }) {
+function ProfileIdentity({ profile, isOwnProfile, userId }) {
   const [expanded, setExpanded] = useState(false);
+  const { t } = useTranslation();
   const bioNeedsToggle = profile.bio.length > 145;
   const avatarUrl = profile.avatarUrl || '/assets/icons/icon-192.png';
   const showAdminBadge = isOwnProfile && ADMIN_UIDS.has(userId);
 
   return (
-    <section className="creator-identity" aria-label="Creator identity">
+    <section className="creator-identity" aria-label={t('profile.creatorIdentity')}>
       <div className="creator-identity__avatar-wrap">
-        <img className="creator-identity__avatar" src={avatarUrl} alt={`Portrait of ${profile.displayName}`} />
-        {isOwnProfile ? (
-          <button type="button" className="creator-identity__edit-avatar" onClick={onEditAvatar} aria-label="Edit my profile photo">
-            <Camera size={13} strokeWidth={2} />
-          </button>
-        ) : null}
+        <img className="creator-identity__avatar" src={avatarUrl} alt={t('profile.portraitOf', { name: profile.displayName })} />
       </div>
 
       <div className="creator-identity__body">
         <h1 className="creator-identity__name">
           {profile.displayName}
           {profile.verified ? (
-            <span className="creator-identity__verified" aria-label="Verified creator">
+            <span className="creator-identity__verified" aria-label={t('profile.verifiedCreator')}>
               <Check size={11} strokeWidth={2.6} />
             </span>
           ) : null}
         </h1>
         {showAdminBadge ? (
-          <Link to="/admin" className="profile-admin-badge" aria-label="Admin panel">
+          <Link to="/admin" className="profile-admin-badge" aria-label={t('profile.adminPanel')}>
             <svg width="13" height="13" viewBox="0 0 96 96" fill="none" aria-hidden="true">
               <defs>
                 <linearGradient id="pb-grad" x1="16" y1="34" x2="80" y2="34" gradientUnits="userSpaceOnUse">
@@ -198,7 +192,7 @@ function ProfileIdentity({ profile, isOwnProfile, onEditAvatar, userId }) {
               <path d="M16 34 L34 66 L48 44 L62 66 L80 34" stroke="url(#pb-grad)" strokeWidth="13" strokeLinecap="round" strokeLinejoin="round" fill="none" />
               <circle cx="48" cy="24" r="9" fill="#3B82F6" />
             </svg>
-            Admin
+            {t('profile.admin')}
           </Link>
         ) : null}
         <p className="creator-identity__meta">
@@ -207,13 +201,13 @@ function ProfileIdentity({ profile, isOwnProfile, onEditAvatar, userId }) {
         {isOwnProfile ? (
           <small className="creator-identity__own-note">
             <Eye size={11} aria-hidden="true" />
-            Visible to others
+            {t('profile.visibleToOthers')}
           </small>
         ) : null}
         <p className={expanded ? 'creator-identity__bio is-expanded' : 'creator-identity__bio'}>{profile.bio}</p>
         {bioNeedsToggle ? (
           <button type="button" className="creator-identity__more" onClick={() => setExpanded((value) => !value)}>
-            {expanded ? 'Show less' : 'Show more'}
+            {expanded ? t('common.showLess') : t('common.showMore')}
           </button>
         ) : null}
       </div>
@@ -231,17 +225,18 @@ function ProfileActions({
   onMessage,
 }) {
   const navigate = useNavigate();
+  const { t } = useTranslation();
 
   if (isOwnProfile) {
     return (
-      <section className="creator-identity__actions" aria-label="Personal profile actions">
+      <section className="creator-identity__actions" aria-label={t('profile.personalActions')}>
         <button type="button" className="creator-follow-button creator-follow-button--primary" onClick={() => navigate('/profile/edit')}>
-          Edit my profile
+          {t('profile.editProfile')}
         </button>
-        <button type="button" className="creator-secondary-icon" onClick={onShare} aria-label="Share my profile">
+        <button type="button" className="creator-secondary-icon" onClick={onShare} aria-label={t('profile.shareMyProfile')}>
           <Share2 size={18} strokeWidth={1.8} />
         </button>
-        <button type="button" className="creator-secondary-icon" onClick={() => navigate('/settings')} aria-label="Open settings">
+        <button type="button" className="creator-secondary-icon" onClick={() => navigate('/settings')} aria-label={t('profile.openSettings')}>
           <Settings size={18} strokeWidth={1.8} />
         </button>
       </section>
@@ -249,22 +244,22 @@ function ProfileActions({
   }
 
   return (
-    <section className="creator-identity__actions" aria-label="Creator profile actions">
+    <section className="creator-identity__actions" aria-label={t('profile.creatorActions')}>
       <button type="button" className={isFollowing ? 'creator-follow-button is-active' : 'creator-follow-button'} onClick={onToggleFollow}>
-        {isFollowing ? 'Following' : 'Follow'}
+        {isFollowing ? t('common.following') : t('common.follow')}
       </button>
       <button type="button" className="creator-follow-button creator-follow-button--message" onClick={onMessage}>
-        Send message
+        {t('common.sendMessage')}
       </button>
       <button
         type="button"
         className={notificationsEnabled ? 'creator-notify-button is-active' : 'creator-notify-button'}
         onClick={onToggleNotifications}
-        aria-label={notificationsEnabled ? 'Disable live notifications' : 'Enable live notifications'}
+        aria-label={notificationsEnabled ? t('profile.disableLiveNotifications') : t('profile.enableLiveNotifications')}
       >
         {notificationsEnabled ? <BellRing size={18} strokeWidth={1.8} /> : <Bell size={18} strokeWidth={1.8} />}
       </button>
-      <button type="button" className="creator-secondary-icon" onClick={onShare} aria-label="Share profile">
+      <button type="button" className="creator-secondary-icon" onClick={onShare} aria-label={t('profile.shareProfile')}>
         <Share2 size={18} strokeWidth={1.8} />
       </button>
     </section>
@@ -274,21 +269,22 @@ function ProfileActions({
 function ProfileImageSheet({ type, previewUrl, error, onClose, onSelectFile, onRemove, onSave }) {
   const inputId = `profile-${type}-file`;
   const isAvatar = type === 'avatar';
+  const { t } = useTranslation();
 
   return (
-    <div className="profile-image-sheet" role="dialog" aria-modal="true" aria-label={isAvatar ? 'Edit profile photo' : 'Edit cover'}>
-      <button type="button" className="profile-image-sheet__backdrop" onClick={onClose} aria-label="Close" />
+    <div className="profile-image-sheet" role="dialog" aria-modal="true" aria-label={isAvatar ? t('profile.avatarDialog') : t('profile.coverDialog')}>
+      <button type="button" className="profile-image-sheet__backdrop" onClick={onClose} aria-label={t('common.close')} />
       <div className="profile-image-sheet__panel">
-        <h2>{isAvatar ? 'Profile photo' : 'Cover'}</h2>
+        <h2>{isAvatar ? t('profile.profilePhoto') : t('profile.cover')}</h2>
         {previewUrl ? (
-          <img className={isAvatar ? 'profile-image-sheet__preview is-avatar' : 'profile-image-sheet__preview'} src={previewUrl} alt="Local preview" />
+          <img className={isAvatar ? 'profile-image-sheet__preview is-avatar' : 'profile-image-sheet__preview'} src={previewUrl} alt={t('profile.localPreview')} />
         ) : null}
         {error ? <p className="profile-image-sheet__error">{error}</p> : null}
-        <label htmlFor={inputId}>Prendre une photo</label>
-        <label htmlFor={inputId}>Choose from photo library</label>
-        <button type="button" onClick={onRemove}>{isAvatar ? 'Delete la photo' : 'Delete la couverture'}</button>
-        <button type="button" className="is-primary" disabled={!previewUrl} onClick={onSave}>Save</button>
-        <button type="button" onClick={onClose}>Cancel</button>
+        <label htmlFor={inputId}>{t('profile.takePhoto')}</label>
+        <label htmlFor={inputId}>{t('profile.chooseFromLibrary')}</label>
+        <button type="button" onClick={onRemove}>{isAvatar ? t('profile.removePhoto') : t('profile.removeCover')}</button>
+        <button type="button" className="is-primary" disabled={!previewUrl} onClick={onSave}>{t('common.save')}</button>
+        <button type="button" onClick={onClose}>{t('common.cancel')}</button>
         <input id={inputId} type="file" accept="image/jpeg,image/png,image/webp" onChange={onSelectFile} />
       </div>
     </div>
@@ -296,20 +292,21 @@ function ProfileImageSheet({ type, previewUrl, error, onClose, onSelectFile, onR
 }
 
 function ProfileStats({ profile, isOwnProfile, onViewFollowing }) {
+  const { t } = useTranslation();
   const followingCount = Array.isArray(profile.followedCreators)
     ? profile.followedCreators.length
     : (profile.followingCount ?? 0);
   const stats = [
-    { value: profile.liveCount, label: 'lives' },
-    { value: formatCompact(profile.followersCount), label: 'followers' },
-    { value: formatCompact(followingCount), label: 'following', clickable: isOwnProfile },
+    { value: profile.liveCount, key: 'lives', label: t('profile.statsLives') },
+    { value: formatCompact(profile.followersCount), key: 'followers', label: t('profile.statsFollowers') },
+    { value: formatCompact(followingCount), key: 'following', label: t('profile.statsFollowing'), clickable: isOwnProfile },
   ];
 
   return (
-    <section className="creator-stats" aria-label="Creator stats">
+    <section className="creator-stats" aria-label={t('profile.creatorStats')}>
       {stats.map((stat) => (
         <article
-          key={stat.label}
+          key={stat.key}
           className={stat.clickable ? 'creator-stats__clickable' : ''}
           onClick={stat.clickable ? onViewFollowing : undefined}
           role={stat.clickable ? 'button' : undefined}
@@ -324,16 +321,17 @@ function ProfileStats({ profile, isOwnProfile, onViewFollowing }) {
 }
 
 function FeaturedLiveCard({ profile, isOwnProfile, notified, onJoin, onNotify, onManage }) {
+  const { t } = useTranslation();
   const featured = profile.currentLive?.status !== 'ended' ? profile.currentLive : null;
   const fallback = featured ? null : profile.upcomingLives?.[0];
 
   if (!featured && !fallback) {
     if (!isOwnProfile) return null;
     return (
-      <section className="featured-live featured-live--none" aria-label="No scheduled live">
+      <section className="featured-live featured-live--none" aria-label={t('profile.noScheduledLive')}>
         <div className="featured-live__empty">
-          <p className="featured-live__none-text">No live scheduled</p>
-          <button type="button" onClick={onManage}>Schedule a live</button>
+          <p className="featured-live__none-text">{t('profile.noLiveScheduled')}</p>
+          <button type="button" onClick={onManage}>{t('profile.scheduleLive')}</button>
         </div>
       </section>
     );
@@ -343,37 +341,38 @@ function FeaturedLiveCard({ profile, isOwnProfile, notified, onJoin, onNotify, o
   const isLive = displayLive.status === 'live';
 
   return (
-    <section className={isLive ? 'featured-live is-live' : 'featured-live'} aria-label={isLive ? 'Live now' : 'Upcoming live'}>
+    <section className={isLive ? 'featured-live is-live' : 'featured-live'} aria-label={isLive ? t('globe.liveNow') : t('profile.upcomingLive')}>
       <div className={displayLive.thumbnailUrl ? 'featured-live__thumb' : 'featured-live__thumb featured-live__thumb--empty'}>
         {displayLive.thumbnailUrl ? <img src={displayLive.thumbnailUrl} alt="" /> : null}
         {isLive ? <span className="featured-live__live-dot" aria-hidden="true" /> : <Clock3 size={18} strokeWidth={1.8} />}
       </div>
       <div className="featured-live__content">
-        {isLive && <span className="featured-live__label">LIVE NOW</span>}
+        {isLive && <span className="featured-live__label">{t('profile.liveNowLabel')}</span>}
         <h2>{displayLive.title}</h2>
         <p>
           {isLive
-            ? `${displayLive.location}${displayLive.viewers ? ` · ${formatCompact(displayLive.viewers)} viewers` : ''}`
+            ? `${displayLive.location}${displayLive.viewers ? ` · ${t('profile.viewersCount', { count: formatCompact(displayLive.viewers) })}` : ''}`
             : [displayLive.scheduledAt && displayLive.time ? `${displayLive.scheduledAt} · ${displayLive.time}` : null, displayLive.location].filter(Boolean).join(' · ')}
         </p>
       </div>
       <button type="button" onClick={isLive ? (isOwnProfile ? onManage : onJoin) : isOwnProfile ? onManage : onNotify}>
-        {isLive ? (isOwnProfile ? 'Manage live' : 'Join') : isOwnProfile ? 'Edit' : notified ? 'Notification on' : 'Notify me'}
+        {isLive ? (isOwnProfile ? t('profile.manageLive') : t('profile.join')) : isOwnProfile ? t('common.edit') : notified ? t('profile.notificationOn') : t('common.notifyMe')}
       </button>
     </section>
   );
 }
 
 function ProfileTabs({ activeTab, onChange }) {
+  const { t } = useTranslation();
   const tabs = [
-    { id: 'lives', label: 'Lives' },
-    { id: 'about', label: 'About' },
-    { id: 'equipment', label: 'Equipment' },
-    { id: 'highlights', label: 'Highlights' },
+    { id: 'lives', label: t('profile.tabsLives') },
+    { id: 'about', label: t('profile.tabsAbout') },
+    { id: 'equipment', label: t('profile.equipment') },
+    { id: 'highlights', label: t('profile.tabsHighlights') },
   ];
 
   return (
-    <div className="creator-tabs" role="tablist" aria-label="Profile content">
+    <div className="creator-tabs" role="tablist" aria-label={t('profile.profileContent')}>
       {tabs.map((tab) => (
         <button
           key={tab.id}
@@ -391,16 +390,17 @@ function ProfileTabs({ activeTab, onChange }) {
 }
 
 function FavoritesTab({ lives, onOpenLive }) {
+  const { t } = useTranslation();
   if (!lives?.length) {
     return (
       <div className="profile-empty-state">
-        <p>No saved favorite yet.</p>
+        <p>{t('profile.emptyFavorites')}</p>
       </div>
     );
   }
 
   return (
-    <section className="recent-live-list" aria-label="Favorites">
+    <section className="recent-live-list" aria-label={t('profile.tabs.favorites')}>
       {lives.map((live) => (
         <RecentLiveCard
           key={`favorite-${live.id}`}
@@ -420,6 +420,7 @@ function ProfilePageHeader() {
 }
 
 function RecentLiveCard({ live, isOwnProfile, menuOpen, onOpen, onMenu }) {
+  const { t } = useTranslation();
   return (
     <article className="recent-live-card">
       <button type="button" className="recent-live-card__main" onClick={onOpen}>
@@ -437,26 +438,26 @@ function RecentLiveCard({ live, isOwnProfile, menuOpen, onOpen, onMenu }) {
           <strong>{live.title}</strong>
           <small>{live.location}</small>
           <span>
-            {live.relativeDate} · {formatCompact(live.views)} views
+            {live.relativeDate} · {t('profile.viewsCount', { count: formatCompact(live.views) })}
           </span>
         </span>
         <span className="recent-live-card__duration">{live.duration}</span>
       </button>
-      <button type="button" className="recent-live-card__menu" onClick={onMenu} aria-label={`Options for ${live.title}`}>
+      <button type="button" className="recent-live-card__menu" onClick={onMenu} aria-label={t('profile.optionsFor', { title: live.title })}>
         <MoreHorizontal size={18} strokeWidth={1.8} />
       </button>
       {menuOpen ? (
         <div className="recent-live-card__popover" role="menu">
           {isOwnProfile ? (
             <>
-              <button type="button" role="menuitem">Edit details</button>
-              <button type="button" role="menuitem">Hide from profile</button>
-              <button type="button" role="menuitem">Delete</button>
+              <button type="button" role="menuitem">{t('profile.editDetails')}</button>
+              <button type="button" role="menuitem">{t('profile.hideFromProfile')}</button>
+              <button type="button" role="menuitem">{t('common.delete')}</button>
             </>
           ) : (
             <>
-              <button type="button" role="menuitem">Share</button>
-              <button type="button" role="menuitem">Report</button>
+              <button type="button" role="menuitem">{t('common.share')}</button>
+              <button type="button" role="menuitem">{t('common.report')}</button>
             </>
           )}
         </div>
@@ -466,17 +467,18 @@ function RecentLiveCard({ live, isOwnProfile, menuOpen, onOpen, onMenu }) {
 }
 
 function RecentLivesTab({ lives, isOwnProfile, openMenuId, onOpenLive, onMenu }) {
+  const { t } = useTranslation();
   if (!lives?.length) {
     return (
       <div className="profile-empty-state">
-        <p>No replay published yet.</p>
-        {isOwnProfile ? <small>Your saved replays will appear here.</small> : null}
+        <p>{t('profile.emptyReplays')}</p>
+        {isOwnProfile ? <small>{t('profile.ownReplayHint')}</small> : null}
       </div>
     );
   }
 
   return (
-    <section className="recent-live-list" aria-label="Replays">
+    <section className="recent-live-list" aria-label={t('profile.tabs.replays')}>
       {lives.map((live) => (
         <RecentLiveCard
           key={live.id}
@@ -492,13 +494,14 @@ function RecentLivesTab({ lives, isOwnProfile, openMenuId, onOpenLive, onMenu })
 }
 
 function LivesTab({ profile, isOwnProfile, notified, onJoin, onNotify, onManage }) {
+  const { t } = useTranslation();
   if (!profile.currentLive || profile.currentLive.status === 'ended') {
     return (
       <div className="profile-empty-state">
-        <p>{profile.displayName} is not live right now.</p>
+        <p>{t('profile.notLiveRightNow', { name: profile.displayName })}</p>
         {!isOwnProfile && profile.upcomingLives?.length ? (
           <button type="button" onClick={onNotify}>
-            Enable notifications
+            {t('profile.enableNotifications')}
           </button>
         ) : null}
       </div>
@@ -518,11 +521,12 @@ function LivesTab({ profile, isOwnProfile, notified, onJoin, onNotify, onManage 
 }
 
 function UpcomingLiveCard({ live, isOwnProfile, notified, onNotify, onManage, onCancel }) {
+  const { t } = useTranslation();
   return (
     <article className="upcoming-live-card">
       {live.thumbnailUrl ? <img src={live.thumbnailUrl} alt="" /> : null}
       <div>
-        <span>Upcoming</span>
+        <span>{t('profile.upcomingBadge')}</span>
         <h3>{live.title}</h3>
         <p>{live.scheduledAt}</p>
         <small>
@@ -532,12 +536,12 @@ function UpcomingLiveCard({ live, isOwnProfile, notified, onNotify, onManage, on
       <div className="upcoming-live-card__actions">
         {isOwnProfile ? (
           <>
-            <button type="button" onClick={onManage}>Edit</button>
-            <button type="button" className="is-danger" onClick={() => onCancel?.(live.id)}>Cancel</button>
+            <button type="button" onClick={() => onManage(live)}>{t('common.edit')}</button>
+            <button type="button" className="is-danger" onClick={() => onCancel?.(live.id)}>{t('common.cancel')}</button>
           </>
         ) : (
           <button type="button" className={notified ? 'is-active' : ''} onClick={() => onNotify(live.id)}>
-            {notified ? 'Notification on' : 'Notify me'}
+            {notified ? t('profile.notificationOn') : t('common.notifyMe')}
           </button>
         )}
       </div>
@@ -546,17 +550,18 @@ function UpcomingLiveCard({ live, isOwnProfile, notified, onNotify, onManage, on
 }
 
 function UpcomingLivesTab({ lives, isOwnProfile, notifiedIds, onNotify, onManage, onCancel }) {
+  const { t } = useTranslation();
   if (!lives?.length) {
     return (
       <div className="profile-empty-state">
-        <p>{isOwnProfile ? 'No scheduled live.' : 'No upcoming live.'}</p>
-        {isOwnProfile ? <button type="button" onClick={onManage}>Schedule a live</button> : null}
+        <p>{isOwnProfile ? t('profile.noOwnUpcoming') : t('profile.noPublicUpcoming')}</p>
+        {isOwnProfile ? <button type="button" onClick={onManage}>{t('profile.scheduleLive')}</button> : null}
       </div>
     );
   }
 
   return (
-    <section className="upcoming-live-list" aria-label="Upcoming lives">
+    <section className="upcoming-live-list" aria-label={t('profile.upcomingLives')}>
       {lives.map((live) => (
         <UpcomingLiveCard key={live.id} live={live} isOwnProfile={isOwnProfile} notified={!!notifiedIds[live.id]} onNotify={onNotify} onManage={onManage} onCancel={onCancel} />
       ))}
@@ -565,43 +570,44 @@ function UpcomingLivesTab({ lives, isOwnProfile, notifiedIds, onNotify, onManage
 }
 
 function AboutTab({ profile }) {
+  const { t } = useTranslation();
   const links = [
-    profile.websiteUrl ? { label: 'Website', value: profile.websiteUrl } : null,
-    profile.instagramUrl ? { label: 'Instagram', value: profile.instagramUrl.startsWith('http') ? profile.instagramUrl : `@${profile.instagramUrl}` } : null,
-    profile.youtubeUrl ? { label: 'YouTube', value: profile.youtubeUrl } : null,
+    profile.websiteUrl ? { label: t('profile.linkWebsite'), value: profile.websiteUrl } : null,
+    profile.instagramUrl ? { label: t('profile.linkInstagram'), value: profile.instagramUrl.startsWith('http') ? profile.instagramUrl : `@${profile.instagramUrl}` } : null,
+    profile.youtubeUrl ? { label: t('profile.linkYoutube'), value: profile.youtubeUrl } : null,
   ].filter(Boolean);
 
   return (
-    <section className="about-section" aria-label="About the creator">
+    <section className="about-section" aria-label={t('profile.aboutCreator')}>
       <article>
-        <span>Activity</span>
+        <span>{t('profile.activity')}</span>
         <strong>{profile.profession}</strong>
       </article>
       <article>
-        <span>Location</span>
+        <span>{t('profile.location')}</span>
         <strong>{profile.city}, {profile.country}</strong>
       </article>
       {profile.languages?.length ? (
         <article>
-          <span>Spoken languages</span>
+          <span>{t('profile.spokenLanguages')}</span>
           <strong>{profile.languages.join(' · ')}</strong>
         </article>
       ) : null}
       {profile.categories?.length ? (
         <article>
-          <span>Categories</span>
+          <span>{t('profile.categories')}</span>
           <strong>{profile.categories.join(' · ')}</strong>
         </article>
       ) : null}
       {formatCreatedAt(profile.createdAt) ? (
         <article>
-          <span>Member since</span>
+          <span>{t('profile.memberSince')}</span>
           <strong>{formatCreatedAt(profile.createdAt)}</strong>
         </article>
       ) : null}
       {links.length ? (
         <article>
-          <span>Links</span>
+          <span>{t('profile.links')}</span>
           <div className="about-section__links">
             {links.map((link) => (
               <button key={link.label} type="button">{link.label} · {link.value}</button>
@@ -614,6 +620,7 @@ function AboutTab({ profile }) {
 }
 
 function EquipmentTab({ equipment, liveEquipment, isOwnProfile, displayName, onManage, onViewLive }) {
+  const { t } = useTranslation();
   const [activeCategoryId, setActiveCategoryId] = useState(null);
   const [sponsorshipOpen, setSponsorshipOpen] = useState(false);
   const publicEquipment = equipment.filter((item) => item.isPublic);
@@ -624,22 +631,22 @@ function EquipmentTab({ equipment, liveEquipment, isOwnProfile, displayName, onM
     return (
       <section className="equipment-tab">
         <div className="profile-empty-state">
-          <p>No equipment added yet</p>
-          <small>Add the gear you use to create your POV experiences.</small>
-          {isOwnProfile ? <button type="button" onClick={onManage}>Add equipment</button> : null}
+          <p>{t('equipment.noneAdded')}</p>
+          <small>{t('equipment.noneAddedHint')}</small>
+          {isOwnProfile ? <button type="button" onClick={onManage}>{t('equipment.addEquipment')}</button> : null}
         </div>
       </section>
     );
   }
 
   return (
-    <section className="equipment-tab" aria-label="Creator equipment">
+    <section className="equipment-tab" aria-label={t('profile.creatorEquipment')}>
       <div className="equipment-tab__header">
         <div>
-          <h2>{isOwnProfile ? 'My Equipment' : `${displayName}'s Equipment`}</h2>
-          <p>{isOwnProfile ? 'The gear I use to capture and stream my POV experiences.' : `The gear ${displayName} uses to capture and stream POV experiences.`}</p>
+          <h2>{isOwnProfile ? t('equipment.myEquipment') : t('equipment.creatorEquipment', { name: displayName })}</h2>
+          <p>{isOwnProfile ? t('equipment.ownDescription') : t('equipment.creatorDescription', { name: displayName })}</p>
         </div>
-        <button type="button" onClick={() => setSponsorshipOpen(true)}>About sponsorships</button>
+        <button type="button" onClick={() => setSponsorshipOpen(true)}>{t('equipment.aboutSponsorships')}</button>
       </div>
 
       <div className="equipment-category-list">
@@ -654,10 +661,10 @@ function EquipmentTab({ equipment, liveEquipment, isOwnProfile, displayName, onM
       </div>
 
       {selectedGroup ? (
-        <section className="equipment-detail-panel" aria-label={`${selectedGroup.label} equipment`}>
+        <section className="equipment-detail-panel" aria-label={t('equipment.categoryEquipment', { label: selectedGroup.label })}>
           <header>
             <h3>{selectedGroup.label}</h3>
-            <button type="button" onClick={() => setActiveCategoryId(null)}>Close</button>
+            <button type="button" onClick={() => setActiveCategoryId(null)}>{t('common.close')}</button>
           </header>
           {selectedGroup.items.map((item) => (
             <EquipmentItemRow key={item.id} item={item} />
@@ -670,23 +677,23 @@ function EquipmentTab({ equipment, liveEquipment, isOwnProfile, displayName, onM
 
       <section className="equipment-partnership-card">
         <div>
-          <h2>Interested in partnering with this creator?</h2>
-          <p>Partnership requests are reviewed by Vuvio before being shared.</p>
+          <h2>{t('equipment.partnershipTitle')}</h2>
+          <p>{t('equipment.partnershipDescription')}</p>
         </div>
-        <button type="button" onClick={() => setSponsorshipOpen(true)}>Partnership inquiries</button>
+        <button type="button" onClick={() => setSponsorshipOpen(true)}>{t('equipment.partnershipInquiries')}</button>
       </section>
 
       {isOwnProfile ? (
-        <button type="button" className="equipment-manage-link" onClick={onManage}>Manage my equipment</button>
+        <button type="button" className="equipment-manage-link" onClick={onManage}>{t('profile.manageEquipment')}</button>
       ) : null}
 
       {sponsorshipOpen ? (
-        <div className="equipment-info-modal" role="dialog" aria-modal="true" aria-label="About sponsorships">
-          <button type="button" className="equipment-info-modal__backdrop" onClick={() => setSponsorshipOpen(false)} aria-label="Close" />
+        <div className="equipment-info-modal" role="dialog" aria-modal="true" aria-label={t('equipment.aboutSponsorships')}>
+          <button type="button" className="equipment-info-modal__backdrop" onClick={() => setSponsorshipOpen(false)} aria-label={t('common.close')} />
           <div className="equipment-info-modal__panel">
-            <h2>About sponsorships</h2>
-            <p>Creators can mark gear as Sponsored, Affiliate link, or Provided by a brand. Vuvio keeps those labels visible for transparency.</p>
-            <button type="button" onClick={() => setSponsorshipOpen(false)}>Close</button>
+            <h2>{t('equipment.aboutSponsorships')}</h2>
+            <p>{t('equipment.sponsorshipDescription')}</p>
+            <button type="button" onClick={() => setSponsorshipOpen(false)}>{t('common.close')}</button>
           </div>
         </div>
       ) : null}
@@ -696,18 +703,19 @@ function EquipmentTab({ equipment, liveEquipment, isOwnProfile, displayName, onM
 
 function OwnProfileShortcuts() {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const shortcuts = [
-    { label: 'My favorites', icon: Bookmark, action: null },
-    { label: 'Following', icon: Check, action: null },
-    { label: 'My notifications', icon: Bell, action: null },
-    { label: 'Stats', icon: Sparkles, action: null },
-    { label: 'Settings', icon: Settings, action: () => navigate('/settings') },
+    { key: 'favorites', label: t('profile.myFavorites'), icon: Bookmark, action: null },
+    { key: 'following', label: t('common.following'), icon: Check, action: null },
+    { key: 'notifications', label: t('profile.myNotifications'), icon: Bell, action: null },
+    { key: 'stats', label: t('profile.stats'), icon: Sparkles, action: null },
+    { key: 'settings', label: t('common.settings'), icon: Settings, action: () => navigate('/settings') },
   ];
 
   return (
-    <section className="profile-shortcuts" aria-label="Personal profile shortcuts">
-      {shortcuts.map(({ label, icon: Icon, action }) => (
-        <button key={label} type="button" onClick={action ?? (() => {})}>
+    <section className="profile-shortcuts" aria-label={t('profile.personalShortcuts')}>
+      {shortcuts.map(({ key, label, icon: Icon, action }) => (
+        <button key={key} type="button" onClick={action ?? (() => {})}>
           <span>
             <Icon size={17} strokeWidth={1.8} />
             {label}
@@ -720,19 +728,13 @@ function OwnProfileShortcuts() {
 }
 
 export default function ProfilePage() {
-  console.count('[ProfilePage] render');
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const { creatorId } = useParams();
   const [searchParams] = useSearchParams();
   const { user, userProfile, profileLoading } = useAuth();
   const toastTimer = useRef(null);
   const [state, setState] = useState({ loading: true, currentUser: null, viewedProfile: null });
-
-  console.log('[ProfilePage] viewing:', creatorId ? `creator ${creatorId}` : 'own profile', {
-    userLoaded: !!user,
-    profileLoaded: !!userProfile,
-    profileLoading,
-  });
   const [isFollowing, setIsFollowing] = useState(false);
   const [followStatus, setFollowStatus] = useState('idle');
   const [notificationsEnabled, setNotificationsEnabled] = useState(false);
@@ -740,11 +742,11 @@ export default function ProfilePage() {
   const [notifiedIds, setNotifiedIds] = useState({});
   const [openMenuId, setOpenMenuId] = useState(null);
   const [toast, setToast] = useState('');
-  const [imageSheet, setImageSheet] = useState(null);
   const [equipmentLibrary, setEquipmentLibrary] = useState(() => getEquipmentLibrary());
   const [profileEquipmentEnriched, setProfileEquipmentEnriched] = useState([]);
   const [scheduledProfileLives, setScheduledProfileLives] = useState([]);
   const [showScheduleSheet, setShowScheduleSheet] = useState(false);
+  const [editingLive, setEditingLive] = useState(null);
   const [scheduledRefreshKey, setScheduledRefreshKey] = useState(0);
 
   useEffect(() => {
@@ -801,13 +803,13 @@ export default function ProfilePage() {
         setState({ loading: false, currentUser: userProfile || null, viewedProfile });
         setIsFollowing(Boolean(viewedProfile?.isFollowing || isFollowingCreator(viewedProfile?.id)));
         setFollowStatus('idle');
-        setNotificationsEnabled(Boolean(viewedProfile?.notificationsEnabled));
+        setNotificationsEnabled(Boolean(userProfile?.liveNotifications?.includes(uid)));
       } else {
         const localProfile = getCreatorProfile(uid);
         setState({ loading: false, currentUser: userProfile || null, viewedProfile: localProfile });
         setIsFollowing(Boolean(localProfile?.id && isFollowingCreator(localProfile.id)));
         setFollowStatus('idle');
-        setNotificationsEnabled(Boolean(localProfile?.notificationsEnabled));
+        setNotificationsEnabled(Boolean(userProfile?.liveNotifications?.includes(uid)));
       }
     } catch (err) {
       console.error('[ProfilePage] Failed to load creator:', err.message);
@@ -815,7 +817,7 @@ export default function ProfilePage() {
       setState({ loading: false, currentUser: userProfile || null, viewedProfile: localProfile });
       setIsFollowing(Boolean(localProfile?.id && isFollowingCreator(localProfile.id)));
       setFollowStatus('idle');
-      setNotificationsEnabled(Boolean(localProfile?.notificationsEnabled));
+      setNotificationsEnabled(Boolean(userProfile?.liveNotifications?.includes(uid)));
     }
   };
 
@@ -912,7 +914,7 @@ export default function ProfilePage() {
       .then(({ streams }) => {
         if (!active) return;
         const lives = (Array.isArray(streams) ? streams : [])
-          .map(toProfileUpcomingLive)
+          .map((raw) => toProfileUpcomingLive(raw, t('profile.locationTBD'), t('profile.scheduledLiveFallback')))
           .filter(Boolean);
         setScheduledProfileLives(lives);
       })
@@ -927,7 +929,7 @@ export default function ProfilePage() {
     if (!id) return;
     setNotifiedIds((current) => {
       const next = { ...current, [id]: !current[id] };
-      showToast(next[id] ? 'Notification on' : 'Notification removed');
+      showToast(next[id] ? t('profile.notificationOn') : t('profile.notificationRemoved'));
       return next;
     });
   };
@@ -935,7 +937,7 @@ export default function ProfilePage() {
   const toggleFollow = async () => {
     const profile = state.viewedProfile;
     if (!profile || isOwnProfile || followStatus === 'loading') return;
-    if (isFollowing && !window.confirm('Unfollow this creator?')) return;
+    if (isFollowing && !window.confirm(t('profile.unfollowConfirm'))) return;
 
     const previous = isFollowing;
     const next = !previous;
@@ -948,44 +950,17 @@ export default function ProfilePage() {
         const creatorUid = profile.uid || profile.id;
         (next ? followCreator : unfollowCreator)(user.uid, creatorUid).catch(() => {});
       }
-      showToast(next ? 'You are following this creator' : 'You are no longer following this creator');
+      showToast(next ? t('profile.nowFollowing') : t('profile.stoppedFollowing'));
       setFollowStatus('idle');
     } catch {
       setIsFollowing(previous);
       setFollowStatus('error');
-      showToast('Could not update following status');
+      showToast(t('profile.followingUpdateError'));
     }
-  };
-
-  const updateOwnProfileImage = async (field, value) => {
-    if (!isOwnProfile) return;
-    const updated = await saveOwnCreatorProfile({ [field]: value });
-    setState((current) => ({ ...current, currentUser: updated, viewedProfile: updated }));
-    showToast('Profile updated');
-  };
-
-  const onSelectImage = async (event) => {
-    const file = event.target.files?.[0];
-    if (!file || !imageSheet) return;
-    try {
-      const previewUrl = await readImageFile(file);
-      setImageSheet((current) => ({ ...current, previewUrl, error: '' }));
-    } catch (error) {
-      setImageSheet((current) => ({ ...current, error: error.message }));
-    } finally {
-      event.target.value = '';
-    }
-  };
-
-  const saveImageSheet = async () => {
-    if (!imageSheet?.previewUrl) return;
-    await updateOwnProfileImage(imageSheet.type === 'avatar' ? 'avatarUrl' : 'coverUrl', imageSheet.previewUrl);
-    setImageSheet(null);
   };
 
   if (state.loading) return <ProfileSkeleton />;
-  if (!state.currentUser) return <ProfileState title="Sign-in required">Sign in to view your profile.</ProfileState>;
-  if (!state.viewedProfile) return <ProfileState title="Profile not found">This creator does not exist or is no longer available.</ProfileState>;
+  if (!state.viewedProfile) return <ProfileState title={t('profile.notFound')}>{t('profile.notFoundBody')}</ProfileState>;
 
   const profile = {
     ...state.viewedProfile,
@@ -1000,33 +975,31 @@ export default function ProfilePage() {
   const liveEquipment = profile.currentLive
     ? getEquipmentSelection(profileEquipment, liveEquipmentIds)
     : [];
-  const shareProfile = () => showToast('Profile link copied');
-  const manageLive = () => setShowScheduleSheet(true);
+  const shareProfile = () => showToast(t('profile.linkCopied'));
+  const manageLive = (live = null) => { setEditingLive(live); setShowScheduleSheet(true); };
 
   const handleCancelLive = async (liveId) => {
     try {
       await cancelScheduledStream(liveId);
       setScheduledRefreshKey((k) => k + 1);
-      showToast('Live cancelled');
+      showToast(t('profile.liveCancelled'));
     } catch {
-      showToast('Could not cancel live');
+      showToast(t('profile.cancelLiveError'));
     }
   };
 
   return (
-    <section className="screen-scroll creator-profile-screen" aria-label={`Profile of ${profile.displayName}`}>
+    <section className="screen-scroll creator-profile-screen" aria-label={t('profile.profileOf', { name: profile.displayName })}>
       <ProfilePageHeader isOwnProfile={isOwnProfile} />
       <ProfileCover
         profile={profile}
         isOwnProfile={isOwnProfile}
         onShare={shareProfile}
-        onEditCover={() => setImageSheet({ type: 'cover', previewUrl: '', error: '' })}
       />
       <div className="creator-profile-content">
         <ProfileIdentity
           profile={profile}
           isOwnProfile={isOwnProfile}
-          onEditAvatar={() => setImageSheet({ type: 'avatar', previewUrl: '', error: '' })}
           userId={user?.uid}
         />
 
@@ -1036,8 +1009,13 @@ export default function ProfilePage() {
           notificationsEnabled={notificationsEnabled}
           onToggleFollow={toggleFollow}
           onToggleNotifications={() => {
-            setNotificationsEnabled((value) => !value);
-            showToast(notificationsEnabled ? 'Notifications disabled' : 'Notifications enabled');
+            const next = !notificationsEnabled;
+            setNotificationsEnabled(next);
+            showToast(next ? t('profile.notificationsEnabledToast') : t('profile.notificationsDisabledToast'));
+            if (user?.uid && state.viewedProfile) {
+              const targetUid = state.viewedProfile.uid || state.viewedProfile.id;
+              if (targetUid) setLiveNotifications(user.uid, targetUid, next).catch(() => {});
+            }
           }}
           onShare={shareProfile}
           onMessage={async () => {
@@ -1106,28 +1084,13 @@ export default function ProfilePage() {
 
       {showScheduleSheet ? (
         <ScheduleLiveSheet
-          onClose={() => setShowScheduleSheet(false)}
+          existingLive={editingLive}
+          onClose={() => { setShowScheduleSheet(false); setEditingLive(null); }}
           onScheduled={() => setScheduledRefreshKey((k) => k + 1)}
+          onCancel={async (liveId) => { await handleCancelLive(liveId); setShowScheduleSheet(false); setEditingLive(null); }}
         />
       ) : null}
       {toast ? <div className="profile-toast" role="status">{toast}</div> : null}
-      {imageSheet ? (
-        <ProfileImageSheet
-          type={imageSheet.type}
-          previewUrl={imageSheet.previewUrl}
-          error={imageSheet.error}
-          onClose={() => setImageSheet(null)}
-          onSelectFile={onSelectImage}
-          onSave={saveImageSheet}
-          onRemove={() => {
-            setImageSheet((current) => ({
-              ...current,
-              previewUrl: current.type === 'avatar' ? '/assets/icons/icon-192.png' : null,
-              error: '',
-            }));
-          }}
-        />
-      ) : null}
     </section>
   );
 }

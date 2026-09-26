@@ -2050,7 +2050,7 @@ function LiveViewer({ liveId, creatorMode = false }) {
       <div className="live-feed__top-gradient" />
       <div className="live-feed__bottom-gradient" />
       <div className="live-feed__watermark" aria-hidden="true">
-        <BrandMark size={26} showName />
+        <BrandMark size={64} nameSize={18} gap={-8} nameOffsetY={2} showName />
       </div>
 
       <div className="live-position-pill" aria-label={`Live ${index + 1} of ${liveFeed.length}`}>

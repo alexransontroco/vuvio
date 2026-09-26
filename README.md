@@ -1,3 +1,5 @@
+Status: Current
+
 # Vuvio
 
 Vuvio is a mobile-first POV live streaming app for outdoor, adventure, craft, and field-based creators.

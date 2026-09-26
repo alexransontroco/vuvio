@@ -1,3 +1,6 @@
+Status: Current
+Read before coding: Product and architecture context for major UX, backend, streaming, monetization, and roadmap changes.
+
 # Journal d'Architecture — Vuvio
 
 > Document vivant. Chaque session ajoute une entrée numérotée en bas.  
@@ -11,7 +14,7 @@
 
 ### 1.1 L'idée centrale
 
-Vuvio est une **plateforme de streaming live spécialisée dans l'outdoor et l'aventure**. L'ambition : permettre à des créateurs (alpinistes, surfeurs, trail runners, guides, parapentistes…) de **diffuser en direct depuis le terrain**, et à une communauté de passionnés de les regarder, interagir et découvrir du contenu immersif ancré dans des lieux réels.
+Vuvio est une **plateforme de streaming live spécialisée dans l'outdoor et l'aventure**. L'ambition : permettre à des créateurs (alpinistes, surfeurs, trail runners, guides, parapentistes…) de **diffuser en Live depuis le terrain**, et à une communauté de passionnés de les regarder, interagir et découvrir du contenu immersif ancré dans des lieux réels.
 
 Deux différences fondamentales avec YouTube Live ou Twitch :
 1. **Le lieu est premier** — chaque stream est géolocalisé. Le globe 3D est l'interface de découverte principale, pas un algorithme.
@@ -328,7 +331,7 @@ conversations/{conversationId}/messages/{messageId}
 
 - Seuls les participants peuvent lire/écrire
 - `senderId` doit correspondre à `auth.uid`
-- Écriture des champs highlight interdite en direct (passe par le backend uniquement)
+- Écriture des champs highlight interdite en Live (passe par le backend uniquement)
 
 ---
 

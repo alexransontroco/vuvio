@@ -6,6 +6,249 @@ Historique des sessions de travail, du plus récent au plus ancien.
 
 ---
 
+## 2026-09-26 — WHEP viewer — multi-viewer live WebRTC via Cloudflare
+`🚀 Feature` | WHEP, multi-viewer illimité, cross-réseau, ~2-3s latence
+
+### Architecture
+- **WHEP** (WebRTC HTTP Egress) : chaque viewer se connecte directement à Cloudflare Stream en WebRTC
+- Illimité simultanés, cross-réseau (4G/5G/WiFi/desktop), latence ~2-3s
+- Priorité : WHEP → HLS → P2P (fallback)
+
+### Implémentation
+- Nouveau `startWhepViewer` / `stopWhepViewer` dans `webrtcService.js`
+  - POST SDP offer → Cloudflare → SDP answer → DTLS → stream
+  - Livraison du stream uniquement à `connectionState === 'connected'`
+  - Timeout fetch 15s + ICE gathering max 8s
+- Path WHEP inséré avant HLS dans le viewer effect de `WatchPage.jsx`
+- `capturedWhepUrl` déclaré au scope de `setupBroadcast` et écrit dans Firestore (comme `hlsManifestUrl`) dès le démarrage
+- Propagation Firestore → `createdLives` élargie à `whepUrl`
+
+### Confirmé en logs
+```
+[VIEWER] trying WHEP
+[WHEP] ontrack: video / audio
+[WHEP] connectionState: connecting → connected
+[WHEP] DTLS connected — delivering stream
+[VIEWER] WHEP connected
+```
+
+---
+
+## 2026-09-26 — Multi-viewer live via HLS Cloudflare CDN
+`🚀 Feature` + `🐛 Fix` | Multi-viewer, ingest WHIP, Safari HLS
+
+### Objectif
+Permettre à des dizaines de viewers simultanés (monde entier, comptes différents) de regarder un même live — pas seulement le premier viewer P2P.
+
+### Architecture retenue
+- **WHIP** (WebRTC HTTP Ingest) → Cloudflare Stream → **HLS CDN** pour tous les viewers
+- P2P reste comme fallback rapide pour le même WiFi (démarre en parallèle après 3 échecs HLS)
+- Relay RTMPS comme fallback ingest si WHIP échoue
+
+### Fix 1 — Firestore write découplé de l'ingest (`WatchPage.jsx`)
+- **Avant** : `hlsManifestUrl` écrit dans Firestore APRÈS que WHIP/relay soit connecté → viewers attendaient jusqu'à 25s avant de commencer leurs retries HLS → 60s window gaspillée
+- **Après** : Firestore (`hlsManifestUrl` + `cloudflareLiveInputId`) mis à jour IMMÉDIATEMENT après `startBroadcast`. WHIP/relay tournent en background (IIFE fire-and-forget). Viewers ont 60s complètes pour que Cloudflare soit prêt (~25-30s). 
+
+### Fix 2 — Safari HLS : manifest vide + fetch timeout
+- Cloudflare peut retourner un manifest `#EXTM3U` valide mais sans segments (pipeline pas encore prêt) → Safari mettait `video.src`, l'erreur déclenchait un retry, 20× → "Reconnecting live"
+- Fix : vérifier que le manifest contient `#EXTINF` ou `#EXT-X-STREAM-INF` avant de passer à `video.src`
+- Ajout d'un AbortController avec timeout 8s sur le fetch manifest Safari (évite les réponses qui bloquent)
+- `MAX_HLS_RETRIES` : 20 → 30 (fenêtre 60s → 90s)
+
+### Ingest status indicator (broadcaster)
+- `● HLS active — unlimited viewers` : WHIP connecté
+- `● Relay active — unlimited viewers` : relay connecté
+- `⚠ Stream not reaching Cloudflare — viewers limited to 1` : les deux ont échoué
+
+### État au déploiement
+- Mobile (même WiFi) : fonctionne ✓
+- Safari desktop (autre réseau) : fix déployé, résultat à confirmer
+
+---
+
+## 2026-09-26 — Fix écran noir viewer Chrome desktop → mobile
+`🐛 Fix` | WebRTC — `connectionState` gating
+
+### Problème
+- Viewer mobile voyait écran noir (mais pouvait commenter) quand le broadcaster était sur Chrome desktop
+- `ontrack` se déclenche au parsing SDP, bien avant que le DTLS soit terminé et que les frames transitent réellement
+- `video.srcObject = stream` + spinner caché immédiatement → vidéo noire jusqu'à la fin du DTLS (ou jamais si cross-réseau)
+
+### Fix — `webrtcService.js` `watchBroadcast`
+- `ontrack` capture le stream dans `pendingStream` mais ne le livre plus à WatchPage
+- `onconnectionstatechange` livre `pendingStream` uniquement quand `connectionState === 'connected'` (DTLS complet, frames qui transitent)
+- `onconnectionstatechange` défini tôt (avant ICE gathering) + check post-`setDoc` pour les cas ultra-rapides (même device)
+
+### Bonus — overlay diagnostic `?debug=viewer`
+- Ajouter `?debug=viewer` à l'URL du watch pour voir readyState, conn/ice state, tracks en temps réel depuis mobile
+
+---
+
+## 2026-09-25 — Fix P2P live viewer (écran noir)
+`🐛 Fix` | WebRTC signaling + Firestore rules
+
+### Problème
+- Viewer P2P voyait un écran noir même si les logs indiquaient "playback started"
+- `ontrack` se déclenche au parsing SDP (pas à la réception des frames) → faux positif
+- Le `setDoc` du watcher Firestore échouait silencieusement → broadcaster ne recevait jamais la réponse SDP → DTLS incomplet → aucune frame ne transitait
+
+### Fix 1 — Firestore rules (`firestore.rules`)
+- Règle watcher simplifiée : `allow create, update` sans restriction sur `watcherUid`
+- La restriction `watcherUid == request.auth.uid` échouait pour les viewers authentifiés avec `merge:true`
+
+### Fix 2 — setDoc non-fatal (`webrtcService.js`)
+- Answer write wrappé dans try/catch silencieux
+- Évite la boucle de retry infinie qui détruisait la connexion P2P fonctionnelle
+
+---
+
+## 2026-09-25 — Globe UX + Explore polish
+`✨ Feature` `🎨 Design` | Globe redesign, cluster sheet, live markers
+
+### Globe — marqueurs live
+- Points live pulsent en taille (core scale) + luminosité via sinusoïde, chaque point a sa propre phase (désynchronisés)
+- Vitesse de pulsation réduite (0.38×) — plus lent et organique
+- Halos (rings) adaptatifs : rayon proportionnel à l'altitude (`altitudeRef`), plus petits en zoom proche
+- Rayon max rings réduit, opacité basse (0.4), vitesse et période irrégulières par point (hash sur ID)
+- `coreBaseScale` stocké dans `markerRefs` pour que l'animation puisse scaler correctement
+
+### Globe — interactions
+- Cliquer un live déjà zoomé : garde l'altitude actuelle si elle est déjà plus basse que 1.2 (pas de dézoom)
+- Fermer la cluster sheet : revient à la position initiale (lat 10, lng 14, altitude 3.4) ET réactive l'autoRotation
+
+### Globe — cluster bottom sheet redesign
+- **Thumbnail** 58×58px, coins arrondis
+- **Bouton Watch** pill cyan (`linear-gradient #3ef0e8 → #1ec8d4`) remplace l'icône play
+- **Nom créateur** affiché en cyan clair sous le titre du live
+- **Double action** : tap sur thumbnail/texte → profil créateur (`/profile/:creatorUid`) ; tap Watch → live
+- **Titre contextuel** : "3 lives in Paris" si tous les lives ont une ville, sinon "3 lives nearby"
+- Viewers formatés avec `.toLocaleString()` (2,087 au lieu de 2087)
+- Sheet plus grande (border-radius 22px), animation avec fade-in
+
+### Explore / Notifications
+- Popover notifications : fond opaque `#0e1a2b`, largeur 260px, padding compact
+- Message "aucune notification" : padding réduit → popover très compact quand vide
+
+### Divers
+- `CurrentGlobePage` simplifié : plus de mode-pill tabs (Current/Test2)
+- Firestore rules : watchers subcollection accepte viewers anonymes (`watcherUid = null`)
+- `ProfilePage` : suppression du guard "login required" pour les profils publics
+- Nav label "Explorer" → "Explore" (fr.json)
+- Explore cards (Live Now, Nearby, Upcoming) : passage à CSS grid `grid-auto-columns` — plus de flex + marges négatives
+
+---
+
+## 2026-09-24 — Design finition — Vuvio Product Reference (docs/)
+`🎨 Design` | Session design deck présentation
+
+### Pages corrigées
+- **Page 1 (cover)** : suppression des blocs texte surchargés, tagline épurée ; ajout de deux téléphones flottants (Watch + Explore) sur la droite pour remplir l'espace vide
+- **Page 2** : remplacement photos problématiques, dégradé masquant les labels embarqués
+- **Page 3** : grille position-grid fixée à hauteur réelle, formule ancrée en bas
+- **Page 4** : remplacement icones sprite par 7 icones neon individuelles (icon-spectateur/createur/marques.png) — bien plus lisibles
+- **Page 5** : refonte complète — grille 3×2 égale pour les 6 surfaces (Watch, Globe, Explore, Profil, Replay & Recap, Équipement) ; tous les vrais screenshots app utilisés ; plus de hiérarchie inégale (hero/mini)
+- **Page 7** : piliers plus contrastés (backdrop-filter renforcé)
+- **Page 8** : business-grid à hauteur fixe, remplit la slide
+- **Page 10** : risk-road à hauteur 750px, blockquote ancré sans gap
+
+### Assets ajoutés
+- `screens/explore.png`, `screens/profil.png`, `screens/equipement.png` — vrais screenshots app
+- `assets/icon-watch.png`, `icon-explore.png`, `icon-globe.png`, `icon-spectateur.png`, `icon-profil.png`, `icon-createur.png`, `icon-marques.png` — icones neon individuelles
+
+---
+
+## 2026-09-24 — Explore UX, notifications popover, fix Edit Profile
+`✨ Feature` `🐛 Fix` | Session UI + bugs profil
+
+### Notifications — popover bulle
+- Cloche dans `ExploreHeader` ouvre maintenant un popover positionné sous le bouton (plus de page dédiée)
+- Backdrop invisible pour fermer au clic extérieur, flèche CSS pointant vers la cloche
+- `NotifPopover` + `NotifItem` inline dans `ExplorePage`, réutilise les classes CSS `notif-*`
+
+### Explore — cartes live enrichies
+- Ville/pays des lives maintenant affichés en **vert** (`#4cd97b`) sur les miniatures
+- Avatar (initiale ou photo) + nom du créateur ajoutés en bas de chaque carte live et nearby
+
+### Fix Edit Profile — sauvegardes perdues
+- **Cause racine** : `saveOwnCreatorProfile` envoyait tout `EMPTY_PROFILE_BASE` à Firestore (dont `followingCount: 0`, `liveCount: 0`) → rejeté par les règles de sécurité Firestore → données jamais persistées
+- **Fix** : seuls les champs éditables sont envoyés à Firestore (`displayName`, `bio`, `profession`, `city`, `country`, `languages`, `categories`, URLs, `playlists`, `avatarUrl`, `coverUrl`)
+- **Fix** : `effect2` dans `EditProfilePage` (reset sur changement UID) supprimé — causait une réinitialisation du formulaire à vide après chaque init
+- **Fix** : `setLocalUserProfile` dans `AuthContext` — met à jour le contexte immédiatement après save, sans repassage Firestore
+- **Fix** : `loadProfile` dans `AuthContext` — merge les données localStorage (champs éditables) par-dessus les données Firestore au chargement
+- Bouton Camera direct sur la photo de profil supprimé (édition photo uniquement via Edit Profile)
+- Images base64 (trop volumineuses pour Firestore) strippées avant envoi Firestore, conservées en localStorage
+
+---
+
+## 2026-09-24 — Notifications : système complet (index, dedup, messages, bell profil)
+`✨ Feature` | Session notifications — finalisation
+
+### Firestore index
+- Ajout index `notifications` (collectionGroup) sur `createdAt DESC` dans `firestore.indexes.json`
+
+### liveNotifications (opt-in fan-out)
+- `followCreator` + `unfollowCreator` maintenant synchronisent aussi `liveNotifications` array
+- `setLiveNotifications(uid, creatorUid, enabled)` nouveau helper dans `creatorService.js`
+- `fanOutCreatorLive` utilise `liveNotifications` au lieu de `followedCreators` + pagination (500/page)
+
+### Cloche profil branchée
+- `ProfilePage` : `notificationsEnabled` initialisé depuis `userProfile.liveNotifications.includes(creatorId)` (plus depuis `viewedProfile.notificationsEnabled`)
+- Toggle cloche → `setLiveNotifications()` Firestore en temps réel
+
+### Remind me — état persisté
+- `getRemindedStreamIds(uid)` dans `notificationService.js` — charge les streamIds déjà rappelés
+- `ExplorePage` charge les IDs au mount et les passe en prop `isReminded` aux `UpcomingCard` et `UpcomingDetailSheet`
+
+### notifyNewMessage — Cloud Function
+- Trigger `onDocumentCreated('conversations/{convId}/messages/{msgId}')` → écrit `message_received` dans `users/{recipientId}/notifications`
+- NotificationsPage : type `message_received` → icône MessageCircle, clic navigue vers `/messages/{conversationId}`
+
+### new_follower deduplication
+- Cache doc `users/{creatorUid}/followerNotifCache/{followerUid}` — skip si notifié dans les 24h
+
+---
+
+## 2026-09-24 — Notifications : Cloud Functions fan-out (scope b)
+`✨ Feature` | Session notifications Cloud Functions
+
+### Cloud Functions Firestore triggers
+- **`fanOutCreatorLive`** — `onDocumentCreated('activeLives/{liveId}')` : quand un live démarre, fan-out vers tous les followers (jusqu'à 500 via `array-contains`) → écrit `creator_live` dans `users/{followerUid}/notifications`
+- **`notifyNewFollower`** — `onDocumentUpdated('users/{uid}')` : détecte les UIDs ajoutés à `followedCreators` → écrit `new_follower` dans `users/{creatorUid}/notifications` pour chaque nouveau follower
+
+### Standardisation du path notifications
+- `remindScheduledStreams.ts` mis à jour : écrit maintenant dans `users/{creatorId}/notifications` (plus dans `notifications/{creatorId}/items`)
+- Tous les types (remind_me, stream_reminder, creator_live, new_follower) dans le même subcollection
+
+### Firestore rules
+- Ajout règle `users/{uid}/notifications/{notifId}` : lecture/création/update (read only) pour le propriétaire, write admin SDK depuis les fonctions
+
+### NotificationsPage mise à jour
+- Navigation au clic : `creator_live` → `/watch`, `new_follower` → `/profile/:uid`, `stream_reminder` → `/watch`
+- Ajout icône `CalendarClock` pour `stream_reminder`
+
+---
+
+## 2026-09-24 — Système de notifications Firestore (backend minimal)
+`✨ Feature` | Session notifications
+
+### Architecture notifications
+- **`src/services/notificationService.js`** — CRUD Firestore sur `users/{uid}/notifications/{id}` : `subscribeNotifications`, `createNotification`, `markRead`, `markAllRead` (batch)
+- **`src/hooks/useNotifications.js`** — hook React avec subscription onSnapshot, `unreadCount`, `markRead`, `markAllRead`
+- **`src/routes/NotificationsPage.jsx`** — page dédiée : liste triée par date, état lu/non-lu, "Tout marquer comme lu", skeleton loader, empty state
+- **`src/styles/pages/notifications.css`** — styles : items unread surlignés cyan, dot badge, skeleton animé, empty state
+
+### Intégration Explore
+- Bell icon dans `ExploreHeader` → navigue vers `/notifications` avec badge de non-lus
+- Bouton "Remind me" dans `UpcomingCard` + `UpcomingDetailSheet` → écrit une notification `remind_me` dans Firestore si connecté
+- Fallback local si non connecté (state local uniquement)
+
+### Améliorations à faire (scope b — Cloud Functions)
+- `new_follower` : fan-out quand quelqu'un te follow
+- `creator_live` : alertes quand un créateur suivi part en live
+- Aggregation des notifs groupées (ex: "5 personnes ont aimé ton live")
+
+---
+
 ## 2026-09-22 — Globe Test 2 : redesign marqueurs HTML (clusters + dots)
 `✨ Feature` | Session globe redesign
 

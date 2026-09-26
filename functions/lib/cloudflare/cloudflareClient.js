@@ -31,7 +31,8 @@ function normalizeLiveInput(result, customerCode) {
         : typeof rtmps?.streamKey === 'string' ? rtmps.streamKey
             : typeof srt?.streamId === 'string' ? srt.streamId : null;
     // WHIP URL: use webRTC.url from Cloudflare, or construct from RTMPS stream key (same key, different protocol)
-    const webRTCUrl = typeof webRTC?.url === 'string' ? webRTC.url : null;
+    const webRTCUrl = typeof webRTC?.url === 'string' ? webRTC.url
+        : (customerCode && uid ? `https://customer-${customerCode}.cloudflarestream.com/${uid}/webRTC/publish` : null);
     const whepUrl = whepUrlFor(customerCode, uid, typeof webRTCPlayback?.url === 'string' ? webRTCPlayback.url : null, webRTCUrl);
     console.log(`[CLOUDFLARE] live input ${uid} — webRTCUrl: ${webRTCUrl ?? 'MISSING'} | whepUrl: ${whepUrl ?? 'none'} | streamKey: ${streamKey ? 'present' : 'MISSING'} | keys in result: ${Object.keys(result).join(',')}`);
     if (!webRTC)

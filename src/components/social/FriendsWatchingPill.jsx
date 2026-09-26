@@ -1,4 +1,5 @@
 import { Users } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import './social.css';
 
 /**
@@ -6,6 +7,7 @@ import './social.css';
  * Appears as a subtle presence indicator in the live viewer
  */
 export function FriendsWatchingPill({ friends = [], count = 0, onClick, className = '' }) {
+  const { t } = useTranslation();
   if (count === 0) return null;
 
   const visibleFriends = friends.slice(0, 3);
@@ -16,7 +18,9 @@ export function FriendsWatchingPill({ friends = [], count = 0, onClick, classNam
       type="button"
       className={`friends-watching-pill ${className}`}
       onClick={onClick}
-      aria-label={count === 1 ? `${friends[0]?.name} is watching` : `${count} friends are watching`}
+      aria-label={count === 1
+        ? t('social.pill.singleAria', { name: friends[0]?.name })
+        : t('social.pill.multipleAria', { count })}
     >
       <div className="friends-watching-pill__avatars">
         {visibleFriends.map((friend, index) => (
@@ -30,7 +34,7 @@ export function FriendsWatchingPill({ friends = [], count = 0, onClick, classNam
           </div>
         ))}
         {hiddenCount > 0 && (
-          <div className="friends-watching-pill__avatar friends-watching-pill__avatar--more" title={`+${hiddenCount} more`}>
+          <div className="friends-watching-pill__avatar friends-watching-pill__avatar--more" title={t('social.pill.moreTitle', { count: hiddenCount })}>
             +{hiddenCount}
           </div>
         )}
@@ -40,12 +44,12 @@ export function FriendsWatchingPill({ friends = [], count = 0, onClick, classNam
         {count === 1 ? (
           <>
             <span className="friends-watching-pill__name">{friends[0]?.name}</span>
-            <span className="friends-watching-pill__label">is here</span>
+            <span className="friends-watching-pill__label">{t('social.pill.isHere')}</span>
           </>
         ) : (
           <>
-            <span className="friends-watching-pill__count">{count} friends</span>
-            <span className="friends-watching-pill__label">are here</span>
+            <span className="friends-watching-pill__count">{t('social.pill.friendsCount', { count })}</span>
+            <span className="friends-watching-pill__label">{t('social.pill.areHere')}</span>
           </>
         )}
       </div>

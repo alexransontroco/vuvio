@@ -503,7 +503,7 @@ export default function DiscoverFeedPage() {
         />
         {showTravelLabel ? (
           <div className="watch-travel-label">
-            {swipeDir > 0 ? 'Next' : 'Back'} · {travelCity}
+            {swipeDir > 0 ? t('discover.travelNext') : t('discover.travelBack')} · {travelCity}
           </div>
         ) : null}
       </div>
@@ -549,7 +549,7 @@ export default function DiscoverFeedPage() {
       {current.isCityTour && current.currentLocation ? (
         <div key={`pin-${current.id}`} className="discover-city-pin">
           <MapPin size={11} strokeWidth={1.8} />
-          Currently {current.currentLocation}
+          {t('discover.currently', { location: current.currentLocation })}
         </div>
       ) : null}
 

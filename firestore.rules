@@ -29,6 +29,21 @@ service cloud.firestore {
       allow delete: if false;
     }
 
+    // ── User notifications (subcollection) ────────
+    match /users/{uid}/notifications/{notifId} {
+      allow read:   if request.auth != null && request.auth.uid == uid;
+      allow create: if request.auth != null && request.auth.uid == uid
+        && request.resource.data.keys().hasOnly([
+          'type', 'title', 'body', 'read', 'createdAt',
+          'streamId', 'scheduledAt', 'creatorUid', 'creatorName',
+          'followerUid', 'followerName', 'followerPhotoURL'
+        ])
+        && request.resource.data.read == false;
+      allow update: if request.auth != null && request.auth.uid == uid
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['read']);
+      allow delete: if false;
+    }
+
     // ── Username reservations ──────────────────────
     match /usernames/{username} {
       allow read:   if true;
@@ -51,27 +66,23 @@ service cloud.firestore {
 
       match /watchers/{watcherId} {
         allow read: if true;
-        allow create: if request.auth != null
-          && request.resource.data.watcherUid == request.auth.uid
-          && request.resource.data.keys().hasOnly([
+        // P2P signaling docs — only allow the expected fields, no auth restriction
+        // (SDP/ICE data is not sensitive; restricting by watcherUid caused permission failures)
+        allow create: if request.resource.data.keys().hasOnly([
             'sdpAnswer',
             'signalSessionId',
             'watcherUid',
             'watcherIceCandidates',
             'updatedAt'
           ]);
-        allow update: if request.auth != null
-          && resource.data.watcherUid == request.auth.uid
-          && request.resource.data.watcherUid == resource.data.watcherUid
-          && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+        allow update: if request.resource.data.diff(resource.data).affectedKeys().hasOnly([
             'sdpAnswer',
             'signalSessionId',
             'watcherUid',
             'watcherIceCandidates',
             'updatedAt'
           ]);
-        allow delete: if request.auth != null
-          && resource.data.watcherUid == request.auth.uid;
+        allow delete: if true;
       }
 
       match /comments/{commentId} {

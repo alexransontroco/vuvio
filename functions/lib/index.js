@@ -38,6 +38,8 @@ import { processVideoAnalysisJob } from './videoProcessing/processVideoAnalysisJ
 import { remindScheduledStreams } from './streams/remindScheduledStreams.js';
 import { cancelScheduledStream } from './streams/cancelScheduledStream.js';
 import { updateAllTrustScores } from './users/updateTrustScore.js';
+import { fanOutCreatorLive } from './notifications/fanOutCreatorLive.js';
+import { notifyNewFollower } from './notifications/notifyNewFollower.js';
 function pathParts(path = '') {
     return path.replace(/^\/api\/?/, '/').split('/').filter(Boolean);
 }
@@ -207,3 +209,5 @@ export const updateTrustScoresScheduled = onSchedule({
         console.error('[trust] scheduled recalculation failed:', error);
     }
 });
+import { notifyNewMessage } from './notifications/notifyNewMessage.js';
+export { fanOutCreatorLive, notifyNewFollower, notifyNewMessage };

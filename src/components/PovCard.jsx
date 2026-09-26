@@ -1,12 +1,14 @@
+import { useTranslation } from 'react-i18next';
 import LiveBadge from './LiveBadge.jsx';
 import CreatorLink from './CreatorLink.jsx';
 import { Bookmark, Eye } from 'lucide-react';
 
 export default function PovCard({ stream, onClick }) {
+  const { t } = useTranslation();
   return (
     <article className="pov-card">
-      <button className="pov-card__open" type="button" onClick={onClick} aria-label={`Open ${stream.name}'s live`}>
-        <img src={stream.image} alt={`${stream.role} POV`} />
+      <button className="pov-card__open" type="button" onClick={onClick} aria-label={t('povCard.openLive', { name: stream.name })}>
+        <img src={stream.image} alt={t('povCard.povAlt', { role: stream.role })} />
         <span className="pov-card__shade" />
         <span className="pov-card__top">
           <LiveBadge compact />

@@ -1,7 +1,7 @@
 import { CURRENT_USER_ID, creatorProfiles, ownCreatorProfile } from '../data/creatorProfiles.js';
 import { lives } from '../data/lives.js';
 import { mapStreams } from '../data/mapStreams.js';
-import { streams } from '../data/mockStreams.js';
+import { streams, upcomingStreams } from '../data/mockStreams.js';
 
 const STORAGE_KEY = 'vuvio:ownCreatorProfile';
 const PROFILE_UPDATED_EVENT = 'vuvio:profile-updated';
@@ -84,7 +84,7 @@ function normalizeInstagram(value) {
 function findCreatorSource(creatorId) {
   if (!creatorId) return null;
   const normalizedId = creatorSlug(creatorId);
-  const allContent = [...mapStreams, ...streams, ...lives];
+  const allContent = [...mapStreams, ...streams, ...upcomingStreams, ...lives];
 
   return allContent.find((item) => {
     const displayName = item.name ?? item.streamer ?? String(item.who ?? '').split(' - ')[0] ?? '';
@@ -98,15 +98,17 @@ function findCreatorSource(creatorId) {
 function profileFromContent(content, creatorId) {
   if (!content) return null;
 
-  const displayName = content.name ?? content.streamer ?? String(content.who ?? '').split(' - ')[0] ?? 'Vuvio creator';
+  const displayName = content.name ?? content.streamer ?? content.creatorName ?? String(content.who ?? '').split(' - ')[0] ?? 'Vuvio creator';
   const id = creatorId ?? aliasByDisplayName[displayName] ?? creatorSlug(displayName);
-  const locationParts = content.place ? String(content.place).split(',') : [];
+  const locationParts = String(content.place ?? content.locationLabel ?? '').split(',');
   const city = content.city ?? locationParts[0]?.trim() ?? '';
   const country = content.country ?? locationParts.slice(1).join(',').trim() ?? '';
   const title = content.experienceTitle ?? content.title ?? content.description ?? content.note ?? `Live: ${content.job ?? content.role ?? 'Live'}`;
   const image = content.image ?? content.thumbnailUrl ?? '/assets/icons/icon-192.png';
   const viewers = Number.parseInt(String(content.viewers ?? content.viewerLabel ?? 0).replace(/\D/g, ''), 10) || 0;
   const category = content.subcategory ?? content.category ?? content.job ?? content.role ?? 'Live';
+  const isUpcoming = content.status === 'upcoming';
+  const location = [city, country].filter(Boolean).join(', ') || content.locationLabel || content.place || '';
 
   return normalizeProfile({
     id,
@@ -117,7 +119,9 @@ function profileFromContent(content, creatorId) {
     profession: content.job ?? content.role ?? 'Vuvio creator',
     city,
     country,
-    bio: `Vuvio creator live from ${city || 'the field'}.`,
+    bio: isUpcoming
+      ? content.livePlan ?? content.description ?? `Vuvio creator preparing a scheduled live from ${city || 'the field'}.`
+      : `Vuvio creator live from ${city || 'the field'}.`,
     categories: [category].filter(Boolean),
     followersCount: 0,
     followingCount: 0,
@@ -128,18 +132,31 @@ function profileFromContent(content, creatorId) {
           id: content.id,
           title,
           thumbnailUrl: image,
-          location: [city, country].filter(Boolean).join(', '),
+          location,
           status: 'live',
           viewers,
         }
       : null,
+    upcomingLives: isUpcoming
+      ? [
+          {
+            id: content.id,
+            title,
+            thumbnailUrl: image,
+            location,
+            status: 'upcoming',
+            scheduledAt: content.day,
+            time: content.time,
+          },
+        ]
+      : [],
     recentLives: content.status === 'live' || content.kind
       ? [
           {
             id: `${content.id}-replay`,
             title,
             thumbnailUrl: image,
-            location: [city, country].filter(Boolean).join(', '),
+            location,
             relativeDate: 'Recently',
             duration: content.duration ?? '—',
             views: viewers,
@@ -273,7 +290,29 @@ export async function saveOwnCreatorProfile(nextProfile) {
     const { db } = await import('../firebase.js');
     const firestoreUid = normalized.uid || normalized.id;
     if (firestoreUid && firestoreUid !== CURRENT_USER_ID) {
-      await setDoc(doc(db, 'users', firestoreUid), { ...normalized, uid: firestoreUid, id: firestoreUid }, { merge: true });
+      const isDataUrl = (v) => typeof v === 'string' && v.startsWith('data:');
+      // Only send user-editable fields — never send stats (followingCount, liveCount, etc.)
+      // because Firestore rules forbid changing those fields client-side
+      const firestoreData = {
+        uid: firestoreUid,
+        id: firestoreUid,
+        displayName: normalized.displayName ?? '',
+        name: normalized.displayName ?? '',
+        bio: normalized.bio ?? '',
+        profession: normalized.profession ?? '',
+        city: normalized.city ?? '',
+        country: normalized.country ?? '',
+        username: normalized.username ?? '',
+        languages: normalized.languages ?? [],
+        categories: normalized.categories ?? [],
+        websiteUrl: normalized.websiteUrl ?? '',
+        instagramUrl: normalized.instagramUrl ?? '',
+        youtubeUrl: normalized.youtubeUrl ?? '',
+        playlists: normalized.playlists ?? [],
+        avatarUrl: isDataUrl(normalized.avatarUrl) ? null : (normalized.avatarUrl ?? null),
+        coverUrl: isDataUrl(normalized.coverUrl) ? null : (normalized.coverUrl ?? null),
+      };
+      await setDoc(doc(db, 'users', firestoreUid), firestoreData, { merge: true });
     }
   } catch (err) {
     console.error('[profileService] Failed to save profile to Firestore:', err.message);

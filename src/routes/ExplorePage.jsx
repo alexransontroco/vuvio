@@ -1,7 +1,9 @@
 import {
   Bell,
   Briefcase,
+  CalendarClock,
   ChevronRight,
+  Clock,
   Eye,
   Globe,
   Hammer,
@@ -12,11 +14,16 @@ import {
   Mountain,
   Music,
   Palette,
+  Play,
   Plus,
+  Radio,
   Search,
+  Share2,
   SlidersHorizontal,
   Smartphone,
   Truck,
+  UsersRound,
+  UserRound,
   UtensilsCrossed,
   X,
   Zap,
@@ -24,7 +31,9 @@ import {
 } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import LiveBadge from '../components/LiveBadge.jsx';
+import CreatorLink from '../components/CreatorLink.jsx';
 import { streams, upcomingStreams } from '../data/mockStreams.js';
 import { useMessaging } from '../context/MessagingContext.jsx';
 import { searchCreators, followCreator, unfollowCreator } from '../services/creatorService.js';
@@ -32,29 +41,8 @@ import { useAuth } from '../context/AuthContext.jsx';
 import { subscribeToCreatedLives } from '../services/createdLiveService.js';
 import { getCountdownState } from '../utils/countdown.js';
 import { analyticsService } from '../services/analytics/analyticsService.ts';
-
-const quickFilters = [
-  { id: 'for-you', label: 'For you' },
-  { id: 'nearby', label: 'Nearby' },
-  { id: 'jobs', label: 'Jobs' },
-  { id: 'sports', label: 'Sports' },
-  { id: 'crafts', label: 'Crafts' },
-  { id: 'travel', label: 'Travel' },
-  { id: 'nature', label: 'Nature' },
-  { id: 'music', label: 'Music' },
-];
-
-const categoryTiles = [
-  { id: 'jobs', label: 'Jobs', desc: 'Discover real workdays', icon: Briefcase, accent: 'var(--vuvio-cyan)' },
-  { id: 'sports', label: 'Sports', desc: 'Move, ride and explore', icon: Zap, accent: 'var(--vuvio-blue)' },
-  { id: 'crafts', label: 'Crafts', desc: 'Watch people make', icon: Hammer, accent: 'var(--vuvio-orange)' },
-  { id: 'nature', label: 'Nature', desc: 'See the world outside', icon: Leaf, accent: '#4cd97b' },
-  { id: 'food', label: 'Food & Drink', desc: 'Taste the world live', icon: UtensilsCrossed, accent: 'var(--vuvio-orange)' },
-  { id: 'transport', label: 'Transport', desc: 'On board, on the move', icon: Truck, accent: 'var(--vuvio-blue)' },
-  { id: 'travel', label: 'Travel', desc: 'Explore from anywhere', icon: Globe, accent: 'var(--vuvio-cyan)' },
-  { id: 'city-tours', label: 'City Tours', desc: 'Walk the world live', icon: MapPin, accent: 'var(--vuvio-cyan)' },
-  { id: 'music', label: 'Music', desc: 'Live sound from the world', icon: Music, accent: 'var(--vuvio-orange)' },
-];
+import { useNotifications } from '../hooks/useNotifications.js';
+import { createNotification, getRemindedStreamIds } from '../services/notificationService.js';
 
 const chipCategories = {
   jobs: ['City', 'Craft', 'Cuisine'],
@@ -66,37 +54,13 @@ const chipCategories = {
   music: [],
 };
 
-const envFilters = [
-  { id: 'air', label: 'Air', family: 'air' },
-  { id: 'earth', label: 'Land', family: 'earth' },
-  { id: 'water', label: 'Water', family: 'water' },
+const activityChipIds = [
+  'fishing', 'surfing', 'cycling', 'hiking', 'skiing',
+  'cooking', 'architecture', 'medicine', 'pottery', 'photography',
+  'tourGuide', 'farming', 'carpentry', 'welding', 'sailing',
 ];
 
-const themeOptions = [
-  { id: 'food', label: 'Food', icon: UtensilsCrossed },
-  { id: 'adventure', label: 'Adventure', icon: Mountain },
-  { id: 'transport', label: 'Transport', icon: Truck },
-  { id: 'nature', label: 'Nature', icon: Leaf },
-  { id: 'art', label: 'Art', icon: Palette },
-  { id: 'music', label: 'Music', icon: Music },
-  { id: 'daily', label: 'Daily life', icon: Home },
-  { id: 'tech', label: 'Technology', icon: Smartphone },
-];
-
-const activityChips = [
-  'Fishing', 'Surfing', 'Cycling', 'Hiking', 'Skiing',
-  'Cooking', 'Architecture', 'Medicine', 'Pottery', 'Photography',
-  'Tour Guide', 'Farming', 'Carpentry', 'Welding', 'Sailing',
-];
-
-const equipmentOptions = ['GoPro', 'Drone', 'Bicycle', 'Smartphone', 'Boat', 'Motorbike'];
-
-const locationOptions = [
-  { id: 'nearby', label: 'Nearby' },
-  { id: 'city', label: 'City' },
-  { id: 'country', label: 'Country' },
-  { id: 'worldwide', label: 'Worldwide' },
-];
+const equipmentOptionIds = ['gopro', 'drone', 'bicycle', 'smartphone', 'boat', 'motorbike'];
 
 const fallbackImage = '/assets/icons/icon-512.png';
 
@@ -180,6 +144,16 @@ function LiveNowCard({ stream, onOpen }) {
               {location}
             </span>
           ) : null}
+          {stream.name ? (
+            <div className="ep-live-card__creator">
+              <span className="ep-live-card__creator-avatar">
+                {stream.photoURL ? (
+                  <img src={stream.photoURL} alt={stream.name} onError={(e) => { e.currentTarget.style.display = 'none'; }} />
+                ) : stream.name[0].toUpperCase()}
+              </span>
+              <span className="ep-live-card__creator-name">{stream.name}</span>
+            </div>
+          ) : null}
         </div>
       </div>
     </article>
@@ -188,7 +162,7 @@ function LiveNowCard({ stream, onOpen }) {
 
 function NearbyCard({ stream, onOpen }) {
   const title = stream.note ?? stream.role ?? stream.name;
-  const location = stream.city ?? stream.place ?? '';
+  const location = [stream.city, stream.country].filter(Boolean).join(', ') || stream.place || '';
 
   return (
     <article className="ep-nearby-card" onClick={() => onOpen(stream.id)} onMouseEnter={() => prefetchManifest(stream.hlsManifestUrl)} role="button" tabIndex={0}>
@@ -199,28 +173,41 @@ function NearbyCard({ stream, onOpen }) {
           loading="lazy"
           onError={(e) => { e.currentTarget.src = fallbackImage; }}
         />
-        <LiveBadge compact pulse />
-      </div>
-      <div className="ep-nearby-card__info">
-        <p className="ep-nearby-card__title">{title}</p>
-        <span className="ep-nearby-card__meta">
-          <MapPin size={10} strokeWidth={1.8} />
-          {location}
-        </span>
-        <span className="ep-nearby-card__viewers">
-          <Eye size={10} strokeWidth={1.8} />
-          {formatViewers(stream.viewerLabel)}
-        </span>
-        {stream.category ? <span className="ep-nearby-card__tag">{stream.category}</span> : null}
+        <div className="ep-nearby-card__top">
+          <LiveBadge compact pulse />
+        </div>
+        <div className="ep-nearby-card__overlay">
+          <p className="ep-nearby-card__title">{title}</p>
+          {location ? (
+            <span className="ep-nearby-card__location">
+              <MapPin size={10} strokeWidth={1.8} />
+              {location}
+            </span>
+          ) : null}
+          {stream.name ? (
+            <div className="ep-nearby-card__creator">
+              <span className="ep-nearby-card__creator-avatar">
+                {stream.photoURL ? (
+                  <img src={stream.photoURL} alt={stream.name} onError={(e) => { e.currentTarget.style.display = 'none'; }} />
+                ) : stream.name[0].toUpperCase()}
+              </span>
+              <span className="ep-nearby-card__creator-name">{stream.name}</span>
+            </div>
+          ) : null}
+        </div>
       </div>
     </article>
   );
 }
 
-function UpcomingCard({ item }) {
-  const [hasReminder, setHasReminder] = useState(false);
+function UpcomingCard({ item, onOpen, onRemind, isReminded = false }) {
+  const { t } = useTranslation();
+  const [hasReminder, setHasReminder] = useState(isReminded);
+  useEffect(() => { setHasReminder(isReminded); }, [isReminded]);
   const [now, setNow] = useState(() => new Date());
-  const date = item.day === 'TODAY' ? `Today · ${item.time}` : `Tomorrow · ${item.time}`;
+  const date = item.day === 'TODAY'
+    ? t('explore.dateToday', { time: item.time })
+    : t('explore.dateTomorrow', { time: item.time });
 
   useEffect(() => {
     const timer = setInterval(() => setNow(new Date()), 1000);
@@ -230,7 +217,13 @@ function UpcomingCard({ item }) {
   const countdown = item.startsAt ? getCountdownState(item.startsAt, now) : null;
 
   return (
-    <article className="ep-upcoming-card">
+    <article
+      className="ep-upcoming-card"
+      onClick={() => onOpen(item)}
+      role="button"
+      tabIndex={0}
+      style={{ cursor: 'pointer' }}
+    >
       <div className="ep-upcoming-card__media">
         <img
           src={item.image ?? fallbackImage}
@@ -238,7 +231,7 @@ function UpcomingCard({ item }) {
           loading="lazy"
           onError={(e) => { e.currentTarget.src = fallbackImage; }}
         />
-        <span className="ep-upcoming-card__badge">Upcoming</span>
+        <span className="ep-upcoming-card__badge">{t('explore.upcomingBadge')}</span>
       </div>
       <div className="ep-upcoming-card__info">
         <p className="ep-upcoming-card__title">{item.title}</p>
@@ -265,13 +258,108 @@ function UpcomingCard({ item }) {
         <button
           type="button"
           className={hasReminder ? 'ep-upcoming-card__notify is-set' : 'ep-upcoming-card__notify'}
-          onClick={(e) => { e.stopPropagation(); setHasReminder((v) => !v); }}
-          aria-label={hasReminder ? 'Reminder set' : 'Set reminder'}
+          onClick={(e) => {
+            e.stopPropagation();
+            const next = !hasReminder;
+            setHasReminder(next);
+            if (next) onRemind?.(item);
+          }}
+          aria-label={hasReminder ? t('explore.reminderSet') : t('explore.setReminder')}
         >
-          {hasReminder ? 'Reminder on' : 'Remind me'}
+          {hasReminder ? t('explore.reminderOn') : t('explore.remindMe')}
         </button>
       </div>
     </article>
+  );
+}
+
+function UpcomingDetailSheet({ item, onClose, onWatch, onRemind, isReminded = false }) {
+  const { t } = useTranslation();
+  const [hasReminder, setHasReminder] = useState(isReminded);
+  const [now, setNow] = useState(() => new Date());
+
+  useEffect(() => {
+    const timer = setInterval(() => setNow(new Date()), 1000);
+    return () => clearInterval(timer);
+  }, []);
+
+  const countdown = item.startsAt ? getCountdownState(item.startsAt, now) : null;
+  const startsAt = item.startsAt ? new Date(item.startsAt) : null;
+  const isLive = startsAt ? startsAt <= now : false;
+  const dateLabel = startsAt
+    ? startsAt.toLocaleString(undefined, { weekday: 'short', hour: '2-digit', minute: '2-digit' })
+    : item.day === 'TODAY'
+      ? t('explore.dateToday', { time: item.time })
+      : t('explore.dateTomorrow', { time: item.time });
+  const place = item.locationLabel ?? t('explore.locationTbc');
+  const creatorName = item.creatorName ?? 'Vuvio creator';
+  const creator = { ...item, name: creatorName, place, status: 'upcoming' };
+  const povLabel = item.povType === 'vehicle'
+    ? t('explore.povVehicle')
+    : item.povType === 'fixed'
+      ? t('explore.povFixed')
+      : t('explore.liveTitleFallback');
+  const interested = typeof item.interestedCount === 'number'
+    ? (item.interestedCount + (hasReminder ? 1 : 0)).toLocaleString()
+    : '';
+
+  return (
+    <div className="home-upcoming-sheet" role="dialog" aria-modal="true" aria-label={t('explore.detailsFor', { title: item.title })}>
+      <button type="button" className="home-upcoming-sheet__backdrop" onClick={onClose} aria-label={t('explore.close')} />
+      <section className="home-upcoming-sheet__panel">
+        <header>
+          <div>
+            <span className={isLive ? 'home-upcoming-badge home-upcoming-badge--live' : 'home-upcoming-badge'}>
+              {isLive ? t('explore.liveNow') : t('explore.upcomingBadge')}
+            </span>
+            <h2>{item.title}</h2>
+          </div>
+          <button type="button" onClick={onClose} aria-label={t('explore.close')}>
+            <X size={18} strokeWidth={1.9} />
+          </button>
+        </header>
+        <img src={item.image ?? fallbackImage} alt={item.title} loading="lazy" decoding="async" />
+        <div className="home-upcoming-sheet__meta">
+          <p><MapPin size={15} strokeWidth={1.9} /> {place}</p>
+          <p><CalendarClock size={15} strokeWidth={1.9} /> {dateLabel}</p>
+          <p><Clock size={15} strokeWidth={1.9} /> {povLabel}</p>
+          {interested ? <p><UsersRound size={15} strokeWidth={1.9} /> {t('explore.interestedCount', { count: interested })}</p> : null}
+        </div>
+        {countdown ? (
+          <div className="home-countdown home-countdown--sheet" aria-label={countdown.ariaLabel}>
+            <span>{countdown.label}</span>
+            {countdown.value ? <strong>{countdown.value}</strong> : null}
+          </div>
+        ) : null}
+        <p className="home-upcoming-sheet__description">{item.description ?? t('explore.detailsBeforeLive')}</p>
+        <div className="home-upcoming-creator">
+          <CreatorLink creator={creator} stopPropagation showMeta metaLabel={`${povLabel} · ${place}`} />
+          <p>{item.livePlan ?? item.description ?? `${creatorName} will share this POV live from ${place}.`}</p>
+        </div>
+        <div className="home-upcoming-sheet__actions">
+          <button
+            type="button"
+            className={hasReminder ? 'is-active' : ''}
+            onClick={() => {
+              if (isLive) {
+                onWatch(item.id);
+              } else {
+                const next = !hasReminder;
+                setHasReminder(next);
+                if (next) onRemind?.(item);
+              }
+            }}
+          >
+            {isLive ? <Play size={15} fill="currentColor" strokeWidth={1.8} /> : <Bell size={15} strokeWidth={1.9} />}
+            {isLive ? t('common.watch') : hasReminder ? t('explore.reminderOn') : t('common.notifyMe')}
+          </button>
+          <button type="button" onClick={() => navigator.share?.({ title: item.title, text: item.description })}>
+            <Share2 size={15} strokeWidth={1.9} />
+            {t('common.share')}
+          </button>
+        </div>
+      </section>
+    </div>
   );
 }
 
@@ -295,6 +383,7 @@ function CategoryTile({ tile, onSelect }) {
 }
 
 function CreatorCard({ creator, isFollowing, onFollow, onUnfollow, onViewProfile }) {
+  const { t } = useTranslation();
   return (
     <article className="ep-creator-card" onClick={() => onViewProfile(creator.id)}>
       <div className="ep-creator-card__header">
@@ -318,12 +407,12 @@ function CreatorCard({ creator, isFollowing, onFollow, onUnfollow, onViewProfile
         {isFollowing ? (
           <>
             <Check size={15} strokeWidth={2} />
-            Following
+            {t('common.following')}
           </>
         ) : (
           <>
             <Plus size={15} strokeWidth={2} />
-            Follow
+            {t('common.follow')}
           </>
         )}
       </button>
@@ -332,13 +421,14 @@ function CreatorCard({ creator, isFollowing, onFollow, onUnfollow, onViewProfile
 }
 
 function ExploreSection({ title, onSeeAll, children }) {
+  const { t } = useTranslation();
   return (
     <section className="ep-section">
       <header className="ep-section__header">
         <h2>{title}</h2>
         {onSeeAll ? (
           <button type="button" className="ep-section__see-all" onClick={onSeeAll}>
-            See all
+            {t('explore.seeAll')}
             <ChevronRight size={14} strokeWidth={2.1} />
           </button>
         ) : null}
@@ -349,8 +439,49 @@ function ExploreSection({ title, onSeeAll, children }) {
 }
 
 function FilterSheet({ onClose, filters, onApply, resultCount }) {
+  const { t } = useTranslation();
   const [local, setLocal] = useState({ status: 'both', ...filters });
   const [activitySearch, setActivitySearch] = useState('');
+
+  const themeOptions = useMemo(() => ([
+    { id: 'food', label: t('explore.themes.food'), icon: UtensilsCrossed },
+    { id: 'adventure', label: t('explore.themes.adventure'), icon: Mountain },
+    { id: 'transport', label: t('explore.themes.transport'), icon: Truck },
+    { id: 'nature', label: t('explore.themes.nature'), icon: Leaf },
+    { id: 'art', label: t('explore.themes.art'), icon: Palette },
+    { id: 'music', label: t('explore.themes.music'), icon: Music },
+    { id: 'daily', label: t('explore.themes.daily'), icon: Home },
+    { id: 'tech', label: t('explore.themes.tech'), icon: Smartphone },
+  ]), [t]);
+
+  const envFilters = useMemo(() => ([
+    { id: 'air', label: t('explore.filtersList.air'), family: 'air' },
+    { id: 'earth', label: t('explore.filtersList.land'), family: 'earth' },
+    { id: 'water', label: t('explore.filtersList.water'), family: 'water' },
+  ]), [t]);
+
+  const equipmentOptions = useMemo(
+    () => equipmentOptionIds.map((id) => ({ id, label: t(`explore.equipment.${id}`) })),
+    [t],
+  );
+
+  const locationOptions = useMemo(() => ([
+    { id: 'nearby', label: t('explore.locations.nearby') },
+    { id: 'city', label: t('explore.locations.city') },
+    { id: 'country', label: t('explore.locations.country') },
+    { id: 'worldwide', label: t('explore.locations.worldwide') },
+  ]), [t]);
+
+  const activityChips = useMemo(
+    () => activityChipIds.map((id) => ({ id, label: t(`explore.activities.${id}`) })),
+    [t],
+  );
+
+  const statusOptions = useMemo(() => ([
+    { value: 'live', label: t('explore.statusLiveNow') },
+    { value: 'upcoming', label: t('explore.upcomingBadge') },
+    { value: 'both', label: t('explore.statusBoth') },
+  ]), [t]);
 
   const toggle = (group, value) => {
     setLocal((prev) => {
@@ -367,48 +498,45 @@ function FilterSheet({ onClose, filters, onApply, resultCount }) {
   };
 
   const filteredActivities = activitySearch.trim()
-    ? activityChips.filter((a) => a.toLowerCase().includes(activitySearch.toLowerCase()))
+    ? activityChips.filter((a) => a.label.toLowerCase().includes(activitySearch.toLowerCase()))
     : activityChips;
 
   return (
-    <div className="ep-filter-sheet" role="dialog" aria-modal="true" aria-label="Filter live streams">
-      <button type="button" className="ep-filter-sheet__backdrop" onClick={onClose} aria-label="Close" />
+    <div className="ep-filter-sheet" role="dialog" aria-modal="true" aria-label={t('explore.filterSheetAria')}>
+      <button type="button" className="ep-filter-sheet__backdrop" onClick={onClose} aria-label={t('explore.close')} />
       <div className="ep-filter-sheet__panel">
         <span className="ep-filter-sheet__handle" aria-hidden="true" />
         <div className="ep-filter-sheet__titlerow">
-          <strong>Filter</strong>
+          <strong>{t('explore.filterTitle')}</strong>
           <button
             type="button"
             className="ep-filter-sheet__reset"
             onClick={() => setLocal({ status: 'both' })}
           >
-            Reset
+            {t('explore.reset')}
           </button>
         </div>
 
         <div className="ep-filter-sheet__groups">
 
           <div className="ep-filter-group">
-            <p>Status</p>
+            <p>{t('explore.groupStatus')}</p>
             <div className="ep-filter-chips">
-              {['Live now', 'Upcoming', 'Both'].map((opt) => {
-                const val = opt === 'Live now' ? 'live' : opt === 'Upcoming' ? 'upcoming' : 'both';
-                return (
-                  <button
-                    key={val}
-                    type="button"
-                    className={(local.status ?? 'both') === val ? 'ep-filter-chip is-active' : 'ep-filter-chip'}
-                    onClick={() => setRadio('status', val)}
-                  >
-                    {opt}
-                  </button>
-                );
-              })}
+              {statusOptions.map((opt) => (
+                <button
+                  key={opt.value}
+                  type="button"
+                  className={(local.status ?? 'both') === opt.value ? 'ep-filter-chip is-active' : 'ep-filter-chip'}
+                  onClick={() => setRadio('status', opt.value)}
+                >
+                  {opt.label}
+                </button>
+              ))}
             </div>
           </div>
 
           <div className="ep-filter-group">
-            <p>Theme</p>
+            <p>{t('explore.groupTheme')}</p>
             <div className="ep-filter-theme-grid">
               {themeOptions.map((opt) => {
                 const Icon = opt.icon;
@@ -431,12 +559,12 @@ function FilterSheet({ onClose, filters, onApply, resultCount }) {
           </div>
 
           <div className="ep-filter-group">
-            <p>Activity or job</p>
+            <p>{t('explore.groupActivity')}</p>
             <div className="ep-filter-search">
               <Search size={13} strokeWidth={1.9} />
               <input
                 type="search"
-                placeholder="Search activities..."
+                placeholder={t('explore.searchActivitiesPlaceholder')}
                 value={activitySearch}
                 onChange={(e) => setActivitySearch(e.target.value)}
               />
@@ -444,19 +572,19 @@ function FilterSheet({ onClose, filters, onApply, resultCount }) {
             <div className="ep-filter-chips ep-filter-chips--wrap" style={{ marginTop: '8px' }}>
               {filteredActivities.map((act) => (
                 <button
-                  key={act}
+                  key={act.id}
                   type="button"
-                  className={local.activity?.includes(act) ? 'ep-filter-chip is-active' : 'ep-filter-chip'}
-                  onClick={() => toggle('activity', act)}
+                  className={local.activity?.includes(act.id) ? 'ep-filter-chip is-active' : 'ep-filter-chip'}
+                  onClick={() => toggle('activity', act.id)}
                 >
-                  {act}
+                  {act.label}
                 </button>
               ))}
             </div>
           </div>
 
           <div className="ep-filter-group">
-            <p>Environment</p>
+            <p>{t('explore.groupEnvironment')}</p>
             <div className="ep-filter-chips">
               {envFilters.map((opt) => (
                 <button
@@ -472,23 +600,23 @@ function FilterSheet({ onClose, filters, onApply, resultCount }) {
           </div>
 
           <div className="ep-filter-group">
-            <p>Equipment</p>
+            <p>{t('explore.groupEquipment')}</p>
             <div className="ep-filter-chips ep-filter-chips--wrap">
               {equipmentOptions.map((opt) => (
                 <button
-                  key={opt}
+                  key={opt.id}
                   type="button"
-                  className={local.equipment?.includes(opt) ? 'ep-filter-chip is-active' : 'ep-filter-chip'}
-                  onClick={() => toggle('equipment', opt)}
+                  className={local.equipment?.includes(opt.id) ? 'ep-filter-chip is-active' : 'ep-filter-chip'}
+                  onClick={() => toggle('equipment', opt.id)}
                 >
-                  {opt}
+                  {opt.label}
                 </button>
               ))}
             </div>
           </div>
 
           <div className="ep-filter-group">
-            <p>Location</p>
+            <p>{t('explore.groupLocation')}</p>
             <div className="ep-filter-chips">
               {locationOptions.map((opt) => (
                 <button
@@ -510,7 +638,7 @@ function FilterSheet({ onClose, filters, onApply, resultCount }) {
           className="ep-filter-sheet__apply"
           onClick={() => { onApply(local); onClose(); }}
         >
-          Show {resultCount} perspective{resultCount !== 1 ? 's' : ''}
+          {t('explore.showResults', { count: resultCount })}
         </button>
       </div>
     </div>
@@ -529,29 +657,147 @@ function ExploreEmptyState({ title, body, action, onAction }) {
   );
 }
 
-function ExploreHeader({ filterCount, onOpenFilter }) {
+function notifTimeAgo(value) {
+  if (!value) return '';
+  const ts = value?.toDate ? value.toDate() : new Date(value);
+  const diff = Math.floor((Date.now() - ts.getTime()) / 1000);
+  if (diff < 60) return `${diff}s`;
+  if (diff < 3600) return `${Math.floor(diff / 60)}m`;
+  if (diff < 86400) return `${Math.floor(diff / 3600)}h`;
+  return `${Math.floor(diff / 86400)}d`;
+}
+
+const NOTIF_TYPE_META = {
+  remind_me:        { Icon: Bell,          color: 'var(--color-accent)' },
+  stream_reminder:  { Icon: CalendarClock, color: 'var(--color-accent)' },
+  creator_live:     { Icon: Radio,         color: '#e05e5e' },
+  new_follower:     { Icon: UserRound,     color: 'var(--vuvio-blue, #2372c8)' },
+  message_received: { Icon: MessageCircle, color: 'var(--vuvio-blue, #2372c8)' },
+};
+
+function notifTarget(notif) {
+  if ((notif.type === 'creator_live' || notif.type === 'stream_reminder') && notif.streamId) {
+    return `/watch?live=${encodeURIComponent(notif.streamId)}&mode=view`;
+  }
+  if (notif.type === 'new_follower' && notif.followerUid) return `/profile/${notif.followerUid}`;
+  if (notif.type === 'message_received' && notif.conversationId) return `/messages/${notif.conversationId}`;
+  return null;
+}
+
+function NotifItem({ notif, onRead, onNavigate }) {
+  const meta = NOTIF_TYPE_META[notif.type] ?? NOTIF_TYPE_META.remind_me;
+  const { Icon, color } = meta;
+  const target = notifTarget(notif);
+
+  const handleClick = () => {
+    if (!notif.read) onRead(notif.id);
+    if (target) onNavigate(target);
+  };
+
+  return (
+    <button
+      type="button"
+      className={`notif-item${notif.read ? '' : ' notif-item--unread'}${target ? ' notif-item--tappable' : ''}`}
+      onClick={handleClick}
+    >
+      <span className="notif-item__icon" style={{ color }}>
+        <Icon size={18} strokeWidth={1.8} />
+      </span>
+      <span className="notif-item__body">
+        <strong>{notif.title}</strong>
+        {notif.body ? <span>{notif.body}</span> : null}
+      </span>
+      <span className="notif-item__right">
+        {!notif.read ? <span className="notif-item__dot" aria-hidden="true" /> : null}
+        <span className="notif-item__time">{notifTimeAgo(notif.createdAt)}</span>
+      </span>
+    </button>
+  );
+}
+
+function NotifPopover({ notifications, loading, unreadCount, markRead, markAllRead, onClose, onNavigate }) {
+  const { t } = useTranslation();
+  return (
+    <>
+      <div style={{ position: 'fixed', inset: 0, zIndex: 99 }} onClick={onClose} aria-hidden="true" />
+      <div className="notif-popover" role="dialog" aria-modal="true" aria-label={t('notifications.title')}>
+        <div className="notif-popover__header">
+          <span className="notif-popover__title">{t('notifications.title')}</span>
+          {unreadCount > 0 ? (
+            <button type="button" className="notif-header__mark-all" onClick={markAllRead}>
+              {t('notifications.markAllRead')}
+            </button>
+          ) : null}
+        </div>
+        <div className="notif-popover__list">
+          {loading ? (
+            <div className="notif-skeleton" style={{ padding: '8px 12px' }}>
+              {[1, 2, 3].map((i) => <div key={i} className="notif-skeleton__item" />)}
+            </div>
+          ) : notifications.length === 0 ? (
+            <p className="notif-popover__empty">{t('notifications.empty')}</p>
+          ) : (
+            notifications.map((notif) => (
+              <NotifItem key={notif.id} notif={notif} onRead={markRead} onNavigate={onNavigate} />
+            ))
+          )}
+        </div>
+      </div>
+    </>
+  );
+}
+
+function ExploreHeader({ filterCount, onOpenFilter, notifUnread, notifications, notifsLoading, markRead, markAllRead }) {
+  const { t } = useTranslation();
+  const navigate = useNavigate();
   const { unreadCount: msgUnread } = useMessaging();
+  const [notifOpen, setNotifOpen] = useState(false);
+
+  const handleNavigate = (target) => { setNotifOpen(false); navigate(target); };
 
   return (
     <header className="ep-header">
-      <h1 className="ep-header__title">Explore</h1>
+      <h1 className="ep-header__title">{t('explore.title')}</h1>
       <div className="ep-header__actions">
-        <Link to="/messages" className="ep-header__icon-btn ep-header__icon-btn--msg" aria-label="Messages">
+        <Link to="/messages" className="ep-header__icon-btn ep-header__icon-btn--msg" aria-label={t('explore.messagesAria')}>
           <MessageCircle size={22} strokeWidth={2} />
           {msgUnread > 0 ? (
-            <span className="ep-header__badge" aria-label={`${msgUnread} unread`}>
+            <span className="ep-header__badge" aria-label={t('explore.unreadCount', { count: msgUnread })}>
               {msgUnread > 9 ? '9+' : msgUnread}
             </span>
           ) : null}
         </Link>
-        <button type="button" className="ep-header__icon-btn" aria-label="Notifications">
-          <Bell size={20} strokeWidth={1.9} />
-        </button>
+        <div style={{ position: 'relative' }}>
+          <button
+            type="button"
+            className="ep-header__icon-btn ep-header__icon-btn--notif"
+            aria-label={t('explore.notificationsAria')}
+            onClick={() => setNotifOpen((v) => !v)}
+          >
+            <Bell size={20} strokeWidth={1.9} />
+            {notifUnread > 0 ? (
+              <span className="ep-header__badge" aria-label={t('explore.unreadCount', { count: notifUnread })}>
+                {notifUnread > 9 ? '9+' : notifUnread}
+              </span>
+            ) : null}
+          </button>
+          {notifOpen ? (
+            <NotifPopover
+              notifications={notifications}
+              loading={notifsLoading}
+              unreadCount={notifUnread}
+              markRead={markRead}
+              markAllRead={markAllRead}
+              onClose={() => setNotifOpen(false)}
+              onNavigate={handleNavigate}
+            />
+          ) : null}
+        </div>
         <button
           type="button"
           className={filterCount ? 'ep-header__filter-btn has-active' : 'ep-header__filter-btn'}
           onClick={onOpenFilter}
-          aria-label="Open filters"
+          aria-label={t('explore.openFiltersAria')}
         >
           <SlidersHorizontal size={17} strokeWidth={1.9} />
           {filterCount ? <span className="ep-header__filter-dot" aria-hidden="true" /> : null}
@@ -562,6 +808,7 @@ function ExploreHeader({ filterCount, onOpenFilter }) {
 }
 
 function ExploreSearch({ search, onSearchChange, hasSearch, onSearchClear, searchInputRef }) {
+  const { t } = useTranslation();
   return (
     <div className="ep-search-wrap">
       <div className="ep-search">
@@ -570,17 +817,17 @@ function ExploreSearch({ search, onSearchChange, hasSearch, onSearchClear, searc
           ref={searchInputRef}
           type="search"
           className="ep-search__input"
-          placeholder="Search activities, jobs, places or gear"
+          placeholder={t('explore.searchPlaceholder')}
           value={search}
           onChange={onSearchChange}
-          aria-label="Search live streams"
+          aria-label={t('explore.searchAria')}
         />
         {hasSearch ? (
           <button
             type="button"
             className="ep-search__clear"
             onClick={onSearchClear}
-            aria-label="Clear search"
+            aria-label={t('explore.clearSearch')}
           >
             <X size={14} strokeWidth={2} />
           </button>
@@ -591,16 +838,43 @@ function ExploreSearch({ search, onSearchChange, hasSearch, onSearchClear, searc
 }
 
 export default function ExplorePage() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { user, userProfile } = useAuth();
+  const { notifications, unreadCount: notifUnread, loading: notifsLoading, markRead, markAllRead } = useNotifications();
   const [search, setSearch] = useState('');
   const [activeChip, setActiveChip] = useState('for-you');
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [activeFilters, setActiveFilters] = useState({});
   const [creators, setCreators] = useState([]);
   const [firestoreLives, setFirestoreLives] = useState([]);
+  const [openUpcoming, setOpenUpcoming] = useState(null);
+  const [remindedIds, setRemindedIds] = useState(() => new Set());
   const searchInputRef = useRef(null);
   const chipsRef = useRef(null);
+
+  const quickFilters = useMemo(() => ([
+    { id: 'for-you', label: t('explore.quickFilters.forYou') },
+    { id: 'nearby', label: t('explore.quickFilters.nearby') },
+    { id: 'jobs', label: t('explore.quickFilters.jobs') },
+    { id: 'sports', label: t('explore.quickFilters.sports') },
+    { id: 'crafts', label: t('explore.quickFilters.crafts') },
+    { id: 'travel', label: t('explore.quickFilters.travel') },
+    { id: 'nature', label: t('explore.quickFilters.nature') },
+    { id: 'music', label: t('explore.quickFilters.music') },
+  ]), [t]);
+
+  const categoryTiles = useMemo(() => ([
+    { id: 'jobs', label: t('explore.categoryTiles.jobs.label'), desc: t('explore.categoryTiles.jobs.desc'), icon: Briefcase, accent: 'var(--vuvio-cyan)' },
+    { id: 'sports', label: t('explore.categoryTiles.sports.label'), desc: t('explore.categoryTiles.sports.desc'), icon: Zap, accent: 'var(--vuvio-blue)' },
+    { id: 'crafts', label: t('explore.categoryTiles.crafts.label'), desc: t('explore.categoryTiles.crafts.desc'), icon: Hammer, accent: 'var(--vuvio-orange)' },
+    { id: 'nature', label: t('explore.categoryTiles.nature.label'), desc: t('explore.categoryTiles.nature.desc'), icon: Leaf, accent: '#4cd97b' },
+    { id: 'food', label: t('explore.categoryTiles.food.label'), desc: t('explore.categoryTiles.food.desc'), icon: UtensilsCrossed, accent: 'var(--vuvio-orange)' },
+    { id: 'transport', label: t('explore.categoryTiles.transport.label'), desc: t('explore.categoryTiles.transport.desc'), icon: Truck, accent: 'var(--vuvio-blue)' },
+    { id: 'travel', label: t('explore.categoryTiles.travel.label'), desc: t('explore.categoryTiles.travel.desc'), icon: Globe, accent: 'var(--vuvio-cyan)' },
+    { id: 'city-tours', label: t('explore.categoryTiles.cityTours.label'), desc: t('explore.categoryTiles.cityTours.desc'), icon: MapPin, accent: 'var(--vuvio-cyan)' },
+    { id: 'music', label: t('explore.categoryTiles.music.label'), desc: t('explore.categoryTiles.music.desc'), icon: Music, accent: 'var(--vuvio-orange)' },
+  ]), [t]);
 
   const openStream = useCallback((id) => navigate(`/watch?live=${encodeURIComponent(id)}&mode=view`), [navigate]);
 
@@ -618,6 +892,23 @@ export default function ExplorePage() {
     analyticsService.trackCreatorProfileOpened(creatorId, undefined, 'explore');
     navigate(`/profile/${creatorId}`);
   }, [navigate]);
+
+  useEffect(() => {
+    if (!user?.uid) return;
+    getRemindedStreamIds(user.uid).then(setRemindedIds).catch(() => {});
+  }, [user?.uid]);
+
+  const handleRemind = useCallback((item) => {
+    setRemindedIds((prev) => new Set([...prev, item.id]));
+    if (!user?.uid) return;
+    createNotification(user.uid, {
+      type: 'remind_me',
+      title: item.title,
+      body: [item.day === 'TODAY' ? t('explore.dateToday', { time: item.time }) : t('explore.dateTomorrow', { time: item.time }), item.locationLabel].filter(Boolean).join(' · '),
+      streamId: item.id,
+      scheduledAt: item.startsAt ?? null,
+    }).catch(() => {});
+  }, [user?.uid, t]);
 
   const filteredStreams = useMemo(() => {
     return streams
@@ -640,7 +931,17 @@ export default function ExplorePage() {
 
   const liveNowStreams = useMemo(() => {
     const mockIds = new Set(realLives.map((l) => l.id));
-    const mocks = filteredStreams.filter((s) => !mockIds.has(s.id)).sort((a, b) => viewerCount(b.viewerLabel) - viewerCount(a.viewerLabel));
+    const hasVideo = (s) => Boolean(s.video || s.hlsManifestUrl);
+    const mocks = filteredStreams
+      .filter((s) => !mockIds.has(s.id))
+      .sort((a, b) => {
+        const va = hasVideo(a) ? 0 : 1;
+        const vb = hasVideo(b) ? 0 : 1;
+        if (va !== vb) return va - vb;
+        const ha = ((a.id ?? '').charCodeAt(0) * 31 + (a.id ?? '').charCodeAt(1)) | 0;
+        const hb = ((b.id ?? '').charCodeAt(0) * 31 + (b.id ?? '').charCodeAt(1)) | 0;
+        return ha - hb;
+      });
     return [...realLives, ...mocks].slice(0, 10);
   }, [filteredStreams, realLives]);
 
@@ -703,11 +1004,16 @@ export default function ExplorePage() {
   }, []);
 
   return (
-    <section className="screen-scroll ep-screen" aria-label="Explore">
+    <section className="screen-scroll ep-screen" aria-label={t('explore.screenAria')}>
 
       <ExploreHeader
         filterCount={filterCount}
         onOpenFilter={() => setFiltersOpen(true)}
+        notifUnread={notifUnread}
+        notifications={notifications}
+        notifsLoading={notifsLoading}
+        markRead={markRead}
+        markAllRead={markAllRead}
       />
 
       <ExploreSearch
@@ -718,7 +1024,7 @@ export default function ExplorePage() {
         searchInputRef={searchInputRef}
       />
 
-      <div ref={chipsRef} className="ep-chips" role="group" aria-label="Quick filters">
+      <div ref={chipsRef} className="ep-chips" role="group" aria-label={t('explore.quickFiltersAria')}>
         {quickFilters.map((chip) => (
           <button
             key={chip.id}
@@ -740,7 +1046,7 @@ export default function ExplorePage() {
               <>
                 {creators.length > 0 ? (
                   <>
-                    <p className="ep-results-count">{creators.length} creator{creators.length !== 1 ? 's' : ''}</p>
+                    <p className="ep-results-count">{t('explore.creatorCount', { count: creators.length })}</p>
                     <div className="ep-creators-grid">
                       {creators.map((creator) => (
                         <CreatorCard
@@ -756,9 +1062,9 @@ export default function ExplorePage() {
                   </>
                 ) : (
                   <ExploreEmptyState
-                    title="No creators found"
-                    body="Try searching for another creator."
-                    action="Clear search"
+                    title={t('explore.noCreatorsFound')}
+                    body={t('explore.tryAnotherCreator')}
+                    action={t('explore.clearSearch')}
                     onAction={() => setSearch('')}
                   />
                 )}
@@ -767,7 +1073,7 @@ export default function ExplorePage() {
               <>
                 {filteredStreams.length ? (
                   <>
-                    <p className="ep-results-count">{filteredStreams.length} perspectives</p>
+                    <p className="ep-results-count">{t('explore.perspectivesCount', { count: filteredStreams.length })}</p>
                     <div className="ep-results-grid">
                       {filteredStreams.map((stream, index) => (
                         <LiveNowCard key={stream.id} stream={stream} onOpen={(id) => {
@@ -779,9 +1085,9 @@ export default function ExplorePage() {
                   </>
                 ) : (
                   <ExploreEmptyState
-                    title="No live perspectives found"
-                    body="Try another activity, place or filter."
-                    action="Reset search"
+                    title={t('explore.noPerspectivesFound')}
+                    body={t('explore.tryAnotherFilter')}
+                    action={t('explore.resetSearch')}
                     onAction={() => setSearch('')}
                   />
                 )}
@@ -790,7 +1096,7 @@ export default function ExplorePage() {
           </div>
         ) : (
           <>
-            <ExploreSection title="Live now" onSeeAll={() => navigate('/explore/live')}>
+            <ExploreSection title={t('explore.sectionLiveNow')} onSeeAll={() => navigate('/explore/live')}>
               {liveNowStreams.length ? (
                 <div className="ep-live-row">
                   {liveNowStreams.map((stream, index) => (
@@ -802,13 +1108,13 @@ export default function ExplorePage() {
                 </div>
               ) : (
                 <ExploreEmptyState
-                  title="No live streams right now"
-                  body="Explore upcoming perspectives or try another category."
+                  title={t('explore.noLiveStreamsRightNow')}
+                  body={t('explore.exploreUpcomingOrCategory')}
                 />
               )}
             </ExploreSection>
 
-            <ExploreSection title="Live nearby" onSeeAll={() => navigate('/explore/live')}>
+            <ExploreSection title={t('explore.sectionLiveNearby')} onSeeAll={() => navigate('/explore/live')}>
               {nearbyStreams.length ? (
                 <div className="ep-nearby-row">
                   {nearbyStreams.map((stream, index) => (
@@ -820,23 +1126,23 @@ export default function ExplorePage() {
                 </div>
               ) : (
                 <ExploreEmptyState
-                  title="Nothing live nearby yet"
-                  body="Try expanding your location or browse worldwide."
+                  title={t('explore.nothingLiveNearby')}
+                  body={t('explore.expandLocationOrWorldwide')}
                 />
               )}
             </ExploreSection>
 
             {upcomingItems.length ? (
-            <ExploreSection title="Upcoming" onSeeAll={() => navigate('/explore/live')}>
+            <ExploreSection title={t('explore.sectionUpcoming')} onSeeAll={() => navigate('/explore/live')}>
                 <div className="ep-upcoming-row">
                   {upcomingItems.map((item) => (
-                    <UpcomingCard key={item.id} item={item} />
+                    <UpcomingCard key={item.id} item={item} onOpen={setOpenUpcoming} onRemind={handleRemind} isReminded={remindedIds.has(item.id)} />
                   ))}
                 </div>
               </ExploreSection>
             ) : null}
 
-            <ExploreSection title="Browse by category">
+            <ExploreSection title={t('explore.sectionBrowseByCategory')}>
               <div className="ep-category-grid">
                 {categoryTiles.map((tile) => (
                   <CategoryTile key={tile.id} tile={tile} onSelect={selectCategory} />
@@ -853,6 +1159,16 @@ export default function ExplorePage() {
           filters={activeFilters}
           onApply={setActiveFilters}
           resultCount={filteredStreams.length}
+        />
+      ) : null}
+
+      {openUpcoming ? (
+        <UpcomingDetailSheet
+          item={openUpcoming}
+          onClose={() => setOpenUpcoming(null)}
+          onWatch={(id) => { setOpenUpcoming(null); openStream(id); }}
+          onRemind={handleRemind}
+          isReminded={remindedIds.has(openUpcoming.id)}
         />
       ) : null}
     </section>

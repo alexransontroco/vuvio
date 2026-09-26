@@ -41,9 +41,9 @@ export async function remindScheduledStreams() {
 
       // Write notification for the creator
       const notifRef = db
-        .collection(collections.notifications)
+        .collection('users')
         .doc(stream.creatorId)
-        .collection('items')
+        .collection('notifications')
         .doc();
 
       batch.set(notifRef, {

@@ -7,7 +7,7 @@ import { ACTIVITY_CATEGORIES } from '../../data/activityCategories.js';
 import { getCreatedLives, subscribeToCreatedLives } from '../../services/createdLiveService.js';
 import MapBottomSheet from '../map/MapBottomSheet.jsx';
 import { LocateFixed, Minus, Plus, X, Play } from 'lucide-react';
-import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
+import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 
 // Expose our THREE so globe.gl's bundled deps pick up the same instance
 if (typeof window !== 'undefined') window.THREE = THREE;
@@ -311,6 +311,7 @@ export default function GlobeTest2() {
   const [activeActivities, setActiveActivities] = useState([]);
   const [activeStatuses, setActiveStatuses] = useState(['live']);
   const [expandedClusterId, setExpandedClusterId] = useState(null);
+  const altitudeRef = useRef(3.4);
 
   // ── Data ────────────────────────────────────────────────────────────────────
   useEffect(() => {
@@ -572,6 +573,7 @@ export default function GlobeTest2() {
       phase,
       isCluster,
       baseScale: isCluster ? Math.max(10, baseScale + 3) : markerBaseScale,
+      coreBaseScale: isCluster ? Math.max(2.8, coreScale + 1.4) : markerCoreScale,
     });
 
     return group;
@@ -584,6 +586,7 @@ export default function GlobeTest2() {
       t += 0.016;
 
       const altitude = globeRef.current?.pointOfView?.()?.altitude ?? 3.4;
+      altitudeRef.current = altitude;
       const zoomScale = Math.max(0.22, Math.min(2.6, altitude / 3.4));
 
       const camera = globeRef.current?.camera?.();
@@ -613,17 +616,17 @@ export default function GlobeTest2() {
 
         const glowVis = visFactor * visFactor;
 
-        const blinkCycle = ((t * 0.9 + ref.phase / (Math.PI * 2)) % 1);
-        const blink = blinkCycle < 0.22 ? 1 - (blinkCycle / 0.22) : 0;
-        ref.glow.material.opacity = showGlowRef.current ? (0.22 + blink * 0.78) * glowVis : 0;
-        ref.glow.scale.setScalar(ref.baseScale * (0.46 + blink * 0.24));
+        const pulse = 0.5 + 0.5 * Math.sin((t * 0.38 + ref.phase / (Math.PI * 2)) * Math.PI * 2);
+        // Core pulses in size and brightness
+        ref.core.scale.setScalar(ref.coreBaseScale * (0.6 + pulse * 0.8));
+        ref.core.material.opacity = (0.5 + pulse * 0.5) * visFactor;
 
-        // Core dot blinks: full brightness on blink peak, dims between pulses
-        ref.core.material.opacity = (0.55 + blink * 0.45) * visFactor;
+        // Glow follows the core
+        ref.glow.material.opacity = showGlowRef.current ? (0.2 + pulse * 0.6) * glowVis : 0;
+        ref.glow.scale.setScalar(ref.baseScale * (0.4 + pulse * 0.3));
 
-        const ripple = ((t * 0.25 + ref.phase / (Math.PI * 2)) % 1);
-        ref.halo.scale.setScalar(ref.baseScale * (1.0 + ripple * 0.9));
-        ref.halo.material.opacity = showGlowRef.current ? Math.max(0, 0.30 * Math.sin(ripple * Math.PI)) * glowVis : 0;
+        // No expanding halo ring
+        ref.halo.material.opacity = 0;
       }
 
       // Draw stars + shooting stars overlay
@@ -703,7 +706,8 @@ export default function GlobeTest2() {
     userInteractedRef.current = true;
     setSelectedCluster(null);
     setSelectedStream(obj);
-    const altitude = isDouble ? 0.4 : 1.2;
+    const currentAlt = globeRef.current?.pointOfView?.()?.altitude ?? 3.4;
+    const altitude = isDouble ? 0.4 : Math.min(1.2, currentAlt);
     const focusCoordinates = obj.displayCoordinates || obj.coordinates;
     globeRef.current?.pointOfView(
       { lat: focusCoordinates[1], lng: focusCoordinates[0], altitude },
@@ -714,13 +718,12 @@ export default function GlobeTest2() {
   };
 
   const watchPath = (s) => `/watch?live=${encodeURIComponent(s.id)}`;
-  const currentGlobePath = `${location.pathname.startsWith('/map') ? '/map-current' : '/globe-current'}${location.search}`;
 
   return (
     <div
       ref={containerRef}
       className="gt2-space-globe"
-      style={{ position: 'relative', width: '100%', height: '100dvh', background: '#060d16', overflow: 'hidden' }}
+      style={{ position: 'relative', width: '100%', height: 'calc(100dvh - var(--nav-height, 62px))', background: '#060d16', overflow: 'hidden' }}
     >
       <canvas
         ref={starsCanvasRef}
@@ -742,34 +745,30 @@ export default function GlobeTest2() {
         objectLng={(d) => (d.displayCoordinates || d.coordinates)[0]}
         objectLabel={(d) => d.name || d.streamer || ''}
         onObjectClick={handleObjectClick}
-        ringsData={selectedStream ? [selectedStream] : []}
-        ringColor={() => '#32d8e5'}
-        ringMaxRadius={3}
-        ringPropagationSpeed={1}
-        ringRepeatPeriod={2500}
+        ringsData={selectedStream ? [selectedStream] : liveStreams.filter(s => !s.compactMarker)}
+        ringColor={(d) => selectedStream ? 'rgba(50,216,229,0.6)' : 'rgba(50,216,229,0.4)'}
+        ringMaxRadius={(d) => {
+          const alt = altitudeRef.current;
+          const hash = d.id ? [...d.id].reduce((acc, c) => acc + c.charCodeAt(0), 0) % 8 : 0;
+          const base = selectedStream ? 0.9 : 0.6 + hash * 0.07;
+          return Math.max(0.2, base * Math.min(1, alt / 2));
+        }}
+        ringPropagationSpeed={(d) => {
+          if (selectedStream) return 0.6;
+          const hash = d.id ? [...d.id].reduce((acc, c) => acc + c.charCodeAt(0), 0) % 6 : 0;
+          return 0.35 + hash * 0.05;
+        }}
+        ringRepeatPeriod={(d) => {
+          if (selectedStream) return 3000;
+          const hash = d.id ? [...d.id].reduce((acc, c) => acc + c.charCodeAt(0), 0) % 12 : 0;
+          return 3000 + hash * 200;
+        }}
         ringAltitude={0.01}
         ringLat={(d) => (d.displayCoordinates || d.coordinates)[1]}
         ringLng={(d) => (d.displayCoordinates || d.coordinates)[0]}
         rendererConfig={{ antialias: true, powerPreference: 'high-performance' }}
       />
 
-      <div className="gt2-mode-pill" role="tablist" aria-label="Globe mode">
-        <Link
-          role="tab"
-          to={currentGlobePath}
-          className="gt2-mode-pill__tab"
-        >
-          Current
-        </Link>
-        <span className="gt2-mode-pill__sep" aria-hidden="true" />
-        <span
-          role="tab"
-          aria-selected="true"
-          className="gt2-mode-pill__tab gt2-mode-pill__tab--active"
-        >
-          Test 2
-        </span>
-      </div>
 
       {!selectedStream && !selectedCluster && (
         <MapBottomSheet
@@ -820,34 +819,48 @@ export default function GlobeTest2() {
           <div className="gt2-cluster-sheet__handle" />
           <div className="gt2-cluster-sheet__header">
             <span className="gt2-cluster-sheet__title">
-              {selectedCluster.count} lives nearby
+              {selectedCluster.count} live{selectedCluster.count > 1 ? 's' : ''}{selectedCluster.streams[0]?.city ? ` in ${selectedCluster.streams[0].city}` : ' nearby'}
             </span>
             <button
               type="button"
               className="gt2-cluster-sheet__close"
-              onClick={() => { setSelectedCluster(null); const c = globeRef.current?.controls?.(); if (c) c.autoRotate = false; }}
+              onClick={() => { setSelectedCluster(null); userInteractedRef.current = false; globeRef.current?.pointOfView({ lat: 10, lng: 14, altitude: 3.4 }, 800); const c = globeRef.current?.controls?.(); if (c) c.autoRotate = true; }}
             >
               <X size={16} strokeWidth={2} />
             </button>
           </div>
           <div className="gt2-cluster-sheet__list">
-            {selectedCluster.streams.map((s) => (
-              <button
-                key={s.id}
-                type="button"
-                className="gt2-cluster-sheet__item"
-                onClick={() => { setSelectedCluster(null); navigate(watchPath(s)); }}
-              >
-                <img src={s.image} alt="" loading="lazy" />
-                <div className="gt2-cluster-sheet__item-body">
-                  <span className="gt2-cluster-sheet__item-name">{s.experienceTitle || s.name}</span>
-                  <span className="gt2-cluster-sheet__item-meta">{s.city}, {s.country} · {s.viewers} viewers</span>
+            {selectedCluster.streams.map((s) => {
+              const profilePath = s.creatorUid ? `/profile/${s.creatorUid}` : null;
+              return (
+                <div key={s.id} className="gt2-cluster-sheet__item">
+                  <button
+                    type="button"
+                    className="gt2-cluster-sheet__item-left"
+                    onClick={() => { if (profilePath) { setSelectedCluster(null); navigate(profilePath); } }}
+                    aria-label={`View ${s.name}'s profile`}
+                  >
+                    <img src={s.image} alt="" loading="lazy" />
+                  </button>
+                  <button
+                    type="button"
+                    className="gt2-cluster-sheet__item-body"
+                    onClick={() => { if (profilePath) { setSelectedCluster(null); navigate(profilePath); } }}
+                  >
+                    <span className="gt2-cluster-sheet__item-title">{s.experienceTitle || s.subcategory}</span>
+                    <span className="gt2-cluster-sheet__item-creator">{s.name}</span>
+                    <span className="gt2-cluster-sheet__item-meta">{s.city}, {s.country} · {s.viewers?.toLocaleString()} viewers</span>
+                  </button>
+                  <button
+                    type="button"
+                    className="gt2-cluster-sheet__item-watch"
+                    onClick={() => { setSelectedCluster(null); navigate(watchPath(s)); }}
+                  >
+                    Watch
+                  </button>
                 </div>
-                <div className="gt2-cluster-sheet__item-play">
-                  <Play size={12} fill="currentColor" strokeWidth={0} />
-                </div>
-              </button>
-            ))}
+              );
+            })}
           </div>
         </div>
       )}

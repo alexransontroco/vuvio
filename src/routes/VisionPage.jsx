@@ -11,63 +11,33 @@ import {
   ShieldCheck,
   Sparkles,
 } from 'lucide-react';
-import { useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import BrandMark from '../components/BrandMark.jsx';
-
-/* ─── Data ──────────────────────────────────────────────────── */
-
-const heroCities = [
-  { id: 'chamonix',  name: 'Chamonix',  country: 'FRANCE',  time: '02:13', style: { top: '8%',   left: '24%'  } },
-  { id: 'cappadoce', name: 'Cappadoce', country: 'TURQUIE', time: '04:13', style: { top: '30%',  left: '7%'   } },
-  { id: 'tokyo',     name: 'Tokyo',     country: 'JAPON',   time: '10:13', style: { top: '9%',   right: '4%'  } },
-  { id: 'biarritz',  name: 'Biarritz',  country: 'FRANCE',  time: '02:13', style: { top: '55%',  right: '2%'  } },
-  { id: 'marseille', name: 'Marseille', country: 'FRANCE',  time: '02:13', style: { bottom: '26%', left: '3%' } },
-];
-
-const benefits = [
-  { icon: Radio,      title: 'EN DIRECT',   text: 'Vivez des moments réels en temps réel.'     },
-  { icon: ShieldCheck,title: 'AUTHENTIQUE', text: 'Des personnes réelles, sans filtre.'         },
-  { icon: Eye,        title: 'IMMERSIF',    text: 'Le monde à travers leurs yeux.'              },
-  { icon: Globe2,     title: 'PARTOUT',     text: 'Des milliers de lieux et d\'activités.'      },
-];
-
-const mosaicMoments = [
-  { key: 'surf',       title: 'Surf en Atlantique',          place: 'Biarritz, France',    env: 'Water', viewers: '368', image: '/assets/VuVio_20_New_POV/01_surfer.jpg'          },
-  { key: 'baker',      title: 'Boulangerie artisanale',      place: 'Lyon, France',        env: 'Work',  viewers: '442', image: '/assets/VuVio_20_New_POV/07_baker.jpg'           },
-  { key: 'balloon',    title: 'Vol en montgolfière',         place: 'Cappadoce, Turquie',  env: 'Air',   viewers: '642', image: '/assets/VuVio_20_New_POV/03_hot_air_balloon.jpg' },
-  { key: 'fishing',    title: 'Pêche en mer',                place: 'Bretagne, France',    env: 'Water', viewers: '512', image: '/assets/VuVio_20_New_POV/14_fishing.jpg'         },
-  { key: 'paraglider', title: 'Parapente au soleil levant',  place: 'Chamonix, France',    env: 'Air',   viewers: '1.2k',image: '/assets/VuVio_20_New_POV/02_paraglider.jpg'     },
-  { key: 'drone',      title: 'Drone au-dessus des Alpes',   place: 'Suisse · Alpes',      env: 'Air',   viewers: '753', image: '/assets/VuVio_20_New_POV/19_drone_pilot.jpg'     },
-];
-
-const finalStats = [
-  { icon: MapPin,  label: 'Des milliers de perspectives' },
-  { icon: Globe2,  label: 'Des centaines de pays'        },
-  { icon: Eye,     label: 'Des millions de moments'      },
-  { icon: Sparkles,label: 'Un monde à explorer'          },
-];
 
 /* ─── Meta hook ──────────────────────────────────────────────── */
 
 function useNoIndexMeta() {
+  const { t } = useTranslation();
   useEffect(() => {
     const meta = document.createElement('meta');
     meta.name = 'robots';
     meta.content = 'noindex, nofollow';
     document.head.appendChild(meta);
     const prev = document.title;
-    document.title = 'Vuvio — Vision';
+    document.title = t('vision.documentTitle');
     return () => { document.head.removeChild(meta); document.title = prev; };
-  }, []);
+  }, [t]);
 }
 
 /* ─── Shared atoms ───────────────────────────────────────────── */
 
 function VisionLiveBadge() {
+  const { t } = useTranslation();
   return (
     <span className="live-badge live-badge--compact">
       <span className="live-badge__dot" />
-      EN DIRECT
+      {t('vision.liveBadge')}
     </span>
   );
 }
@@ -75,15 +45,16 @@ function VisionLiveBadge() {
 /* ─── Header ─────────────────────────────────────────────────── */
 
 function VisionHeader() {
+  const { t } = useTranslation();
   return (
     <header className="vision-header">
-      <a className="vision-header__brand" href="/vision" aria-label="Vuvio Vision">
+      <a className="vision-header__brand" href="/vision" aria-label={t('vision.header.brandAriaLabel')}>
         <BrandMark size={30} showName />
       </a>
       <div className="vision-header__meta">
-        <span><i />VISION</span>
+        <span><i />{t('vision.header.label')}</span>
         <span className="vision-header__sep">·</span>
-        <small>Présentation interne</small>
+        <small>{t('vision.header.subtitle')}</small>
         <Lock size={13} strokeWidth={1.8} aria-hidden="true" />
       </div>
     </header>
@@ -93,11 +64,19 @@ function VisionHeader() {
 /* ─── Hero phone inner screens ───────────────────────────────── */
 
 function MiniBottomNav({ active }) {
+  const { t } = useTranslation();
+  const items = [
+    { key: 'Home',     label: t('vision.miniNav.home') },
+    { key: 'Discover', label: t('vision.miniNav.discover') },
+    { key: 'V',        label: 'V' },
+    { key: 'Globe',    label: t('vision.miniNav.globe') },
+    { key: 'Profile',  label: t('vision.miniNav.profile') },
+  ];
   return (
     <div className="vision-mini-nav" aria-hidden="true">
-      {['Home', 'Discover', 'V', 'Globe', 'Profile'].map(item => (
-        <span key={item} className={active === item ? 'is-active' : item === 'V' ? 'is-create' : ''}>
-          {item}
+      {items.map(item => (
+        <span key={item.key} className={active === item.key ? 'is-active' : item.key === 'V' ? 'is-create' : ''}>
+          {item.label}
         </span>
       ))}
     </div>
@@ -105,21 +84,22 @@ function MiniBottomNav({ active }) {
 }
 
 function HomeScreen() {
+  const { t } = useTranslation();
   return (
     <div className="vision-phone-screen vision-phone-screen--app">
       <div className="vision-mini-header">
         <BrandMark size={16} showName />
         <span><Search size={11} /><Bell size={11} /></span>
       </div>
-      <div className="vision-mini-tabs"><span>Pour toi</span><span>En direct</span><span>Suivis</span></div>
+      <div className="vision-mini-tabs"><span>{t('vision.tabs.forYou')}</span><span>{t('vision.tabs.live')}</span><span>{t('vision.tabs.followed')}</span></div>
       <article className="vision-mini-hero">
         <img src="/assets/VuVio_POV_Pack_20/01_mountain_rescue_helicopter.jpg" alt="" loading="eager" decoding="async" />
         <div><VisionLiveBadge /><small><Eye size={8} /> 128</small></div>
-        <strong>Le Mont Blanc depuis le col</strong>
-        <p>Manuel · Saint-Gervais, France</p>
+        <strong>{t('vision.home.streamTitle')}</strong>
+        <p>{t('vision.home.streamMeta')}</p>
       </article>
       <div className="vision-mini-section">
-        <b>En direct à proximité</b>
+        <b>{t('vision.home.nearby')}</b>
         <div>
           <img src="/assets/VuVio_20_New_POV/15_scuba_diver.jpg" alt="" loading="lazy" decoding="async" />
           <img src="/assets/VuVio_20_New_POV/01_surfer.jpg" alt="" loading="lazy" decoding="async" />
@@ -131,16 +111,17 @@ function HomeScreen() {
 }
 
 function DiscoverScreen() {
+  const { t } = useTranslation();
   return (
     <div className="vision-phone-screen vision-phone-screen--discover">
       <img src="/assets/VuVio_20_New_POV/01_surfer.jpg" alt="" loading="eager" decoding="async" />
-      <div className="vision-mini-discover-top"><span>Pour toi</span><span>Aléatoire</span></div>
+      <div className="vision-mini-discover-top"><span>{t('vision.tabs.forYou')}</span><span>{t('vision.tabs.random')}</span></div>
       <div className="vision-mini-actions"><i /><i /><i /><i /></div>
       <div className="vision-mini-discover-copy">
         <div><VisionLiveBadge /><small><Eye size={8} /> 342</small></div>
-        <strong>Session surf au lever du soleil</strong>
-        <p>Biarritz, France</p>
-        <span>WaveLive <button type="button">Suivre</button></span>
+        <strong>{t('vision.discover.streamTitle')}</strong>
+        <p>{t('vision.discover.streamMeta')}</p>
+        <span>WaveLive <button type="button">{t('vision.discover.follow')}</button></span>
       </div>
       <MiniBottomNav active="Discover" />
     </div>
@@ -148,24 +129,25 @@ function DiscoverScreen() {
 }
 
 function GlobeScreen() {
+  const { t } = useTranslation();
   return (
     <div className="vision-phone-screen vision-phone-screen--globe">
       <div className="vision-mini-header">
-        <span className="vision-mini-title"><Globe2 size={12} /> Globe</span>
+        <span className="vision-mini-title"><Globe2 size={12} /> {t('vision.globe.title')}</span>
         <span><Search size={11} /><Map size={11} /></span>
       </div>
       <div className="vision-mini-filter-row">
-        <span className="is-active">En direct</span><span>Pays</span><span>Villes</span><span>Activités</span><span>Suivis</span>
+        <span className="is-active">{t('vision.tabs.live')}</span><span>{t('vision.globe.filters.countries')}</span><span>{t('vision.globe.filters.cities')}</span><span>{t('vision.globe.filters.activities')}</span><span>{t('vision.tabs.followed')}</span>
       </div>
       <div className="vision-mini-globe">
         <img src="/globe/earth-night.jpg" alt="" loading="eager" decoding="async" />
         {Array.from({ length: 14 }).map((_, i) => <i key={i} />)}
       </div>
       <div className="vision-mini-nearby">
-        <b>En direct autour de vous</b>
-        <p>Surf à Biarritz</p>
-        <p>Vol en montgolfière</p>
-        <p>Pêche en mer</p>
+        <b>{t('vision.globe.nearby.title')}</b>
+        <p>{t('vision.globe.nearby.item1')}</p>
+        <p>{t('vision.globe.nearby.item2')}</p>
+        <p>{t('vision.globe.nearby.item3')}</p>
       </div>
       <MiniBottomNav active="Globe" />
     </div>
@@ -211,6 +193,23 @@ function VisionHeroConstellationSVG() {
 /* ─── Hero ───────────────────────────────────────────────────── */
 
 function VisionHero() {
+  const { t } = useTranslation();
+
+  const heroCities = useMemo(() => [
+    { id: 'chamonix',  name: t('vision.cities.chamonix'),  country: t('vision.countries.france'),  time: '02:13', style: { top: '8%',   left: '24%'  } },
+    { id: 'cappadoce', name: t('vision.cities.cappadoce'), country: t('vision.countries.turkey'),  time: '04:13', style: { top: '30%',  left: '7%'   } },
+    { id: 'tokyo',     name: t('vision.cities.tokyo'),     country: t('vision.countries.japan'),   time: '10:13', style: { top: '9%',   right: '4%'  } },
+    { id: 'biarritz',  name: t('vision.cities.biarritz'),  country: t('vision.countries.france'),  time: '02:13', style: { top: '55%',  right: '2%'  } },
+    { id: 'marseille', name: t('vision.cities.marseille'), country: t('vision.countries.france'),  time: '02:13', style: { bottom: '26%', left: '3%' } },
+  ], [t]);
+
+  const benefits = useMemo(() => [
+    { icon: Radio,       title: t('vision.benefits.live.title'),          text: t('vision.benefits.live.text') },
+    { icon: ShieldCheck, title: t('vision.benefits.authentic.title'),     text: t('vision.benefits.authentic.text') },
+    { icon: Eye,         title: t('vision.benefits.immersive.title'),     text: t('vision.benefits.immersive.text') },
+    { icon: Globe2,      title: t('vision.benefits.everywhere.title'),    text: t('vision.benefits.everywhere.text') },
+  ], [t]);
+
   return (
     <section className="vision-hero">
       {/* Earth background image - behind everything */}
@@ -219,12 +218,12 @@ function VisionHero() {
       </div>
 
       <div className="vision-hero__copy">
-        <p className="vision-eyebrow">NOTRE VISION</p>
-        <h1>See the world through someone else's eyes.</h1>
+        <p className="vision-eyebrow">{t('vision.hero.eyebrow')}</p>
+        <h1>{t('vision.hero.title')}</h1>
         <p className="vision-lead">
-          Vuvio connects people to real places, activities and lives happening right now around the world.
+          {t('vision.hero.lead')}
         </p>
-        <p className="vision-hero__accent">Real people. Real places. Live perspectives.</p>
+        <p className="vision-hero__accent">{t('vision.hero.accent')}</p>
         <div className="vision-benefits">
           {benefits.map(({ icon: Icon, title, text }) => (
             <article key={title}>
@@ -236,7 +235,7 @@ function VisionHero() {
         </div>
       </div>
 
-      <div className="vision-hero__phones" aria-label="Aperçus de l'application Vuvio">
+      <div className="vision-hero__phones" aria-label={t('vision.hero.phonesAriaLabel')}>
         <VisionHeroConstellationSVG />
         {heroCities.map(city => (
           <div key={city.id} className="vision-city-label" style={city.style}>
@@ -334,22 +333,23 @@ function VisionConstellationLines() {
 /* ─── Journey: stream card (step 01) ────────────────────────── */
 
 function VisionStreamCard() {
+  const { t } = useTranslation();
   return (
     <div className="vision-stream-card">
       <div className="vision-stream-card__media">
-        <img src="/assets/VuVio_POV_Pack_20/01_mountain_rescue_helicopter.jpg" alt="Le Mont Blanc depuis le col" loading="lazy" decoding="async" />
+        <img src="/assets/VuVio_POV_Pack_20/01_mountain_rescue_helicopter.jpg" alt={t('vision.streamCard.imageAlt')} loading="lazy" decoding="async" />
         <div className="vision-stream-card__badges">
           <VisionLiveBadge />
           <small><Eye size={9} /> 1,2 k</small>
         </div>
       </div>
       <div className="vision-stream-card__body">
-        <strong>Le Mont Blanc depuis le col</strong>
-        <p>Manuel · Saint-Gervais, France</p>
+        <strong>{t('vision.streamCard.title')}</strong>
+        <p>{t('vision.streamCard.meta')}</p>
         <div className="vision-stream-card__tags">
-          <span>Trekking</span>
-          <span>Chamonix</span>
-          <button type="button">Regarder</button>
+          <span>{t('vision.streamCard.tag1')}</span>
+          <span>{t('vision.streamCard.tag2')}</span>
+          <button type="button">{t('vision.streamCard.watch')}</button>
         </div>
       </div>
     </div>
@@ -359,28 +359,29 @@ function VisionStreamCard() {
 /* ─── Journey: mini profile card (step 04) ──────────────────── */
 
 function VisionMiniProfileCard() {
+  const { t } = useTranslation();
   return (
     <div className="vision-mini-profile">
       <div className="vision-mini-profile__head">
         <img
           src="/assets/VuVio_10_POV/08_wildlife_photographer.jpg"
-          alt="Thomas"
+          alt={t('vision.profileCard.avatarAlt')}
           className="vision-mini-profile__avatar"
           loading="lazy"
           decoding="async"
         />
         <div>
-          <strong>Thomas <BadgeCheck size={12} /></strong>
+          <strong>{t('vision.profileCard.name')} <BadgeCheck size={12} /></strong>
           <span>@aventurethomas</span>
-          <span><MapPin size={9} aria-hidden="true" /> Chamonix, France</span>
+          <span><MapPin size={9} aria-hidden="true" /> {t('vision.profileCard.location')}</span>
         </div>
       </div>
-      <p>Driven par la nature et l'envie de partager des instants qui comptent.</p>
+      <p>{t('vision.profileCard.bio')}</p>
       <div className="vision-mini-profile__stats">
-        <span><b>128</b><small>Lives</small></span>
-        <span><b>3,2 k</b><small>Abonnés</small></span>
-        <span><b>256</b><small>Abonn.</small></span>
-        <span><b>42</b><small>Pays explorés</small></span>
+        <span><b>128</b><small>{t('vision.profileCard.stats.lives')}</small></span>
+        <span><b>3,2 k</b><small>{t('vision.profileCard.stats.followers')}</small></span>
+        <span><b>256</b><small>{t('vision.profileCard.stats.following')}</small></span>
+        <span><b>42</b><small>{t('vision.profileCard.stats.countries')}</small></span>
       </div>
     </div>
   );
@@ -389,9 +390,10 @@ function VisionMiniProfileCard() {
 /* ─── Journey: landscape kayak window (step 02/03) ──────────── */
 
 function VisionKayakWindow() {
+  const { t } = useTranslation();
   return (
     <div className="vision-kayak-window">
-      <img src="/assets/VuVio_20_New_POV/16_kayaker.jpg" alt="POV kayak" loading="lazy" decoding="async" />
+      <img src="/assets/VuVio_20_New_POV/16_kayaker.jpg" alt={t('vision.kayakWindow.imageAlt')} loading="lazy" decoding="async" />
       <div className="vision-kayak-window__overlay">
         <div className="vision-kayak-window__actions"><i /><i /></div>
         <span className="vision-kayak-window__stat"><small>💬</small> 2,1 k</span>
@@ -417,16 +419,17 @@ function VisionStepLabel({ num, title, text, align = 'left' }) {
 /* ─── Journey section (constellation layout) ─────────────────── */
 
 function VisionJourney() {
+  const { t } = useTranslation();
   return (
     <section className="vision-journey-section" aria-labelledby="vision-journey-title">
       <div className="vision-journey-section__inner">
 
         {/* Section header: eyebrow + manifesto quote */}
         <div className="vision-journey-header">
-          <p className="vision-eyebrow">PRODUCT JOURNEY</p>
+          <p className="vision-eyebrow">{t('vision.journey.eyebrow')}</p>
           <h2 id="vision-journey-title">
-            The world is not a feed.<br />
-            It is millions of lives happening at once.
+            {t('vision.journey.titleLine1')}<br />
+            {t('vision.journey.titleLine2')}
           </h2>
         </div>
 
@@ -444,8 +447,8 @@ function VisionJourney() {
           <div className="vision-const-pos vision-const-pos--01">
             <VisionStepLabel
               num="01"
-              title="Home"
-              text="Your world, selected for you. Personalized live experiences, nearby activity and moments worth waiting for."
+              title={t('vision.journey.steps.home.title')}
+              text={t('vision.journey.steps.home.text')}
             />
             <VisionStreamCard />
           </div>
@@ -454,8 +457,8 @@ function VisionJourney() {
           <div className="vision-const-pos vision-const-pos--02">
             <VisionStepLabel
               num="02"
-              title="Discover"
-              text="Swipe into the moment. Move instantly between authentic live perspectives from around the world."
+              title={t('vision.journey.steps.discover.title')}
+              text={t('vision.journey.steps.discover.text')}
             />
           </div>
 
@@ -473,8 +476,8 @@ function VisionJourney() {
           <div className="vision-const-pos vision-const-pos--03">
             <VisionStepLabel
               num="03"
-              title="Globe"
-              text="A living map of live perspectives. Find by place, environment, activity and time."
+              title={t('vision.journey.steps.globe.title')}
+              text={t('vision.journey.steps.globe.text')}
               align="right"
             />
           </div>
@@ -483,8 +486,8 @@ function VisionJourney() {
           <div className="vision-const-pos vision-const-pos--04">
             <VisionStepLabel
               num="04"
-              title="Profile"
-              text="Every creator is a journey. Find live perspectives by passions, equipment and past experiences."
+              title={t('vision.journey.steps.profile.title')}
+              text={t('vision.journey.steps.profile.text')}
               align="right"
             />
             <VisionMiniProfileCard />
@@ -499,12 +502,23 @@ function VisionJourney() {
 /* ─── Moments mosaic ─────────────────────────────────────────── */
 
 function VisionMomentsMosaic() {
+  const { t } = useTranslation();
+
+  const mosaicMoments = useMemo(() => [
+    { key: 'surf',       title: t('vision.mosaic.items.surf.title'),       place: t('vision.mosaic.items.surf.place'),       env: 'Water', viewers: '368',  image: '/assets/VuVio_20_New_POV/01_surfer.jpg'          },
+    { key: 'baker',      title: t('vision.mosaic.items.baker.title'),      place: t('vision.mosaic.items.baker.place'),      env: 'Work',  viewers: '442',  image: '/assets/VuVio_20_New_POV/07_baker.jpg'           },
+    { key: 'balloon',    title: t('vision.mosaic.items.balloon.title'),    place: t('vision.mosaic.items.balloon.place'),    env: 'Air',   viewers: '642',  image: '/assets/VuVio_20_New_POV/03_hot_air_balloon.jpg' },
+    { key: 'fishing',    title: t('vision.mosaic.items.fishing.title'),    place: t('vision.mosaic.items.fishing.place'),    env: 'Water', viewers: '512',  image: '/assets/VuVio_20_New_POV/14_fishing.jpg'         },
+    { key: 'paraglider', title: t('vision.mosaic.items.paraglider.title'), place: t('vision.mosaic.items.paraglider.place'), env: 'Air',   viewers: '1.2k', image: '/assets/VuVio_20_New_POV/02_paraglider.jpg'      },
+    { key: 'drone',      title: t('vision.mosaic.items.drone.title'),      place: t('vision.mosaic.items.drone.place'),      env: 'Air',   viewers: '753',  image: '/assets/VuVio_20_New_POV/19_drone_pilot.jpg'     },
+  ], [t]);
+
   return (
     <section className="vision-moments-section" aria-labelledby="vision-moments-title">
       <div className="vision-moments-section__inner">
         <div className="vision-moments-header">
-          <p className="vision-eyebrow">MOMENTS VUVIO</p>
-          <h2 id="vision-moments-title">Des expériences.<br />Des émotions. En direct.</h2>
+          <p className="vision-eyebrow">{t('vision.mosaic.eyebrow')}</p>
+          <h2 id="vision-moments-title">{t('vision.mosaic.titleLine1')}<br />{t('vision.mosaic.titleLine2')}</h2>
         </div>
         <div className="vision-mosaic">
           {mosaicMoments.map(moment => (
@@ -531,15 +545,24 @@ function VisionMomentsMosaic() {
 /* ─── Final section ──────────────────────────────────────────── */
 
 function VisionFinalSection() {
+  const { t } = useTranslation();
+
+  const finalStats = useMemo(() => [
+    { icon: MapPin,   label: t('vision.finalStats.perspectives') },
+    { icon: Globe2,   label: t('vision.finalStats.countries') },
+    { icon: Eye,      label: t('vision.finalStats.moments') },
+    { icon: Sparkles, label: t('vision.finalStats.world') },
+  ], [t]);
+
   return (
     <section className="vision-final" aria-labelledby="vision-final-title">
       <div className="vision-final__copy">
-        <p className="vision-eyebrow">NOTRE VISION</p>
-        <h2 id="vision-final-title">A world of perspectives. Live.</h2>
+        <p className="vision-eyebrow">{t('vision.final.eyebrow')}</p>
+        <h2 id="vision-final-title">{t('vision.final.title')}</h2>
         <p>
-          Every live is a point.<br />
-          Every creator is a journey.<br />
-          Together, they connect the world through authentic perspectives.
+          {t('vision.final.line1')}<br />
+          {t('vision.final.line2')}<br />
+          {t('vision.final.line3')}
         </p>
         <div className="vision-final__stats">
           {finalStats.map(({ icon: Icon, label }) => (
@@ -551,8 +574,8 @@ function VisionFinalSection() {
         <img src="/vision/earth-space.png" alt="" loading="lazy" decoding="async" />
         <div>
           <BrandMark size={48} showName />
-          <strong>Rejoignez l'aventure Vuvio.</strong>
-          <small>Vision interne</small>
+          <strong>{t('vision.final.cta')}</strong>
+          <small>{t('vision.final.ctaSub')}</small>
         </div>
       </div>
     </section>
@@ -562,10 +585,11 @@ function VisionFinalSection() {
 /* ─── Footer ─────────────────────────────────────────────────── */
 
 function VisionFooter() {
+  const { t } = useTranslation();
   return (
     <footer className="vision-footer">
       <BrandMark size={20} showName />
-      <span>Vision interne · 2026</span>
+      <span>{t('vision.footer.text')}</span>
     </footer>
   );
 }

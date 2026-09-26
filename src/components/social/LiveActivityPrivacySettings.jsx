@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { useLiveActivityPrivacy } from '../../hooks/useLiveActivityPrivacy.js';
 import '../social/social.css';
 
@@ -6,6 +7,7 @@ import '../social/social.css';
  * Allows users to control whether their viewing activity is visible
  */
 export function LiveActivityPrivacySettings() {
+  const { t } = useTranslation();
   const {
     liveActivityVisibility,
     showWatchingIndicator,
@@ -13,20 +15,22 @@ export function LiveActivityPrivacySettings() {
     setShowWatchingIndicator,
   } = useLiveActivityPrivacy();
 
+  const options = [
+    ['friends', t('social.privacy.friends')],
+    ['nobody', t('social.privacy.nobody')],
+  ];
+
   return (
     <section className="settings-group live-activity-privacy-settings" aria-labelledby="settings-live-activity">
-      <h2 id="settings-live-activity">Live activity</h2>
+      <h2 id="settings-live-activity">{t('social.privacy.title')}</h2>
 
       <div className="settings-card">
         <div className="settings-privacy-copy">
-          <strong>Who can see what I'm watching?</strong>
-          <p>Friends may see the live you are currently watching and join you.</p>
+          <strong>{t('social.privacy.whoCanSee')}</strong>
+          <p>{t('social.privacy.whoCanSeeDesc')}</p>
         </div>
 
-        {[
-          ['friends', 'Friends'],
-          ['nobody', 'Nobody (private)'],
-        ].map(([value, label]) => (
+        {options.map(([value, label]) => (
           <label key={value} className="settings-radio-row">
             <span>{label}</span>
             <input
@@ -42,9 +46,9 @@ export function LiveActivityPrivacySettings() {
 
         <label className="settings-toggle-row">
           <div>
-            <span>Show presence indicator</span>
+            <span>{t('social.privacy.showIndicator')}</span>
             <small style={{ display: 'block', marginTop: '2px' }}>
-              Friends see when you're watching a live
+              {t('social.privacy.showIndicatorDesc')}
             </small>
           </div>
           <input
@@ -56,7 +60,7 @@ export function LiveActivityPrivacySettings() {
       </div>
 
       <div style={{ padding: '12px 16px', fontSize: '12px', color: 'var(--vuvio-text-muted)', lineHeight: '1.5' }}>
-        💡 <strong>Pro tip:</strong> Your presence is only visible while actively watching a live. It disappears after you leave or the live ends.
+        💡 <strong>{t('social.privacy.proTipLabel')}</strong> {t('social.privacy.proTipBody')}
       </div>
     </section>
   );

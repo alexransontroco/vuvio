@@ -1,12 +1,14 @@
 import { ChevronLeft } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 
 export default function SettingsPageHeader({ title }) {
   const navigate = useNavigate();
+  const { t } = useTranslation();
 
   return (
     <header className="support-page-header">
-      <button type="button" onClick={() => navigate(-1)} aria-label="Back">
+      <button type="button" onClick={() => navigate(-1)} aria-label={t('common.back')}>
         <ChevronLeft size={20} strokeWidth={1.9} />
       </button>
       <h1>{title}</h1>

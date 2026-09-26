@@ -1,28 +1,28 @@
 import { useState } from 'react';
-import { X } from 'lucide-react';
+import { Trash2, X } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { ACTIVITY_CATEGORIES } from '../data/activityCategories.js';
 import { scheduleStream } from '../services/streamApi.ts';
-
-const ENVIRONMENTS = [
-  { id: 'land', label: 'Land' },
-  { id: 'water', label: 'Water' },
-  { id: 'air', label: 'Air' },
-  { id: 'urban', label: 'Urban' },
-  { id: 'other', label: 'Other' },
-];
-
-const VISIBILITIES = [
-  { id: 'public', label: 'Public' },
-  { id: 'followers', label: 'Followers' },
-  { id: 'private', label: 'Private' },
-];
 
 function minDateTimeLocal() {
   const d = new Date(Date.now() + 10 * 60 * 1000);
   return d.toISOString().slice(0, 16);
 }
 
-export default function ScheduleLiveSheet({ onClose, onScheduled }) {
+export default function ScheduleLiveSheet({ existingLive, onClose, onScheduled, onCancel }) {
+  const { t } = useTranslation();
+  const ENVIRONMENTS = [
+    { id: 'land', label: t('scheduleLive.environments.land') },
+    { id: 'water', label: t('scheduleLive.environments.water') },
+    { id: 'air', label: t('scheduleLive.environments.air') },
+    { id: 'urban', label: t('scheduleLive.environments.urban') },
+    { id: 'other', label: t('scheduleLive.environments.other') },
+  ];
+  const VISIBILITIES = [
+    { id: 'public', label: t('scheduleLive.visibilities.public') },
+    { id: 'followers', label: t('scheduleLive.visibilities.followers') },
+    { id: 'private', label: t('scheduleLive.visibilities.private') },
+  ];
   const [title, setTitle] = useState('');
   const [datetime, setDatetime] = useState('');
   const [category, setCategory] = useState('outdoor');
@@ -31,16 +31,17 @@ export default function ScheduleLiveSheet({ onClose, onScheduled }) {
   const [city, setCity] = useState('');
   const [visibility, setVisibility] = useState('public');
   const [loading, setLoading] = useState(false);
+  const [cancelling, setCancelling] = useState(false);
   const [error, setError] = useState('');
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!title.trim()) { setError('Title is required'); return; }
-    if (!datetime) { setError('Date and time are required'); return; }
+    if (!title.trim()) { setError(t('scheduleLive.errors.titleRequired')); return; }
+    if (!datetime) { setError(t('scheduleLive.errors.datetimeRequired')); return; }
 
     const scheduledDate = new Date(datetime);
     if (scheduledDate.getTime() < Date.now() + 5 * 60 * 1000) {
-      setError('Must be at least 5 minutes from now');
+      setError(t('scheduleLive.errors.tooSoon'));
       return;
     }
 
@@ -59,7 +60,7 @@ export default function ScheduleLiveSheet({ onClose, onScheduled }) {
       onScheduled?.();
       onClose();
     } catch (err) {
-      setError(err.message || 'Failed to schedule live');
+      setError(err.message || t('scheduleLive.errors.scheduleFailed'));
     } finally {
       setLoading(false);
     }
@@ -69,19 +70,19 @@ export default function ScheduleLiveSheet({ onClose, onScheduled }) {
     <div className="create-sheet" onClick={(e) => e.target === e.currentTarget && onClose()}>
       <div className="create-sheet__panel schedule-sheet">
         <div className="create-sheet__header">
-          <strong>Schedule a live</strong>
-          <button type="button" onClick={onClose} aria-label="Close">
+          <strong>{existingLive ? t('scheduleLive.editTitle') : t('scheduleLive.title')}</strong>
+          <button type="button" onClick={onClose} aria-label={t('common.close')}>
             <X size={16} strokeWidth={2} />
           </button>
         </div>
 
         <form className="schedule-sheet__form" onSubmit={handleSubmit}>
           <div className="schedule-sheet__field">
-            <label className="schedule-sheet__label">Title</label>
+            <label className="schedule-sheet__label">{t('scheduleLive.fields.title')}</label>
             <input
               className="schedule-sheet__input"
               type="text"
-              placeholder="What are you doing?"
+              placeholder={t('scheduleLive.fields.titlePlaceholder')}
               maxLength={120}
               value={title}
               onChange={(e) => setTitle(e.target.value)}
@@ -90,7 +91,7 @@ export default function ScheduleLiveSheet({ onClose, onScheduled }) {
           </div>
 
           <div className="schedule-sheet__field">
-            <label className="schedule-sheet__label">Date & time</label>
+            <label className="schedule-sheet__label">{t('scheduleLive.fields.datetime')}</label>
             <input
               className="schedule-sheet__input"
               type="datetime-local"
@@ -101,7 +102,7 @@ export default function ScheduleLiveSheet({ onClose, onScheduled }) {
           </div>
 
           <div className="schedule-sheet__field">
-            <label className="schedule-sheet__label">Category</label>
+            <label className="schedule-sheet__label">{t('scheduleLive.fields.category')}</label>
             <div className="schedule-sheet__chips">
               {ACTIVITY_CATEGORIES.map((cat) => (
                 <button
@@ -117,7 +118,7 @@ export default function ScheduleLiveSheet({ onClose, onScheduled }) {
           </div>
 
           <div className="schedule-sheet__field">
-            <label className="schedule-sheet__label">Environment</label>
+            <label className="schedule-sheet__label">{t('scheduleLive.fields.environment')}</label>
             <div className="schedule-sheet__chips">
               {ENVIRONMENTS.map((env) => (
                 <button
@@ -133,11 +134,11 @@ export default function ScheduleLiveSheet({ onClose, onScheduled }) {
           </div>
 
           <div className="schedule-sheet__field">
-            <label className="schedule-sheet__label">City <span className="schedule-sheet__optional">optional</span></label>
+            <label className="schedule-sheet__label">{t('scheduleLive.fields.city')} <span className="schedule-sheet__optional">{t('scheduleLive.optional')}</span></label>
             <input
               className="schedule-sheet__input"
               type="text"
-              placeholder="Paris, Tokyo…"
+              placeholder={t('scheduleLive.fields.cityPlaceholder')}
               maxLength={80}
               value={city}
               onChange={(e) => setCity(e.target.value)}
@@ -145,10 +146,10 @@ export default function ScheduleLiveSheet({ onClose, onScheduled }) {
           </div>
 
           <div className="schedule-sheet__field">
-            <label className="schedule-sheet__label">Description <span className="schedule-sheet__optional">optional</span></label>
+            <label className="schedule-sheet__label">{t('scheduleLive.fields.description')} <span className="schedule-sheet__optional">{t('scheduleLive.optional')}</span></label>
             <textarea
               className="schedule-sheet__input schedule-sheet__textarea"
-              placeholder="Tell viewers what to expect…"
+              placeholder={t('scheduleLive.fields.descriptionPlaceholder')}
               maxLength={500}
               rows={3}
               value={description}
@@ -157,7 +158,7 @@ export default function ScheduleLiveSheet({ onClose, onScheduled }) {
           </div>
 
           <div className="schedule-sheet__field">
-            <label className="schedule-sheet__label">Visibility</label>
+            <label className="schedule-sheet__label">{t('scheduleLive.fields.visibility')}</label>
             <div className="schedule-sheet__chips">
               {VISIBILITIES.map((v) => (
                 <button
@@ -177,10 +178,25 @@ export default function ScheduleLiveSheet({ onClose, onScheduled }) {
           <button
             type="submit"
             className="schedule-sheet__submit"
-            disabled={loading}
+            disabled={loading || cancelling}
           >
-            {loading ? 'Scheduling…' : 'Schedule live'}
+            {loading ? t('scheduleLive.scheduling') : existingLive ? t('scheduleLive.saveChanges') : t('scheduleLive.scheduleLive')}
           </button>
+
+          {existingLive && onCancel && (
+            <button
+              type="button"
+              className="schedule-sheet__cancel-live"
+              disabled={cancelling || loading}
+              onClick={async () => {
+                setCancelling(true);
+                try { await onCancel(existingLive.id); } finally { setCancelling(false); }
+              }}
+            >
+              <Trash2 size={15} strokeWidth={2} />
+              {cancelling ? t('scheduleLive.cancelling') : t('scheduleLive.cancelLive')}
+            </button>
+          )}
         </form>
       </div>
     </div>

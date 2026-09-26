@@ -2,6 +2,7 @@ import {
   BatteryCharging, Bike, Camera, Check, Mic, Plus, Radio, Sparkles, X,
 } from 'lucide-react';
 import { useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { ACTIVITY_CATEGORIES } from '../data/activityCategories.js';
 import BrandMark from '../components/BrandMark.jsx';
@@ -14,15 +15,21 @@ import { addEquipmentItem, initEquipmentService } from '../services/equipmentSer
 const TOTAL_STEPS = 6;
 
 /* ─── Equipment category meta ────────────────────── */
-const GEAR_CATS = [
-  { id: 'recording',         label: 'Camera',  icon: Camera },
-  { id: 'audio',             label: 'Audio',   icon: Mic },
-  { id: 'activity',          label: 'Gear',    icon: Bike },
-  { id: 'streaming',         label: 'Stream',  icon: Radio },
-  { id: 'power_accessories', label: 'Power',   icon: BatteryCharging },
+const GEAR_CATS_DEFS = [
+  { id: 'recording',         labelKey: 'onboarding.gearCats.camera', icon: Camera },
+  { id: 'audio',             labelKey: 'onboarding.gearCats.audio',  icon: Mic },
+  { id: 'activity',          labelKey: 'onboarding.gearCats.gear',   icon: Bike },
+  { id: 'streaming',         labelKey: 'onboarding.gearCats.stream', icon: Radio },
+  { id: 'power_accessories', labelKey: 'onboarding.gearCats.power',  icon: BatteryCharging },
 ];
-const gearCatIcon = (id) => { const c = GEAR_CATS.find((g) => g.id === id); return c ? c.icon : Camera; };
-const gearCatLabel = (id) => GEAR_CATS.find((g) => g.id === id)?.label ?? id;
+const gearCatIcon = (id) => { const c = GEAR_CATS_DEFS.find((g) => g.id === id); return c ? c.icon : Camera; };
+const useGearCatLabel = () => {
+  const { t } = useTranslation();
+  return (id) => {
+    const cat = GEAR_CATS_DEFS.find((g) => g.id === id);
+    return cat ? t(cat.labelKey) : id;
+  };
+};
 
 /* ─── Gear suggestions catalogue ────────────────── */
 // activities: null = always shown, string[] = shown when any activity matches
@@ -49,8 +56,9 @@ function getSuggestions(activities) {
 
 /* ─── Progress dots ──────────────────────────────── */
 function ProgressDots({ step }) {
+  const { t } = useTranslation();
   return (
-    <div className="onboarding-progress" aria-label={`Step ${step} of ${TOTAL_STEPS}`}>
+    <div className="onboarding-progress" aria-label={t('onboarding.stepXofY', { step, total: TOTAL_STEPS })}>
       {Array.from({ length: TOTAL_STEPS }).map((_, i) => (
         <div
           key={i}
@@ -63,35 +71,36 @@ function ProgressDots({ step }) {
 
 /* ─── Step 1 — Profile ───────────────────────────── */
 function StepProfile({ displayName, setDisplayName, avatarPreview, onSelectAvatar }) {
+  const { t } = useTranslation();
   const fileRef = useRef(null);
 
   return (
     <div className="onboarding-step">
       <div>
-        <p className="onboarding-step__eyebrow">Step 1</p>
-        <h2 className="onboarding-step__title">Set up your profile</h2>
-        <p className="onboarding-step__sub">Add a photo and choose your creator name.</p>
+        <p className="onboarding-step__eyebrow">{t('onboarding.stepLabel', { n: 1 })}</p>
+        <h2 className="onboarding-step__title">{t('onboarding.step1.title')}</h2>
+        <p className="onboarding-step__sub">{t('onboarding.step1.sub')}</p>
       </div>
 
       <div className="onboarding-avatar">
-        <button type="button" className="onboarding-avatar__btn" onClick={() => fileRef.current?.click()} aria-label="Upload profile photo">
+        <button type="button" className="onboarding-avatar__btn" onClick={() => fileRef.current?.click()} aria-label={t('onboarding.step1.uploadAria')}>
           {avatarPreview ? (
             <>
-              <img src={avatarPreview} alt="Preview" />
+              <img src={avatarPreview} alt={t('onboarding.step1.previewAlt')} />
               <div className="onboarding-avatar__edit-icon"><Camera size={20} strokeWidth={1.8} color="#f4f7fa" /></div>
             </>
           ) : (
             <Camera size={24} strokeWidth={1.6} />
           )}
         </button>
-        <span className="onboarding-avatar__label">{avatarPreview ? 'Change photo' : 'Add a photo (optional)'}</span>
+        <span className="onboarding-avatar__label">{avatarPreview ? t('onboarding.step1.changePhoto') : t('onboarding.step1.addPhoto')}</span>
         <input ref={fileRef} type="file" accept="image/jpeg,image/png,image/webp" style={{ display: 'none' }} onChange={onSelectAvatar} />
       </div>
 
       <div className="auth-field">
-        <label className="auth-field__label" htmlFor="ob-name">Display name</label>
+        <label className="auth-field__label" htmlFor="ob-name">{t('onboarding.step1.displayName')}</label>
         <div className="auth-field__control">
-          <input id="ob-name" className="auth-field__input" type="text" autoComplete="name" placeholder="Your name" value={displayName} onChange={(e) => setDisplayName(e.target.value)} />
+          <input id="ob-name" className="auth-field__input" type="text" autoComplete="name" placeholder={t('onboarding.step1.namePlaceholder')} value={displayName} onChange={(e) => setDisplayName(e.target.value)} />
         </div>
       </div>
     </div>
@@ -100,12 +109,13 @@ function StepProfile({ displayName, setDisplayName, avatarPreview, onSelectAvata
 
 /* ─── Step 2 — Interests ─────────────────────────── */
 function StepInterests({ selected, onToggle }) {
+  const { t } = useTranslation();
   return (
     <div className="onboarding-step">
       <div>
-        <p className="onboarding-step__eyebrow">Step 2</p>
-        <h2 className="onboarding-step__title">What are you into?</h2>
-        <p className="onboarding-step__sub">Choose your passions — we'll personalize your experience.</p>
+        <p className="onboarding-step__eyebrow">{t('onboarding.stepLabel', { n: 2 })}</p>
+        <h2 className="onboarding-step__title">{t('onboarding.step2.title')}</h2>
+        <p className="onboarding-step__sub">{t('onboarding.step2.sub')}</p>
       </div>
       <div className="onboarding-categories">
         {ACTIVITY_CATEGORIES.map((cat) => {
@@ -130,6 +140,7 @@ function StepInterests({ selected, onToggle }) {
 
 /* ─── Step 3 — Activities ────────────────────────── */
 function StepActivities({ selectedCategories, activities, onToggle }) {
+  const { t } = useTranslation();
   // Build activity pills from selected categories (or all if none selected)
   const sourceCats = selectedCategories.length > 0
     ? ACTIVITY_CATEGORIES.filter((c) => selectedCategories.includes(c.id))
@@ -146,12 +157,12 @@ function StepActivities({ selectedCategories, activities, onToggle }) {
   return (
     <div className="onboarding-step">
       <div>
-        <p className="onboarding-step__eyebrow">Step 3</p>
-        <h2 className="onboarding-step__title">What will you stream?</h2>
+        <p className="onboarding-step__eyebrow">{t('onboarding.stepLabel', { n: 3 })}</p>
+        <h2 className="onboarding-step__title">{t('onboarding.step3.title')}</h2>
         <p className="onboarding-step__sub">
           {selectedCategories.length > 0
-            ? 'Pick the activities you want to broadcast.'
-            : 'Pick anything — sport, passion, work, life.'}
+            ? t('onboarding.step3.subFiltered')
+            : t('onboarding.step3.subAny')}
         </p>
       </div>
       <div className="onboarding-activities">
@@ -171,7 +182,7 @@ function StepActivities({ selectedCategories, activities, onToggle }) {
         })}
         {items.length === 0 && (
           <p style={{ color: 'rgba(111,130,148,0.7)', fontSize: 13 }}>
-            Go back and select at least one interest to see activity suggestions.
+            {t('onboarding.step3.empty')}
           </p>
         )}
       </div>
@@ -181,6 +192,8 @@ function StepActivities({ selectedCategories, activities, onToggle }) {
 
 /* ─── Step 4 — Gear ──────────────────────────────── */
 function StepGear({ activities, checkedSuggestions, onToggleSuggestion, customItems, onAddCustom, onRemoveCustom }) {
+  const { t } = useTranslation();
+  const gearCatLabel = useGearCatLabel();
   const [brand,    setBrand]    = useState('');
   const [model,    setModel]    = useState('');
   const [category, setCategory] = useState('recording');
@@ -199,12 +212,12 @@ function StepGear({ activities, checkedSuggestions, onToggleSuggestion, customIt
   return (
     <div className="onboarding-step">
       <div>
-        <p className="onboarding-step__eyebrow">Step 4</p>
-        <h2 className="onboarding-step__title">Your gear</h2>
+        <p className="onboarding-step__eyebrow">{t('onboarding.stepLabel', { n: 4 })}</p>
+        <h2 className="onboarding-step__title">{t('onboarding.step4.title')}</h2>
         <p className="onboarding-step__sub">
           {activities.length > 0
-            ? "Check what you use to film — we've picked suggestions for your activities."
-            : 'Check what you film with. You can edit anytime.'}
+            ? t('onboarding.step4.subFiltered')
+            : t('onboarding.step4.subAny')}
         </p>
       </div>
 
@@ -246,7 +259,7 @@ function StepGear({ activities, checkedSuggestions, onToggleSuggestion, customIt
                   <Icon size={14} strokeWidth={1.8} className="onboarding-gear__item-icon" />
                   <span className="onboarding-gear__item-label">{[item.brand, item.model].filter(Boolean).join(' ')}</span>
                   <span className="onboarding-gear__item-cat">{gearCatLabel(item.category)}</span>
-                  <button type="button" className="onboarding-gear__item-remove" onClick={() => onRemoveCustom(item.id)} aria-label="Remove">
+                  <button type="button" className="onboarding-gear__item-remove" onClick={() => onRemoveCustom(item.id)} aria-label={t('common.remove')}>
                     <X size={13} />
                   </button>
                 </li>
@@ -258,26 +271,26 @@ function StepGear({ activities, checkedSuggestions, onToggleSuggestion, customIt
         {/* Toggle add form */}
         <button type="button" className="onboarding-gear-v2__add-toggle" onClick={() => setShowForm((v) => !v)}>
           <Plus size={14} strokeWidth={2} />
-          Add custom gear
+          {t('onboarding.step4.addCustom')}
         </button>
 
         {showForm && (
           <div className="onboarding-gear__form" style={{ marginTop: 8 }}>
             {/* Category tabs */}
             <div className="onboarding-gear__cats" style={{ gridColumn: '1/-1', marginBottom: 4 }}>
-              {GEAR_CATS.map(({ id, label, icon: Icon }) => (
+              {GEAR_CATS_DEFS.map(({ id, labelKey, icon: Icon }) => (
                 <button
                   key={id} type="button"
                   className={`onboarding-gear__cat${category === id ? ' is-active' : ''}`}
                   onClick={() => setCategory(id)}
                 >
-                  <Icon size={13} strokeWidth={1.8} />{label}
+                  <Icon size={13} strokeWidth={1.8} />{t(labelKey)}
                 </button>
               ))}
             </div>
-            <input className="auth-field__input onboarding-gear__input" type="text" placeholder="Brand" value={brand} onChange={(e) => setBrand(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleAdd()} />
-            <input className="auth-field__input onboarding-gear__input" type="text" placeholder="Model" value={model} onChange={(e) => setModel(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleAdd()} />
-            <button type="button" className="onboarding-gear__add-btn" onClick={handleAdd} disabled={!brand.trim() && !model.trim()} aria-label="Add">
+            <input className="auth-field__input onboarding-gear__input" type="text" placeholder={t('onboarding.step4.brand')} value={brand} onChange={(e) => setBrand(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleAdd()} />
+            <input className="auth-field__input onboarding-gear__input" type="text" placeholder={t('onboarding.step4.model')} value={model} onChange={(e) => setModel(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleAdd()} />
+            <button type="button" className="onboarding-gear__add-btn" onClick={handleAdd} disabled={!brand.trim() && !model.trim()} aria-label={t('onboarding.step4.add')}>
               <Plus size={18} strokeWidth={2} />
             </button>
           </div>
@@ -289,17 +302,18 @@ function StepGear({ activities, checkedSuggestions, onToggleSuggestion, customIt
 
 /* ─── Step 5 — Bio ───────────────────────────────── */
 function StepBio({ bio, setBio }) {
+  const { t } = useTranslation();
   return (
     <div className="onboarding-step">
       <div>
-        <p className="onboarding-step__eyebrow">Step 5</p>
-        <h2 className="onboarding-step__title">Tell your story</h2>
-        <p className="onboarding-step__sub">Add a bio so viewers know what you're about.</p>
+        <p className="onboarding-step__eyebrow">{t('onboarding.stepLabel', { n: 5 })}</p>
+        <h2 className="onboarding-step__title">{t('onboarding.step5.title')}</h2>
+        <p className="onboarding-step__sub">{t('onboarding.step5.sub')}</p>
       </div>
       <div className="auth-field">
-        <label className="auth-field__label" htmlFor="ob-bio">Bio (optional)</label>
+        <label className="auth-field__label" htmlFor="ob-bio">{t('onboarding.step5.bioLabel')}</label>
         <div className="auth-field__control">
-          <textarea id="ob-bio" className="auth-field__input" style={{ minHeight: '100px', resize: 'vertical' }} placeholder="I love cycling and exploring new routes..." value={bio} onChange={(e) => setBio(e.target.value.slice(0, 160))} maxLength={160} />
+          <textarea id="ob-bio" className="auth-field__input" style={{ minHeight: '100px', resize: 'vertical' }} placeholder={t('onboarding.step5.bioPlaceholder')} value={bio} onChange={(e) => setBio(e.target.value.slice(0, 160))} maxLength={160} />
         </div>
         <span style={{ fontSize: '12px', color: 'rgba(111, 130, 148, 0.8)', marginTop: '4px' }}>{bio.length}/160</span>
       </div>
@@ -309,6 +323,7 @@ function StepBio({ bio, setBio }) {
 
 /* ─── Step 6 — Welcome ───────────────────────────── */
 function StepWelcome({ displayName, selectedCategories, activities, checkedSuggestions, customItems }) {
+  const { t } = useTranslation();
   const cats = ACTIVITY_CATEGORIES.filter((c) => selectedCategories.includes(c.id));
   const checkedGear = GEAR_SUGGESTIONS.filter((s) => checkedSuggestions.has(s.id));
   const allGear = [...checkedGear, ...customItems];
@@ -316,8 +331,10 @@ function StepWelcome({ displayName, selectedCategories, activities, checkedSugge
   return (
     <div className="onboarding-welcome">
       <div className="onboarding-welcome__mark"><BrandMark size={36} /></div>
-      <h2 className="onboarding-welcome__title">Welcome{displayName ? `, ${displayName.split(' ')[0]}` : ''}!</h2>
-      <p className="onboarding-welcome__body">You're all set. Start exploring live perspectives from around the world.</p>
+      <h2 className="onboarding-welcome__title">
+        {displayName ? t('onboarding.step6.welcomeName', { name: displayName.split(' ')[0] }) : t('onboarding.step6.welcome')}
+      </h2>
+      <p className="onboarding-welcome__body">{t('onboarding.step6.body')}</p>
 
       {cats.length > 0 && (
         <div className="onboarding-welcome__interests">
@@ -362,6 +379,7 @@ function StepWelcome({ displayName, selectedCategories, activities, checkedSugge
 
 /* ─── Main ───────────────────────────────────────── */
 export default function OnboardingPage() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const location = useLocation();
   const { user, userProfile, updateProfile, refreshUserProfile } = useAuth();
@@ -457,7 +475,7 @@ export default function OnboardingPage() {
         navigate(returnTo, { replace: true });
       } catch (e) {
         console.error('[Onboarding] error:', e);
-        setError(e.message || 'Error');
+        setError(e.message || t('common.error'));
         setBusy(false);
       }
     }
@@ -466,21 +484,23 @@ export default function OnboardingPage() {
   const skip = async () => {
     setBusy(true);
     try {
-      if (!user?.uid) throw new Error('Your session is still loading. Please try again.');
+      if (!user?.uid) throw new Error(t('onboarding.errors.sessionLoading'));
       await updateProfile({ onboardingCompleted: true });
       await refreshUserProfile();
       navigate(returnTo, { replace: true });
     } catch (err) {
-      setError(err.message || 'Could not finish onboarding. Please try again.');
+      setError(err.message || t('onboarding.errors.finishFailed'));
       setBusy(false);
     }
   };
 
   const gearCount = checkedSuggestions.size + customItems.length;
   const ctaLabel =
-    step === 6 ? 'Explore Vuvio' :
-    step === 4 ? (gearCount > 0 ? `Continue · ${gearCount} item${gearCount > 1 ? 's' : ''}` : 'Continue') :
-    'Continue';
+    step === 6 ? t('onboarding.cta.explore') :
+    step === 4 ? (gearCount > 0
+      ? t('onboarding.cta.continueWithCount', { count: gearCount })
+      : t('onboarding.cta.continue')) :
+    t('onboarding.cta.continue');
 
   return (
     <div className="onboarding-screen">
@@ -488,7 +508,7 @@ export default function OnboardingPage() {
         <BrandMark size={28} showName />
         <ProgressDots step={step} />
         <button type="button" className="onboarding-skip" onClick={skip} disabled={busy}>
-          Skip for now
+          {t('onboarding.skip')}
         </button>
       </div>
 

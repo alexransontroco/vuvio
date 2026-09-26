@@ -1,5 +1,6 @@
 import { Bell, ChevronDown, ChevronRight, Radio, UsersRound, Video, VideoOff, X } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import MapBottomSheet from '../components/map/MapBottomSheet.jsx';
 import LiveMap from '../components/map/LiveMap.jsx';
@@ -12,6 +13,7 @@ import { collection, onSnapshot, query, where } from 'firebase/firestore';
 import { db } from '../firebase.js';
 
 function YouAreLivePanel({ live, onEnd }) {
+  const { t } = useTranslation();
   const videoRef = useRef(null);
   const streamRef = useRef(null);
   const [camActive, setCamActive] = useState(false);
@@ -55,15 +57,15 @@ function YouAreLivePanel({ live, onEnd }) {
         {!camActive && <Video size={20} strokeWidth={1.6} />}
       </div>
       <div className="you-are-live__info">
-        <span className="you-are-live__badge">● LIVE</span>
+        <span className="you-are-live__badge">● {t('map.live')}</span>
         <strong className="you-are-live__title">{live.experienceTitle || live.job}</strong>
-        <span className="you-are-live__viewers">{viewers} watching</span>
+        <span className="you-are-live__viewers">{t('map.viewersWatching', { count: viewers })}</span>
       </div>
       <div className="you-are-live__actions">
-        <button type="button" onClick={camActive ? stopCamera : undefined} aria-label="Toggle camera">
+        <button type="button" onClick={camActive ? stopCamera : undefined} aria-label={t('map.toggleCamera')}>
           {camActive ? <Video size={16} strokeWidth={1.8} /> : <VideoOff size={16} strokeWidth={1.8} />}
         </button>
-        <button type="button" className="is-end" onClick={onEnd}>End</button>
+        <button type="button" className="is-end" onClick={onEnd}>{t('map.end')}</button>
       </div>
     </div>
   );
@@ -71,6 +73,7 @@ function YouAreLivePanel({ live, onEnd }) {
 
 export default function MapPage() {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const [searchParams, setSearchParams] = useSearchParams();
   const requestedLiveId = searchParams.get('live');
   const [activeStatuses, setActiveStatuses] = useState(['live']);
@@ -195,7 +198,7 @@ export default function MapPage() {
   };
 
   return (
-    <section className="screen map-screen" data-sheet-state={sheetState} aria-label="VuVio live map">
+    <section className="screen map-screen" data-sheet-state={sheetState} aria-label={t('map.aria')}>
       {userLive && !userLiveEnded ? (
         <YouAreLivePanel live={userLive} onEnd={() => setUserLiveEnded(true)} />
       ) : null}
@@ -211,14 +214,14 @@ export default function MapPage() {
         resetSignal={resetSignal}
       />
 
-      <div className="map-engine-switch" role="group" aria-label="Choose globe">
+      <div className="map-engine-switch" role="group" aria-label={t('map.chooseGlobe')}>
         <button
           type="button"
           className="is-active"
           onClick={resetGlobeView}
           aria-pressed="true"
         >
-          Current
+          {t('map.current')}
         </button>
       </div>
 
@@ -260,7 +263,7 @@ export default function MapPage() {
       ) : null}
 
       {loading ? (
-        <div className="page-skeleton page-skeleton--map" aria-label="Loading globe">
+        <div className="page-skeleton page-skeleton--map" aria-label={t('map.loadingGlobe')}>
           <span />
           <span />
           <span />

@@ -1,9 +1,11 @@
 import { X } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import '../styles/components/notification-toast.css';
 
 export default function NotificationToast({ notifications, onDismiss }) {
   const navigate = useNavigate();
+  const { t } = useTranslation();
 
   const handleNotificationClick = (liveId) => {
     navigate(`/watch?live=${encodeURIComponent(liveId)}&mode=view`);
@@ -13,7 +15,7 @@ export default function NotificationToast({ notifications, onDismiss }) {
   if (!notifications || notifications.length === 0) return null;
 
   return (
-    <div className="notification-stack" role="region" aria-live="polite" aria-label="Live notifications">
+    <div className="notification-stack" role="region" aria-live="polite" aria-label={t('notifications.regionAria')}>
       {notifications.map((notif) => (
         <div key={notif.id} className="notification-toast" role="alert">
           <div
@@ -31,7 +33,7 @@ export default function NotificationToast({ notifications, onDismiss }) {
             type="button"
             className="notification-toast__close"
             onClick={() => onDismiss(notif.id)}
-            aria-label="Dismiss notification"
+            aria-label={t('notifications.dismiss')}
           >
             <X size={16} strokeWidth={2} />
           </button>

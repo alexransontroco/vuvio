@@ -22,68 +22,72 @@ import {
 import { useNavigate } from 'react-router-dom';
 import { getMessagePreferences, updateMessagePreferences } from '../services/messagingService.js';
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '../context/AuthContext.jsx';
 import { useTheme } from '../context/ThemeContext.jsx';
+import { useLanguage } from '../context/LanguageContext.jsx';
 import { LiveActivityPrivacySettings } from '../components/social/LiveActivityPrivacySettings.jsx';
+import LanguageSheet from '../components/LanguageSheet.jsx';
 
-const getSettingGroups = (userEmail) => [
+const buildGroups = (t, userEmail, languageLabel) => [
   {
     id: 'about',
-    title: 'About',
+    title: t('settings.groups.about'),
     items: [
-      { label: 'What is Vuvio?', value: 'Platform overview', icon: Info, to: '/help', state: { scrollTo: 'what-is-vuvio' } },
+      { label: t('settings.items.whatIsVuvio'), value: t('settings.items.platformOverview'), icon: Info, to: '/help', state: { scrollTo: 'what-is-vuvio' } },
     ],
   },
   {
     id: 'account',
-    title: 'Account',
+    title: t('settings.groups.account'),
     items: [
-      { label: 'E-mail', value: userEmail, icon: Mail, readOnly: true },
-      { label: 'Password', value: 'Edit', icon: Lock },
-      { label: 'Public profile', value: 'Edit your profile', icon: UserRound, to: '/profile/edit' },
+      { label: t('settings.items.email'), value: userEmail, icon: Mail, readOnly: true },
+      { label: t('settings.items.password'), value: t('common.edit'), icon: Lock },
+      { label: t('settings.items.publicProfile'), value: t('settings.items.editYourProfile'), icon: UserRound, to: '/profile/edit' },
     ],
   },
   {
     id: 'preferences',
-    title: 'Preferences',
+    title: t('settings.groups.preferences'),
     items: [
-      { label: 'Notifications', value: 'Lives, messages and reminders', icon: Bell },
-      { label: 'Privacy', value: 'Visibility and security', icon: Shield },
-      { label: 'Private messages', value: 'Who can message you', icon: MessageCircle, action: 'message-privacy' },
-      { label: 'Streaming quality', value: 'Automatic', icon: MonitorUp },
-      { label: 'Data and storage', value: 'Cache and downloads', icon: Database },
-      { label: 'App language', value: 'English', icon: Languages },
+      { label: t('settings.items.notifications'), value: t('settings.items.notificationsValue'), icon: Bell },
+      { label: t('settings.items.privacy'), value: t('settings.items.privacyValue'), icon: Shield },
+      { label: t('settings.items.privateMessages'), value: t('settings.items.privateMessagesValue'), icon: MessageCircle, action: 'message-privacy' },
+      { label: t('settings.items.streamingQuality'), value: t('settings.items.streamingQualityValue'), icon: MonitorUp },
+      { label: t('settings.items.dataStorage'), value: t('settings.items.dataStorageValue'), icon: Database },
+      { label: t('settings.items.appLanguage'), value: languageLabel, icon: Languages, action: 'language' },
     ],
   },
   {
     id: 'support',
-    title: 'Support',
+    title: t('settings.groups.support'),
     items: [
-      { label: 'Help center', icon: HelpCircle, to: '/help' },
-      { label: 'Report a problem', icon: Siren, to: '/report-problem' },
-      { label: 'Terms of use', icon: FileText, to: '/terms' },
-      { label: 'Privacy policy', icon: Globe2, to: '/privacy' },
+      { label: t('settings.items.helpCenter'), icon: HelpCircle, to: '/help' },
+      { label: t('settings.items.reportProblem'), icon: Siren, to: '/report-problem' },
+      { label: t('settings.items.terms'), icon: FileText, to: '/terms' },
+      { label: t('settings.items.privacyPolicy'), icon: Globe2, to: '/privacy' },
     ],
   },
   {
     id: 'security',
-    title: 'Account and security',
+    title: t('settings.groups.security'),
     items: [
-      { label: 'Sign out', value: 'End the session on this device', icon: LogOut, action: 'sign-out' },
-      { label: 'Delete my account', value: 'Permanent action', icon: Trash2, action: 'delete-account', danger: true },
+      { label: t('settings.items.signOut'), value: t('settings.items.signOutValue'), icon: LogOut, action: 'sign-out' },
+      { label: t('settings.items.deleteAccount'), value: t('settings.items.permanentAction'), icon: Trash2, action: 'delete-account', danger: true },
     ],
   },
 ];
 
 function ConfirmModal({ title, message, confirmLabel, danger, onConfirm, onCancel }) {
+  const { t } = useTranslation();
   return (
     <div className="settings-confirm-modal" role="dialog" aria-modal="true" aria-labelledby="settings-confirm-title">
-      <button type="button" className="settings-confirm-modal__backdrop" onClick={onCancel} aria-label="Cancel" />
+      <button type="button" className="settings-confirm-modal__backdrop" onClick={onCancel} aria-label={t('common.cancel')} />
       <div className="settings-confirm-modal__panel">
         <h3 id="settings-confirm-title">{title}</h3>
         <p>{message}</p>
         <div className="settings-confirm-modal__actions">
-          <button type="button" className="settings-confirm-modal__cancel" onClick={onCancel}>Cancel</button>
+          <button type="button" className="settings-confirm-modal__cancel" onClick={onCancel}>{t('common.cancel')}</button>
           <button type="button" className={`settings-confirm-modal__confirm${danger ? ' is-danger' : ''}`} onClick={onConfirm}>{confirmLabel}</button>
         </div>
       </div>
@@ -93,11 +97,18 @@ function ConfirmModal({ title, message, confirmLabel, danger, onConfirm, onCance
 
 export default function SettingsPage() {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const { logout, user } = useAuth();
   const { theme, setTheme } = useTheme();
+  const { language, mode } = useLanguage();
   const [messagePreferences, setMessagePreferences] = useState(() => getMessagePreferences());
   const [pendingAction, setPendingAction] = useState(null);
+  const [showLanguageSheet, setShowLanguageSheet] = useState(false);
   const userEmail = user?.email ?? '';
+
+  const languageLabel = mode === 'auto'
+    ? `${t(language === 'fr' ? 'settings.language.optionFr' : 'settings.language.optionEn')} · ${t('settings.language.autoBadge')}`
+    : t(language === 'fr' ? 'settings.language.optionFr' : 'settings.language.optionEn');
 
   const handleSignOut = async () => {
     await logout();
@@ -122,6 +133,11 @@ export default function SettingsPage() {
       return;
     }
 
+    if (item.action === 'language') {
+      setShowLanguageSheet(true);
+      return;
+    }
+
     if (item.action === 'delete-account') {
       setPendingAction('delete-account');
     }
@@ -133,7 +149,6 @@ export default function SettingsPage() {
       await handleSignOut();
     } else if (pendingAction === 'delete-account') {
       setPendingAction(null);
-      // Firebase Auth not wired yet — placeholder
     }
   };
 
@@ -145,64 +160,75 @@ export default function SettingsPage() {
     <>
     {pendingAction === 'sign-out' && (
       <ConfirmModal
-        title="Sign out"
-        message="End the session on this device?"
-        confirmLabel="Sign out"
+        title={t('settings.confirm.signOutTitle')}
+        message={t('settings.confirm.signOutMessage')}
+        confirmLabel={t('settings.items.signOut')}
         onConfirm={handleConfirm}
         onCancel={() => setPendingAction(null)}
       />
     )}
     {pendingAction === 'delete-account' && (
       <ConfirmModal
-        title="Delete account"
-        message="This will permanently delete your Vuvio account. This action cannot be undone."
-        confirmLabel="Delete account"
+        title={t('settings.confirm.deleteTitle')}
+        message={t('settings.confirm.deleteMessage')}
+        confirmLabel={t('settings.items.deleteAccount')}
         danger
         onConfirm={handleConfirm}
         onCancel={() => setPendingAction(null)}
       />
     )}
-    <section className="screen-scroll settings-screen" aria-label="Settings">
+    {showLanguageSheet && (
+      <LanguageSheet onClose={() => setShowLanguageSheet(false)} />
+    )}
+    <section className="screen-scroll settings-screen" aria-label={t('settings.title')}>
       <header className="settings-header">
-        <button type="button" onClick={() => navigate(-1)} aria-label="Back">
+        <button type="button" onClick={() => navigate(-1)} aria-label={t('common.back')}>
           <ChevronLeft size={20} strokeWidth={1.9} />
         </button>
-        <h1>Settings</h1>
+        <h1>{t('settings.title')}</h1>
         <span aria-hidden="true" />
       </header>
 
       <div className="settings-content">
         <section className="settings-group" aria-labelledby="settings-appearance">
-          <h2 id="settings-appearance">Appearance</h2>
+          <h2 id="settings-appearance">{t('settings.groups.appearance')}</h2>
           <div className="settings-card">
             <div className="settings-theme-row">
               <span className="settings-row__icon" aria-hidden="true">
                 <Palette size={17} strokeWidth={1.8} />
               </span>
-              <span className="settings-row__copy"><strong>Theme</strong></span>
+              <span className="settings-row__copy"><strong>{t('settings.items.theme')}</strong></span>
               <div className="settings-theme-swatches">
-                <button
-                  type="button"
-                  className={`theme-swatch${theme === 'default' ? ' is-active' : ''}`}
-                  style={{ background: '#071c2b' }}
-                  onClick={() => setTheme('default')}
-                  aria-label="Dark theme"
-                  title="Dark"
-                />
                 <button
                   type="button"
                   className={`theme-swatch${theme === 'midnight-sky' ? ' is-active' : ''}`}
                   style={{ background: 'linear-gradient(135deg, #0A1E3A 0%, #123F63 100%)' }}
                   onClick={() => setTheme('midnight-sky')}
-                  aria-label="Midnight Sky theme"
-                  title="Midnight Sky"
+                  aria-label={t('settings.themes.midnight')}
+                  title={t('settings.themes.midnight')}
+                />
+                <button
+                  type="button"
+                  className={`theme-swatch${theme === 'default' ? ' is-active' : ''}`}
+                  style={{ background: '#071c2b' }}
+                  onClick={() => setTheme('default')}
+                  aria-label={t('settings.themes.dark')}
+                  title={t('settings.themes.dark')}
+                />
+                <button
+                  type="button"
+                  className={`theme-swatch${theme === 'azure-sky' ? ' is-active' : ''}`}
+                  style={{ background: 'linear-gradient(135deg, #124077 0%, #2372c8 100%)' }}
+                  onClick={() => setTheme('azure-sky')}
+                  aria-label={t('settings.themes.azure')}
+                  title={t('settings.themes.azure')}
                 />
               </div>
             </div>
           </div>
         </section>
 
-        {getSettingGroups(userEmail).map((group) => (
+        {buildGroups(t, userEmail, languageLabel).map((group) => (
           <section key={group.id} className="settings-group" aria-labelledby={`settings-${group.id}`}>
             <h2 id={`settings-${group.id}`}>{group.title}</h2>
             <div className="settings-card">
@@ -236,16 +262,16 @@ export default function SettingsPage() {
         ))}
 
         <section className="settings-group message-privacy-settings" aria-labelledby="settings-message-privacy">
-          <h2 id="settings-message-privacy">Private messages</h2>
+          <h2 id="settings-message-privacy">{t('settings.items.privateMessages')}</h2>
           <div className="settings-card">
             <div className="settings-privacy-copy">
-              <strong>Who can send me messages?</strong>
-              <p>Messages from people you do not follow will appear in your requests.</p>
+              <strong>{t('settings.privacy.whoCanSend')}</strong>
+              <p>{t('settings.privacy.whoCanSendHint')}</p>
             </div>
             {[
-              ['everyone', 'Everyone'],
-              ['following', 'People I follow'],
-              ['none', 'Nobody'],
+              ['everyone', t('settings.privacy.everyone')],
+              ['following', t('settings.privacy.peopleIFollow')],
+              ['none', t('settings.privacy.nobody')],
             ].map(([value, label]) => (
               <label key={value} className="settings-radio-row">
                 <span>{label}</span>
@@ -258,10 +284,10 @@ export default function SettingsPage() {
               </label>
             ))}
             {[
-              ['showOnlineStatus', 'Show my online status'],
-              ['readReceipts', 'Read receipts'],
-              ['messageNotifications', 'Message notifications'],
-              ['requestNotifications', 'Request notifications'],
+              ['showOnlineStatus', t('settings.privacy.showOnlineStatus')],
+              ['readReceipts', t('settings.privacy.readReceipts')],
+              ['messageNotifications', t('settings.privacy.messageNotifications')],
+              ['requestNotifications', t('settings.privacy.requestNotifications')],
             ].map(([key, label]) => (
               <label key={key} className="settings-toggle-row">
                 <span>{label}</span>
@@ -279,7 +305,7 @@ export default function SettingsPage() {
 
         <footer className="settings-footer">
           <strong>Vuvio</strong>
-          <span>Version 0.1.0</span>
+          <span>{t('settings.version', { version: '0.1.0' })}</span>
         </footer>
       </div>
     </section>

@@ -1,6 +1,8 @@
 import { Bell } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 export default function UpcomingItem({ item, active, onToggle }) {
+  const { t } = useTranslation();
   return (
     <article className="upcoming-item">
       <img src={item.image} alt="" />
@@ -15,7 +17,7 @@ export default function UpcomingItem({ item, active, onToggle }) {
       <button
         type="button"
         className={active ? 'notify-button is-active' : 'notify-button'}
-        aria-label={active ? 'Notification active' : 'Enable notification'}
+        aria-label={active ? t('upcoming.notificationActive') : t('upcoming.enableNotification')}
         onClick={onToggle}
       >
         <Bell size={17} strokeWidth={1.8} />

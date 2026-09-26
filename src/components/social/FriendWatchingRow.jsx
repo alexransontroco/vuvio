@@ -1,10 +1,12 @@
 import { ChevronRight } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { formatTimeSinceJoined } from '../../hooks/useLivePresence.js';
 
 /**
  * Individual friend row shown in the friends watching sheet
  */
 export function FriendWatchingRow({ friend, onViewProfile, onMessage }) {
+  const { t } = useTranslation();
   return (
     <div className="friend-watching-row">
       <div className="friend-watching-row__avatar" title={friend.name}>
@@ -25,7 +27,7 @@ export function FriendWatchingRow({ friend, onViewProfile, onMessage }) {
         type="button"
         className="friend-watching-row__action"
         onClick={onViewProfile}
-        aria-label={`View ${friend.name}'s profile`}
+        aria-label={t('social.viewProfileOfAria', { name: friend.name })}
       >
         <ChevronRight size={16} strokeWidth={2} />
       </button>

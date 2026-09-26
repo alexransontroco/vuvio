@@ -18,7 +18,7 @@ import { lives } from '../data/lives.js';
 import { mapStreams } from '../data/mapStreams.js';
 import { streams, upcomingStreams } from '../data/mockStreams.js';
 import { getCreatedLives, getCreatedLiveStream, registerCreatedLiveStream, subscribeToCreatedLives, publishLivePing, updateCreatedLive } from '../services/createdLiveService.js';
-import { startBroadcast, stopBroadcast, watchBroadcast, closePeer, getLocalStream, getRemoteStream, startRtmpRelayBroadcast, stopRtmpRelayBroadcast, stopRtmpRelayBroadcastSync, startWhipConnection } from '../services/webrtcService.js';
+import { startBroadcast, stopBroadcast, watchBroadcast, closePeer, getLocalStream, getRemoteStream, startRtmpRelayBroadcast, stopRtmpRelayBroadcast, stopRtmpRelayBroadcastSync, startWhipConnection, startWhepViewer, stopWhepViewer } from '../services/webrtcService.js';
 import { collection, doc, onSnapshot, query, where, getDocs, getDoc, addDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { getDownloadURL, ref as storageRef, uploadString } from 'firebase/storage';
 import { db, storage } from '../firebase.js';
@@ -1216,6 +1216,7 @@ function CreatorLiveSession({ live, onEndingChange }) {
   const [phase, setPhase] = useState('live');
   const [elapsed, setElapsed] = useState(0);
   const [recordingActive, setRecordingActive] = useState(false);
+  const [ingestStatus, setIngestStatus] = useState('pending'); // 'pending' | 'relay' | 'whip' | 'failed'
   const [viewerCount, setViewerCount] = useState(1);
   const [peakViewers, setPeakViewers] = useState(1);
   const [stars, setStars] = useState(0);
@@ -1397,6 +1398,8 @@ function CreatorLiveSession({ live, onEndingChange }) {
       let whipCredentials = null;
       let relayCredentials = null;
       let cloudflareLiveInputId = live.cloudflareLiveInputId || null;
+      let capturedHlsManifestUrl = live.hlsManifestUrl || null;
+      let capturedWhepUrl = live.whepUrl || null;
       try {
         // ── Step 1: Create Cloudflare live input ──
         // Always call the backend — never reuse webRTCUrl/streamKey cached in Firestore,
@@ -1422,6 +1425,8 @@ function CreatorLiveSession({ live, onEndingChange }) {
             // Push hlsManifestUrl into local live state immediately so viewers can start HLS
             // without waiting for the Firestore subscription to round-trip.
             if (cfData.hlsManifestUrl || cfData.whepUrl) {
+              if (cfData.hlsManifestUrl) capturedHlsManifestUrl = cfData.hlsManifestUrl;
+              if (cfData.whepUrl) capturedWhepUrl = cfData.whepUrl;
               updateCreatedLive(live.id, {
                 hlsManifestUrl: cfData.hlsManifestUrl,
                 whepUrl: cfData.whepUrl || null,
@@ -1466,45 +1471,67 @@ function CreatorLiveSession({ live, onEndingChange }) {
         const stream = await startBroadcast(live.id, user.uid, existingStream);
         console.log('[INGEST][POST-STARTBROADCAST] stream tracks:', stream?.getTracks?.().length, '| active:', active, '| relayCredentials:', relayCredentials ? 'set' : 'null');
 
-        // ── Step 3: Start ingest to Cloudflare (relay → WHIP fallback) ──
-        console.log('[INGEST][ROUTE] usingRelay=%s usingWhip=%s relayUrl=%s cloudflareLiveInputUid=%s', !!relayCredentials, !!whipCredentials, relayCredentials?.relayUrl || 'none', cloudflareLiveInputId || 'MISSING');
-        let ingestMode = 'none';
-        if (relayCredentials) {
-          const keyForLog = relayCredentials.streamKey ? relayCredentials.streamKey.slice(-16) : 'MISSING';
-          console.log('[INGEST][PRE-RELAY] Vuvio live id:', live.id, '| CF liveInputId:', cloudflareLiveInputId || 'MISSING', '| relayUrl:', relayCredentials.relayUrl, '| ingestUrl:', relayCredentials.ingestUrl || 'MISSING', '| streamKey suffix:', keyForLog);
-          try {
-            await startRtmpRelayBroadcast(live.id, user.uid, stream, relayCredentials.relayUrl, relayCredentials.ingestUrl, relayCredentials.streamKey);
-            ingestMode = 'rtmps-relay';
-            setRecordingActive(true);
-            console.log('[INGEST] relay connected');
-          } catch (relayErr) {
-            console.warn('[INGEST] relay failed:', relayErr.message, '— falling back to WHIP');
-          }
-        }
-        if (ingestMode === 'none' && whipCredentials) {
-          try {
-            await startWhipConnection(stream, whipCredentials.url, whipCredentials.key);
-            ingestMode = 'whip';
-            setRecordingActive(true);
-          } catch (whipErr) {
-            console.error('[INGEST] WHIP failed:', whipErr.message);
-          }
-        }
-        console.log('[INGEST] FINAL MODE:', ingestMode);
-
-        // ── Step 4: Update Firestore ──
+        // ── Step 3: Update Firestore immediately so viewers can start HLS retries ──
+        // Write hlsManifestUrl + cloudflareLiveInputId NOW (before ingest connects).
+        // Cloudflare HLS becomes available ~20s after WHIP connects, and viewers have a
+        // 60-second HLS retry window. Delaying this write until after ingest (up to 25s)
+        // was burning most of that window before viewers could even start.
         if (stream) {
-          ingestModeRef.current = ingestMode === 'rtmps-relay' ? 'rtmps-relay' : 'whip';
           registerCreatedLiveStream(live.id, stream);
           setBroadcastStream(stream);
           await updateDoc(doc(db, 'activeLives', live.id), {
             cloudflareLiveInputId,
+            ...(capturedHlsManifestUrl && { hlsManifestUrl: capturedHlsManifestUrl }),
+            ...(capturedWhepUrl && { whepUrl: capturedWhepUrl }),
             liveStartedAt: serverTimestamp(),
-            recordingStatus: ingestMode !== 'none' ? 'recording' : 'ingest_failed',
-            broadcastIngestMode: ingestMode,
+            recordingStatus: 'pending',
             updatedAt: serverTimestamp(),
           });
         }
+
+        // ── Step 4: Start ingest to Cloudflare in background (WHIP → relay fallback) ──
+        // Fire-and-forget so we don't block the component. Viewers already have the HLS
+        // URL and are retrying; ingest just needs to connect before their window closes.
+        const hasVP8 = (() => {
+          try {
+            if (typeof RTCRtpSender?.getCapabilities !== 'function') return false;
+            return (RTCRtpSender.getCapabilities('video')?.codecs ?? []).some((c) => c.mimeType?.toLowerCase() === 'video/vp8');
+          } catch { return false; }
+        })();
+        console.log('[INGEST][ROUTE] usingRelay=%s usingWhip=%s hasVP8=%s relayUrl=%s cloudflareLiveInputUid=%s', !!relayCredentials && hasVP8, !!whipCredentials, hasVP8, relayCredentials?.relayUrl || 'none', cloudflareLiveInputId || 'MISSING');
+        (async () => {
+          let ingestMode = 'none';
+          if (whipCredentials) {
+            try {
+              await startWhipConnection(stream, whipCredentials.url, whipCredentials.key);
+              ingestMode = 'whip';
+              if (active) setRecordingActive(true);
+              console.log('[INGEST] WHIP connected');
+            } catch (whipErr) {
+              console.warn('[INGEST] WHIP failed:', whipErr.message, '— falling back to relay');
+            }
+          }
+          if (ingestMode === 'none' && relayCredentials && hasVP8) {
+            const keyForLog = relayCredentials.streamKey ? relayCredentials.streamKey.slice(-16) : 'MISSING';
+            console.log('[INGEST][PRE-RELAY] Vuvio live id:', live.id, '| CF liveInputId:', cloudflareLiveInputId || 'MISSING', '| relayUrl:', relayCredentials.relayUrl, '| ingestUrl:', relayCredentials.ingestUrl || 'MISSING', '| streamKey suffix:', keyForLog);
+            try {
+              await startRtmpRelayBroadcast(live.id, user.uid, stream, relayCredentials.relayUrl, relayCredentials.ingestUrl, relayCredentials.streamKey);
+              ingestMode = 'rtmps-relay';
+              if (active) setRecordingActive(true);
+              console.log('[INGEST] relay connected');
+            } catch (relayErr) {
+              console.error('[INGEST] relay failed:', relayErr.message);
+            }
+          }
+          console.log('[INGEST] FINAL MODE:', ingestMode);
+          ingestModeRef.current = ingestMode === 'rtmps-relay' ? 'rtmps-relay' : 'whip';
+          if (active) setIngestStatus(ingestMode === 'rtmps-relay' ? 'relay' : ingestMode === 'whip' ? 'whip' : 'failed');
+          updateDoc(doc(db, 'activeLives', live.id), {
+            recordingStatus: ingestMode !== 'none' ? 'recording' : 'ingest_failed',
+            broadcastIngestMode: ingestMode,
+            updatedAt: serverTimestamp(),
+          }).catch((err) => console.warn('[INGEST] recordingStatus update failed:', err.message));
+        })();
       } catch (err) {
         console.error('[INGEST] Broadcast setup failed:', err.message);
         setToast('Broadcast connection failed');
@@ -1918,6 +1945,9 @@ function CreatorLiveSession({ live, onEndingChange }) {
       <div className="creator-live-indicators">
         {micMuted ? <span><MicOff size={13} strokeWidth={1.9} />Microphone muted</span> : null}
         {flashOn ? <span><Flashlight size={13} strokeWidth={1.9} />Flash on</span> : null}
+        {ingestStatus === 'failed' ? <span style={{color:'#f87171'}}>⚠ Stream not reaching Cloudflare — viewers limited to 1</span> : null}
+        {ingestStatus === 'whip' ? <span style={{color:'#4ade80'}}>● HLS active — unlimited viewers</span> : null}
+        {ingestStatus === 'relay' ? <span style={{color:'#4ade80'}}>● Relay active — unlimited viewers</span> : null}
       </div>
       {toast ? <span className="creator-live-toast">{toast === 'Weak connection' ? <WifiOff size={13} strokeWidth={1.9} /> : null}{toast}</span> : null}
       {elapsed > 45 ? <span className="creator-live-warning"><BatteryWarning size={13} strokeWidth={1.8} />Low battery</span> : null}
@@ -1973,6 +2003,8 @@ function LiveViewer({ liveId, creatorMode = false }) {
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
   const { user } = useAuth();
+  const [searchParams] = useSearchParams();
+  const debugViewer = searchParams.get('debug') === 'viewer';
   const [createdLives, setCreatedLives] = useState([]);
   const [lives, setLives] = useState([]);
   const [remoteStream, setRemoteStream] = useState(null);
@@ -1980,7 +2012,9 @@ function LiveViewer({ liveId, creatorMode = false }) {
   const [watchRetry, setWatchRetry] = useState(0);
   const [hlsFailure, setHlsFailure] = useState(null);
   const [broadcastEnded, setBroadcastEnded] = useState(false);
+  const [endedLiveSnap, setEndedLiveSnap] = useState(null); // captured live when it ends, so feed removal doesn't hide the ended screen
   const [remoteVideoEl, setRemoteVideoEl] = useState(null);
+  const [debugInfo, setDebugInfo] = useState({});
   const localVideoRef = useRef(null);
   const remoteVideoRef = useRef(null);
   const videoPlaybackRef = useRef(null);
@@ -1993,6 +2027,7 @@ function LiveViewer({ liveId, creatorMode = false }) {
     if (!video) return;
     video.muted = true;
   };
+
 
   useEffect(() => { getCreatedLives().then(setCreatedLives).catch(() => setCreatedLives([])); }, []);
   // Stable shuffle — computed once per session so Firestore updates don't reshuffle the feed
@@ -2100,6 +2135,27 @@ function LiveViewer({ liveId, creatorMode = false }) {
   const liveCreatorId = live.creatorUid || live.id;
   const isFollowing = !!(following[liveCreatorId] ?? isFollowingCreator(liveCreatorId));
 
+  // Debug overlay — poll video + peer connection state every second when ?debug=viewer
+  useEffect(() => {
+    if (!debugViewer) return;
+    const interval = setInterval(() => {
+      const video = remoteVideoRef.current;
+      const pc = window.__vuvioPeerConnection;
+      setDebugInfo({
+        readyState: video?.readyState ?? '—',
+        paused: video?.paused ?? '—',
+        srcType: video?.srcObject ? 'srcObject' : video?.src ? 'src' : 'none',
+        tracks: video?.srcObject ? video.srcObject.getTracks().map((t) => `${t.kind}:${t.readyState}`).join(' ') : '—',
+        connState: pc?.connectionState ?? '—',
+        iceState: pc?.iceConnectionState ?? '—',
+        watchStatus,
+        remoteStream: remoteStream ? (remoteStream === 'watching' ? 'watching' : 'stream') : 'null',
+        hlsManifest: live?.hlsManifestUrl ? '✓' : '✗',
+      });
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [debugViewer, watchStatus, remoteStream, live?.hlsManifestUrl]);
+
   const attemptVideoPlayback = (video) => {
     if (!video) return;
 
@@ -2187,7 +2243,7 @@ function LiveViewer({ liveId, creatorMode = false }) {
     };
   }, [creatorMode, liveId, user, live.createdLocally]);
 
-  // Watch for broadcaster ending their live (only for real broadcasts)
+  // Watch for broadcaster live updates (hlsManifestUrl, status, etc.)
   useEffect(() => {
     if (creatorMode || !activeLiveId || !live.creatorUid) return;
 
@@ -2199,7 +2255,25 @@ function LiveViewer({ liveId, creatorMode = false }) {
       try {
         if (docSnap.exists()) {
           const data = docSnap.data();
+
+          // Propagate live field updates (hlsManifestUrl, cloudflareLiveInputId, etc.) into
+          // createdLives so the viewer connection effect re-runs when HLS becomes available.
+          setCreatedLives((prev) => {
+            const idx = prev.findIndex((l) => l.id === activeLiveId);
+            if (idx === -1) return prev;
+            const updated = { ...prev[idx], ...data };
+            if (
+              prev[idx].hlsManifestUrl === updated.hlsManifestUrl &&
+              prev[idx].whepUrl === updated.whepUrl &&
+              prev[idx].status === updated.status
+            ) return prev;
+            const next = [...prev];
+            next[idx] = updated;
+            return next;
+          });
+
           if (data.status === 'ended') {
+            setEndedLiveSnap((prev) => prev ?? live);
             setBroadcastEnded(true);
             setRemoteStream(null);
             if (webrtcCallRef.current) {
@@ -2223,10 +2297,13 @@ function LiveViewer({ liveId, creatorMode = false }) {
     };
   }, [creatorMode, activeLiveId, live.creatorUid]);
 
-  // Auto-navigate to /watch 3s after a live ends (viewer side)
+  // Auto-navigate to /watch 5s after a live ends (viewer side)
   useEffect(() => {
     if (!broadcastEnded || creatorMode) return;
-    const timer = setTimeout(() => navigate('/watch', { replace: true }), 3000);
+    const timer = setTimeout(() => {
+      setEndedLiveSnap(null);
+      navigate('/watch', { replace: true });
+    }, 5000);
     return () => clearTimeout(timer);
   }, [broadcastEnded, creatorMode, navigate]);
 
@@ -2253,29 +2330,136 @@ function LiveViewer({ liveId, creatorMode = false }) {
     if (creatorMode || !activeLiveId || !remoteVideoEl) return;
     const video = remoteVideoEl;
 
+    // Reset spinner whenever this effect re-runs (e.g. hlsManifestUrl just arrived via Firestore).
+    // Without this, a previous P2P attempt's setRemoteStream('watching') hides the spinner while
+    // HLS retries silently in the background, leaving the user with a black screen.
+    setRemoteStream(null);
+
     // Ended lives: prefer replayUrl (VOD, permanent). If none, replay isn't ready — show ended UI.
     const isEnded = live.status === 'ended' || Boolean(live.liveEndedAt);
     if (isEnded && !live.replayUrl) {
+      setEndedLiveSnap((prev) => prev ?? live);
       setBroadcastEnded(true);
       return;
     }
+    const whepSource = !isEnded ? live.whepUrl : null;
     const hlsSource = isEnded ? live.replayUrl : live.hlsManifestUrl;
     const hlsFailureKey = hlsSource ? `${activeLiveId}:${hlsSource}` : null;
     const hlsFailed = hlsFailureKey && hlsFailure?.key === hlsFailureKey;
     const viewerId = `viewer-${activeLiveId}-${Math.random().toString(36).slice(2, 8)}`;
 
-    // --- Path A: HLS (Cloudflare) — preferred when available, works for all viewers ---
+    // --- Path WHEP: Cloudflare WebRTC viewer (low-latency, unlimited viewers, cross-network) ---
+    // WHEP is tried first when available. If it fails within 10s, falls through to HLS.
+    if (whepSource && !isEnded) {
+      let cancelled = false;
+      let whepFailed = false;
+
+      const tryWhep = async () => {
+        try {
+          console.log(`[VIEWER] trying WHEP | liveId: ${activeLiveId}`);
+          setWatchStatus('retrying'); // show "Connecting live" spinner
+          await startWhepViewer(whepSource, (stream, status) => {
+            if (cancelled) return;
+            if (stream) {
+              console.log(`[VIEWER] WHEP connected | liveId: ${activeLiveId}`);
+              video.src = '';
+              video.srcObject = stream;
+              setRemoteStream(stream);
+              setWatchStatus('connected');
+              setWatchRetry(0);
+              attemptVideoPlayback(video);
+            } else if (status === 'failed' || status === 'disconnected') {
+              if (!cancelled) {
+                console.warn(`[VIEWER] WHEP disconnected (${status}) | liveId: ${activeLiveId}`);
+                setRemoteStream(null);
+                setWatchStatus('retrying');
+              }
+            }
+          });
+        } catch (err) {
+          if (cancelled) return;
+          console.warn(`[VIEWER] WHEP failed: ${err.message} | liveId: ${activeLiveId}`);
+          whepFailed = true;
+          // Fall through to HLS path by triggering hlsFailure — but keep trying WHEP
+        }
+      };
+
+      tryWhep();
+
+      return () => {
+        cancelled = true;
+        stopWhepViewer();
+        video.srcObject = null;
+      };
+    }
+
+    // --- Path A: HLS (Cloudflare) + parallel P2P fallback ---
+    // HLS is preferred (works cross-network). P2P starts in parallel after a few HLS failures
+    // so same-WiFi viewers don't wait 60s for Cloudflare to be ready.
     if (hlsSource && !hlsFailed) {
-      console.log(`[VIEWER] playback source: cloudflare | viewerId: ${viewerId} | liveId: ${activeLiveId} | P2P fallback used: false`);
       let cancelled = false;
       let hls = null;
       let retryTimer = null;
       let retryCount = 0;
-      const MAX_HLS_RETRIES = 8;
+      const MAX_HLS_RETRIES = 30;
       const HLS_RETRY_DELAY = 3000;
+      // After this many HLS failures, start P2P in parallel (don't wait for HLS to give up)
+      const P2P_PARALLEL_AFTER = 3;
+
+      // Parallel P2P state
+      let p2pSession = null;
+      let p2pStarted = false;
+      let won = false; // set to true when any source connects — cancels the other
+      let p2pConnected = false; // guard against ontrack firing twice (audio + video)
+
+      const onSourceWon = (source) => {
+        if (won) return false;
+        won = true;
+        console.log(`[VIEWER] playback started | viewerId: ${viewerId} | liveId: ${activeLiveId} | source: ${source}`);
+        setWatchStatus('connected');
+        setWatchRetry(0);
+        return true;
+      };
+
+      const stopHls = () => {
+        cancelled = true;
+        window.clearTimeout(retryTimer);
+        hls?.destroy(); hls = null;
+        if (video.src) video.src = '';
+      };
+
+      const stopP2p = () => {
+        p2pSession?.close?.();
+        closePeer();
+      };
+
+      const startP2p = () => {
+        if (p2pStarted || won || cancelled) return;
+        p2pStarted = true;
+        const p2pId = `p2p-${viewerId}`;
+        console.log(`[VIEWER] starting parallel P2P | liveId: ${activeLiveId}`);
+        watchBroadcast(activeLiveId, (stream, status) => {
+          if (stream) {
+            if (won && !p2pConnected) { stopP2p(); return; } // HLS won before P2P — close P2P
+            if (p2pConnected) return; // ontrack fires once per track; ignore duplicates
+            p2pConnected = true;
+            if (!onSourceWon('p2p')) return;
+            stopHls();
+            if (video.srcObject !== stream) {
+              video.src = '';
+              video.srcObject = stream;
+            }
+            setRemoteStream(stream);
+            attemptVideoPlayback(video);
+          } else if (status && ['failed', 'disconnected', 'ice:failed', 'ice:disconnected'].includes(status) && !won) {
+            console.warn(`[VIEWER] parallel P2P disconnected (${status}) — HLS still retrying | liveId: ${activeLiveId}`);
+          }
+        }, p2pId, user?.uid ?? null)
+          .then((result) => { p2pSession = result; })
+          .catch((err) => { if (!won) console.warn(`[VIEWER] parallel P2P failed: ${err?.message} | liveId: ${activeLiveId}`); });
+      };
 
       if (video.srcObject) video.srcObject = null;
-      setRemoteStream('watching');
       setBroadcastEnded(false);
 
       const tryHls = () => {
@@ -2293,41 +2477,87 @@ function LiveViewer({ liveId, creatorMode = false }) {
           hls.loadSource(hlsSource);
           hls.attachMedia(video);
           hls.on(Hls.Events.MANIFEST_PARSED, () => {
-            if (cancelled) return;
-            console.log(`[VIEWER] playback started | viewerId: ${viewerId} | liveId: ${activeLiveId} | source: HLS`);
-            setWatchStatus('connected');
-            setWatchRetry(0);
+            if (cancelled || won) return;
+            if (!onSourceWon('hls')) return;
+            stopP2p();
+            setRemoteStream('watching');
             attemptVideoPlayback(video);
           });
           hls.on(Hls.Events.ERROR, (_, data) => {
             if (cancelled || !data.fatal) return;
             hls?.destroy();
             hls = null;
-            if (data.details === 'manifestParsingError') {
-              console.warn(`[VIEWER] HLS manifest invalid; falling back to P2P | viewerId: ${viewerId} | liveId: ${activeLiveId}`);
-              setWatchStatus('fallback');
-              setHlsFailure({ key: hlsFailureKey, details: data.details });
-            } else if (retryCount < MAX_HLS_RETRIES) {
+            if (retryCount < MAX_HLS_RETRIES) {
               retryCount += 1;
-              console.warn(`[VIEWER] HLS fatal: ${data.details} (retry ${retryCount}/${MAX_HLS_RETRIES}) | viewerId: ${viewerId} | liveId: ${activeLiveId}`);
+              console.warn(`[VIEWER] HLS retry ${retryCount}/${MAX_HLS_RETRIES}: ${data.details} | liveId: ${activeLiveId}`);
               setWatchStatus('retrying');
               setWatchRetry(retryCount);
+              if (retryCount >= P2P_PARALLEL_AFTER) startP2p();
               retryTimer = window.setTimeout(tryHls, HLS_RETRY_DELAY);
             } else {
-              console.warn(`[VIEWER] HLS gave up after max retries; falling back to P2P | viewerId: ${viewerId} | liveId: ${activeLiveId}`);
+              console.warn(`[VIEWER] HLS exhausted; P2P already running | liveId: ${activeLiveId}`);
               setWatchStatus('fallback');
               setHlsFailure({ key: hlsFailureKey, details: data.details });
             }
           });
         } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
-          video.src = hlsSource;
-          video.addEventListener('loadedmetadata', () => {
+          // Safari native HLS — pre-fetch manifest to confirm it's valid before handing to video element
+          const scheduleNativeRetry = (detail) => {
             if (cancelled) return;
-            console.log(`[VIEWER] playback started (native HLS) | viewerId: ${viewerId} | liveId: ${activeLiveId}`);
-            setWatchStatus('connected');
-            setWatchRetry(0);
-            attemptVideoPlayback(video);
-          }, { once: true });
+            if (retryCount < MAX_HLS_RETRIES) {
+              retryCount += 1;
+              console.warn(`[VIEWER] Safari HLS retry ${retryCount}/${MAX_HLS_RETRIES}: ${detail} | liveId: ${activeLiveId}`);
+              setWatchStatus('retrying');
+              setWatchRetry(retryCount);
+              if (retryCount >= P2P_PARALLEL_AFTER) startP2p();
+              retryTimer = window.setTimeout(tryHls, HLS_RETRY_DELAY);
+            } else {
+              console.warn(`[VIEWER] Safari HLS exhausted; P2P already running | liveId: ${activeLiveId}`);
+              setWatchStatus('fallback');
+              setHlsFailure({ key: hlsFailureKey, details: detail });
+            }
+          };
+          // Fetch with timeout so a hanging Cloudflare response doesn't block retries
+          const fetchCtrl = new AbortController();
+          const fetchTimeout = window.setTimeout(() => fetchCtrl.abort(), 8000);
+          fetch(hlsSource, { method: 'GET', cache: 'no-store', signal: fetchCtrl.signal })
+            .then((res) => { window.clearTimeout(fetchTimeout); return res.text(); })
+            .then((text) => {
+              if (cancelled) return;
+              if (!text.startsWith('#EXTM3U')) {
+                scheduleNativeRetry('not-hls');
+                return;
+              }
+              // Check manifest has actual segment data — an empty manifest (no segments) means
+              // Cloudflare HLS pipeline isn't ready yet even if the header is valid
+              const hasSegments = text.includes('#EXTINF') || text.includes('#EXT-X-STREAM-INF');
+              if (!hasSegments) {
+                scheduleNativeRetry('empty-manifest');
+                return;
+              }
+              video.src = '';
+              video.load();
+              video.src = hlsSource;
+              const onMeta = () => {
+                if (cancelled || won) return;
+                if (!onSourceWon('nativeHls')) return;
+                stopP2p();
+                setRemoteStream('watching');
+                attemptVideoPlayback(video);
+              };
+              const onErr = () => {
+                if (cancelled) return;
+                video.removeEventListener('loadedmetadata', onMeta);
+                scheduleNativeRetry('nativeHlsError');
+              };
+              video.addEventListener('loadedmetadata', onMeta, { once: true });
+              video.addEventListener('error', onErr, { once: true });
+            })
+            .catch((err) => {
+              window.clearTimeout(fetchTimeout);
+              if (cancelled) return;
+              scheduleNativeRetry(err.name === 'AbortError' ? 'fetch-timeout' : err.message);
+            });
         }
       };
 
@@ -2335,9 +2565,11 @@ function LiveViewer({ liveId, creatorMode = false }) {
 
       return () => {
         cancelled = true;
-        if (retryTimer) window.clearTimeout(retryTimer);
+        won = true;
+        window.clearTimeout(retryTimer);
         hls?.destroy();
         video.src = '';
+        stopP2p();
       };
     }
 
@@ -2410,7 +2642,7 @@ function LiveViewer({ liveId, creatorMode = false }) {
       viewerSession?.close?.();
       closePeer();
     };
-  }, [creatorMode, activeLiveId, user?.uid, live.hlsManifestUrl, live.replayUrl, live.status, live.cloudflareLiveInputId, hlsFailure, remoteVideoEl]);
+  }, [creatorMode, activeLiveId, user?.uid, live.whepUrl, live.hlsManifestUrl, live.replayUrl, live.status, live.cloudflareLiveInputId, hlsFailure, remoteVideoEl]);
 
 
 
@@ -2893,6 +3125,20 @@ function LiveViewer({ liveId, creatorMode = false }) {
                           {import.meta.env.DEV && watchStatus ? <small>{watchStatus}</small> : null}
                         </div>
                       ) : null}
+                      {debugViewer ? (
+                        <div style={{
+                          position: 'absolute', top: 8, left: 8, zIndex: 9999,
+                          background: 'rgba(0,0,0,0.75)', color: '#0f0', fontFamily: 'monospace',
+                          fontSize: 11, padding: '6px 8px', borderRadius: 6, lineHeight: 1.6,
+                          maxWidth: '90vw', wordBreak: 'break-all',
+                        }}>
+                          <div>readyState: {debugInfo.readyState} | paused: {String(debugInfo.paused)}</div>
+                          <div>src: {debugInfo.srcType} | tracks: {debugInfo.tracks}</div>
+                          <div>conn: {debugInfo.connState} | ice: {debugInfo.iceState}</div>
+                          <div>watchStatus: {debugInfo.watchStatus || '—'} | stream: {debugInfo.remoteStream}</div>
+                          <div>hlsManifest: {debugInfo.hlsManifest} | retry: {watchRetry}</div>
+                        </div>
+                      ) : null}
                     </>
                   ) : (
                     <>
@@ -2908,43 +3154,46 @@ function LiveViewer({ liveId, creatorMode = false }) {
                   )}
                 </>
               )}
-              {broadcastEnded && isActive && !creatorMode && (
-                <div className="live-ended-screen">
-                  {(item.coverImageUrl ?? item.thumbnailUrl ?? item.image) && (
-                    <img
-                      src={item.coverImageUrl ?? item.thumbnailUrl ?? item.image}
-                      alt=""
-                      className="live-ended-screen__cover"
-                    />
-                  )}
-                  <div className="live-ended-screen__avatar">
-                    {item.avatarUrl ? (
-                      <img src={item.avatarUrl} alt="" />
-                    ) : (
-                      <span>{(item.streamer ?? item.name ?? '?')[0].toUpperCase()}</span>
+              {broadcastEnded && isActive && !creatorMode && (() => {
+                const endedItem = endedLiveSnap ?? item;
+                return (
+                  <div className="live-ended-screen">
+                    {(endedItem.coverImageUrl ?? endedItem.thumbnailUrl ?? endedItem.image) && (
+                      <img
+                        src={endedItem.coverImageUrl ?? endedItem.thumbnailUrl ?? endedItem.image}
+                        alt=""
+                        className="live-ended-screen__cover"
+                      />
                     )}
+                    <div className="live-ended-screen__avatar">
+                      {endedItem.avatarUrl ? (
+                        <img src={endedItem.avatarUrl} alt="" />
+                      ) : (
+                        <span>{(endedItem.streamer ?? endedItem.name ?? '?')[0].toUpperCase()}</span>
+                      )}
+                    </div>
+                    <p className="live-ended-screen__headline">
+                      <strong>@{endedItem.streamer ?? endedItem.name}</strong> ended their livestream
+                    </p>
+                    <div className="live-ended-screen__btns">
+                      <Link
+                        to={`/profile/${endedItem.creatorUid}`}
+                        className="live-ended-screen__btn"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        View profile
+                      </Link>
+                      <button
+                        type="button"
+                        className="live-ended-screen__btn live-ended-screen__btn--primary"
+                        onClick={() => navigate('/watch', { replace: true })}
+                      >
+                        Back to Watch
+                      </button>
+                    </div>
                   </div>
-                  <p className="live-ended-screen__headline">
-                    <strong>@{item.streamer ?? item.name}</strong> ended their livestream
-                  </p>
-                  <div className="live-ended-screen__btns">
-                    <Link
-                      to={`/profile/${item.creatorUid}`}
-                      className="live-ended-screen__btn"
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      View profile
-                    </Link>
-                    <button
-                      type="button"
-                      className="live-ended-screen__btn live-ended-screen__btn--primary"
-                      onClick={() => goTo(1)}
-                    >
-                      Back to Watch
-                    </button>
-                  </div>
-                </div>
-              )}
+                );
+              })()}
             </article>
           );
         })}
@@ -2956,7 +3205,33 @@ function LiveViewer({ liveId, creatorMode = false }) {
         <BrandMark size={64} nameSize={18} gap={-8} nameOffsetY={2} showName />
       </div>
 
-
+      {/* Live-ended overlay — rendered outside the feed so it persists even if the stream
+          is removed from liveFeed by the Firestore status update */}
+      {broadcastEnded && !creatorMode && endedLiveSnap && (
+        <div className="live-ended-screen" style={{ position: 'fixed', zIndex: 9000 }}>
+          {(endedLiveSnap.coverImageUrl ?? endedLiveSnap.thumbnailUrl ?? endedLiveSnap.image) && (
+            <img src={endedLiveSnap.coverImageUrl ?? endedLiveSnap.thumbnailUrl ?? endedLiveSnap.image} alt="" className="live-ended-screen__cover" />
+          )}
+          <div className="live-ended-screen__avatar">
+            {endedLiveSnap.avatarUrl ? (
+              <img src={endedLiveSnap.avatarUrl} alt="" />
+            ) : (
+              <span>{(endedLiveSnap.streamer ?? endedLiveSnap.name ?? '?')[0].toUpperCase()}</span>
+            )}
+          </div>
+          <p className="live-ended-screen__headline">
+            <strong>@{endedLiveSnap.streamer ?? endedLiveSnap.name}</strong> ended their livestream
+          </p>
+          <div className="live-ended-screen__btns">
+            <Link to={`/profile/${endedLiveSnap.creatorUid}`} className="live-ended-screen__btn" onClick={(e) => e.stopPropagation()}>
+              View profile
+            </Link>
+            <button type="button" className="live-ended-screen__btn live-ended-screen__btn--primary" onClick={() => { setEndedLiveSnap(null); navigate('/watch', { replace: true }); }}>
+              Back to Watch
+            </button>
+          </div>
+        </div>
+      )}
 
       {!broadcastEnded && (
         <div className="live-feed__status">

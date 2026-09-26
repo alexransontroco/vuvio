@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Users } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { FriendsWatchingPill } from './FriendsWatchingPill.jsx';
 import { FriendsWatchingSheet } from './FriendsWatchingSheet.jsx';
 import { InviteFriendsSheet } from './InviteFriendsSheet.jsx';
@@ -15,6 +16,7 @@ import { useFriendsWatching, useInviteFriends, useFriendArrivals } from '../../h
  * - Friend arrival notifications
  */
 export function LivePresenceOverlay({ liveId, liveTitle, onJoinFriend }) {
+  const { t } = useTranslation();
   const [showFriendsSheet, setShowFriendsSheet] = useState(false);
   const [showInviteSheet, setShowInviteSheet] = useState(false);
 
@@ -91,8 +93,8 @@ export function LivePresenceOverlay({ liveId, liveTitle, onJoinFriend }) {
           onClick={() => {
             setShowInviteSheet(true);
           }}
-          aria-label="Invite friends to watch"
-          title="Invite friends"
+          aria-label={t('social.inviteFriendsToWatch')}
+          title={t('social.inviteFriends')}
         >
           <Users size={18} strokeWidth={2} />
         </button>

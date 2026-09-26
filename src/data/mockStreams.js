@@ -1334,19 +1334,31 @@ function creatorFromWho(who) {
   return { creatorName, locationLabel };
 }
 
+function creatorSlug(value = '') {
+  return String(value)
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+}
+
 export const upcomingStreams = [
   ...newPovMapStreams
     .filter((stream) => stream.status === 'upcoming')
     .map((stream, index) => {
       const creator = creatorFromWho(stream.who);
+      const creatorId = stream.creatorId ?? creatorSlug(creator.creatorName);
       return {
         id: stream.id,
+        creatorId,
         status: stream.status,
         day: stream.day,
         time: stream.time,
         startsAt: resolveUpcomingStart(stream.day, stream.time),
         title: stream.title,
         description: stream.experienceTitle,
+        livePlan: stream.description,
         who: stream.who,
         creatorName: creator.creatorName,
         locationLabel: creator.locationLabel,
@@ -1359,6 +1371,7 @@ export const upcomingStreams = [
     }),
   {
     id: 'cabinetmaker-session',
+    creatorId: 'niels-cabinetmaker',
     status: 'upcoming',
     day: 'TODAY',
     time: '15:30',
@@ -1372,10 +1385,12 @@ export const upcomingStreams = [
     environment: 'earth',
     povType: 'fixed',
     description: 'Hand-cut dovetails for a walnut drawer.',
+    livePlan: 'Niels will set the camera above the bench, mark the walnut by hand, cut the tails and show how the joint closes before glue-up.',
     interestedCount: 184,
   },
   {
     id: 'surgeon-simulation',
+    creatorId: 'dr-maya-boston',
     status: 'upcoming',
     day: 'TODAY',
     time: '20:00',
@@ -1389,10 +1404,12 @@ export const upcomingStreams = [
     environment: 'earth',
     povType: 'fixed',
     description: 'Night team simulation inside the training room.',
+    livePlan: 'Dr. Maya will walk through the simulation setup, explain the roles in the room and answer questions between each scenario.',
     interestedCount: 276,
   },
   {
     id: 'fisherman-line',
+    creatorId: 'erik-lofoten',
     status: 'upcoming',
     day: 'TMRW',
     time: '05:10',
@@ -1406,10 +1423,12 @@ export const upcomingStreams = [
     environment: 'water',
     povType: 'vehicle',
     description: 'Hauling the morning line under low clouds.',
+    livePlan: 'Erik will start before sunrise, show the deck prep, then keep the POV on the line as the first haul comes in.',
     interestedCount: 421,
   },
   {
     id: 'pottery-dinner-set',
+    creatorId: 'elena-oaxaca',
     status: 'upcoming',
     day: 'TMRW',
     time: '16:00',
@@ -1423,6 +1442,7 @@ export const upcomingStreams = [
     environment: 'earth',
     povType: 'fixed',
     description: 'Throwing and trimming a full dinner set.',
+    livePlan: 'Elena will throw the first plates live, compare clay thickness at the wheel and trim one finished piece near the end.',
     interestedCount: 199,
   },
 ];

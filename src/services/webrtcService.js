@@ -281,7 +281,7 @@ async function startRtmpRelayIngest(relayUrl, liveInputId, ingestUrl, streamKey,
 
   // Lock video resolution once ICE is connected — encodings are only active at that point
   const connectionPromise = new Promise((resolve, reject) => {
-    const timeout = setTimeout(() => reject(new Error('Relay ICE connection timeout')), 8000);
+    const timeout = setTimeout(() => reject(new Error('Relay ICE connection timeout')), 3000);
     pc.onconnectionstatechange = () => {
     console.log('[relay] WebRTC state:', pc.connectionState);
     if (pc.connectionState === 'connected') {
@@ -357,17 +357,25 @@ export async function startWhipConnection(stream, whipUrl, whipKey) {
     whipPeerConnection.onicegatheringstatechange = () => {
       if (whipPeerConnection.iceGatheringState === 'complete') resolve();
     };
-    setTimeout(resolve, 5000);
+    setTimeout(resolve, 10000);
   });
 
-  const response = await fetch(whipUrl, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/sdp',
-      ...(whipKey ? { Authorization: `Bearer ${whipKey}` } : {}),
-    },
-    body: whipPeerConnection.localDescription.sdp,
-  });
+  const whipController = new AbortController();
+  const whipTimeout = setTimeout(() => whipController.abort(), 15000);
+  let response;
+  try {
+    response = await fetch(whipUrl, {
+      method: 'POST',
+      signal: whipController.signal,
+      headers: {
+        'Content-Type': 'application/sdp',
+        ...(whipKey ? { Authorization: `Bearer ${whipKey}` } : {}),
+      },
+      body: whipPeerConnection.localDescription.sdp,
+    });
+  } finally {
+    clearTimeout(whipTimeout);
+  }
 
   if (!response.ok) {
     const text = await response.text().catch(() => '');
@@ -624,14 +632,34 @@ export async function watchBroadcast(liveId, onStreamReceived, watcherId = `view
 
     // Create peer connection
     peerConnection = new RTCPeerConnection(await getRtcConfig());
+    window.__vuvioPeerConnection = peerConnection; // debug overlay
 
-    // Handle remote stream
+    // Capture stream from ontrack but only deliver it once DTLS is complete
+    // (connectionState === 'connected'). ontrack fires when SDP is parsed —
+    // well before frames flow — causing a black screen if we render too early.
+    let pendingStream = null;
+
     peerConnection.ontrack = (event) => {
       console.log('[webrtcService] Received remote track:', event.track.kind);
       console.log('[webrtcService] Streams available:', event.streams.length, event.streams[0]?.getTracks?.().length ?? 0, 'tracks');
       onStreamReceived(null, `track:${event.track.kind}`);
-      if (event.streams && event.streams.length > 0) {
-        onStreamReceived(event.streams[0]);
+      if (event.streams?.[0]) {
+        pendingStream = event.streams[0];
+      }
+    };
+
+    // Handle connection state — deliver stream only once DTLS is fully established
+    peerConnection.onconnectionstatechange = () => {
+      const state = peerConnection?.connectionState;
+      if (!state) return;
+      console.log('[webrtcService] Connection state:', state);
+      onStreamReceived(null, state);
+      if (state === 'connected' && pendingStream) {
+        console.log('[webrtcService] DTLS connected — delivering stream to viewer');
+        onStreamReceived(pendingStream);
+        pendingStream = null;
+      } else if (state === 'failed' || state === 'disconnected') {
+        onStreamReceived(null);
       }
     };
 
@@ -721,28 +749,31 @@ export async function watchBroadcast(liveId, onStreamReceived, watcherId = `view
 
     // Save answer and candidates to Firestore (only if we have a local description)
     if (peerConnection.localDescription) {
-      await setDoc(watcherRef, {
-        signalSessionId,
-        watcherUid,
-        sdpAnswer: peerConnection.localDescription.sdp,
-        watcherIceCandidates: watcherCandidates,
-        updatedAt: serverTimestamp(),
-      }, { merge: true });
-      watcherDocReady = true;
-      publishWatcherCandidates();
-      console.log('[webrtcService] Answer sent to broadcaster:', watcherId);
+      try {
+        await setDoc(watcherRef, {
+          signalSessionId,
+          watcherUid,
+          sdpAnswer: peerConnection.localDescription.sdp,
+          watcherIceCandidates: watcherCandidates,
+          updatedAt: serverTimestamp(),
+        }, { merge: true });
+        watcherDocReady = true;
+        publishWatcherCandidates();
+        console.log('[webrtcService] Answer sent to broadcaster:', watcherId);
+      } catch (signalErr) {
+        console.warn('[webrtcService] Answer write failed (non-fatal, P2P active):', signalErr.message);
+      }
     } else {
       console.log('[webrtcService] No local description to send (already established)');
     }
 
-    // Handle connection state changes
-    peerConnection.onconnectionstatechange = () => {
-      console.log('[webrtcService] Connection state:', peerConnection.connectionState);
-      onStreamReceived(null, peerConnection.connectionState);
-      if (peerConnection.connectionState === 'failed' || peerConnection.connectionState === 'disconnected') {
-        onStreamReceived(null);
-      }
-    };
+    // Edge-case: connectionState already reached 'connected' before this point
+    // (e.g., fast same-device test where DTLS completed before answer was written to Firestore)
+    if (peerConnection.connectionState === 'connected' && pendingStream) {
+      console.log('[webrtcService] Already connected after answer write — delivering stream');
+      onStreamReceived(pendingStream);
+      pendingStream = null;
+    }
 
     peerConnection.oniceconnectionstatechange = () => {
       console.log('[webrtcService] ICE connection state:', peerConnection.iceConnectionState);
@@ -818,6 +849,103 @@ export function getLocalStream() {
 
 export function getRemoteStream() {
   return null; // Remote stream is handled via ontrack callback
+}
+
+// WHEP viewer — WebRTC pull from Cloudflare Stream (unlimited cross-network viewers)
+// Protocol: POST SDP offer → get SDP answer → ICE → stream flows
+let whepPeerConnection = null;
+
+export async function startWhepViewer(whepUrl, onStream) {
+  // Clean up any previous WHEP connection
+  if (whepPeerConnection) {
+    whepPeerConnection.close();
+    whepPeerConnection = null;
+  }
+
+  const pc = new RTCPeerConnection({
+    iceServers: [{ urls: 'stun:stun.cloudflare.com:3478' }],
+    bundlePolicy: 'max-bundle',
+  });
+  whepPeerConnection = pc;
+  window.__vuvioWhepPeerConnection = pc; // debug overlay
+
+  // Recvonly transceivers — we only want to receive, not send
+  pc.addTransceiver('video', { direction: 'recvonly' });
+  pc.addTransceiver('audio', { direction: 'recvonly' });
+
+  let pendingStream = null;
+
+  pc.ontrack = (event) => {
+    console.log('[WHEP] ontrack:', event.track.kind);
+    if (event.streams?.[0]) pendingStream = event.streams[0];
+  };
+
+  pc.onconnectionstatechange = () => {
+    const state = pc.connectionState;
+    console.log('[WHEP] connectionState:', state);
+    if (state === 'connected' && pendingStream) {
+      console.log('[WHEP] DTLS connected — delivering stream');
+      onStream(pendingStream);
+      pendingStream = null;
+    } else if (state === 'failed' || state === 'disconnected') {
+      onStream(null, state);
+    }
+  };
+
+  // Gather ICE candidates before sending (Cloudflare WHEP doesn't do trickle ICE)
+  const offer = await pc.createOffer();
+  await pc.setLocalDescription(offer);
+
+  await new Promise((resolve) => {
+    if (pc.iceGatheringState === 'complete') { resolve(); return; }
+    const onStateChange = () => {
+      if (pc.iceGatheringState === 'complete') {
+        pc.removeEventListener('icegatheringstatechange', onStateChange);
+        resolve();
+      }
+    };
+    pc.addEventListener('icegatheringstatechange', onStateChange);
+    setTimeout(resolve, 8000); // max wait
+  });
+
+  const ctrl = new AbortController();
+  const timeout = setTimeout(() => ctrl.abort(), 15000);
+  let response;
+  try {
+    response = await fetch(whepUrl, {
+      method: 'POST',
+      signal: ctrl.signal,
+      headers: { 'Content-Type': 'application/sdp' },
+      body: pc.localDescription.sdp,
+    });
+  } finally {
+    clearTimeout(timeout);
+  }
+
+  if (!response.ok) {
+    const text = await response.text().catch(() => '');
+    throw new Error(`WHEP ${response.status}: ${text.slice(0, 120)}`);
+  }
+
+  const answerSdp = await response.text();
+  await pc.setRemoteDescription({ type: 'answer', sdp: answerSdp });
+  console.log('[WHEP] remote description set — waiting for DTLS');
+
+  // Post-setRemoteDescription check for ultra-fast connections
+  if (pc.connectionState === 'connected' && pendingStream) {
+    onStream(pendingStream);
+    pendingStream = null;
+  }
+
+  return pc;
+}
+
+export function stopWhepViewer() {
+  if (whepPeerConnection) {
+    whepPeerConnection.close();
+    whepPeerConnection = null;
+    window.__vuvioWhepPeerConnection = null;
+  }
 }
 
 export function closePeer() {

@@ -1,3 +1,5 @@
+import { useTranslation } from 'react-i18next';
+
 /**
  * Reusable card showing a friend is watching a live
  * Can be used in Messages, Home, or a dedicated friends activity section
@@ -8,6 +10,7 @@ export function FriendLiveActivityCard({
   onJoinLive,
   compact = false,
 }) {
+  const { t } = useTranslation();
   return (
     <article className="friend-live-activity-card">
       <div className="friend-live-activity-card__thumbnail">
@@ -31,7 +34,7 @@ export function FriendLiveActivityCard({
           <div style={{ flex: 1, minWidth: 0 }}>
             <p className="friend-live-activity-card__name">{friend.name}</p>
           </div>
-          <span className="friend-live-activity-card__badge">Live</span>
+          <span className="friend-live-activity-card__badge">{t('social.liveBadge')}</span>
         </header>
 
         <p className="friend-live-activity-card__title">{live.title}</p>
@@ -46,9 +49,9 @@ export function FriendLiveActivityCard({
           <button
             type="button"
             onClick={onJoinLive}
-            aria-label={`Join ${friend.name} watching ${live.title}`}
+            aria-label={t('social.joinFriendWatchingAria', { name: friend.name, title: live.title })}
           >
-            Join live
+            {t('social.joinLive')}
           </button>
         </div>
       </div>

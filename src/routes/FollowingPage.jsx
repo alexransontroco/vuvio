@@ -4,11 +4,17 @@ import { doc, getDoc } from 'firebase/firestore';
 import { db } from '../firebase.js';
 import { useAuth } from '../context/AuthContext.jsx';
 import { creatorProfiles } from '../data/creatorProfiles.js';
+import { newPovStreams } from '../data/newPovStreams.js';
 import { subscribeToFollowing } from '../services/followService.js';
 import '../styles/pages/following.css';
 
 const mockProfilesById = Object.values(creatorProfiles).reduce((acc, p) => {
   if (p?.id) acc[p.id] = p;
+  return acc;
+}, {});
+
+const mockStreamById = newPovStreams.reduce((acc, s) => {
+  acc[s.id] = { uid: s.id, displayName: s.name, username: s.id, bio: s.job ? `${s.job} · ${s.city}, ${s.country}` : null, avatarUrl: s.image };
   return acc;
 }, {});
 
@@ -38,6 +44,11 @@ export default function FollowingPage() {
           const mock = mockProfilesById[creatorId];
           if (mock) {
             users.push({ uid: creatorId, displayName: mock.displayName, username: mock.username, bio: mock.bio, avatarUrl: mock.avatarUrl });
+            continue;
+          }
+          const stream = mockStreamById[creatorId];
+          if (stream) {
+            users.push(stream);
             continue;
           }
           try {

@@ -1,6 +1,6 @@
 import { collection, getDocs, getCountFromServer, limit, orderBy, query } from 'firebase/firestore';
 import { useEffect, useState } from 'react';
-import { Navigate } from 'react-router-dom';
+import { Navigate, useNavigate } from 'react-router-dom';
 import { db } from '../firebase.js';
 import { useAuth } from '../context/AuthContext.jsx';
 
@@ -118,6 +118,7 @@ function LiveRow({ live, isLive }) {
 
 export default function AdminMarketingPage() {
   const { user, authLoading } = useAuth();
+  const navigate = useNavigate();
   const isLocalDev = import.meta.env.DEV || ['localhost', '127.0.0.1'].includes(window.location.hostname);
   const isAdmin = isLocalDev || user?.email?.endsWith('@vuvio.app') || user?.email === 'alexandre.ranson@gmail.com' || user?.email === 'doug.benchetrit@gmail.com' || user?.email === 'cecilia.ranson@outlook.com';
 
@@ -179,6 +180,13 @@ export default function AdminMarketingPage() {
 
         {/* Header */}
         <div style={{ marginBottom: 40 }}>
+          <button
+            type="button"
+            onClick={() => navigate(-1)}
+            style={{ display: 'inline-flex', alignItems: 'center', gap: 6, marginBottom: 20, background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 10, padding: '7px 14px', color: 'rgba(255,255,255,0.65)', fontSize: 13, fontWeight: 500, cursor: 'pointer' }}
+          >
+            ← Retour
+          </button>
           <p style={{ fontSize: 12, fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#35e3dc', marginBottom: 8 }}>
             Vuvio — Vue marketing
           </p>

@@ -1,33 +1,36 @@
 import { ImagePlus, Loader2, Send } from 'lucide-react';
 import { useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { submitProblemReport } from '../services/reportProblemService.js';
 
-const problemTypes = [
-  'Connection issue',
-  'Account issue',
-  'Cannot start a live',
-  'Poor video or sound quality',
-  'Interrupted live stream',
-  'Location issue',
-  'Messaging issue',
-  'Incorrect notification',
-  'Payment or subscription',
-  'Inappropriate content or behavior',
-  'Security vulnerability',
-  'Other issue',
-];
-
-const initialForm = {
-  category: problemTypes[0],
-  subject: '',
-  description: '',
-  steps: '',
-  attachTechnicalInfo: true,
-  email: 'hello@vuvio.app',
-  screenshotName: '',
-};
-
 export default function ReportProblemForm() {
+  const { t } = useTranslation();
+
+  const problemTypes = useMemo(() => [
+    t('reportProblem.form.types.connection'),
+    t('reportProblem.form.types.account'),
+    t('reportProblem.form.types.cannotStart'),
+    t('reportProblem.form.types.poorQuality'),
+    t('reportProblem.form.types.interrupted'),
+    t('reportProblem.form.types.location'),
+    t('reportProblem.form.types.messaging'),
+    t('reportProblem.form.types.notification'),
+    t('reportProblem.form.types.payment'),
+    t('reportProblem.form.types.inappropriate'),
+    t('reportProblem.form.types.security'),
+    t('reportProblem.form.types.other'),
+  ], [t]);
+
+  const initialForm = useMemo(() => ({
+    category: problemTypes[0],
+    subject: '',
+    description: '',
+    steps: '',
+    attachTechnicalInfo: true,
+    email: 'hello@vuvio.app',
+    screenshotName: '',
+  }), [problemTypes]);
+
   const [form, setForm] = useState(initialForm);
   const [status, setStatus] = useState('initial');
   const [error, setError] = useState('');
@@ -45,7 +48,7 @@ export default function ReportProblemForm() {
   const submit = async (event) => {
     event.preventDefault();
     if (!canSubmit) {
-      setError('Enter a subject, description and valid email address.');
+      setError(t('reportProblem.form.errors.invalid'));
       setStatus('error');
       return;
     }
@@ -66,15 +69,15 @@ export default function ReportProblemForm() {
   if (status === 'success') {
     return (
       <section className="report-success" aria-live="polite">
-        <h2>Your report has been sent</h2>
-        <p>Thanks for contacting us. Our team will review your request and reply to the email address linked to your account.</p>
-        <strong>Reference: {reference}</strong>
+        <h2>{t('reportProblem.form.success.title')}</h2>
+        <p>{t('reportProblem.form.success.body')}</p>
+        <strong>{t('reportProblem.form.success.reference', { reference })}</strong>
         <button type="button" onClick={() => {
           setForm(initialForm);
           setStatus('initial');
           setReference('');
         }}>
-          Send another report
+          {t('reportProblem.form.success.sendAnother')}
         </button>
       </section>
     );
@@ -83,39 +86,39 @@ export default function ReportProblemForm() {
   return (
     <form className="report-form" onSubmit={submit}>
       <label>
-        <span>What type of issue are you having?</span>
+        <span>{t('reportProblem.form.fields.category')}</span>
         <select value={form.category} onChange={(event) => update('category', event.target.value)}>
           {problemTypes.map((type) => <option key={type}>{type}</option>)}
         </select>
       </label>
 
       <label>
-        <span>Subject</span>
+        <span>{t('reportProblem.form.fields.subject')}</span>
         <input
           value={form.subject}
           onChange={(event) => update('subject', event.target.value)}
-          placeholder="Cannot start a live"
+          placeholder={t('reportProblem.form.placeholders.subject')}
           required
         />
       </label>
 
       <label>
-        <span>Describe the issue</span>
+        <span>{t('reportProblem.form.fields.description')}</span>
         <textarea
           value={form.description}
           onChange={(event) => update('description', event.target.value)}
-          placeholder="Describe what you were trying to do, what happened and any error message shown."
+          placeholder={t('reportProblem.form.placeholders.description')}
           required
           rows={5}
         />
       </label>
 
       <label>
-        <span>Steps to reproduce the issue</span>
+        <span>{t('reportProblem.form.fields.steps')}</span>
         <textarea
           value={form.steps}
           onChange={(event) => update('steps', event.target.value)}
-          placeholder={'I open the page...\nI tap...\nThe app shows...'}
+          placeholder={t('reportProblem.form.placeholders.steps')}
           rows={4}
         />
       </label>
@@ -128,10 +131,10 @@ export default function ReportProblemForm() {
             onChange={(event) => update('screenshotName', event.target.files?.[0]?.name ?? '')}
           />
           <ImagePlus size={18} strokeWidth={1.8} />
-          <span>Add image</span>
+          <span>{t('reportProblem.form.upload.addImage')}</span>
         </label>
         {form.screenshotName ? <strong>{form.screenshotName}</strong> : null}
-        <p>Avoid sending screenshots containing passwords, payment details or private information about another person.</p>
+        <p>{t('reportProblem.form.upload.notice')}</p>
       </div>
 
       <label className="report-checkbox">
@@ -141,13 +144,13 @@ export default function ReportProblemForm() {
           onChange={(event) => update('attachTechnicalInfo', event.target.checked)}
         />
         <span>
-          <strong>Automatically attach useful technical information.</strong>
-          <small>Vuvio version, device type, browser and operating system. Your password is never attached.</small>
+          <strong>{t('reportProblem.form.tech.title')}</strong>
+          <small>{t('reportProblem.form.tech.body')}</small>
         </span>
       </label>
 
       <label>
-        <span>Reply email address</span>
+        <span>{t('reportProblem.form.fields.email')}</span>
         <input
           type="email"
           value={form.email}
@@ -160,7 +163,7 @@ export default function ReportProblemForm() {
 
       <button type="submit" className="support-primary-button" disabled={status === 'sending'}>
         {status === 'sending' ? <Loader2 size={17} strokeWidth={1.9} /> : <Send size={17} strokeWidth={1.9} />}
-        Send report
+        {t('reportProblem.form.submit')}
       </button>
     </form>
   );

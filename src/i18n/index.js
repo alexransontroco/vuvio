@@ -12,10 +12,10 @@ i18n
       en: { translation: en },
       fr: { translation: fr },
     },
-    lng: 'en',
     fallbackLng: 'en',
     supportedLngs: ['en', 'fr'],
     nonExplicitSupportedLngs: true,
+    load: 'languageOnly',
     interpolation: {
       escapeValue: false,
     },
@@ -23,7 +23,11 @@ i18n
       order: ['localStorage', 'navigator'],
       caches: ['localStorage'],
       lookupLocalStorage: 'vuvio-language',
-      convertDetectedLanguage: (lng) => (String(lng).startsWith('fr') ? 'en' : 'en'),
+      convertDetectedLanguage: (lng) => {
+        const code = String(lng || '').toLowerCase();
+        if (code.startsWith('fr')) return 'fr';
+        return 'en';
+      },
     },
   });
 

@@ -1,4 +1,4 @@
-export default function BrandMark({ size = 34, showName = false, dark = false, withCircle = true, useLegacy = false }) {
+export default function BrandMark({ size = 34, showName = false, dark = false, withCircle = true, useLegacy = false, nameSize, gap, nameOffsetY = 0 }) {
   const textColor = dark ? '#062320' : '#ffffff';
 
   if (useLegacy) {
@@ -52,18 +52,19 @@ export default function BrandMark({ size = 34, showName = false, dark = false, w
       <span
         className="brand-mark"
         aria-label="Vuvio"
-        style={{ display: 'inline-flex', alignItems: 'center', gap: `${Math.round(size * 0.32)}px` }}
+        style={{ display: 'inline-flex', alignItems: 'center', gap: `${Math.round(gap ?? size * 0.32)}px` }}
       >
         {legacyIcon}
         <span
           aria-hidden="true"
           style={{
             color: textColor,
-            fontSize: `${Math.round(size * 0.82)}px`,
+            fontSize: `${Math.round(nameSize ?? size * 0.82)}px`,
             fontWeight: 700,
             letterSpacing: '-0.01em',
             lineHeight: 1,
             textShadow: dark ? 'none' : '0 2px 12px rgba(0,0,0,0.28)',
+            transform: nameOffsetY ? `translateY(${nameOffsetY}px)` : undefined,
           }}
         >
           Vuvio
@@ -90,18 +91,19 @@ export default function BrandMark({ size = 34, showName = false, dark = false, w
     <span
       className="brand-mark"
       aria-label="Vuvio"
-      style={{ display: 'inline-flex', alignItems: 'center', gap: `${Math.round(size * 0.32)}px` }}
+      style={{ display: 'inline-flex', alignItems: 'center', gap: `${Math.round(gap ?? size * 0.32)}px` }}
     >
       {icon}
       <span
         aria-hidden="true"
         style={{
           color: textColor,
-          fontSize: `${Math.round(size * 0.82)}px`,
+          fontSize: `${Math.round(nameSize ?? size * 0.82)}px`,
           fontWeight: 700,
           letterSpacing: '-0.01em',
           lineHeight: 1,
           textShadow: dark ? 'none' : '0 2px 12px rgba(0,0,0,0.28)',
+          transform: nameOffsetY ? `translateY(${nameOffsetY}px)` : undefined,
         }}
       >
         Vuvio

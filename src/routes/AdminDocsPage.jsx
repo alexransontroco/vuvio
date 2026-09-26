@@ -30,6 +30,7 @@ const docModules = import.meta.glob([
   '../../CHANGELOG.md',
   '../../AGENTS.md',
   '../../journal.architecture.md',
+  '../../Vuvio_Inspirations_Strava_Polarsteps.md',
   '../../docs/**/*.md',
 ], { query: '?raw', import: 'default', eager: true });
 
@@ -47,6 +48,18 @@ const DOMAIN_META = {
 };
 
 const PRIORITY_ORDER = ['root', 'streaming', 'backend', 'analytics', 'gear', 'products', 'globe', 'i18n', 'ops', 'archive'];
+
+const DOC_ROLES = {
+  'README.md': { en: 'Project entry point', fr: 'Point d\'entrée projet' },
+  'ADMIN.md': { en: 'Open tasks and decisions', fr: 'Tâches et arbitrages' },
+  'CHANGELOG.md': { en: 'Session history', fr: 'Historique des sessions' },
+  'AGENTS.md': { en: 'Critical agent rules', fr: 'Règles critiques agent' },
+  'journal.architecture.md': { en: 'Product and architecture journal', fr: 'Journal produit et architecture' },
+  'Vuvio_Inspirations_Strava_Polarsteps.md': { en: 'Product inspirations', fr: 'Inspirations produit' },
+  'docs/README.md': { en: 'Technical docs index', fr: 'Index des docs techniques' },
+  'docs/vuvio-complete-overview.md': { en: 'Complete product reference', fr: 'Référence produit complète' },
+  'docs/vuvio-reference-produit-non-technique.md': { en: 'Non-technical product reference', fr: 'Référence produit non technique' },
+};
 
 const COPY = {
   en: {
@@ -87,6 +100,13 @@ const COPY = {
     readBeforeCoding: 'Read before coding',
     viewDocs: 'Open docs browser',
     latestSession: 'Latest session',
+    needsReview: 'Needs review',
+    reviewDocs: 'Docs to verify',
+    sourceOfTruth: 'Source of truth',
+    indexDoc: 'Index',
+    referenceDoc: 'Reference',
+    reviewDoc: 'To verify',
+    archiveDoc: 'Archive',
     high: 'high',
     medium: 'medium',
     low: 'low',
@@ -99,7 +119,7 @@ const COPY = {
     eyebrow: 'Documentation Admin',
     title: 'Manuel opérationnel Vuvio',
     subtitle: 'Règles actuelles, docs par domaine, notes historiques et références d\'implémentation dans une interface admin unique.',
-    scoreLabel: 'docs actuelles qualifiées',
+    scoreLabel: 'docs actuelles classées',
     criticalRules: 'Règles critiques',
     searchPlaceholder: 'Chercher docs, règles, chemins...',
     allCurrent: 'Tout actuel',
@@ -108,7 +128,7 @@ const COPY = {
     allDomains: 'Tous les domaines actifs',
     words: 'mots',
     languageNote: 'Langue',
-    contentNote: 'Admin et changelog sont bilingues. Les docs techniques gardent leur langue source.',
+    contentNote: 'Les écrans, statuts et docs racine sont localisés. Les longues docs techniques gardent leur langue source.',
     openDocs: 'Docs',
     openAnalytics: 'Dashboard analytics',
     domainNavLabel: 'Domaines de documentation',
@@ -132,11 +152,18 @@ const COPY = {
     readBeforeCoding: 'À lire avant de coder',
     viewDocs: 'Ouvrir le navigateur docs',
     latestSession: 'Dernière session',
+    needsReview: 'À vérifier',
+    reviewDocs: 'Docs à vérifier',
+    sourceOfTruth: 'Source de vérité',
+    indexDoc: 'Index',
+    referenceDoc: 'Référence',
+    reviewDoc: 'À vérifier',
+    archiveDoc: 'Archive',
     high: 'haute',
     medium: 'moyenne',
     low: 'basse',
-    labeled: 'qualifiées',
-    unlabeled: 'Non qualifié',
+    labeled: 'classées',
+    unlabeled: 'Non classé',
     historical: 'Historique',
   },
 };
@@ -229,6 +256,32 @@ const CRITICAL_RULES = [
 ];
 
 const LOCALIZED_DOCS = {
+  'README.md': {
+    fr: `# Vuvio
+
+Vuvio est une application mobile-first de live streaming POV pour les créateurs outdoor, aventure, craft et terrain.
+
+Le produit organise la découverte autour des lives géolocalisés, des profils créateurs, des replays/recaps et de l'équipement comme couche communautaire et monétisable.
+
+Stack, commandes et règles critiques → [AGENTS.md](AGENTS.md).  
+Architecture, décisions et questions ouvertes → [journal.architecture.md](journal.architecture.md).
+
+## Carte de documentation
+
+- [AGENTS.md](AGENTS.md) — règles critiques pour les agents de code.
+- [journal.architecture.md](journal.architecture.md) — source de vérité produit, architecture, décisions et questions ouvertes.
+- [docs/README.md](docs/README.md) — index des docs techniques, guides par domaine et notes historiques.
+- [agents/README.md](agents/README.md) — stratégie marché et prospection créateurs.
+
+## Règles non négociables
+
+- La lecture viewer utilise HLS en premier. Ne pas prioriser WHEP pour plusieurs viewers.
+- Garder les streams \`?live=ID\` en premier dans le feed Watch.
+- Ne pas supprimer \`activeLives/{liveId}\` dans le flow de fin de live.
+- Garder les URLs vidéo mock centralisées dans \`src/data/mockVideoUrls.js\`.
+- Google Sign-In utilise popup, pas redirect.
+- Le texte UI de l'app reste en anglais.`,
+  },
   'ADMIN.md': {
     en: `# Admin — Vuvio
 
@@ -280,12 +333,100 @@ Single entry point for navigating project documentation.
 
 **Production URL:** https://vuvio-bf328.web.app`,
   },
+  'docs/README.md': {
+    fr: `# Vuvio Docs
+
+Ce dossier contient les références techniques et les notes d'implémentation historiques.
+
+Pour comprendre le projet, commencer par :
+
+- [../AGENTS.md](../AGENTS.md) — règles critiques à suivre.
+- [../journal.architecture.md](../journal.architecture.md) — source de vérité architecture, décisions et questions ouvertes.
+- [../README.md](../README.md) — aperçu court du projet et commandes.
+- [vuvio-complete-overview.md](vuvio-complete-overview.md) — référence complète produit, storytelling, architecture, business model et roadmap.
+- [../Vuvio_Inspirations_Strava_Polarsteps.md](../Vuvio_Inspirations_Strava_Polarsteps.md) — inspirations pour Experiences, Adventures, mémoire de profil et découverte géographique.
+
+## Classification Admin Docs
+
+Admin Docs classe les fichiers Markdown via leur chemin et leurs métadonnées en haut du fichier.
+
+Ajouter \`Status:\` tout en haut d'un fichier Markdown pour le marquer comme classé :
+
+\`\`\`md
+Status: Current
+Read before coding: Source of truth before touching GlobeTest2 behavior.
+
+# Globe Test 2
+\`\`\`
+
+Conventions de statut :
+
+- \`Status: Current\` — source de vérité active.
+- \`Status: Current index\` — index actif d'un dossier.
+- \`Status: Partially current\` — utile, mais vérifier le code avant de s'appuyer dessus.
+- \`Status: Historical note\` — contexte conservé, pas comportement courant.
+- \`Status: Requires verification\` — nécessite une vérification produit ou code.
+
+\`Read before coding:\` est optionnel. Si présent, le fichier remonte dans "À lire avant de coder".
+
+Le domaine est déduit du dossier : \`docs/globe/\`, \`docs/backend/\`, \`docs/streaming/\`, \`docs/analytics/\`, \`docs/gear/\`, \`docs/products/\`, \`docs/i18n/\`, \`docs/ops/\`, \`docs/archive/\`.
+
+Les fichiers racine du Centre de commande ont chacun un rôle clair : \`README.md\` pour l'entrée projet, \`ADMIN.md\` pour les tâches, \`CHANGELOG.md\` pour l'historique, \`AGENTS.md\` pour les règles, \`journal.architecture.md\` pour la vision, et \`Vuvio_Inspirations_Strava_Polarsteps.md\` pour les inspirations produit.
+
+## Guides par domaine
+
+- [backend/](backend/) — backend, Firestore, messaging et lifecycle stream.
+- [analytics/](analytics/) — architecture analytics, audit, statut et intégration.
+- [gear/](gear/) — système d'équipement créateur.
+- [products/](products/) — catalogue produit, Icecat, thumbnails et affiliation.
+- [streaming/](streaming/) — relay, live/replay pipeline, Cloudflare, highlights.
+- [globe/](globe/) — notes d'expérimentation globe.
+- [i18n/](i18n/) — audit internationalisation.
+- [ops/](ops/) — corrections de déploiement et notes opérationnelles.
+
+## Notes historiques
+
+Les notes de phases et correctifs ponctuels vivent dans [archive/](archive/). Les traiter comme contexte historique, pas comme source de vérité actuelle.`,
+  },
 };
 
 function t(value, lang) {
   if (typeof value === 'string') return value;
   return value?.[lang] || value?.en || '';
 }
+
+const STATUS_TRANSLATIONS = {
+  Current: { fr: 'Actuel' },
+  'Current index': { fr: 'Index actuel' },
+  'Partially current': { fr: 'Partiellement actuel' },
+  'Historical note': { fr: 'Note historique' },
+  'Requires verification': { fr: 'À vérifier' },
+  'Globe experiment note, partially current': { fr: 'Note expérimentation globe, partiellement actuelle' },
+  'Architecture reference, partially current': { fr: 'Référence architecture, partiellement actuelle' },
+  'Integration reference': { fr: 'Référence intégration' },
+  'Backend implementation guide, requires current-code verification': { fr: 'Guide backend, nécessite vérification du code actuel' },
+  'Product-system quickstart, partially current': { fr: 'Quickstart produits, partiellement actuel' },
+  'Historical status report, partially current': { fr: 'Rapport historique, partiellement actuel' },
+  'MVP testing quickstart, partially current': { fr: 'Quickstart test MVP, partiellement actuel' },
+  'Product-system reference, partially current': { fr: 'Référence produits, partiellement actuelle' },
+  'Integration reference, requires credential and current-code verification': { fr: 'Référence intégration, nécessite identifiants et vérification code' },
+  'MVP implementation reference, partially current': { fr: 'Référence implémentation MVP, partiellement actuelle' },
+};
+
+const READ_SIGNAL_TRANSLATIONS = {
+  'Check open tasks and current project decisions before changing docs, admin, globe, or streaming behavior.': {
+    fr: 'Vérifier les tâches ouvertes et décisions actuelles avant de modifier docs, admin, globe ou streaming.',
+  },
+  'Required before editing core app behavior, streaming, replay, auth, deployment, or Firebase logic.': {
+    fr: 'Obligatoire avant de modifier le comportement coeur, streaming, replay, auth, déploiement ou Firebase.',
+  },
+  'Product and architecture context for major UX, backend, streaming, monetization, and roadmap changes.': {
+    fr: 'Contexte produit et architecture pour les changements UX, backend, streaming, monétisation et roadmap.',
+  },
+  'Product inspiration reference for Experiences, Adventures, profile memory, and geographic discovery.': {
+    fr: 'Référence d\'inspiration produit pour Experiences, Adventures, mémoire de profil et découverte géographique.',
+  },
+};
 
 function normalizePath(path) {
   return path.replace('../../', '');
@@ -313,7 +454,33 @@ function getStatus(markdown, domain) {
 function formatStatus(status, lang) {
   if (status === 'Unlabeled') return COPY[lang].unlabeled;
   if (status === 'Historical') return COPY[lang].historical;
+  if (lang === 'fr' && STATUS_TRANSLATIONS[status]?.fr) return STATUS_TRANSLATIONS[status].fr;
   return status;
+}
+
+function formatReadSignal(signal, lang) {
+  if (lang === 'fr' && READ_SIGNAL_TRANSLATIONS[signal]?.fr) return READ_SIGNAL_TRANSLATIONS[signal].fr;
+  return signal;
+}
+
+function getDocKind(doc) {
+  const status = doc.status.toLowerCase();
+  if (doc.domain === 'archive' || status.includes('historical')) return 'archive';
+  if (status.includes('requires verification') || status.includes('partially current')) return 'review';
+  if (doc.isIndex) return 'index';
+  if (status.includes('current')) return 'truth';
+  return 'reference';
+}
+
+function formatDocKind(kind, lang) {
+  const copy = COPY[lang];
+  return {
+    archive: copy.archiveDoc,
+    review: copy.reviewDoc,
+    index: copy.indexDoc,
+    truth: copy.sourceOfTruth,
+    reference: copy.referenceDoc,
+  }[kind] || copy.referenceDoc;
 }
 
 function getReadSignal(markdown) {
@@ -386,6 +553,39 @@ function makeDocs() {
 function getDocContent(docs, path, lang) {
   const doc = docs.find((item) => item.path === path);
   return LOCALIZED_DOCS[path]?.[lang] || doc?.content || '';
+}
+
+function resolveDocHref(currentPath, href) {
+  if (!href || /^(https?:|mailto:|tel:|#)/i.test(href)) return null;
+
+  const cleanHref = decodeURIComponent(href).split('#')[0].split('?')[0];
+  if (!cleanHref) return null;
+
+  let candidate = cleanHref.startsWith('/')
+    ? cleanHref.replace(/^\/+/, '')
+    : cleanHref;
+
+  if (candidate.startsWith('./')) candidate = candidate.slice(2);
+
+  if (cleanHref.startsWith('../') || cleanHref.startsWith('./')) {
+    const base = currentPath.includes('/') ? currentPath.split('/').slice(0, -1) : [];
+    const parts = [...base, ...cleanHref.split('/')];
+    const resolved = [];
+    parts.forEach((part) => {
+      if (!part || part === '.') return;
+      if (part === '..') {
+        resolved.pop();
+        return;
+      }
+      resolved.push(part);
+    });
+    candidate = resolved.join('/');
+  }
+
+  if (candidate.endsWith('/')) candidate += 'README.md';
+  if (!candidate.endsWith('.md') && candidate.startsWith('docs/')) candidate = `${candidate}/README.md`;
+
+  return candidate;
 }
 
 function parseChangelog(markdown) {
@@ -565,8 +765,18 @@ function getLocalizedDocTitle(doc, lang) {
   return title ? stripMarkdown(title) : doc.title;
 }
 
+function getDocRole(doc, lang) {
+  const role = DOC_ROLES[doc.path];
+  if (role) return t(role, lang);
+
+  const domain = t(DOMAIN_META[doc.domain]?.label, lang);
+  const kind = formatDocKind(getDocKind(doc), lang);
+  return `${domain} · ${kind}`;
+}
+
 function DocCard({ doc, active, onSelect, lang }) {
   const meta = DOMAIN_META[doc.domain] || DOMAIN_META.root;
+  const kind = getDocKind(doc);
 
   return (
     <button
@@ -580,8 +790,10 @@ function DocCard({ doc, active, onSelect, lang }) {
       </span>
       <span className="admin-docs-card__body">
         <strong>{getLocalizedDocTitle(doc, lang)}</strong>
-        <small>{doc.path}</small>
+        <small>{getDocRole(doc, lang)}</small>
+        <em>{doc.path}</em>
       </span>
+      <span className={`admin-docs-card__kind admin-docs-card__kind--${kind}`}>{formatDocKind(kind, lang)}</span>
       <span className="admin-docs-card__status">{formatStatus(doc.status, lang)}</span>
     </button>
   );
@@ -628,8 +840,8 @@ function MetricPanel({ label, value, detail }) {
 function TaskTable({ tasks, lang }) {
   return (
     <div className="admin-docs-task-table">
-      {tasks.map((task) => (
-        <article key={`${task.area}-${task.title.en}`} className="admin-docs-task-row">
+      {tasks.map((task, index) => (
+        <article key={`${task.source}-${task.area}-${task.priority}-${t(task.title, lang)}-${index}`} className="admin-docs-task-row">
           <div>
             <PriorityBadge priority={task.priority} lang={lang} />
             <span>{task.area}</span>
@@ -639,13 +851,20 @@ function TaskTable({ tasks, lang }) {
             <p>{t(task.context, lang)}</p>
           </div>
           <div>
-            <strong>{t(task.status, lang)}</strong>
+            <strong>{formatTaskStatus(task.status, lang)}</strong>
             <small>{task.source}</small>
           </div>
         </article>
       ))}
     </div>
   );
+}
+
+function formatTaskStatus(status, lang) {
+  if (lang !== 'fr') return t(status, lang);
+  if (status === 'Open') return 'Ouvert';
+  if (status === 'Later') return 'Plus tard';
+  return t(status, lang);
 }
 
 function HistoryTimeline({ items }) {
@@ -695,6 +914,7 @@ function OverviewPanel({ lang, docs, currentWithStatus, historyItems, onOpenDocs
   const copy = COPY[lang];
   const highTasks = ADMIN_TASKS.filter((task) => task.priority === 'high');
   const readBeforeCoding = docs.filter((doc) => doc.readSignal && doc.domain !== 'archive').slice(0, 4);
+  const docsToReview = docs.filter((doc) => getDocKind(doc) === 'review');
   const latestHistory = historyItems[0] || FALLBACK_HISTORY_ITEMS[0];
 
   return (
@@ -703,6 +923,7 @@ function OverviewPanel({ lang, docs, currentWithStatus, historyItems, onOpenDocs
         <MetricPanel label={copy.openTasks} value={ADMIN_TASKS.length} detail={`${highTasks.length} ${copy.high}`} />
         <MetricPanel label={copy.recentWork} value={latestHistory.date} detail={typeof latestHistory.title === 'string' ? latestHistory.title : t(latestHistory.title, lang)} />
         <MetricPanel label={copy.activeDocs} value={docs.filter((doc) => doc.domain !== 'archive').length} detail={`${currentWithStatus} ${copy.labeled}`} />
+        <MetricPanel label={copy.needsReview} value={docsToReview.length} detail={copy.reviewDocs} />
       </section>
 
       <section className="admin-docs-dashboard-grid">
@@ -729,6 +950,18 @@ function OverviewPanel({ lang, docs, currentWithStatus, historyItems, onOpenDocs
           />
           <div className="admin-docs-read-list">
             {readBeforeCoding.map((doc) => (
+              <div key={doc.id}>
+                <strong>{getLocalizedDocTitle(doc, lang)}</strong>
+                <span>{doc.path}</span>
+              </div>
+            ))}
+          </div>
+        </article>
+
+        <article className="admin-docs-panel">
+          <SectionHeader eyebrow={copy.status} title={copy.reviewDocs} />
+          <div className="admin-docs-read-list">
+            {docsToReview.slice(0, 4).map((doc) => (
               <div key={doc.id}>
                 <strong>{getLocalizedDocTitle(doc, lang)}</strong>
                 <span>{doc.path}</span>
@@ -918,6 +1151,10 @@ export default function AdminDocsPage() {
   const selectedContent = LOCALIZED_DOCS[selectedDoc?.path]?.[lang] || selectedDoc?.content || '';
   const selectedTitle = getLocalizedDocTitle(selectedDoc, lang);
   const rendered = useMemo(() => selectedContent ? markdownToHtml(selectedContent) : '', [selectedContent]);
+  const selectedHeadings = useMemo(
+    () => [...selectedContent.matchAll(/^#{2,3}\s+(.+)$/gm)].map((match) => stripMarkdown(match[1])).slice(0, 8),
+    [selectedContent],
+  );
   const currentDocs = docs.filter((doc) => doc.domain !== 'archive');
   const currentWithStatus = currentDocs.filter((doc) => doc.status !== 'Unlabeled').length;
   const copy = COPY[lang];
@@ -927,6 +1164,28 @@ export default function AdminDocsPage() {
   if (authLoading && !isLocalDev) return null;
   if (!user && !isLocalDev) return <Navigate to="/login" replace />;
   if (!isAdmin) return <Navigate to="/watch" replace />;
+
+  const openDocPath = (path) => {
+    const doc = docs.find((item) => item.path === path);
+    if (!doc) return false;
+    setSelectedId(doc.id);
+    setActiveView('docs');
+    setActiveDomain(doc.domain);
+    return true;
+  };
+
+  const handleMarkdownClick = (event) => {
+    const link = event.target.closest?.('a');
+    if (!link) return;
+
+    const href = link.getAttribute('href');
+    const path = resolveDocHref(selectedDoc.path, href);
+    if (!path) return;
+
+    if (openDocPath(path)) {
+      event.preventDefault();
+    }
+  };
 
   const docsBrowser = (
     <section className="admin-docs-shell">
@@ -985,18 +1244,19 @@ export default function AdminDocsPage() {
         {selectedDoc.readSignal ? (
           <div className="admin-docs-reader__signal">
             <CheckCircle2 size={17} strokeWidth={1.9} />
-            <span>{selectedDoc.readSignal}</span>
+            <span>{formatReadSignal(selectedDoc.readSignal, lang)}</span>
           </div>
         ) : null}
 
-        {selectedDoc.headings.length ? (
+        {selectedHeadings.length ? (
           <div className="admin-docs-outline" aria-label={copy.outlineLabel}>
-            {selectedDoc.headings.map((heading) => <span key={heading}>{heading}</span>)}
+            {selectedHeadings.map((heading, index) => <span key={`${heading}-${index}`}>{heading}</span>)}
           </div>
         ) : null}
 
         <article
           className="admin-docs-md"
+          onClick={handleMarkdownClick}
           dangerouslySetInnerHTML={{ __html: rendered }}
         />
       </main>

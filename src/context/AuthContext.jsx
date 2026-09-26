@@ -65,6 +65,32 @@ export function AuthProvider({ children }) {
         profile = await getUserProfile(uid);
       }
 
+      // Merge locally-saved edits on top of Firestore data so changes survive page refresh
+      try {
+        const stored = localStorage.getItem('vuvio:ownCreatorProfile');
+        if (stored && profile) {
+          const local = JSON.parse(stored);
+          if (local.uid === uid || local.id === uid) {
+            profile = {
+              ...profile,
+              displayName: local.displayName || profile.displayName,
+              bio: local.bio ?? profile.bio,
+              profession: local.profession ?? profile.profession,
+              city: local.city ?? profile.city,
+              country: local.country ?? profile.country,
+              avatarUrl: local.avatarUrl ?? profile.avatarUrl,
+              coverUrl: local.coverUrl ?? profile.coverUrl,
+              languages: local.languages ?? profile.languages,
+              categories: local.categories ?? profile.categories,
+              websiteUrl: local.websiteUrl ?? profile.websiteUrl,
+              instagramUrl: local.instagramUrl ?? profile.instagramUrl,
+              youtubeUrl: local.youtubeUrl ?? profile.youtubeUrl,
+              playlists: local.playlists ?? profile.playlists,
+            };
+          }
+        }
+      } catch {}
+
       console.log('[Auth] profile loaded for', uid.slice(0, 8), profile ? 'exists' : 'null');
       setUserProfile(profile);
     } catch (err) {
@@ -157,13 +183,17 @@ export function AuthProvider({ children }) {
   useEffect(() => {
     const splashTimer = setTimeout(() => {
       setShowSplash(false);
-    }, 7000);
+    }, 5500);
     return () => clearTimeout(splashTimer);
   }, []);
 
   const refreshUserProfile = useCallback(async () => {
     if (user) await loadProfile(user);
   }, [user, loadProfile]);
+
+  const setLocalUserProfile = useCallback((data) => {
+    setUserProfile((prev) => ({ ...prev, ...data }));
+  }, []);
 
   const signUp = useCallback(async (email, password, displayName) => {
     try {
@@ -231,6 +261,7 @@ export function AuthProvider({ children }) {
     sendReset,
     updateProfile,
     refreshUserProfile,
+    setLocalUserProfile,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

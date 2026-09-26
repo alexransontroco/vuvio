@@ -1,13 +1,15 @@
 import { X } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import '../styles/components/share-live.css';
 
 export default function LiveShareBanner({ onShare, onDismiss }) {
   const [visible, setVisible] = useState(false);
+  const { t } = useTranslation();
 
   useEffect(() => {
-    const t = window.setTimeout(() => setVisible(true), 80);
-    return () => window.clearTimeout(t);
+    const timer = window.setTimeout(() => setVisible(true), 80);
+    return () => window.clearTimeout(timer);
   }, []);
 
   return (
@@ -16,15 +18,15 @@ export default function LiveShareBanner({ onShare, onDismiss }) {
         <div className="lsb-banner__left">
           <span className="lsb-banner__emoji" aria-hidden="true">🚀</span>
           <div className="lsb-banner__text">
-            <p className="lsb-banner__title">Invite people to your live</p>
-            <p className="lsb-banner__sub">Grow your audience right now</p>
+            <p className="lsb-banner__title">{t('shareLive.bannerTitle')}</p>
+            <p className="lsb-banner__sub">{t('shareLive.bannerSub')}</p>
           </div>
         </div>
         <div className="lsb-banner__actions">
           <button type="button" className="lsb-banner__share-btn" onClick={onShare}>
-            Share live
+            {t('shareLive.shareLive')}
           </button>
-          <button type="button" className="lsb-banner__dismiss" onClick={onDismiss} aria-label="Dismiss banner">
+          <button type="button" className="lsb-banner__dismiss" onClick={onDismiss} aria-label={t('shareLive.dismissBanner')}>
             <X size={13} strokeWidth={2} />
           </button>
         </div>

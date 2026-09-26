@@ -60,6 +60,34 @@ const familyEnvironmentMap = {
   air: 'air',
 };
 
+async function resolveCoordinatesPlace(coordinates) {
+  if (!Array.isArray(coordinates)) return null;
+  const [longitude, latitude] = coordinates;
+  if (!Number.isFinite(longitude) || !Number.isFinite(latitude)) return null;
+
+  const params = new URLSearchParams({
+    latitude: String(latitude),
+    longitude: String(longitude),
+    localityLanguage: 'en',
+  });
+
+  const response = await fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?${params.toString()}`);
+  if (!response.ok) throw new Error('Could not resolve location');
+
+  const data = await response.json();
+  const city = data.city || data.locality || data.principalSubdivision || '';
+  const country = data.countryName || data.countryCode || '';
+  const countryCode = data.countryCode || '';
+
+  if (!city && !country) return null;
+  return {
+    city,
+    country,
+    countryCode,
+    label: [city, country].filter(Boolean).join(', '),
+  };
+}
+
 const QUICK_CATEGORIES = [
   { id: 'Walking',  label: 'Walking',  family: 'earth', subcategory: 'Walking',     icon: Footprints },
   { id: 'Cooking',  label: 'Cooking',  family: 'earth', subcategory: 'Cooking',     icon: UtensilsCrossed },
@@ -514,7 +542,7 @@ function ScheduleLiveFlow({ draft, onUpdateDraft, onSchedule, status, error }) {
 
 export default function BottomNav({ collapsible = false, collapsed = false, onExpand, onCollapse }) {
   const { t } = useTranslation();
-  const { user } = useAuth();
+  const { user, userProfile } = useAuth();
   const [createOpen, setCreateOpen] = useState(false);
   const [createMode, setCreateMode] = useState('actions');
   const [draft, setDraft] = useState(initialLiveDraft);
@@ -529,22 +557,36 @@ export default function BottomNav({ collapsible = false, collapsed = false, onEx
   const [startingScheduledId, setStartingScheduledId] = useState(null);
   const [locationStatus, setLocationStatus] = useState('loading');
   const [userCoordinates, setUserCoordinates] = useState(null);
+  const [userPlace, setUserPlace] = useState(null);
   const location = useLocation();
   const navigate = useNavigate();
 
   useEffect(() => {
+    let active = true;
     if (!navigator.geolocation) {
       setLocationStatus('unavailable');
-      return;
+      return () => { active = false; };
     }
     navigator.geolocation.getCurrentPosition(
       (position) => {
-        setUserCoordinates([position.coords.longitude, position.coords.latitude]);
-        setLocationStatus('ready');
+        const coordinates = [position.coords.longitude, position.coords.latitude];
+        if (!active) return;
+        setUserCoordinates(coordinates);
+        resolveCoordinatesPlace(coordinates)
+          .then((place) => {
+            if (active && place) setUserPlace(place);
+          })
+          .catch(() => {})
+          .finally(() => {
+            if (active) setLocationStatus('ready');
+          });
       },
-      () => setLocationStatus('denied'),
+      () => {
+        if (active) setLocationStatus('denied');
+      },
       { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 },
     );
+    return () => { active = false; };
   }, []);
 
   useEffect(() => {
@@ -592,13 +634,30 @@ export default function BottomNav({ collapsible = false, collapsed = false, onEx
     setDraft((current) => ({ ...current, [key]: value }));
   };
 
-  const launchLive = (cameraStream = null) => {
+  const launchLive = async (cameraStream = null) => {
+    const fallbackPlace = {
+      city: userProfile?.city || '',
+      country: userProfile?.country || userProfile?.countryCode || '',
+      label: [userProfile?.city, userProfile?.country || userProfile?.countryCode].filter(Boolean).join(', '),
+    };
+    let place = userPlace;
+    if (!place && userCoordinates) {
+      try {
+        place = await resolveCoordinatesPlace(userCoordinates);
+        if (place) setUserPlace(place);
+      } catch {}
+    }
+    if (!place && (fallbackPlace.city || fallbackPlace.country)) place = fallbackPlace;
     const effectiveDraft = {
       ...draft,
       family: draft.family || 'earth',
       subcategory: draft.subcategory || 'Walking',
       title: draft.title.trim() || 'Live stream',
       description: draft.description.trim() || draft.title.trim() || 'Live stream',
+      geoCity: place?.city || null,
+      geoCountry: place?.country || null,
+      countryCode: place?.countryCode || userProfile?.countryCode || null,
+      location: place?.label || draft.location,
     };
     const selectedIds = effectiveDraft.equipmentIds ?? [];
     const live = createLocalLive({
@@ -806,11 +865,6 @@ export default function BottomNav({ collapsible = false, collapsed = false, onEx
         </div>
       ) : null}
       <nav className={collapsible ? 'bottom-nav bottom-nav--floating' : 'bottom-nav'} aria-label={t('navigation.main')}>
-        {collapsible ? (
-          <button type="button" className="bottom-nav__collapse" onClick={onCollapse} aria-label={t('navigation.collapseNavigation')}>
-            <span />
-          </button>
-        ) : null}
         {navItems.slice(0, 2).map(({ to, labelKey, icon: Icon }) => (
           <NavLink
             key={to}
@@ -843,8 +897,8 @@ export default function BottomNav({ collapsible = false, collapsed = false, onEx
             className="bottom-nav__item"
             aria-label={t(labelKey)}
             onClick={() => setCreateOpen(false)}
-            onMouseEnter={to === '/globe' ? () => import('../routes/CurrentGlobePage.jsx') : undefined}
-            onTouchStart={to === '/globe' ? () => import('../routes/CurrentGlobePage.jsx') : undefined}
+            onMouseEnter={to === '/globe' ? () => import('../routes/GlobeTest2Page.jsx') : undefined}
+            onTouchStart={to === '/globe' ? () => import('../routes/GlobeTest2Page.jsx') : undefined}
           >
             <span className="bottom-nav__icon">
               <Icon size={23} strokeWidth={1.9} />

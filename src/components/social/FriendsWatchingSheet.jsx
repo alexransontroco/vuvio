@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { FriendWatchingRow } from './FriendWatchingRow.jsx';
 
 /**
@@ -10,13 +11,14 @@ export function FriendsWatchingSheet({
   onInvite,
   isLoading = false,
 }) {
+  const { t } = useTranslation();
   return (
     <div className="friends-watching-sheet">
       <button
         type="button"
         className="friends-watching-sheet__backdrop"
         onClick={onClose}
-        aria-label="Close"
+        aria-label={t('common.close')}
       />
 
       <div className="friends-watching-sheet__panel">
@@ -26,9 +28,9 @@ export function FriendsWatchingSheet({
         />
 
         <header className="friends-watching-sheet__header">
-          <h2 className="friends-watching-sheet__title">Watching with you</h2>
+          <h2 className="friends-watching-sheet__title">{t('social.sheet.title')}</h2>
           <p className="friends-watching-sheet__subtitle">
-            Friends currently in this live
+            {t('social.sheet.subtitle')}
           </p>
         </header>
 
@@ -44,8 +46,8 @@ export function FriendsWatchingSheet({
           </div>
         ) : (
           <div className="friends-watching-sheet__empty">
-            <strong>No friends watching</strong>
-            <p>Invite your friends to watch this live with you</p>
+            <strong>{t('social.sheet.emptyTitle')}</strong>
+            <p>{t('social.sheet.emptyBody')}</p>
           </div>
         )}
 
@@ -55,9 +57,9 @@ export function FriendsWatchingSheet({
             className="friends-watching-sheet__invite-btn"
             onClick={onInvite}
             disabled={isLoading}
-            aria-label="Invite a friend"
+            aria-label={t('social.inviteAFriend')}
           >
-            {isLoading ? 'Loading...' : 'Invite a friend'}
+            {isLoading ? t('common.loading') : t('social.inviteAFriend')}
           </button>
         </footer>
       </div>

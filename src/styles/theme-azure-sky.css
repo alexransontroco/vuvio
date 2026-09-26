@@ -1,0 +1,468 @@
+/* ── Azure Sky theme — lighter blue variation ──────────────────────────────
+   Brighter, more luminous blue. Cleaner, cooler, more day-lit than midnight.
+   Applies when <html data-theme="azure-sky"> is set.
+   ────────────────────────────────────────────────────────────────────────── */
+
+/* ── Root: brighter azure atmospheric background ──────────────────────────── */
+
+[data-theme="azure-sky"] {
+  background:
+    radial-gradient(ellipse at 78% 8%,  rgba(90, 175, 235, 0.16), transparent 40%),
+    radial-gradient(ellipse at 14% 62%, rgba(60, 145, 215, 0.12), transparent 48%),
+    linear-gradient(165deg,
+      #0d2f5c 0%,
+      #124077 25%,
+      #1a5aa0 60%,
+      #2372c8 100%
+    );
+}
+
+[data-theme="azure-sky"] body {
+  background: rgba(10, 30, 60, 0.20);
+  min-height: 100vh;
+}
+
+[data-theme="azure-sky"] body::before,
+[data-theme="azure-sky"] body::after {
+  display: none;
+}
+
+/* ── All layout containers → transparent ──────────────────────────────────── */
+
+[data-theme="azure-sky"] .app-canvas,
+[data-theme="azure-sky"] .app-canvas--desktop,
+[data-theme="azure-sky"] .phone-stage,
+[data-theme="azure-sky"] .screen,
+[data-theme="azure-sky"] .route-fallback {
+  background: transparent;
+}
+
+/* ── Desktop sidebar ──────────────────────────────────────────────────────── */
+
+[data-theme="azure-sky"] .desktop-sidebar-nav {
+  background: rgba(10, 30, 60, 0.94);
+  border-right-color: rgba(140, 200, 240, 0.14);
+  box-shadow: 18px 0 44px rgba(0, 0, 0, 0.28);
+}
+
+/* ── Bottom navigation ────────────────────────────────────────────────────── */
+
+[data-theme="azure-sky"] .bottom-nav,
+[data-theme="azure-sky"] .bottom-nav--floating {
+  background: rgba(15, 50, 95, 0.92);
+  border-top-color: rgba(140, 200, 240, 0.16);
+  box-shadow:
+    inset 0 0.5px 0 rgba(140, 200, 240, 0.10),
+    0 -4px 20px rgba(0, 0, 0, 0.18);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+[data-theme="azure-sky"] .bottom-nav__item {
+  color: rgba(215, 235, 255, 0.55);
+}
+
+[data-theme="azure-sky"] .bottom-nav__item.active {
+  color: #6bd0ff;
+  background: rgba(107, 208, 255, 0.10);
+}
+
+[data-theme="azure-sky"] .bottom-nav__item.active .bottom-nav__icon {
+  background: rgba(107, 208, 255, 0.12);
+  animation: as-nav-halo 4s ease-in-out infinite;
+}
+
+@keyframes as-nav-halo {
+  0%, 100% { box-shadow: 0 0 0 0px rgba(107, 208, 255, 0); }
+  50%       { box-shadow: 0 0 0 5px rgba(107, 208, 255, 0.06); }
+}
+
+/* ── LIVE badge: brighter cyan-azure glow ─────────────────────────────────── */
+
+[data-theme="azure-sky"] .live-badge {
+  background:
+    radial-gradient(120% 100% at 20% 0%, rgba(120, 220, 255, 0.16) 0%, transparent 55%),
+    linear-gradient(180deg, #164680 0%, #0e2f5a 100%);
+  border: 1px solid #7ce0ff;
+  color: #FFFFFF;
+  box-shadow:
+    0 0 6px rgba(124, 224, 255, 0.55),
+    0 0 14px rgba(124, 224, 255, 0.32),
+    0 0 26px rgba(124, 224, 255, 0.16);
+}
+
+[data-theme="azure-sky"] .live-badge__dot {
+  background: #7ce0ff;
+  box-shadow:
+    0 0 4px rgba(124, 224, 255, 0.95),
+    0 0 8px rgba(124, 224, 255, 0.55);
+}
+
+[data-theme="azure-sky"] .live-badge--pulse .live-badge__dot {
+  background: #7ce0ff;
+}
+
+/* ── Home / Watch ─────────────────────────────────────────────────────────── */
+
+[data-theme="azure-sky"] .home-screen {
+  background: transparent;
+}
+
+[data-theme="azure-sky"] .home-header {
+  background: linear-gradient(
+    180deg,
+    rgba(10, 30, 60, 0.86) 0%,
+    rgba(10, 30, 60, 0.62) 68%,
+    rgba(10, 30, 60, 0) 100%
+  );
+}
+
+/* ── Explore page ─────────────────────────────────────────────────────────── */
+
+[data-theme="azure-sky"] .ep-screen {
+  background: transparent;
+}
+
+[data-theme="azure-sky"] .ep-header {
+  background: rgba(12, 38, 72, 0.58);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-bottom: none;
+}
+
+[data-theme="azure-sky"] .ep-header__icon-btn--msg {
+  background: rgba(80, 160, 220, 0.18);
+  color: rgba(220, 240, 255, 0.92);
+  box-shadow: inset 0 0 0 1px rgba(80, 160, 220, 0.22);
+}
+
+[data-theme="azure-sky"] .ep-header__icon-btn--msg:hover {
+  background: rgba(80, 160, 220, 0.26);
+}
+
+[data-theme="azure-sky"] .ep-header__badge {
+  background: #6bd0ff;
+  color: #0a2545;
+}
+
+[data-theme="azure-sky"] .ep-header__filter-btn.has-active {
+  color: #6bd0ff;
+  border-color: rgba(107, 208, 255, 0.34);
+  background: rgba(107, 208, 255, 0.10);
+}
+
+[data-theme="azure-sky"] .ep-header__filter-dot {
+  background: #6bd0ff;
+}
+
+/* ── Search ───────────────────────────────────────────────────────────────── */
+
+[data-theme="azure-sky"] .ep-search {
+  background: rgba(15, 45, 82, 0.42);
+  border-color: rgba(140, 200, 240, 0.20);
+  border-radius: 18px;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  height: auto;
+}
+
+[data-theme="azure-sky"] .ep-search .ep-search__input {
+  background: transparent;
+  border: none;
+  height: 42px;
+}
+
+[data-theme="azure-sky"] .ep-search__icon {
+  color: rgba(230, 245, 255, 0.7);
+}
+
+[data-theme="azure-sky"] .ep-search .ep-search__input::placeholder {
+  color: rgba(230, 245, 255, 0.5);
+}
+
+[data-theme="azure-sky"] .ep-search:focus-within {
+  border-color: rgba(107, 208, 255, 0.44);
+  background: rgba(15, 45, 82, 0.58);
+}
+
+/* ── Category chips ───────────────────────────────────────────────────────── */
+
+[data-theme="azure-sky"] .ep-chip {
+  background: rgba(15, 45, 82, 0.32);
+  border-color: rgba(140, 200, 240, 0.16);
+  color: rgba(255, 255, 255, 0.82);
+}
+
+[data-theme="azure-sky"] .ep-chip.is-active {
+  background: #cfe8f7;
+  border-color: transparent;
+  color: #0d3a72;
+  font-weight: 600;
+}
+
+/* ── Section headers ──────────────────────────────────────────────────────── */
+
+[data-theme="azure-sky"] .ep-section__see-all {
+  color: #a5d8f5;
+  opacity: 1;
+}
+
+/* ── Live Now cards ───────────────────────────────────────────────────────── */
+
+[data-theme="azure-sky"] .ep-live-card__overlay {
+  background: linear-gradient(to top, rgba(6, 22, 44, 0.78) 0%, transparent 100%);
+}
+
+/* ── Nearby cards ─────────────────────────────────────────────────────────── */
+
+[data-theme="azure-sky"] .ep-nearby-card {
+  border-color: rgba(140, 200, 240, 0.16);
+}
+
+[data-theme="azure-sky"] .ep-nearby-card__tag {
+  background: rgba(107, 208, 255, 0.12);
+  color: #6bd0ff;
+}
+
+/* ── Upcoming cards ───────────────────────────────────────────────────────── */
+
+[data-theme="azure-sky"] .ep-upcoming-card {
+  background: transparent;
+  border-color: rgba(140, 200, 240, 0.14);
+}
+
+[data-theme="azure-sky"] .ep-upcoming-card__info {
+  background: rgba(12, 42, 78, 0.72);
+}
+
+[data-theme="azure-sky"] .ep-upcoming-card__badge {
+  background: rgba(12, 42, 78, 0.68);
+  border-color: rgba(140, 200, 240, 0.24);
+  color: rgba(230, 245, 255, 0.9);
+}
+
+[data-theme="azure-sky"] .ep-upcoming-card__notify.is-set {
+  border-color: rgba(107, 208, 255, 0.42);
+  background: rgba(107, 208, 255, 0.10);
+  color: #6bd0ff;
+}
+
+[data-theme="azure-sky"] .ep-upcoming-card__time {
+  color: #6bd0ff;
+}
+
+/* ── Category tiles ───────────────────────────────────────────────────────── */
+
+[data-theme="azure-sky"] .ep-category-tile {
+  background: rgba(15, 45, 82, 0.44);
+  border-color: rgba(140, 200, 240, 0.14);
+}
+
+/* ── Filter sheet ─────────────────────────────────────────────────────────── */
+
+[data-theme="azure-sky"] .ep-filter-sheet__reset {
+  color: #6bd0ff;
+}
+
+[data-theme="azure-sky"] .ep-filter-chip.is-active {
+  color: #6bd0ff;
+}
+
+[data-theme="azure-sky"] .ep-filter-sheet__apply {
+  background: linear-gradient(135deg, #4ba8e5 0%, #6bd0ff 100%);
+  color: #0a2545;
+}
+
+[data-theme="azure-sky"] .ep-theme-tile.is-active .ep-theme-tile__icon,
+[data-theme="azure-sky"] .ep-theme-tile.is-active span {
+  color: #6bd0ff;
+}
+
+/* ── Empty states ─────────────────────────────────────────────────────────── */
+
+[data-theme="azure-sky"] .ep-empty button {
+  color: #6bd0ff;
+}
+
+/* ── Creator cards ────────────────────────────────────────────────────────── */
+
+[data-theme="azure-sky"] .ep-creator-card__follow {
+  color: #6bd0ff;
+}
+
+/* ── Splash screen ────────────────────────────────────────────────────────── */
+
+[data-theme="azure-sky"] .splash-screen {
+  background:
+    radial-gradient(ellipse at 70% 8%, rgba(90, 175, 235, 0.18), transparent 42%),
+    linear-gradient(165deg, #0d2f5c 0%, #124077 30%, #1a5aa0 70%, #2372c8 100%);
+}
+
+/* ── Auth pages ───────────────────────────────────────────────────────────── */
+
+[data-theme="azure-sky"] .auth-loading {
+  background: linear-gradient(165deg, #0d2f5c 0%, #1a5aa0 100%);
+}
+
+[data-theme="azure-sky"] .auth-loading__mark {
+  border-color: rgba(140, 200, 240, 0.22);
+  border-top-color: #6bd0ff;
+}
+
+[data-theme="azure-sky"] .auth-screen {
+  background:
+    radial-gradient(ellipse at 70% 8%, rgba(90, 175, 235, 0.16), transparent 42%),
+    linear-gradient(165deg, #0d2f5c 0%, #1a5aa0 60%, #2372c8 100%);
+}
+
+[data-theme="azure-sky"] .auth-card {
+  background: rgba(15, 45, 82, 0.68);
+  border-color: rgba(140, 200, 240, 0.18);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+}
+
+/* ── Onboarding ───────────────────────────────────────────────────────────── */
+
+[data-theme="azure-sky"] .onboarding-shell {
+  background: linear-gradient(165deg, #0d2f5c 0%, #1a5aa0 100%);
+}
+
+/* ── Creator profile page ─────────────────────────────────────────────────── */
+
+[data-theme="azure-sky"] .creator-profile-screen {
+  --profile-bg:             #0d2f5c;
+  --profile-surface:        rgba(20, 66, 118, 0.65);
+  --profile-surface-strong: rgba(10, 30, 60, 0.92);
+  --profile-border:         rgba(140, 200, 240, 0.16);
+  background: transparent;
+}
+
+[data-theme="azure-sky"] .creator-cover__shade {
+  background:
+    linear-gradient(180deg,
+      rgba(10, 30, 60, 0.14) 0%,
+      transparent 28%,
+      rgba(10, 30, 60, 0.56) 60%,
+      rgba(10, 30, 60, 0.96) 84%,
+      #0d2f5c 100%
+    ),
+    linear-gradient(90deg, rgba(10, 30, 60, 0.18), transparent 46%, rgba(10, 30, 60, 0.10));
+}
+
+/* ── Settings page ────────────────────────────────────────────────────────── */
+
+[data-theme="azure-sky"] .settings-screen {
+  --profile-bg:      #0d2f5c;
+  --profile-surface: rgba(20, 66, 118, 0.60);
+  --profile-border:  rgba(140, 200, 240, 0.16);
+  background: transparent;
+}
+
+[data-theme="azure-sky"] .settings-card {
+  background: rgba(15, 45, 82, 0.68);
+  border-color: rgba(140, 200, 240, 0.14);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+[data-theme="azure-sky"] .settings-row {
+  border-bottom-color: rgba(140, 200, 240, 0.10);
+}
+
+[data-theme="azure-sky"] .settings-header button {
+  background: rgba(20, 66, 118, 0.52);
+}
+
+/* ── Edit profile ─────────────────────────────────────────────────────────── */
+
+[data-theme="azure-sky"] .edit-profile-screen {
+  --profile-bg:     #0d2f5c;
+  --profile-border: rgba(140, 200, 240, 0.16);
+  background: transparent;
+}
+
+/* ── Equipment ────────────────────────────────────────────────────────────── */
+
+[data-theme="azure-sky"] .equipment-manage-screen {
+  --profile-bg:     #0d2f5c;
+  --profile-border: rgba(140, 200, 240, 0.16);
+}
+
+/* ── Messages ─────────────────────────────────────────────────────────────── */
+
+[data-theme="azure-sky"] .messages-screen {
+  background: transparent;
+}
+
+[data-theme="azure-sky"] .messages-home-header {
+  background: rgba(10, 30, 60, 0.78);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+}
+
+/* ── Pre-live / Go live ───────────────────────────────────────────────────── */
+
+[data-theme="azure-sky"] .start-live-screen,
+[data-theme="azure-sky"] .create-live-flow {
+  background: transparent;
+}
+
+/* ── Sheets / modals ──────────────────────────────────────────────────────── */
+
+[data-theme="azure-sky"] .sls-panel {
+  background: rgba(12, 38, 72, 0.97);
+  border-top-color: rgba(140, 200, 240, 0.14);
+}
+
+[data-theme="azure-sky"] .action-sheet,
+[data-theme="azure-sky"] .bottom-sheet,
+[data-theme="azure-sky"] .modal-overlay .modal,
+[data-theme="azure-sky"] .sheet-panel {
+  background: #124077;
+  border-color: rgba(140, 200, 240, 0.14);
+}
+
+/* ── Input fields ─────────────────────────────────────────────────────────── */
+
+[data-theme="azure-sky"] input:not([type="radio"]):not([type="checkbox"]),
+[data-theme="azure-sky"] textarea {
+  background: rgba(15, 45, 82, 0.55);
+  border-color: rgba(140, 200, 240, 0.20);
+  color: #FFFFFF;
+}
+
+[data-theme="azure-sky"] input::placeholder,
+[data-theme="azure-sky"] textarea::placeholder {
+  color: rgba(230, 245, 255, 0.48);
+}
+
+/* ── Discover / Globe topbar ──────────────────────────────────────────────── */
+
+[data-theme="azure-sky"] .discover-topbar > button {
+  background: rgba(12, 38, 72, 0.78);
+  border-color: rgba(140, 200, 240, 0.20);
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.28);
+}
+
+[data-theme="azure-sky"] .discover-topbar .segmented,
+[data-theme="azure-sky"] .discover-mode-control {
+  background: rgba(12, 38, 72, 0.74);
+  border-color: rgba(140, 200, 240, 0.18);
+  box-shadow: 0 12px 26px rgba(0, 0, 0, 0.26);
+}
+
+[data-theme="azure-sky"] .discover-mode-control button.is-active {
+  background: rgba(107, 208, 255, 0.16);
+  color: #6bd0ff;
+  box-shadow: inset 0 0 0 0.5px rgba(107, 208, 255, 0.22);
+}
+
+/* ── Focus ring ───────────────────────────────────────────────────────────── */
+
+[data-theme="azure-sky"] button:focus-visible,
+[data-theme="azure-sky"] a:focus-visible,
+[data-theme="azure-sky"] input:focus-visible,
+[data-theme="azure-sky"] textarea:focus-visible {
+  outline-color: rgba(107, 208, 255, 0.6);
+}

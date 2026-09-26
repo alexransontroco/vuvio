@@ -1,13 +1,9 @@
 import { ChevronLeft, Eye, MapPin, Search, SlidersHorizontal, X } from 'lucide-react';
 import { useMemo, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import LiveBadge from '../components/LiveBadge.jsx';
 import { categories, streams } from '../data/mockStreams.js';
-
-const sortOptions = [
-  { id: 'viewers', label: 'Most watched' },
-  { id: 'recent', label: 'Most recent' },
-];
 
 const fallbackImage = '/assets/icons/icon-512.png';
 
@@ -66,6 +62,11 @@ function LiveCard({ stream, onOpen }) {
 
 export default function AllLivesPage() {
   const navigate = useNavigate();
+  const { t } = useTranslation();
+  const sortOptions = [
+    { id: 'viewers', label: t('allLives.sort.mostWatched') },
+    { id: 'recent', label: t('allLives.sort.mostRecent') },
+  ];
   const [search, setSearch] = useState('');
   const [activeCategory, setActiveCategory] = useState('All');
   const [activeSort, setActiveSort] = useState('viewers');
@@ -88,18 +89,18 @@ export default function AllLivesPage() {
   const hasSearch = search.trim().length > 0;
 
   return (
-    <section className="screen-scroll alp-screen" aria-label="All live streams">
+    <section className="screen-scroll alp-screen" aria-label={t('allLives.aria')}>
 
       <header className="alp-header">
-        <button type="button" className="alp-header__back" onClick={() => navigate(-1)} aria-label="Back">
+        <button type="button" className="alp-header__back" onClick={() => navigate(-1)} aria-label={t('common.back')}>
           <ChevronLeft size={20} strokeWidth={2} />
         </button>
-        <h1 className="alp-header__title">All live streams</h1>
+        <h1 className="alp-header__title">{t('allLives.title')}</h1>
         <button
           type="button"
           className="alp-header__sort"
           onClick={() => setFiltersOpen((v) => !v)}
-          aria-label="Sort and filter"
+          aria-label={t('allLives.sortAndFilter')}
         >
           <SlidersHorizontal size={16} strokeWidth={1.9} />
         </button>
@@ -111,13 +112,13 @@ export default function AllLivesPage() {
           <input
             ref={searchRef}
             type="search"
-            placeholder="Search activities, jobs, places or gear"
+            placeholder={t('allLives.searchPlaceholder')}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            aria-label="Search live streams"
+            aria-label={t('allLives.searchAria')}
           />
           {hasSearch ? (
-            <button type="button" onClick={() => setSearch('')} aria-label="Clear search">
+            <button type="button" onClick={() => setSearch('')} aria-label={t('allLives.clearSearch')}>
               <X size={14} strokeWidth={2} />
             </button>
           ) : null}
@@ -125,7 +126,7 @@ export default function AllLivesPage() {
       </div>
 
       {filtersOpen ? (
-        <div className="alp-sort-row" role="group" aria-label="Sort options">
+        <div className="alp-sort-row" role="group" aria-label={t('allLives.sortOptions')}>
           {sortOptions.map((opt) => (
             <button
               key={opt.id}
@@ -139,7 +140,7 @@ export default function AllLivesPage() {
         </div>
       ) : null}
 
-      <div className="alp-categories" role="group" aria-label="Filter by category">
+      <div className="alp-categories" role="group" aria-label={t('allLives.filterByCategory')}>
         <div className="alp-categories__scroll">
           {categories.map((cat) => (
             <button
@@ -155,7 +156,9 @@ export default function AllLivesPage() {
       </div>
 
       <div className="alp-count">
-        {filtered.length} {filtered.length === 1 ? 'perspective' : 'perspectives'}
+        {filtered.length === 1
+          ? t('allLives.perspectiveCount_one', { count: filtered.length })
+          : t('allLives.perspectiveCount_other', { count: filtered.length })}
       </div>
 
       {filtered.length ? (
@@ -166,10 +169,10 @@ export default function AllLivesPage() {
         </div>
       ) : (
         <div className="alp-empty">
-          <strong>No live perspectives found</strong>
-          <p>Try another activity, place or filter.</p>
+          <strong>{t('allLives.empty.title')}</strong>
+          <p>{t('allLives.empty.body')}</p>
           <button type="button" onClick={() => { setSearch(''); setActiveCategory('All'); }}>
-            Reset filters
+            {t('allLives.empty.reset')}
           </button>
         </div>
       )}

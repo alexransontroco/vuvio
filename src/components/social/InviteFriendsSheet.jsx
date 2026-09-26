@@ -1,5 +1,6 @@
 import { Search, X } from 'lucide-react';
 import { useState, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 
 /**
  * Sheet for inviting friends to watch the current live
@@ -14,6 +15,7 @@ export function InviteFriendsSheet({
   onSendInvites,
   onClose,
 }) {
+  const { t } = useTranslation();
   const [search, setSearch] = useState('');
 
   const filteredFriends = useMemo(() => {
@@ -35,19 +37,19 @@ export function InviteFriendsSheet({
         type="button"
         className="friends-watching-sheet__backdrop"
         onClick={onClose}
-        aria-label="Close"
+        aria-label={t('common.close')}
       />
 
       <div className="invite-friends-sheet__panel">
         <span className="invite-friends-sheet__handle" aria-hidden="true" />
 
         <header className="invite-friends-sheet__header">
-          <h2 className="invite-friends-sheet__title">Invite friends</h2>
+          <h2 className="invite-friends-sheet__title">{t('social.invite.title')}</h2>
           <button
             type="button"
             className="invite-friends-sheet__close"
             onClick={onClose}
-            aria-label="Close"
+            aria-label={t('common.close')}
           >
             <X size={16} strokeWidth={2} />
           </button>
@@ -56,10 +58,10 @@ export function InviteFriendsSheet({
         <div className="invite-friends-sheet__search">
           <input
             type="search"
-            placeholder="Search friends..."
+            placeholder={t('social.invite.searchPlaceholder')}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            aria-label="Search friends"
+            aria-label={t('social.invite.searchAria')}
           />
         </div>
 
@@ -98,7 +100,7 @@ export function InviteFriendsSheet({
                         type="checkbox"
                         checked={isSelected}
                         onChange={() => {}}
-                        aria-label={`Select ${friend.name}`}
+                        aria-label={t('social.invite.selectAria', { name: friend.name })}
                         style={{
                           width: '18px',
                           height: '18px',
@@ -112,7 +114,7 @@ export function InviteFriendsSheet({
             })
           ) : (
             <div className="friends-watching-sheet__empty">
-              <p>No friends found</p>
+              <p>{t('social.invite.noFriendsFound')}</p>
             </div>
           )}
         </div>
@@ -137,13 +139,13 @@ export function InviteFriendsSheet({
             }`}
             onClick={onSendInvites}
             disabled={!canSend}
-            aria-label={`Send ${selectedCount} invite${selectedCount !== 1 ? 's' : ''}`}
+            aria-label={t('social.invite.sendCount', { count: selectedCount })}
           >
             {loading
-              ? 'Sending...'
+              ? t('social.invite.sending')
               : selectedCount > 0
-                ? `Send ${selectedCount} invite${selectedCount !== 1 ? 's' : ''}`
-                : 'Select friends to invite'}
+                ? t('social.invite.sendCount', { count: selectedCount })
+                : t('social.invite.selectPrompt')}
           </button>
         </footer>
       </div>

@@ -1,12 +1,13 @@
 import { Camera, ChevronLeft, Plus, Trash2, X } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { readImageFile, saveOwnCreatorProfile } from '../services/profileService.js';
 import { useAuth } from '../context/AuthContext.jsx';
 import { isValidSpotifyPlaylistUrl } from '../services/spotifyService.js';
 
-const languageOptions = ['French', 'English', 'Spanish', 'Italian', 'German', 'Portuguese', 'Arabic', 'Japanese', 'Other'];
-const categoryOptions = ['Craft', 'Cooking', 'Agriculture', 'Sport', 'Transport', 'Music', 'Nature', 'Science', 'Education', 'Construction', 'Creation', 'Other'];
+const languageOptionValues = ['French', 'English', 'Spanish', 'Italian', 'German', 'Portuguese', 'Arabic', 'Japanese', 'Other'];
+const categoryOptionValues = ['Craft', 'Cooking', 'Agriculture', 'Sport', 'Transport', 'Music', 'Nature', 'Science', 'Education', 'Construction', 'Creation', 'Other'];
 function buildForm(profile) {
   return {
     ...profile,
@@ -27,14 +28,15 @@ function buildForm(profile) {
 }
 
 function EditProfileHeader({ canSave, saving, onBack, onSave }) {
+  const { t } = useTranslation();
   return (
     <header className="edit-profile-header">
-      <button type="button" onClick={onBack} aria-label="Back">
+      <button type="button" onClick={onBack} aria-label={t('common.back')}>
         <ChevronLeft size={20} strokeWidth={1.9} />
       </button>
-      <h1>Edit my profile</h1>
+      <h1>{t('profile.editProfile')}</h1>
       <button type="button" className="edit-profile-header__save" disabled={!canSave || saving} onClick={onSave}>
-        {saving ? 'Saving…' : 'Save'}
+        {saving ? t('common.saving') : t('common.save')}
       </button>
     </header>
   );
@@ -43,6 +45,7 @@ function EditProfileHeader({ canSave, saving, onBack, onSave }) {
 function ProfileImagesEditor({ form, onImageChange, onError }) {
   const avatarInputRef = useRef(null);
   const coverInputRef = useRef(null);
+  const { t } = useTranslation();
 
   const onFile = async (event, field) => {
     const file = event.target.files?.[0];
@@ -60,17 +63,17 @@ function ProfileImagesEditor({ form, onImageChange, onError }) {
   };
 
   return (
-    <section className="edit-image-editor" aria-label="Profile images">
+    <section className="edit-image-editor" aria-label={t('editProfile.profileImages')}>
       <div className="edit-image-editor__cover" style={!form.coverUrl ? { background: 'linear-gradient(135deg, #0f1419 0%, #1a2332 100%)' } : undefined}>
-        {form.coverUrl ? <img src={form.coverUrl} alt="Cover preview" /> : null}
+        {form.coverUrl ? <img src={form.coverUrl} alt={t('editProfile.coverPreview')} /> : null}
         <button type="button" onClick={() => coverInputRef.current?.click()}>
           <Camera size={15} strokeWidth={1.9} />
-          Edit cover
+          {t('profile.editCover')}
         </button>
       </div>
       <div className="edit-image-editor__avatar">
-        <img src={form.avatarUrl || '/assets/icons/icon-192.png'} alt="Avatar preview" />
-        <button type="button" onClick={() => avatarInputRef.current?.click()} aria-label="Edit avatar">
+        <img src={form.avatarUrl || '/assets/icons/icon-192.png'} alt={t('editProfile.avatarPreview')} />
+        <button type="button" onClick={() => avatarInputRef.current?.click()} aria-label={t('editProfile.editAvatar')}>
           <Camera size={15} strokeWidth={2} />
         </button>
       </div>
@@ -83,12 +86,13 @@ function ProfileImagesEditor({ form, onImageChange, onError }) {
 function Field({ label, value, onChange, error, required = false, prefix, maxLength, multiline = false, type = 'text' }) {
   const id = label.toLowerCase().replaceAll(' ', '-');
   const Input = multiline ? 'textarea' : 'input';
+  const { t } = useTranslation();
 
   return (
     <label className={error ? 'edit-field has-error' : 'edit-field'} htmlFor={id}>
       <span>
         {label}
-        {required ? <small> required</small> : null}
+        {required ? <small> {t('editProfile.required')}</small> : null}
       </span>
       <div className="edit-field__control">
         {prefix ? <em>{prefix}</em> : null}
@@ -106,7 +110,7 @@ function Field({ label, value, onChange, error, required = false, prefix, maxLen
   );
 }
 
-function ChipSelector({ title, options, value, onChange }) {
+function ChipSelector({ title, options, value, onChange, labelFor }) {
   const toggle = (item) => {
     onChange(value.includes(item) ? value.filter((current) => current !== item) : [...value, item]);
   };
@@ -117,7 +121,7 @@ function ChipSelector({ title, options, value, onChange }) {
       <div className="edit-chip-row">
         {options.map((item) => (
           <button key={item} type="button" className={value.includes(item) ? 'is-active' : ''} onClick={() => toggle(item)}>
-            {item}
+            {labelFor ? labelFor(item) : item}
           </button>
         ))}
       </div>
@@ -129,14 +133,15 @@ function PlaylistsEditor({ playlists, onChange }) {
   const [newPlaylistUrl, setNewPlaylistUrl] = useState('');
   const [newPlaylistName, setNewPlaylistName] = useState('');
   const [addError, setAddError] = useState('');
+  const { t } = useTranslation();
 
   const handleAdd = () => {
     setAddError('');
 
     const nameError = !newPlaylistName.trim()
-      ? 'Playlist name is required'
+      ? t('editProfile.playlistNameRequired')
       : newPlaylistName.trim().length > 100
-        ? 'Name must be 100 characters or less'
+        ? t('editProfile.playlistNameTooLong')
         : '';
 
     if (nameError) {
@@ -145,12 +150,12 @@ function PlaylistsEditor({ playlists, onChange }) {
     }
 
     if (!newPlaylistUrl.trim()) {
-      setAddError('Spotify playlist URL is required');
+      setAddError(t('editProfile.playlistUrlRequired'));
       return;
     }
 
     if (!isValidSpotifyPlaylistUrl(newPlaylistUrl)) {
-      setAddError('Enter a valid Spotify playlist URL (e.g., https://open.spotify.com/playlist/...)');
+      setAddError(t('editProfile.playlistUrlInvalid'));
       return;
     }
 
@@ -175,21 +180,21 @@ function PlaylistsEditor({ playlists, onChange }) {
 
   return (
     <section className="edit-form-section">
-      <h2>Playlists</h2>
+      <h2>{t('editProfile.playlists')}</h2>
       <p style={{ fontSize: '13px', color: 'rgba(242, 247, 246, 0.62)', marginBottom: '16px' }}>
-        Add Spotify playlists to your profile. We'll fetch the playlist image and song count automatically.
+        {t('editProfile.playlistsDescription')}
       </p>
 
       {addError && <p style={{ color: '#ff6b6b', marginBottom: '12px', fontSize: '13px' }}>{addError}</p>}
 
       <div style={{ display: 'grid', gap: '12px', marginBottom: '20px' }}>
         <label style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-          <span style={{ fontSize: '13px', fontWeight: '600', color: 'rgba(242, 247, 246, 0.92)' }}>Playlist name</span>
+          <span style={{ fontSize: '13px', fontWeight: '600', color: 'rgba(242, 247, 246, 0.92)' }}>{t('editProfile.playlistName')}</span>
           <input
             type="text"
             value={newPlaylistName}
             onChange={(e) => setNewPlaylistName(e.target.value)}
-            placeholder="My favorite songs"
+            placeholder={t('editProfile.playlistNamePlaceholder')}
             maxLength={100}
             style={{
               padding: '12px',
@@ -352,15 +357,8 @@ function isValidInstagram(value) {
 }
 
 export default function EditProfilePage() {
-  console.count('[EditProfilePage] render');
   const navigate = useNavigate();
-  const { user, userProfile, profileLoading, refreshUserProfile } = useAuth();
-
-  console.log('[EditProfilePage] state:', {
-    profileLoading,
-    profileLoaded: !!userProfile,
-    userUid: user?.uid.slice(0, 8),
-  });
+  const { user, userProfile, profileLoading, setLocalUserProfile } = useAuth();
 
   const [form, setForm] = useState(() => buildForm({}));
   const [initialSnapshot, setInitialSnapshot] = useState('');
@@ -372,21 +370,13 @@ export default function EditProfilePage() {
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    if (!profileLoading && userProfile && !hasInitialized && user?.uid === userProfile.uid) {
-      console.log('[EditProfilePage] initializing form from profile');
+    if (!profileLoading && userProfile && !hasInitialized) {
       const built = buildForm(userProfile);
       setForm(built);
       setInitialSnapshot(JSON.stringify(built));
       setHasInitialized(true);
     }
-  }, [profileLoading, userProfile, hasInitialized, user?.uid]);
-
-  useEffect(() => {
-    console.log('[EditProfilePage] UID changed, resetting form');
-    setHasInitialized(false);
-    setForm(buildForm({}));
-    setInitialSnapshot('');
-  }, [user?.uid]);
+  }, [profileLoading, userProfile, hasInitialized]);
 
   const update = (field, value) => {
     setForm((current) => ({ ...current, [field]: value }));
@@ -438,7 +428,7 @@ export default function EditProfilePage() {
       const built = buildForm(updated);
       setForm(built);
       setInitialSnapshot(JSON.stringify(built));
-      await refreshUserProfile?.();
+      setLocalUserProfile?.(updated);
       setToast('Profile updated');
       window.setTimeout(() => navigate('/profile'), 450);
     } catch (err) {
@@ -475,8 +465,8 @@ export default function EditProfilePage() {
         <Field label="Bio" value={form.bio} onChange={(value) => update('bio', value)} maxLength={160} multiline />
       </section>
 
-      <ChipSelector title="Spoken languages" options={languageOptions} value={form.languages} onChange={(value) => update('languages', value)} />
-      <ChipSelector title="Categories" options={categoryOptions} value={form.categories} onChange={(value) => update('categories', value)} />
+      <ChipSelector title="Spoken languages" options={languageOptionValues} value={form.languages} onChange={(value) => update('languages', value)} />
+      <ChipSelector title="Categories" options={categoryOptionValues} value={form.categories} onChange={(value) => update('categories', value)} />
       <PlaylistsEditor playlists={form.playlists} onChange={(value) => update('playlists', value)} />
       <SocialLinksFields form={form} update={update} errors={errors} />
 

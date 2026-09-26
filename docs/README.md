@@ -7,6 +7,54 @@ For current project context, start with:
 - [../AGENTS.md](../AGENTS.md) — critical rules agents must follow.
 - [../journal.architecture.md](../journal.architecture.md) — source of truth for architecture, decisions, and open questions.
 - [../README.md](../README.md) — short project overview and command map.
+- [vuvio-complete-overview.md](vuvio-complete-overview.md) — complete product, storytelling, architecture, business model, and roadmap reference.
+- [vuvio-reference-produit-non-technique.md](vuvio-reference-produit-non-technique.md) — non-technical product reference for vision, app experience, business model, launch, and storytelling.
+- [../Vuvio_Inspirations_Strava_Polarsteps.md](../Vuvio_Inspirations_Strava_Polarsteps.md) — inspiration notes for Experiences, Adventures, profile memory, and geographic discovery.
+
+## Admin Docs Classification
+
+Admin Docs classifies Markdown files from their path and their top metadata lines.
+
+Add `Status:` at the very top of a Markdown file to mark it as classified:
+
+```md
+Status: Current
+Read before coding: Source of truth before touching GlobeTest2 behavior.
+
+# Globe Test 2
+```
+
+Use these status values as a convention:
+
+- `Status: Current` — active source of truth.
+- `Status: Current index` — active folder index.
+- `Status: Partially current` — useful, but verify code before relying on it.
+- `Status: Historical note` — preserved context, not current behavior.
+- `Status: Requires verification` — needs a code or product check before use.
+
+`Read before coding:` is optional. When present, the file appears in the "Read before coding" area of Admin Docs.
+
+The domain is inferred from the folder:
+
+- `docs/globe/` → Globe
+- `docs/backend/` → Backend
+- `docs/streaming/` → Streaming
+- `docs/analytics/` → Analytics
+- `docs/gear/` → Gear
+- `docs/products/` → Products
+- `docs/i18n/` → i18n
+- `docs/ops/` → Ops
+- `docs/archive/` → Archive
+- root files like `README.md`, `ADMIN.md`, and `CHANGELOG.md` → Command Center
+
+Command Center files should each have a clear role:
+
+- `README.md` — project entry point.
+- `ADMIN.md` — open tasks and active decisions.
+- `CHANGELOG.md` — session history.
+- `AGENTS.md` — critical rules for coding agents.
+- `journal.architecture.md` — product and architecture journal.
+- `Vuvio_Inspirations_Strava_Polarsteps.md` — product inspiration notes.
 
 ## Domain Guides
 

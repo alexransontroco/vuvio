@@ -3,12 +3,14 @@ import { createRoot } from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
 import App from './App.jsx';
 import { AuthProvider } from './context/AuthContext.jsx';
+import { LanguageProvider } from './context/LanguageContext.jsx';
 import { MessagingProvider } from './context/MessagingContext.jsx';
 import { ThemeProvider } from './context/ThemeContext.jsx';
 import { ViewModeProvider } from './context/ViewModeContext.jsx';
 import './i18n/index.js';
 import './styles/tokens.css';
 import './styles/theme-midnight-sky.css';
+import './styles/theme-azure-sky.css';
 import './styles/base.css';
 import './styles/layout.css';
 import './styles/app-shell-desktop.css';
@@ -26,6 +28,7 @@ import './styles/pages/vision.css';
 import './styles/pages/auth.css';
 import './styles/pages/test-users.css';
 import './styles/pages/following.css';
+import './styles/pages/notifications.css';
 import './styles/pages/onboarding.css';
 import './styles/pages/internal-stream-admin.css';
 import './styles/pages/admin-docs.css';
@@ -35,15 +38,17 @@ import './components/social/social.css';
 createRoot(document.getElementById('root')).render(
   <StrictMode>
     <BrowserRouter future={{ v7_relativeSplatPath: true, v7_startTransition: true }}>
-      <ThemeProvider>
-        <AuthProvider>
-          <MessagingProvider>
-            <ViewModeProvider>
-              <App />
-            </ViewModeProvider>
-          </MessagingProvider>
-        </AuthProvider>
-      </ThemeProvider>
+      <LanguageProvider>
+        <ThemeProvider>
+          <AuthProvider>
+            <MessagingProvider>
+              <ViewModeProvider>
+                <App />
+              </ViewModeProvider>
+            </MessagingProvider>
+          </AuthProvider>
+        </ThemeProvider>
+      </LanguageProvider>
     </BrowserRouter>
   </StrictMode>,
 );

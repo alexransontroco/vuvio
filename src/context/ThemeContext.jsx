@@ -4,8 +4,8 @@ const ThemeContext = createContext({ theme: 'default', setTheme: () => {} });
 
 export function ThemeProvider({ children }) {
   const [theme, setThemeState] = useState(() => {
-    const stored = localStorage.getItem('vuvio-theme') || 'default';
-    if (stored === 'vuvio-blue' || stored === 'ink-blue') return 'midnight-sky';
+    const stored = localStorage.getItem('vuvio-theme') || 'midnight-sky';
+    if (stored === 'vuvio-blue' || stored === 'ink-blue' || stored === 'default') return 'midnight-sky';
     return stored;
   });
 

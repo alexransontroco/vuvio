@@ -1,5 +1,6 @@
 import { BellOff, Edit3, Search, X } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import {
   getConversations,
@@ -12,12 +13,7 @@ import {
   subscribeToMessaging,
 } from '../services/messagingService.js';
 
-const FILTERS = [
-  { value: 'all', label: 'All' },
-  { value: 'unread', label: 'Unread' },
-  { value: 'creators', label: 'Creators' },
-  { value: 'requests', label: 'Requests' },
-];
+const FILTER_VALUES = ['all', 'unread', 'creators', 'requests'];
 
 function ConstellationSvg() {
   return (
@@ -33,22 +29,24 @@ function ConstellationSvg() {
 }
 
 function LiveDot({ status }) {
+  const { t } = useTranslation();
   if (status === 'live') {
-    return <span className="conv-avatar__live-ring is-live" aria-label="Live now"><i>LIVE</i></span>;
+    return <span className="conv-avatar__live-ring is-live" aria-label={t('messages.liveNowAria')}><i>{t('messages.liveBadge')}</i></span>;
   }
   if (status === 'upcoming') {
-    return <span className="conv-avatar__live-ring is-upcoming" aria-label="Upcoming live" />;
+    return <span className="conv-avatar__live-ring is-upcoming" aria-label={t('messages.upcomingLiveAria')} />;
   }
   return null;
 }
 
 function ConversationRow({ conversation }) {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const participant = getOtherParticipant(conversation);
   const lastMessage = conversation.messages.at(-1);
   const live = conversation.relatedLiveId ? getMessageLive(conversation.relatedLiveId) : null;
 
-  const preview = conversation.previewText ?? (lastMessage?.type === 'live' ? 'Shared a live' : lastMessage?.text ?? '');
+  const preview = conversation.previewText ?? (lastMessage?.type === 'live' ? t('messages.sharedALive') : lastMessage?.text ?? '');
   const isUnread = conversation.unreadCount > 0;
 
   return (
@@ -85,14 +83,15 @@ function ConversationRow({ conversation }) {
 
 function RequestRow({ conversation, requestCount }) {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   return (
     <button
       type="button"
       className="conv-requests-row"
       onClick={() => navigate('/messages?filter=requests')}
-      aria-label={`Message requests · ${requestCount}`}
+      aria-label={`${t('messages.messageRequests')} · ${requestCount}`}
     >
-      <span className="conv-requests-row__label">Message requests</span>
+      <span className="conv-requests-row__label">{t('messages.messageRequests')}</span>
       <span className="conv-requests-row__count">{requestCount}</span>
       <span className="conv-requests-row__arrow" aria-hidden="true">›</span>
     </button>
@@ -102,10 +101,11 @@ function RequestRow({ conversation, requestCount }) {
 function MessageRequestCard({ conversation }) {
   const participant = getOtherParticipant(conversation);
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const requestTypeLabel = {
-    partnership: 'Partnership',
-    collaboration: 'Collaboration request',
-  }[conversation.requestType] ?? 'Message request';
+    partnership: t('messages.requestTypes.partnership'),
+    collaboration: t('messages.requestTypes.collaboration'),
+  }[conversation.requestType] ?? t('messages.requestTypes.default');
 
   return (
     <article className="conv-request-card">
@@ -129,6 +129,7 @@ function MessageRequestCard({ conversation }) {
 
 function NewConversationSheet({ onClose }) {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const [query, setQuery] = useState('');
   const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -156,12 +157,12 @@ function NewConversationSheet({ onClose }) {
   };
 
   return (
-    <div className="msg-sheet" role="dialog" aria-modal="true" aria-label="New conversation">
-      <button type="button" className="msg-sheet__backdrop" onClick={onClose} aria-label="Close" />
+    <div className="msg-sheet" role="dialog" aria-modal="true" aria-label={t('messages.newConversation')}>
+      <button type="button" className="msg-sheet__backdrop" onClick={onClose} aria-label={t('common.close')} />
       <div className="msg-sheet__panel">
         <header className="msg-sheet__header">
-          <h2>New message</h2>
-          <button type="button" onClick={onClose} aria-label="Close"><X size={17} strokeWidth={2} /></button>
+          <h2>{t('messages.newMessage')}</h2>
+          <button type="button" onClick={onClose} aria-label={t('common.close')}><X size={17} strokeWidth={2} /></button>
         </header>
         <div className="messages-search" style={{ margin: '4px 0 8px' }}>
           <Search size={15} strokeWidth={1.8} />
@@ -169,11 +170,11 @@ function NewConversationSheet({ onClose }) {
             ref={inputRef}
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search by name or username"
+            placeholder={t('messages.searchByNameOrUsername')}
             type="search"
           />
           {query ? (
-            <button type="button" className="messages-search__clear" onClick={() => setQuery('')} aria-label="Clear">
+            <button type="button" className="messages-search__clear" onClick={() => setQuery('')} aria-label={t('messages.clear')}>
               <X size={13} strokeWidth={2.5} />
             </button>
           ) : null}
@@ -191,9 +192,9 @@ function NewConversationSheet({ onClose }) {
             </button>
           ))
         ) : query.trim() ? (
-          <p className="new-conv-empty">No users found</p>
+          <p className="new-conv-empty">{t('messages.noUsersFound')}</p>
         ) : (
-          <p className="new-conv-empty">Start typing a name or username</p>
+          <p className="new-conv-empty">{t('messages.startTypingHint')}</p>
         )}
       </div>
     </div>
@@ -201,19 +202,20 @@ function NewConversationSheet({ onClose }) {
 }
 
 function EmptyState({ filter, hasQuery, onExplore }) {
+  const { t } = useTranslation();
   const title = hasQuery
-    ? 'No results found'
+    ? t('messages.empty.noResults')
     : filter === 'unread'
-      ? 'No unread messages'
+      ? t('messages.empty.unread')
       : filter === 'creators'
-        ? 'No creator conversations yet'
+        ? t('messages.empty.creators')
         : filter === 'requests'
-          ? 'No message requests'
-          : 'No conversations yet';
+          ? t('messages.empty.requests')
+          : t('messages.empty.default');
 
   const text = hasQuery
-    ? 'Try another creator name or live title.'
-    : 'Ask creators about their work, equipment or upcoming live experiences.';
+    ? t('messages.empty.tryAnother')
+    : t('messages.empty.ctaBody');
 
   return (
     <div className="messages-empty">
@@ -221,7 +223,7 @@ function EmptyState({ filter, hasQuery, onExplore }) {
       <h2>{title}</h2>
       <p>{text}</p>
       {filter === 'all' && !hasQuery ? (
-        <button type="button" onClick={onExplore}>Explore live perspectives</button>
+        <button type="button" onClick={onExplore}>{t('messages.empty.exploreCta')}</button>
       ) : null}
     </div>
   );
@@ -229,6 +231,8 @@ function EmptyState({ filter, hasQuery, onExplore }) {
 
 export default function MessagesPage() {
   const navigate = useNavigate();
+  const { t } = useTranslation();
+  const FILTERS = FILTER_VALUES.map((value) => ({ value, label: t(`messages.filters.${value}`) }));
   const [query, setQuery] = useState('');
   const [filter, setFilter] = useState('all');
   const [version, setVersion] = useState(0);
@@ -271,15 +275,15 @@ export default function MessagesPage() {
   }), [requestCount]);
 
   return (
-    <section className="messages-screen" aria-label="Messages">
+    <section className="messages-screen" aria-label={t('messages.title')}>
       <header className="messages-home-header">
         <div className="messages-title-row">
-          <h1>Messages</h1>
+          <h1>{t('messages.title')}</h1>
           <div className="messages-header-actions">
-            <button type="button" className="messages-icon-btn" aria-label="Search" onClick={() => setSearchOpen((o) => !o)}>
+            <button type="button" className="messages-icon-btn" aria-label={t('common.search')} onClick={() => setSearchOpen((o) => !o)}>
               <Search size={19} strokeWidth={1.8} />
             </button>
-            <button type="button" className="messages-icon-btn" aria-label="New conversation" onClick={() => setNewConvOpen(true)}>
+            <button type="button" className="messages-icon-btn" aria-label={t('messages.newConversation')} onClick={() => setNewConvOpen(true)}>
               <Edit3 size={19} strokeWidth={1.8} />
             </button>
           </div>
@@ -293,18 +297,18 @@ export default function MessagesPage() {
             ref={searchRef}
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search conversations"
+            placeholder={t('messages.searchConversations')}
             type="search"
           />
           {query ? (
-            <button type="button" className="messages-search__clear" onClick={() => setQuery('')} aria-label="Clear">
+            <button type="button" className="messages-search__clear" onClick={() => setQuery('')} aria-label={t('messages.clear')}>
               <X size={13} strokeWidth={2.5} />
             </button>
           ) : null}
         </div>
       )}
 
-      <div className="messages-filter-row" role="tablist" aria-label="Message filters">
+      <div className="messages-filter-row" role="tablist" aria-label={t('messages.filtersAria')}>
         {FILTERS.map((item) => (
           <button
             key={item.value}
@@ -337,7 +341,7 @@ export default function MessagesPage() {
           <>
             {activeConversations.length > 0 && (
               <>
-                <p className="conv-section-label">Active conversations</p>
+                <p className="conv-section-label">{t('messages.activeConversations')}</p>
                 {activeConversations.map((c) => <ConversationRow key={c.id} conversation={c} />)}
               </>
             )}

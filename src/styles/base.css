@@ -5,6 +5,7 @@
 html {
   background: var(--color-bg);
   overflow-x: hidden;
+  color-scheme: dark;
 }
 
 body {

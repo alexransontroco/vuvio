@@ -10,7 +10,7 @@ export default function SplashScreen() {
       const p = video.play();
       if (p?.catch) p.catch(() => {});
     }
-    const t = setTimeout(() => setLeaving(true), 5200);
+    const t = setTimeout(() => setLeaving(true), 5700);
     return () => clearTimeout(t);
   }, []);
 
