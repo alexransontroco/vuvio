@@ -1,4 +1,4 @@
-import { collection, getDocs, query, doc, updateDoc, arrayUnion, arrayRemove } from 'firebase/firestore';
+import { collection, getDocs, query, where, orderBy, startAt, endAt, limit, doc, updateDoc, arrayUnion, arrayRemove } from 'firebase/firestore';
 import { db } from '../firebase.js';
 
 export async function searchCreators(searchQuery) {
@@ -7,7 +7,12 @@ export async function searchCreators(searchQuery) {
   const normalized = searchQuery.toLowerCase().trim();
 
   try {
-    const q = query(collection(db, 'users'));
+    const q = query(
+      collection(db, 'users'),
+      where('usernameNormalized', '>=', normalized),
+      where('usernameNormalized', '<=', normalized + '\uf8ff'),
+      limit(20),
+    );
     const snapshot = await getDocs(q);
 
     return snapshot.docs
@@ -15,11 +20,7 @@ export async function searchCreators(searchQuery) {
         id: doc.id,
         ...doc.data(),
       }))
-      .filter(user => {
-        if (!user.username || !user.displayName) return false;
-        const userNormalized = (user.usernameNormalized || user.username.toLowerCase());
-        return userNormalized.includes(normalized);
-      })
+      .filter(user => user.username && user.displayName)
       .slice(0, 20);
   } catch (err) {
     console.error('[creatorService] Search failed:', err.message);

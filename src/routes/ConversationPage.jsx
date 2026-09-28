@@ -57,7 +57,7 @@ function LiveContextCard({ live, onDismiss }) {
           <button
             type="button"
             className="conv-context-card__action is-primary"
-            onClick={() => navigate('/watch')}
+            onClick={() => live.id ? navigate(`/watch?live=${encodeURIComponent(live.id)}&mode=view`) : navigate('/watch')}
           >
             {live.actionLabel}
           </button>
@@ -383,7 +383,7 @@ export default function ConversationPage() {
           </small>
         </div>
         {isLive ? (
-          <button type="button" className="conv-header__watch-live" onClick={() => navigate('/watch')}>
+          <button type="button" className="conv-header__watch-live" onClick={() => conversation?.relatedLiveId ? navigate(`/watch?live=${encodeURIComponent(conversation.relatedLiveId)}&mode=view`) : navigate('/watch')}>
             {t('conversation.watchLive')}
           </button>
         ) : null}

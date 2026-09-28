@@ -7,11 +7,12 @@ import {
 } from '../services/notificationService.js';
 
 export function useNotifications() {
-  const { user } = useAuth();
+  const { user, authLoading } = useAuth();
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    if (authLoading) return undefined;
     if (!user?.uid) {
       setNotifications([]);
       setLoading(false);

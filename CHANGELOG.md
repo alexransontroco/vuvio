@@ -6,6 +6,66 @@ Historique des sessions de travail, du plus récent au plus ancien.
 
 ---
 
+## 2026-09-28 — QA audit — 4 bugs P1 corrigés
+
+- **BUG-10** `ExplorePage` : follow/unfollow met à jour le bouton immédiatement (état optimiste local, plus besoin d'attendre Firestore)
+- **BUG-11** `ConversationPage` : "Watch Live" navigue vers le bon stream (`/watch?live=ID&mode=view`) au lieu de `/watch` sans ID
+- **BUG-15** `creatorService.searchCreators` : remplacé le full-scan de la collection `users` par un `where('usernameNormalized', ...)` + `limit(20)` côté serveur
+- **BUG-16** `useNotifications` : skeleton maintenu pendant `authLoading` pour éviter le flash "pas de notifs" à l'init
+
+---
+
+## 2026-09-27 — Session 2 — Globe, viewer streaming, live recap
+
+### Globe (`/globe-test-2`)
+- Cadre gris transparent retiré de la status bar Live/Recent/Upcoming (suppression `border` + `backdrop-filter`)
+- Couleurs des marqueurs par catégorie restaurées via `--marker-color` CSS var depuis `familyColor` → vert `#4CD97B` (earth), orange `#FF8A1F` (air), cyan `#2AB8C8` (water)
+- Couleur earth rendue plus vive : `#45B86B` → `#4CD97B`
+- Boutons zoom/locate descendus sous la nav bar (`bottom: calc(var(--safe-bottom) + 8px)`)
+- Globe remonté : `translateY(16%)` → `translateY(8%)`
+- Zoom cluster : offset lat `-5°` → les markers apparaissent légèrement au-dessus du centre écran
+
+### Viewer streaming (WatchPage)
+- **Live ended screen** : remplacé render-time detection (buggy) par deux `useEffect` — un track le live réel regardé (`watchingLiveRef`), un détecte sa disparition de `createdLives` et déclenche l'écran
+- **Double essais** : effets HLS/P2P et WHEP ne démarrent plus avant `liveReady=true` (plus de run à blanc avec URLs vides avant que Firestore charge)
+- **Flash de live aléatoire** : `liveReady` gate les métadonnées (nom, ville, viewers) jusqu'à ce que le bon live soit chargé
+- Marqueurs live globe : `--marker-color` CSS var appliqué au dot + stem + animations
+
+### LiveRecap
+- Suppression de tous les états "Replay unavailable" / "Replay processing…" dans `LiveRecapPageSimple.jsx` → remplacé par le screenshot du live sans overlay
+
+---
+
+## 2026-09-27 — Viewer UX polish — live ended screen, WHEP race fix, globe & Explore fixes
+`🐛 Fix` + `✨ Polish` | Live ended screen, WHEP retry, globe position, Explore card
+
+### Live ended screen (viewer side)
+- Ajout détection render-time : quand le live actif disparaît de `createdLives` (broadcaster a terminé), `broadcastEnded=true` + `endedLiveSnap` capturé avant que le feed change
+- Corrige la race condition Firestore : la query `status=live` retirait le live du feed avant que l'individual doc listener ne fire → aucun écran "Live ended" n'apparaissait
+- Écran affiché 5s avec thumbnail, avatar, nom du broadcaster, boutons "View profile" et "Back to Watch"
+
+### WHEP / HLS race condition (cross-device)
+- `anySourceWonRef` : empêche WHEP tardif d'écraser P2P/HLS déjà connecté
+- WHEP retry on 409 (stream Cloudflare pas encore prêt) : jusqu'à 10 tentatives toutes les 3s
+- `combinedStream.addTrack()` : corrige audio-only quand Cloudflare envoie les tracks dans des streams séparés
+- `whepConnectedRef` : empêche l'effet principal de réinitialiser WHEP quand `whepFailed` change
+
+### Globe (`/globe-test-2`)
+- Altitude initiale : 2.3 → 2.8 (plus dézoomé)
+- Position verticale : `translateY(16%)` → `translateY(8%)` (moins bas)
+- Status bar Live/Recent/Upcoming : centrage corrigé (suppression du ciblage `first-of-type`)
+
+### Explore page
+- Notification bell sur ProfilePage : ouvre le même NotifPopover que sur Explore
+- Clé i18n manquantes pour Messages (`messages.filters.*`, `messages.empty.*`)
+- Cluster sheet : max 3 items visibles, scroll pour le reste
+- Nouveau live en temps réel : scroll automatique vers le début du live row quand un nouveau broadcaster apparaît
+
+### ReplayPlayer
+- Spinner "replay indisponible" remplacé par le thumbnail du live (avec overlay sombre)
+
+---
+
 ## 2026-09-26 — WHEP viewer — multi-viewer live WebRTC via Cloudflare
 `🚀 Feature` | WHEP, multi-viewer illimité, cross-réseau, ~2-3s latence
 
