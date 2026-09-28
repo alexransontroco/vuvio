@@ -700,9 +700,10 @@
 
 .recent-live-list,
 .upcoming-live-list {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  display: flex;
+  flex-direction: column;
   gap: 10px;
+  padding: 0 16px 16px;
 }
 
 .recent-live-card {
@@ -863,72 +864,84 @@
 .upcoming-live-card {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 12px;
+  gap: 10px;
   border: 0.5px solid rgba(255, 255, 255, 0.07);
-  border-radius: 14px;
+  border-radius: 12px;
   background: rgba(255, 255, 255, 0.032);
-  padding: 14px;
+  padding: 10px 12px;
+  min-height: 0;
 }
 
 .upcoming-live-card > img {
-  width: 62px;
-  height: 54px;
+  width: 38px;
+  height: 38px;
   flex: none;
-  border-radius: 14px;
+  border-radius: 9px;
   object-fit: cover;
 }
 
-.upcoming-live-card div {
-  min-width: 0;
-}
-
-.upcoming-live-card span {
-  color: #8bbdff;
-  font-size: 10px;
-  font-weight: 720;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-}
-
-.upcoming-live-card h3 {
-  margin: 5px 0 0;
-  color: var(--profile-text);
-  font-size: 14px;
-  font-weight: 570;
-}
-
-.upcoming-live-card p,
-.upcoming-live-card small {
-  display: block;
-  margin: 4px 0 0;
-  color: var(--profile-muted);
-  font-size: 11.5px;
-}
-
-.upcoming-live-card button {
-  min-width: 94px;
+.upcoming-live-card__cat-thumb {
+  width: 38px;
   height: 38px;
   flex: none;
-  border: 0.5px solid rgba(22, 135, 255, 0.22);
-  border-radius: 999px;
-  background: rgba(22, 135, 255, 0.12);
-  color: #b7d8ff;
-  font-size: 12px;
-  font-weight: 640;
+  border-radius: 9px;
+  background: color-mix(in srgb, var(--cat-color) 14%, rgba(6, 22, 36, 0.9));
+  border: 0.5px solid color-mix(in srgb, var(--cat-color) 30%, transparent);
+  display: grid;
+  place-items: center;
+  color: var(--cat-color);
+}
+
+.upcoming-live-card__info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.upcoming-live-card__title {
+  font-size: 13px;
+  font-weight: 620;
+  color: var(--profile-text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.upcoming-live-card__meta {
+  font-size: 11px;
+  color: var(--profile-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .upcoming-live-card__actions {
   display: flex;
-  flex-direction: column;
-  gap: 7px;
-  align-items: flex-end;
+  flex-direction: row;
+  gap: 6px;
+  align-items: center;
+  flex: none;
 }
 
-.upcoming-live-card button.is-active {
-  border-color: rgba(255, 255, 255, 0.1);
-  background: rgba(255, 255, 255, 0.075);
-  color: var(--profile-text);
+.upcoming-live-card button {
+  flex: none;
+  height: 28px;
+  padding: 0 11px;
+  border: 0.5px solid rgba(22, 135, 255, 0.22);
+  border-radius: 999px;
+  background: rgba(22, 135, 255, 0.12);
+  color: #b7d8ff;
+  font-size: 11px;
+  font-weight: 640;
+  white-space: nowrap;
+}
+
+.upcoming-live-card button.is-danger {
+  border-color: rgba(255, 80, 80, 0.22);
+  background: rgba(255, 80, 80, 0.08);
+  color: #ffb3b3;
 }
 
 .profile-section-heading {
@@ -1155,6 +1168,36 @@
   width: 100%;
 }
 
+.equipment-nudge {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 20px 16px;
+  border: 0.5px dashed rgba(53, 227, 220, 0.28);
+  border-radius: 16px;
+  background: rgba(53, 227, 220, 0.04);
+  text-align: center;
+}
+
+.equipment-nudge__text {
+  margin: 0;
+  font-size: 13.5px;
+  color: rgba(242, 247, 246, 0.6);
+  line-height: 1.4;
+}
+
+.equipment-nudge__cta {
+  height: 38px;
+  padding: 0 18px;
+  border: 0.5px solid rgba(53, 227, 220, 0.4);
+  border-radius: 10px;
+  background: rgba(53, 227, 220, 0.1);
+  color: rgba(53, 227, 220, 0.9);
+  font-size: 13px;
+  font-weight: 600;
+}
+
 .equipment-info-modal__panel {
   padding: 18px;
 }
@@ -1314,6 +1357,28 @@
 .equipment-card small {
   color: rgba(142, 155, 173, 0.66);
   font-size: 10.5px;
+}
+
+.creator-tab__soon {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: rgba(40, 216, 223, 0.12);
+  border: 0.5px solid rgba(40, 216, 223, 0.28);
+  color: var(--vuvio-cyan, #28d8e0);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  vertical-align: middle;
+}
+
+.profile-coming-soon {
+  padding: 32px 20px;
+  text-align: center;
+  color: var(--profile-muted);
+  font-size: 14px;
 }
 
 .profile-empty-state {

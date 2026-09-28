@@ -9,7 +9,7 @@ import {
   where,
   serverTimestamp,
 } from 'firebase/firestore';
-import { demoEquipmentItems, demoLiveEquipmentIds, EQUIPMENT_CATEGORIES, EQUIPMENT_PRODUCT_ID_MAP } from '../data/equipmentModel.js';
+import { demoEquipmentItems, demoLiveEquipmentIds, EQUIPMENT_CATALOG, EQUIPMENT_CATEGORIES, EQUIPMENT_PRODUCT_ID_MAP } from '../data/equipmentModel.js';
 import { resolveEquipmentProduct, getProductThumbnailUrl } from './productService.js';
 
 const EQUIPMENT_KEY = 'vuvio:equipment-library';
@@ -169,14 +169,7 @@ export function getEquipmentLibrary(seedItems = demoEquipmentItems) {
   try {
     const stored = JSON.parse(win.localStorage.getItem(EQUIPMENT_KEY) ?? 'null');
     if (Array.isArray(stored)) {
-      const storedIds = new Set(stored.map((i) => i.id));
-      const newSeeds = seedItems.filter((i) => !storedIds.has(i.id)).map(normalizeEquipmentItem).filter(Boolean);
-      if (newSeeds.length) {
-        const merged = [...stored.map(normalizeEquipmentItem).filter(Boolean), ...newSeeds];
-        win.localStorage.setItem(EQUIPMENT_KEY, JSON.stringify(merged));
-        return merged;
-      }
-      return stored.map(normalizeEquipmentItem).filter(Boolean);
+      return stored.map(normalizeEquipmentItem).filter((item) => item && item.provider !== 'demo');
     }
   } catch {
     // Fall through to seed data.
@@ -362,7 +355,10 @@ export function getSuggestedEquipmentIds(items, subcategory, compatibleTypes = [
 
 export function getEquipmentSelection(items, ids = demoLiveEquipmentIds) {
   const idSet = new Set(ids);
-  return items.filter((item) => idSet.has(item.id) || idSet.has(item.equipmentId));
+  const fromLibrary = items.filter((item) => idSet.has(item.id) || idSet.has(item.equipmentId));
+  const foundIds = new Set(fromLibrary.map((item) => item.id));
+  const fromCatalog = EQUIPMENT_CATALOG.filter((item) => idSet.has(item.id) && !foundIds.has(item.id));
+  return [...fromLibrary, ...fromCatalog];
 }
 
 export function buildEquipmentSnapshots(items, ids) {

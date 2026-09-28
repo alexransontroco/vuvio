@@ -45,6 +45,9 @@ import {
 } from '../services/equipmentService.js';
 import { getMyScheduledStreams, getScheduledStreams, cancelScheduledStream } from '../services/streamApi.ts';
 import ScheduleLiveSheet from '../components/ScheduleLiveSheet.jsx';
+import { ACTIVITY_CATEGORIES } from '../data/activityCategories.js';
+import NotifPopover from '../components/NotifPopover.jsx';
+import { useNotifications } from '../hooks/useNotifications.js';
 
 function formatCompact(value = 0) {
   if (value >= 1000) {
@@ -88,6 +91,7 @@ function toProfileUpcomingLive(raw, fallbackLocation = 'Location to be confirmed
     scheduledAt: date.toLocaleDateString('en', { weekday: 'short', month: 'short', day: 'numeric' }),
     time: date.toLocaleTimeString('en', { hour: '2-digit', minute: '2-digit' }),
     thumbnailUrl: null,
+    category: raw.category ?? null,
   };
 }
 
@@ -115,11 +119,14 @@ function ProfileState({ title, children }) {
   );
 }
 
-function ProfileCover({ profile, isOwnProfile, onShare }) {
+function ProfileCover({ profile, isOwnProfile, onShare, notifUnread, notifications, notifsLoading, markRead, markAllRead }) {
   const navigate = useNavigate();
   const { t } = useTranslation();
   const hasCover = Boolean(profile.coverUrl);
   const { unreadCount: msgUnread } = useMessaging();
+  const [notifOpen, setNotifOpen] = useState(false);
+
+  const handleNotifNavigate = (target) => { setNotifOpen(false); navigate(target); };
 
   return (
     <header className="creator-cover" style={!hasCover ? { background: 'linear-gradient(135deg, #0f1419 0%, #1a2332 100%)' } : undefined}>
@@ -138,9 +145,32 @@ function ProfileCover({ profile, isOwnProfile, onShare }) {
               </span>
             ) : null}
           </Link>
-          <button type="button" className="creator-icon-button" aria-label={t('home.notifications')}>
-            <Bell size={18} strokeWidth={1.8} />
-          </button>
+          <div style={{ position: 'relative' }}>
+            <button
+              type="button"
+              className="creator-icon-button"
+              aria-label={t('home.notifications')}
+              onClick={() => setNotifOpen((v) => !v)}
+            >
+              <Bell size={18} strokeWidth={1.8} />
+              {notifUnread > 0 ? (
+                <span className="creator-icon-button__badge">
+                  {notifUnread > 9 ? '9+' : notifUnread}
+                </span>
+              ) : null}
+            </button>
+            {notifOpen ? (
+              <NotifPopover
+                notifications={notifications}
+                loading={notifsLoading}
+                unreadCount={notifUnread}
+                markRead={markRead}
+                markAllRead={markAllRead}
+                onClose={() => setNotifOpen(false)}
+                onNavigate={handleNotifNavigate}
+              />
+            ) : null}
+          </div>
           <button type="button" className="creator-icon-button" onClick={onShare} aria-label={t('profile.shareProfile')}>
             <Share2 size={18} strokeWidth={1.8} />
           </button>
@@ -368,7 +398,7 @@ function ProfileTabs({ activeTab, onChange }) {
     { id: 'lives', label: t('profile.tabsLives') },
     { id: 'about', label: t('profile.tabsAbout') },
     { id: 'equipment', label: t('profile.equipment') },
-    { id: 'highlights', label: t('profile.tabsHighlights') },
+    { id: 'highlights', label: t('profile.tabsHighlights'), comingSoon: true },
   ];
 
   return (
@@ -383,6 +413,7 @@ function ProfileTabs({ activeTab, onChange }) {
           aria-selected={activeTab === tab.id}
         >
           {tab.label}
+          {tab.comingSoon ? <span className="creator-tab__soon">Bientôt</span> : null}
         </button>
       ))}
     </div>
@@ -524,14 +555,20 @@ function UpcomingLiveCard({ live, isOwnProfile, notified, onNotify, onManage, on
   const { t } = useTranslation();
   return (
     <article className="upcoming-live-card">
-      {live.thumbnailUrl ? <img src={live.thumbnailUrl} alt="" /> : null}
-      <div>
-        <span>{t('profile.upcomingBadge')}</span>
-        <h3>{live.title}</h3>
-        <p>{live.scheduledAt}</p>
-        <small>
-          {live.time} · {live.location}
-        </small>
+      {live.thumbnailUrl ? (
+        <img src={live.thumbnailUrl} alt="" />
+      ) : (() => {
+        const cat = ACTIVITY_CATEGORIES.find((c) => c.id === live.category);
+        const Icon = cat?.icon;
+        return (
+          <div className="upcoming-live-card__cat-thumb" style={{ '--cat-color': cat?.color ?? 'var(--vuvio-cyan)' }}>
+            {Icon ? <Icon size={22} strokeWidth={1.6} /> : <Clock3 size={22} strokeWidth={1.6} />}
+          </div>
+        );
+      })()}
+      <div className="upcoming-live-card__info">
+        <strong className="upcoming-live-card__title">{live.title}</strong>
+        <span className="upcoming-live-card__meta">{live.scheduledAt} · {live.time}</span>
       </div>
       <div className="upcoming-live-card__actions">
         {isOwnProfile ? (
@@ -627,18 +664,6 @@ function EquipmentTab({ equipment, liveEquipment, isOwnProfile, displayName, onM
   const groups = groupEquipmentByCategory(publicEquipment);
   const selectedGroup = groups.find((group) => group.id === activeCategoryId);
 
-  if (!publicEquipment?.length) {
-    return (
-      <section className="equipment-tab">
-        <div className="profile-empty-state">
-          <p>{t('equipment.noneAdded')}</p>
-          <small>{t('equipment.noneAddedHint')}</small>
-          {isOwnProfile ? <button type="button" onClick={onManage}>{t('equipment.addEquipment')}</button> : null}
-        </div>
-      </section>
-    );
-  }
-
   return (
     <section className="equipment-tab" aria-label={t('profile.creatorEquipment')}>
       <div className="equipment-tab__header">
@@ -646,8 +671,17 @@ function EquipmentTab({ equipment, liveEquipment, isOwnProfile, displayName, onM
           <h2>{isOwnProfile ? t('equipment.myEquipment') : t('equipment.creatorEquipment', { name: displayName })}</h2>
           <p>{isOwnProfile ? t('equipment.ownDescription') : t('equipment.creatorDescription', { name: displayName })}</p>
         </div>
-        <button type="button" onClick={() => setSponsorshipOpen(true)}>{t('equipment.aboutSponsorships')}</button>
+        {!isOwnProfile || publicEquipment.length ? (
+          <button type="button" onClick={() => setSponsorshipOpen(true)}>{t('equipment.aboutSponsorships')}</button>
+        ) : null}
       </div>
+
+      {isOwnProfile && !publicEquipment.length ? (
+        <div className="equipment-nudge">
+          <p className="equipment-nudge__text">{t('equipment.nudgeText')}</p>
+          <button type="button" className="equipment-nudge__cta" onClick={onManage}>{t('equipment.nudgeCta')}</button>
+        </div>
+      ) : null}
 
       <div className="equipment-category-list">
         {groups.map((category) => (
@@ -706,7 +740,7 @@ function OwnProfileShortcuts() {
   const { t } = useTranslation();
   const shortcuts = [
     { key: 'favorites', label: t('profile.myFavorites'), icon: Bookmark, action: null },
-    { key: 'following', label: t('common.following'), icon: Check, action: null },
+    { key: 'following', label: t('common.following'), icon: Check, action: () => navigate('/profile/following') },
     { key: 'notifications', label: t('profile.myNotifications'), icon: Bell, action: null },
     { key: 'stats', label: t('profile.stats'), icon: Sparkles, action: null },
     { key: 'settings', label: t('common.settings'), icon: Settings, action: () => navigate('/settings') },
@@ -748,6 +782,8 @@ export default function ProfilePage() {
   const [showScheduleSheet, setShowScheduleSheet] = useState(false);
   const [editingLive, setEditingLive] = useState(null);
   const [scheduledRefreshKey, setScheduledRefreshKey] = useState(0);
+  const [notifOpen, setNotifOpen] = useState(false);
+  const { notifications, unreadCount: notifUnread, loading: notifsLoading, markRead, markAllRead } = useNotifications();
 
   useEffect(() => {
     window.scrollTo({ top: 0, left: 0 });
@@ -995,6 +1031,11 @@ export default function ProfilePage() {
         profile={profile}
         isOwnProfile={isOwnProfile}
         onShare={shareProfile}
+        notifUnread={notifUnread}
+        notifications={notifications}
+        notifsLoading={notifsLoading}
+        markRead={markRead}
+        markAllRead={markAllRead}
       />
       <div className="creator-profile-content">
         <ProfileIdentity
@@ -1031,14 +1072,25 @@ export default function ProfilePage() {
           onViewFollowing={() => isOwnProfile && navigate('/profile/following')}
         />
 
-        <FeaturedLiveCard
-          profile={profile}
-          isOwnProfile={isOwnProfile}
-          notified={notificationsEnabled}
-          onJoin={() => profile.currentLive && navigate(`/watch?live=${encodeURIComponent(profile.currentLive.id)}&mode=view`)}
-          onNotify={() => notifyLive(profile.currentLive?.id)}
-          onManage={manageLive}
-        />
+        {profile.currentLive && profile.currentLive.status !== 'ended' ? (
+          <FeaturedLiveCard
+            profile={profile}
+            isOwnProfile={isOwnProfile}
+            notified={notificationsEnabled}
+            onJoin={() => profile.currentLive && navigate(`/watch?live=${encodeURIComponent(profile.currentLive.id)}&mode=view`)}
+            onNotify={() => notifyLive(profile.currentLive?.id)}
+            onManage={manageLive}
+          />
+        ) : (
+          <UpcomingLivesTab
+            lives={profile.upcomingLives}
+            isOwnProfile={isOwnProfile}
+            notifiedIds={notifiedIds}
+            onNotify={notifyLive}
+            onManage={manageLive}
+            onCancel={handleCancelLive}
+          />
+        )}
 
         <ProfileTabs activeTab={activeTab} onChange={(tab) => {
           setActiveTab(tab);
@@ -1059,7 +1111,6 @@ export default function ProfilePage() {
             <>
               <AboutTab profile={profile} />
               <PlaylistsSection playlists={profile.playlists} />
-              <UpcomingLivesTab lives={profile.upcomingLives} isOwnProfile={isOwnProfile} notifiedIds={notifiedIds} onNotify={notifyLive} onManage={manageLive} onCancel={handleCancelLive} />
             </>
           ) : null}
           {activeTab === 'equipment' ? (
@@ -1073,10 +1124,9 @@ export default function ProfilePage() {
             />
           ) : null}
           {activeTab === 'highlights' ? (
-            <FavoritesTab
-              lives={profile.recentLives.slice(0, 4)}
-              onOpenLive={(live) => navigate(`/discover?live=${encodeURIComponent(live.id)}`)}
-            />
+            <div className="profile-coming-soon">
+              <p>Les highlights arrivent bientôt.</p>
+            </div>
           ) : null}
         </div>
         {isOwnProfile ? <OwnProfileShortcuts /> : null}

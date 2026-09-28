@@ -570,38 +570,12 @@ export default function LiveRecapPageSimple() {
         {/* Left — thumbnail */}
         <div style={S.left} className="lrs-left">
           <div style={S.thumbWrap}>
-            {liveData.replayUrl ? null : replayState === 'no_footage' ? (
-              <>
-                {liveData.image && <img src={liveData.image} alt="" style={S.thumbBg} />}
-                <div style={S.processingOverlay}>
-                  <X size={28} color="rgba(226,234,244,0.4)" />
-                  <p style={S.processingTitle}>Replay unavailable</p>
-                  <span style={S.processingSubtitle}>{CLOUDFARE_REPLAY_DISABLED_TEXT}</span>
-                </div>
-              </>
-            ) : replayState === 'timeout' ? (
-              <>
-                {liveData.image && <img src={liveData.image} alt="" style={S.thumbBg} />}
-                <div style={S.processingOverlay}>
-                  <X size={28} color="rgba(226,234,244,0.4)" />
-                  <p style={S.processingTitle}>Replay unavailable</p>
-                  <span style={S.processingSubtitle}>Cloudflare took too long to process the recording.</span>
-                </div>
-              </>
-            ) : isProcessing ? (
-              <>
-                {liveData.image && (
-                  <img src={liveData.image} alt="" style={S.thumbBg} />
-                )}
-                <div style={S.processingOverlay}>
-                  <Loader size={28} style={S.spinner} />
-                  <p style={S.processingTitle}>Replay processing…</p>
-                  <span style={S.processingSubtitle}>
-                    {pctComplete != null ? `${pctComplete}% done` : 'Usually ready in a few minutes'}
-                  </span>
-                </div>
-              </>
-            ) : null}
+            {liveData.image && (
+              <img src={liveData.image} alt="" style={S.thumbBg} />
+            )}
+            {!liveData.replayUrl && liveData.image && (
+              <img src={liveData.image} alt="" style={S.thumbFg} />
+            )}
             {liveData.replayUrl ? (
               <ReplayPlayer src={liveData.replayUrl} poster={liveData.image} />
             ) : null}
@@ -632,21 +606,23 @@ export default function LiveRecapPageSimple() {
             ))}
           </div>
 
-          {/* Messages */}
-          <div style={S.card}>
-            <div style={S.replayStatusHeader}>
-              <span style={{ ...S.replayStatusDot, background: replayStatus.tone }} />
-              <div>
-                <h3 style={S.cardTitleNoMargin}>{replayStatus.label}</h3>
-                <p style={S.replayStatusDetail}>{replayStatus.detail}</p>
+          {/* Replay status — only shown when replay is actually ready or actively processing */}
+          {(liveData.replayUrl || isProcessing) && (
+            <div style={S.card}>
+              <div style={S.replayStatusHeader}>
+                <span style={{ ...S.replayStatusDot, background: replayStatus.tone }} />
+                <div>
+                  <h3 style={S.cardTitleNoMargin}>{replayStatus.label}</h3>
+                  <p style={S.replayStatusDetail}>{replayStatus.detail}</p>
+                </div>
               </div>
+              {isProcessing && pctComplete != null && (
+                <div style={S.progressTrack}>
+                  <div style={{ ...S.progressFill, width: `${Math.max(0, Math.min(100, pctComplete))}%` }} />
+                </div>
+              )}
             </div>
-            {isProcessing && pctComplete != null && (
-              <div style={S.progressTrack}>
-                <div style={{ ...S.progressFill, width: `${Math.max(0, Math.min(100, pctComplete))}%` }} />
-              </div>
-            )}
-          </div>
+          )}
 
           {comments.length > 0 && (
             <div style={S.card}>
@@ -846,6 +822,13 @@ const S = {
     objectFit: 'cover',
     opacity: 0.35,
     filter: 'blur(8px)',
+  },
+  thumbFg: {
+    position: 'absolute',
+    inset: 0,
+    width: '100%',
+    height: '100%',
+    objectFit: 'cover',
   },
   processingOverlay: {
     position: 'absolute',

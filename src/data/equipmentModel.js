@@ -90,7 +90,9 @@ function markDemoEquipmentItem(item) {
   };
 }
 
-export const demoEquipmentItems = [
+export const demoEquipmentItems = [];
+
+export const EQUIPMENT_CATALOG = [
   {
     id: 'gopro-hero13',
     userId: 'current-user',

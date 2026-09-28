@@ -6,6 +6,19 @@ Historique des sessions de travail, du plus récent au plus ancien.
 
 ---
 
+## 2026-09-28 — Session 2 — UX équipement, live badge, recap, étoile
+
+- **Badge LIVE** `ShareLiveSheet` : rouge → cyan Vuvio (`rgba(43,217,200)`) + texte/dot foncé pour le contraste
+- **Recap cover** `LiveRecapPageSimple` : image nette au premier plan (thumbFg) par-dessus le fond flouté (thumbBg)
+- **Étoile broadcaster** : animation ralentie 1.4s → 2.2s (CSS + timeout JS synchronisés)
+- **Supprimer équipement** `EquipmentManagePage` : `window.confirm` supprimé, bouton Remove fonctionne direct sur iOS
+- **Équipement profil** : suppression des 47 demo items du seed + filtre `provider !== 'demo'` en localStorage ; `EQUIPMENT_CATALOG` séparé pour lookup des lives mockups (IDs toujours résolus)
+- **Nudge équipement** : encadré pointillé cyan affiché en haut de l'onglet Equipment quand vide (remplace "About sponsorships" qui disparaît temporairement)
+- **Catégories équipement** : affichées même à 0 item (plus d'empty state qui masquait tout)
+- **Firestore** : collection `creatorEquipment` vidée pour tous les vrais profils
+
+---
+
 ## 2026-09-28 — QA audit — 4 bugs P1 corrigés
 
 - **BUG-10** `ExplorePage` : follow/unfollow met à jour le bouton immédiatement (état optimiste local, plus besoin d'attendre Firestore)

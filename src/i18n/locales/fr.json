@@ -381,7 +381,9 @@
     "partnershipTitle": "Intéressé par un partenariat avec ce créateur ?",
     "partnershipDescription": "Les demandes de partenariat sont examinées par Vuvio avant d’être transmises.",
     "partnershipInquiries": "Demandes de partenariat",
-    "sponsorshipDescription": "Les créateurs peuvent marquer leur matériel comme Sponsorisé, Lien affilié ou Fourni par une marque. Vuvio maintient ces étiquettes visibles par souci de transparence."
+    "sponsorshipDescription": "Les créateurs peuvent marquer leur matériel comme Sponsorisé, Lien affilié ou Fourni par une marque. Vuvio maintient ces étiquettes visibles par souci de transparence.",
+    "nudgeText": "Partage le matériel que tu utilises — les viewers adorent savoir ce qui rend ton POV possible.",
+    "nudgeCta": "Ajouter mon équipement"
   },
   "messages": {
     "title": "Messages",
@@ -397,7 +399,26 @@
     "viewReplay": "Voir le replay",
     "viewLive": "Voir le live",
     "unavailableUser": "Utilisateur indisponible",
-    "now": "à l’instant"
+    "now": "à l’instant",
+    "filtersAria": "Filtrer les conversations",
+    "noUsersFound": "Aucun utilisateur trouvé",
+    "startTypingHint": "Commence à taper pour rechercher des utilisateurs",
+    "filters": {
+      "all": "Tous",
+      "unread": "Non lus",
+      "creators": "Créateurs",
+      "requests": "Demandes"
+    },
+    "empty": {
+      "noResults": "Aucun résultat",
+      "unread": "Aucun message non lu",
+      "creators": "Aucune conversation avec un créateur",
+      "requests": "Aucune demande de message",
+      "default": "Aucune conversation pour l’instant",
+      "tryAnother": "Essaie une autre recherche",
+      "ctaBody": "Découvre des créateurs et commence une conversation",
+      "exploreCta": "Explorer"
+    }
   },
   "categories": {
     "air": {
@@ -496,6 +517,56 @@
       "checkEmailTitle": "Vérifiez vos e-mails",
       "checkEmailBody": "Si un compte existe pour <strong>{{email}}</strong>, un lien de réinitialisation a été envoyé.",
       "backToLogin": "Retour à la connexion"
+    }
+  },
+  "scheduleLive": {
+    "title": "Planifier un live",
+    "editTitle": "Modifier le live planifié",
+    "saveChanges": "Enregistrer",
+    "cancelLive": "Annuler ce live",
+    "fields": {
+      "title": "Titre",
+      "titlePlaceholder": "Qu'est-ce que tu vas faire ?",
+      "datetime": "Date et heure",
+      "category": "Catégorie",
+      "environment": "Environnement",
+      "city": "Ville",
+      "cityPlaceholder": "Paris, Lyon…",
+      "description": "Description",
+      "descriptionPlaceholder": "Dis aux spectateurs ce qui les attend…",
+      "visibility": "Visibilité"
+    },
+    "optional": "(optionnel)",
+    "environments": {
+      "land": "Terre",
+      "water": "Eau",
+      "air": "Air",
+      "urban": "Urbain",
+      "other": "Autre"
+    },
+    "visibilities": {
+      "public": "Public",
+      "followers": "Abonnés seulement",
+      "private": "Privé"
+    },
+    "errors": {
+      "titleRequired": "Ajoute un titre",
+      "datetimeRequired": "Choisis une date et une heure",
+      "tooSoon": "Planifie au moins 5 minutes à l'avance",
+      "scheduleFailed": "Impossible d'enregistrer. Réessaie."
+    }
+  },
+  "social": {
+    "privacy": {
+      "title": "Activité en direct",
+      "whoCanSee": "Qui peut voir mon activité de visionnage ?",
+      "whoCanSeeDesc": "Contrôle qui peut voir ce que tu regardes en temps réel.",
+      "friends": "Personnes que je suis",
+      "nobody": "Personne",
+      "showIndicator": "Afficher mon indicateur de visionnage",
+      "showIndicatorDesc": "Permet aux autres de voir une pulsation quand tu regardes un live.",
+      "proTipLabel": "Astuce :",
+      "proTipBody": "Mettre sur « Personne » masque ta présence dans tous les fils live et l'activité de tes amis."
     }
   }
 }

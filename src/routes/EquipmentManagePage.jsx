@@ -304,7 +304,6 @@ export default function EquipmentManagePage() {
                       await refreshItems();
                     }}
                     onRemove={async () => {
-                      if (!window.confirm('Remove this equipment? Past live records will remain available.')) return;
                       removeEquipmentItem(item.id);
                       await refreshItems();
                       showToast('Equipment removed');

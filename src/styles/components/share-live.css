@@ -45,8 +45,8 @@
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  background: rgba(255, 50, 80, 0.88);
-  color: #fff;
+  background: rgba(43, 217, 200, 0.88);
+  color: #0a1e30;
   font-size: 9px;
   font-weight: 800;
   letter-spacing: 0.08em;
@@ -59,7 +59,7 @@
   width: 5px;
   height: 5px;
   border-radius: 50%;
-  background: #fff;
+  background: #0a1e30;
   flex-shrink: 0;
   animation: sls-dot-pulse 1.4s ease-in-out infinite;
 }
@@ -651,8 +651,8 @@
   display: flex;
   align-items: center;
   gap: 4px;
-  background: rgba(255, 50, 80, 0.88);
-  color: #fff;
+  background: rgba(43, 217, 200, 0.88);
+  color: #0a1e30;
   font-size: 7px;
   font-weight: 800;
   letter-spacing: 0.1em;
@@ -665,7 +665,7 @@
   width: 4px;
   height: 4px;
   border-radius: 50%;
-  background: #fff;
+  background: #0a1e30;
   flex-shrink: 0;
   animation: sls-dot-pulse 1.6s ease-in-out infinite;
 }

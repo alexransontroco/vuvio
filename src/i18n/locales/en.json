@@ -397,7 +397,9 @@
     "partnershipTitle": "Interested in partnering with this creator?",
     "partnershipDescription": "Partnership requests are reviewed by Vuvio before being shared.",
     "partnershipInquiries": "Partnership inquiries",
-    "sponsorshipDescription": "Creators can mark gear as Sponsored, Affiliate link, or Provided by a brand. Vuvio keeps those labels visible for transparency."
+    "sponsorshipDescription": "Creators can mark gear as Sponsored, Affiliate link, or Provided by a brand. Vuvio keeps those labels visible for transparency.",
+    "nudgeText": "Share the gear you use — viewers love knowing what makes your POV possible.",
+    "nudgeCta": "Add my equipment"
   },
   "messages": {
     "title": "Messages",
@@ -413,7 +415,26 @@
     "viewReplay": "View replay",
     "viewLive": "View live",
     "unavailableUser": "Unavailable user",
-    "now": "now"
+    "now": "now",
+    "filtersAria": "Filter conversations",
+    "noUsersFound": "No users found",
+    "startTypingHint": "Start typing to search for users",
+    "filters": {
+      "all": "All",
+      "unread": "Unread",
+      "creators": "Creators",
+      "requests": "Requests"
+    },
+    "empty": {
+      "noResults": "No results",
+      "unread": "No unread messages",
+      "creators": "No creator conversations",
+      "requests": "No message requests",
+      "default": "No conversations yet",
+      "tryAnother": "Try a different search",
+      "ctaBody": "Discover creators and start a conversation",
+      "exploreCta": "Explore"
+    }
   },
   "settings": {
     "title": "Settings",
@@ -615,6 +636,56 @@
       "checkEmailTitle": "Check your email",
       "checkEmailBody": "If an account exists for <strong>{{email}}</strong>, a password reset link has been sent.",
       "backToLogin": "Back to login"
+    }
+  },
+  "scheduleLive": {
+    "title": "Schedule a live",
+    "editTitle": "Edit scheduled live",
+    "saveChanges": "Save changes",
+    "cancelLive": "Cancel this live",
+    "fields": {
+      "title": "Title",
+      "titlePlaceholder": "What will you be doing?",
+      "datetime": "Date & time",
+      "category": "Category",
+      "environment": "Environment",
+      "city": "City",
+      "cityPlaceholder": "Paris, London…",
+      "description": "Description",
+      "descriptionPlaceholder": "Tell viewers what to expect…",
+      "visibility": "Visibility"
+    },
+    "optional": "(optional)",
+    "environments": {
+      "land": "Land",
+      "water": "Water",
+      "air": "Air",
+      "urban": "Urban",
+      "other": "Other"
+    },
+    "visibilities": {
+      "public": "Public",
+      "followers": "Followers only",
+      "private": "Private"
+    },
+    "errors": {
+      "titleRequired": "Please add a title",
+      "datetimeRequired": "Please pick a date and time",
+      "tooSoon": "Schedule at least 5 minutes from now",
+      "scheduleFailed": "Could not save. Please try again."
+    }
+  },
+  "social": {
+    "privacy": {
+      "title": "Live activity",
+      "whoCanSee": "Who can see my viewing activity?",
+      "whoCanSeeDesc": "Control who can see what you're watching in real time.",
+      "friends": "People I follow",
+      "nobody": "Nobody",
+      "showIndicator": "Show my watching indicator",
+      "showIndicatorDesc": "Lets others see a pulse when you're watching a live.",
+      "proTipLabel": "Tip:",
+      "proTipBody": "Setting to \"Nobody\" hides your presence from all live feeds and friend activity."
     }
   }
 }
