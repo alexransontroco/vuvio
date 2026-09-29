@@ -55,6 +55,18 @@
   box-shadow: 0 1px 0 rgba(53, 227, 220, 0.06) inset;
 }
 
+.creator-cover--empty {
+  height: 52px;
+}
+
+.creator-cover--empty .creator-cover__shade {
+  display: none;
+}
+
+.creator-cover--empty ~ .creator-profile-content {
+  margin-top: -8px;
+}
+
 .creator-cover img {
   width: 100%;
   height: 100%;
@@ -390,9 +402,19 @@
   color: var(--vuvio-cyan-soft);
 }
 
+.creator-stats-wrap {
+  display: flex;
+  flex-direction: column;
+}
+
 .creator-stats {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
+}
+
+.creator-stats--secondary {
+  grid-template-columns: repeat(2, 1fr);
+  border-top: 0.5px solid rgba(255, 255, 255, 0.07);
 }
 
 .creator-stats article {
@@ -1112,6 +1134,9 @@
   border: 0;
   background: transparent;
   color: var(--profile-muted);
+  font-size: 12px;
+  padding: 4px 8px;
+  min-height: unset;
 }
 
 .gear-in-live {
@@ -1204,8 +1229,9 @@
 
 .equipment-manage-screen {
   display: grid;
+  align-content: start;
   gap: 14px;
-  padding: calc(var(--safe-top) + 16px) 14px calc(var(--nav-height) + var(--safe-bottom) + 24px);
+  padding: calc(env(safe-area-inset-top, 0px) + 36px) 14px calc(var(--nav-height) + var(--safe-bottom) + 24px);
   background: var(--profile-bg);
 }
 
@@ -1254,7 +1280,7 @@
   padding: 14px;
 }
 
-.equipment-private-form input,
+.equipment-private-form input:not(.product-search__input),
 .equipment-private-form select,
 .equipment-private-form textarea {
   width: 100%;
@@ -1266,6 +1292,13 @@
   padding: 11px 12px;
   font: inherit;
   font-size: 13px;
+}
+
+.equipment-field-error {
+  display: block;
+  margin-top: 5px;
+  color: #ff7b7b;
+  font-size: 11.5px;
 }
 
 .equipment-private-toggles {
@@ -1294,6 +1327,7 @@
   font-size: 12px;
   font-weight: 680;
 }
+
 
 .equipment-manage-actions {
   display: flex;
@@ -1418,12 +1452,15 @@
 
 .about-section,
 .profile-shortcuts {
-  display: grid;
-  gap: 9px;
+  display: flex;
+  flex-direction: column;
+  border: 0.5px solid rgba(255, 255, 255, 0.07);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.03);
+  overflow: hidden;
 }
 
-.about-section article,
-.profile-shortcuts button {
+.about-section article {
   border: 0.5px solid rgba(255, 255, 255, 0.07);
   border-radius: 18px;
   background: rgba(255, 255, 255, 0.03);
@@ -1448,30 +1485,77 @@
 }
 
 .about-section__links {
-  display: grid;
-  gap: 7px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 20px;
+  margin-bottom: 24px;
 }
 
-.about-section__links button,
-.profile-shortcuts button {
-  min-height: 44px;
-  border: 0;
-  background: transparent;
-  color: rgba(247, 249, 252, 0.84);
-  text-align: left;
-  font-size: 13px;
+.about-section__links-label {
+  color: rgba(242, 247, 246, 0.45);
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: 4px;
+}
+
+.about-section__link {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 0;
+  color: rgba(247, 249, 252, 0.88);
+  font-size: 14px;
+  font-weight: 500;
+  text-decoration: none;
+  cursor: pointer;
+  transition: color 150ms ease;
+}
+
+.about-section__link svg {
+  flex-shrink: 0;
+}
+
+.about-section__link:hover {
+  color: var(--vuvio-cyan);
 }
 
 .profile-shortcuts button {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  padding: 15px 16px;
+  border: none;
+  border-top: 0.5px solid rgba(255, 255, 255, 0.06);
+  border-radius: 0;
+  background: transparent;
+  color: var(--profile-text);
+  font-size: 15px;
+  font-weight: 480;
+  cursor: pointer;
+  transition: background 120ms ease;
+}
+
+.profile-shortcuts button:first-child {
+  border-top: none;
+}
+
+.profile-shortcuts button:active {
+  background: rgba(255, 255, 255, 0.05);
 }
 
 .profile-shortcuts span {
   display: inline-flex;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
+  color: var(--profile-text);
+}
+
+.profile-shortcuts span svg {
+  color: var(--vuvio-cyan-soft);
+  opacity: 0.85;
 }
 
 .profile-image-sheet {
@@ -1699,6 +1783,11 @@
   height: 216px;
   overflow: hidden;
   background: rgba(255, 255, 255, 0.04);
+}
+
+.edit-image-editor__cover--empty {
+  height: 80px;
+  background: transparent;
 }
 
 .edit-image-editor__cover img {

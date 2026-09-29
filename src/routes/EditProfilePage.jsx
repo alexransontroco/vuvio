@@ -1,4 +1,5 @@
 import { Camera, ChevronLeft, Plus, Trash2, X } from 'lucide-react';
+import { ACTIVITY_CATEGORIES } from '../data/activityCategories.js';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
@@ -64,7 +65,7 @@ function ProfileImagesEditor({ form, onImageChange, onError }) {
 
   return (
     <section className="edit-image-editor" aria-label={t('editProfile.profileImages')}>
-      <div className="edit-image-editor__cover" style={!form.coverUrl ? { background: 'linear-gradient(135deg, #0f1419 0%, #1a2332 100%)' } : undefined}>
+      <div className={`edit-image-editor__cover${form.coverUrl ? '' : ' edit-image-editor__cover--empty'}`}>
         {form.coverUrl ? <img src={form.coverUrl} alt={t('editProfile.coverPreview')} /> : null}
         <button type="button" onClick={() => coverInputRef.current?.click()}>
           <Camera size={15} strokeWidth={1.9} />
@@ -132,6 +133,7 @@ function ChipSelector({ title, options, value, onChange, labelFor }) {
 function PlaylistsEditor({ playlists, onChange }) {
   const [newPlaylistUrl, setNewPlaylistUrl] = useState('');
   const [newPlaylistName, setNewPlaylistName] = useState('');
+  const [newPlaylistCategory, setNewPlaylistCategory] = useState(null);
   const [addError, setAddError] = useState('');
   const { t } = useTranslation();
 
@@ -166,12 +168,14 @@ function PlaylistsEditor({ playlists, onChange }) {
         name: newPlaylistName.trim(),
         spotifyUrl: newPlaylistUrl.trim(),
         platform: 'Spotify',
+        category: newPlaylistCategory,
       },
     ];
 
     onChange(updated);
     setNewPlaylistName('');
     setNewPlaylistUrl('');
+    setNewPlaylistCategory(null);
   };
 
   const handleRemove = (id) => {
@@ -186,6 +190,41 @@ function PlaylistsEditor({ playlists, onChange }) {
       </p>
 
       {addError && <p style={{ color: '#ff6b6b', marginBottom: '12px', fontSize: '13px' }}>{addError}</p>}
+
+      <div style={{ overflowX: 'auto', display: 'flex', gap: '8px', paddingBottom: '4px', marginBottom: '16px', scrollbarWidth: 'none' }}>
+        <button
+          type="button"
+          onClick={() => setNewPlaylistCategory(null)}
+          style={{
+            display: 'inline-flex', alignItems: 'center', gap: '5px',
+            padding: '6px 12px', borderRadius: '999px', fontSize: '12px', fontWeight: '600',
+            whiteSpace: 'nowrap', cursor: 'pointer', border: '0.5px solid',
+            borderColor: newPlaylistCategory === null ? 'rgba(43,217,200,0.5)' : 'rgba(255,255,255,0.1)',
+            background: newPlaylistCategory === null ? 'rgba(43,217,200,0.1)' : 'rgba(255,255,255,0.04)',
+            color: newPlaylistCategory === null ? '#2bd9c8' : 'rgba(242,247,246,0.55)',
+          }}
+        >
+          Général
+        </button>
+        {ACTIVITY_CATEGORIES.map((cat) => (
+          <button
+            key={cat.id}
+            type="button"
+            onClick={() => setNewPlaylistCategory(cat.id)}
+            style={{
+              display: 'inline-flex', alignItems: 'center', gap: '5px',
+              padding: '6px 12px', borderRadius: '999px', fontSize: '12px', fontWeight: '600',
+              whiteSpace: 'nowrap', cursor: 'pointer', border: '0.5px solid',
+              borderColor: newPlaylistCategory === cat.id ? 'rgba(43,217,200,0.5)' : 'rgba(255,255,255,0.1)',
+              background: newPlaylistCategory === cat.id ? 'rgba(43,217,200,0.1)' : 'rgba(255,255,255,0.04)',
+              color: newPlaylistCategory === cat.id ? '#2bd9c8' : 'rgba(242,247,246,0.55)',
+            }}
+          >
+            <cat.icon size={13} strokeWidth={1.8} style={{ color: newPlaylistCategory === cat.id ? cat.color : 'rgba(242,247,246,0.4)' }} />
+            {cat.label}
+          </button>
+        ))}
+      </div>
 
       <div style={{ display: 'grid', gap: '12px', marginBottom: '20px' }}>
         <label style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
@@ -208,12 +247,12 @@ function PlaylistsEditor({ playlists, onChange }) {
           />
         </label>
         <label style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-          <span style={{ fontSize: '13px', fontWeight: '600', color: 'rgba(242, 247, 246, 0.92)' }}>Spotify playlist URL</span>
+          <span style={{ fontSize: '13px', fontWeight: '600', color: 'rgba(242, 247, 246, 0.92)' }}>{t('editProfile.playlistUrl')}</span>
           <input
             type="url"
             value={newPlaylistUrl}
             onChange={(e) => setNewPlaylistUrl(e.target.value)}
-            placeholder="https://open.spotify.com/playlist/..."
+            placeholder={t('editProfile.playlistUrlPlaceholder')}
             style={{
               padding: '12px',
               borderRadius: '8px',
@@ -253,7 +292,7 @@ function PlaylistsEditor({ playlists, onChange }) {
           }}
         >
           <Plus size={16} strokeWidth={2} />
-          Add playlist
+          {t('editProfile.playlistAdd')}
         </button>
       </div>
 
@@ -265,41 +304,54 @@ function PlaylistsEditor({ playlists, onChange }) {
               style={{
                 display: 'flex',
                 alignItems: 'center',
-                justifyContent: 'space-between',
-                padding: '12px',
-                borderRadius: '8px',
-                background: 'rgba(255, 255, 255, 0.03)',
-                border: '0.5px solid rgba(43, 217, 200, 0.15)',
+                gap: '12px',
+                padding: '10px 12px',
+                borderRadius: '10px',
+                background: 'rgba(30, 215, 96, 0.06)',
+                border: '0.5px solid rgba(30, 215, 96, 0.2)',
               }}
             >
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" aria-hidden="true" style={{ flexShrink: 0 }}>
+                <circle cx="12" cy="12" r="12" fill="#1ED760" />
+                <path d="M7 9.5c2.8-1 6.4-.8 8.8.8" stroke="white" strokeWidth="1.4" strokeLinecap="round" />
+                <path d="M7.5 12c2.4-.8 5.5-.6 7.5.8" stroke="white" strokeWidth="1.4" strokeLinecap="round" />
+                <path d="M8 14.5c1.9-.6 4.3-.4 5.8.6" stroke="white" strokeWidth="1.4" strokeLinecap="round" />
+              </svg>
               <div style={{ flex: 1, minWidth: 0 }}>
-                <p style={{ margin: '0 0 4px 0', fontSize: '13px', fontWeight: '600', color: 'rgba(242, 247, 246, 0.92)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                <p style={{ margin: 0, fontSize: '13px', fontWeight: '600', color: 'rgba(242, 247, 246, 0.95)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                   {playlist.name}
                 </p>
-                <p style={{ margin: 0, fontSize: '11px', color: 'rgba(242, 247, 246, 0.52)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                  {playlist.spotifyUrl}
-                </p>
+                {(() => {
+                  const cat = playlist.category ? ACTIVITY_CATEGORIES.find((c) => c.id === playlist.category) : null;
+                  return cat ? (
+                    <p style={{ margin: '2px 0 0', fontSize: '11px', color: cat.color, fontWeight: 500, display: 'flex', alignItems: 'center', gap: '3px' }}>
+                      <cat.icon size={10} strokeWidth={2} />
+                      {cat.label}
+                    </p>
+                  ) : (
+                    <p style={{ margin: '2px 0 0', fontSize: '11px', color: '#1ED760', fontWeight: 500 }}>Spotify</p>
+                  );
+                })()}
               </div>
               <button
                 type="button"
                 onClick={() => handleRemove(playlist.id)}
                 style={{
-                  marginLeft: '12px',
-                  padding: '8px',
-                  background: 'rgba(255, 107, 107, 0.1)',
+                  flexShrink: 0,
+                  padding: '6px',
+                  background: 'transparent',
                   border: 'none',
                   borderRadius: '6px',
-                  color: '#ff6b6b',
+                  color: 'rgba(242, 247, 246, 0.3)',
                   cursor: 'pointer',
                   display: 'flex',
                   alignItems: 'center',
-                  justifyContent: 'center',
-                  transition: 'all 150ms ease',
+                  transition: 'color 150ms ease',
                 }}
-                onMouseEnter={(e) => e.target.style.background = 'rgba(255, 107, 107, 0.15)'}
-                onMouseLeave={(e) => e.target.style.background = 'rgba(255, 107, 107, 0.1)'}
+                onMouseEnter={(e) => e.currentTarget.style.color = '#ff6b6b'}
+                onMouseLeave={(e) => e.currentTarget.style.color = 'rgba(242, 247, 246, 0.3)'}
               >
-                <Trash2 size={16} strokeWidth={2} />
+                <Trash2 size={15} strokeWidth={2} />
               </button>
             </div>
           ))}

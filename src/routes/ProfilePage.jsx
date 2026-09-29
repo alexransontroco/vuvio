@@ -7,6 +7,7 @@ import {
   ChevronRight,
   Clock3,
   Eye,
+  Globe2,
   MessageCircle,
   MoreHorizontal,
   Play,
@@ -14,7 +15,34 @@ import {
   Share2,
   Sparkles,
 } from 'lucide-react';
-import { useEffect, useMemo, useRef, useState } from 'react';
+
+function IconInstagram({ size = 16 }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <rect x="2" y="2" width="20" height="20" rx="5" ry="5" stroke="url(#ig-grad)" strokeWidth="2" />
+      <circle cx="12" cy="12" r="4.5" stroke="url(#ig-grad)" strokeWidth="2" />
+      <circle cx="17.5" cy="6.5" r="1" fill="url(#ig-grad)" />
+      <defs>
+        <linearGradient id="ig-grad" x1="2" y1="22" x2="22" y2="2" gradientUnits="userSpaceOnUse">
+          <stop offset="0%" stopColor="#f9ce34" />
+          <stop offset="30%" stopColor="#ee2a7b" />
+          <stop offset="65%" stopColor="#9b27af" />
+          <stop offset="100%" stopColor="#4f5bd5" />
+        </linearGradient>
+      </defs>
+    </svg>
+  );
+}
+
+function IconYouTube({ size = 16 }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path d="M22.54 6.42a2.78 2.78 0 0 0-1.95-1.96C18.88 4 12 4 12 4s-6.88 0-8.59.46A2.78 2.78 0 0 0 1.46 6.42 29 29 0 0 0 1 12a29 29 0 0 0 .46 5.58 2.78 2.78 0 0 0 1.95 1.96C5.12 20 12 20 12 20s6.88 0 8.59-.46a2.78 2.78 0 0 0 1.95-1.96A29 29 0 0 0 23 12a29 29 0 0 0-.46-5.58z" fill="#FF0000" />
+      <polygon points="9.75,15.02 15.5,12 9.75,8.98" fill="white" />
+    </svg>
+  );
+}
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { getDoc, doc, collection, query, where, getDocs } from 'firebase/firestore';
@@ -55,6 +83,14 @@ function formatCompact(value = 0) {
   }
 
   return String(value);
+}
+
+function formatHours(value = 0) {
+  if (value >= 1000) {
+    return `${(value / 1000).toLocaleString('fr-FR', { maximumFractionDigits: 1 })} k h`;
+  }
+
+  return `${value} h`;
 }
 
 function formatCreatedAt(createdAt) {
@@ -129,11 +165,11 @@ function ProfileCover({ profile, isOwnProfile, onShare, notifUnread, notificatio
   const handleNotifNavigate = (target) => { setNotifOpen(false); navigate(target); };
 
   return (
-    <header className="creator-cover" style={!hasCover ? { background: 'linear-gradient(135deg, #0f1419 0%, #1a2332 100%)' } : undefined}>
+    <header className={`creator-cover${hasCover ? '' : ' creator-cover--empty'}`}>
       {hasCover ? <img src={profile.coverUrl} alt={t('profile.coverAlt')} /> : null}
       <div className="creator-cover__shade" />
       <div className="creator-cover__topbar">
-        <button type="button" className="creator-icon-button" onClick={() => (isOwnProfile ? navigate('/discover') : navigate(-1))} aria-label={t('common.back')}>
+        <button type="button" className="creator-icon-button" onClick={() => navigate(-1)} aria-label={t('common.back')}>
           <ChevronLeft size={20} strokeWidth={1.9} />
         </button>
         <div className="creator-cover__actions">
@@ -326,26 +362,43 @@ function ProfileStats({ profile, isOwnProfile, onViewFollowing }) {
   const followingCount = Array.isArray(profile.followedCreators)
     ? profile.followedCreators.length
     : (profile.followingCount ?? 0);
-  const stats = [
+  const isStreamer = (profile.liveCount ?? 0) > 0;
+  const mainStats = [
     { value: profile.liveCount, key: 'lives', label: t('profile.statsLives') },
     { value: formatCompact(profile.followersCount), key: 'followers', label: t('profile.statsFollowers') },
     { value: formatCompact(followingCount), key: 'following', label: t('profile.statsFollowing'), clickable: isOwnProfile },
   ];
+  const streamerStats = [
+    { value: formatCompact(profile.totalViews), key: 'views', label: t('profile.statsViews') },
+    { value: formatHours(profile.totalLiveHours), key: 'hours', label: t('profile.statsHours') },
+  ];
 
   return (
-    <section className="creator-stats" aria-label={t('profile.creatorStats')}>
-      {stats.map((stat) => (
-        <article
-          key={stat.key}
-          className={stat.clickable ? 'creator-stats__clickable' : ''}
-          onClick={stat.clickable ? onViewFollowing : undefined}
-          role={stat.clickable ? 'button' : undefined}
-          tabIndex={stat.clickable ? 0 : undefined}
-        >
-          <strong>{stat.value}</strong>
-          <span>{stat.label}</span>
-        </article>
-      ))}
+    <section className="creator-stats-wrap" aria-label={t('profile.creatorStats')}>
+      <div className="creator-stats">
+        {mainStats.map((stat) => (
+          <article
+            key={stat.key}
+            className={stat.clickable ? 'creator-stats__clickable' : ''}
+            onClick={stat.clickable ? onViewFollowing : undefined}
+            role={stat.clickable ? 'button' : undefined}
+            tabIndex={stat.clickable ? 0 : undefined}
+          >
+            <strong>{stat.value}</strong>
+            <span>{stat.label}</span>
+          </article>
+        ))}
+      </div>
+      {isStreamer && (
+        <div className="creator-stats creator-stats--secondary">
+          {streamerStats.map((stat) => (
+            <article key={stat.key}>
+              <strong>{stat.value}</strong>
+              <span>{stat.label}</span>
+            </article>
+          ))}
+        </div>
+      )}
     </section>
   );
 }
@@ -609,57 +662,71 @@ function UpcomingLivesTab({ lives, isOwnProfile, notifiedIds, onNotify, onManage
 function AboutTab({ profile }) {
   const { t } = useTranslation();
   const links = [
-    profile.websiteUrl ? { label: t('profile.linkWebsite'), value: profile.websiteUrl } : null,
-    profile.instagramUrl ? { label: t('profile.linkInstagram'), value: profile.instagramUrl.startsWith('http') ? profile.instagramUrl : `@${profile.instagramUrl}` } : null,
-    profile.youtubeUrl ? { label: t('profile.linkYoutube'), value: profile.youtubeUrl } : null,
+    profile.websiteUrl ? {
+      icon: <Globe2 size={18} strokeWidth={1.8} />,
+      href: profile.websiteUrl.startsWith('http') ? profile.websiteUrl : `https://${profile.websiteUrl}`,
+      value: profile.websiteUrl.replace(/^https?:\/\/(www\.)?/, '').replace(/\/.*$/, ''),
+    } : null,
+    profile.instagramUrl ? {
+      icon: <IconInstagram size={18} />,
+      href: profile.instagramUrl.startsWith('http') ? profile.instagramUrl : `https://instagram.com/${profile.instagramUrl.replace(/^@/, '')}`,
+      value: '@' + profile.instagramUrl.replace(/^https?:\/\/(www\.)?instagram\.com\//, '').replace(/^@/, '').replace(/[/?#].*$/, '').replace(/\/$/, ''),
+    } : null,
+    profile.youtubeUrl ? {
+      icon: <IconYouTube size={18} />,
+      href: profile.youtubeUrl.startsWith('http') ? profile.youtubeUrl.replace(/[?#].*$/, '') : `https://youtube.com/@${profile.youtubeUrl.replace(/^@/, '')}`,
+      value: '@' + profile.youtubeUrl.replace(/^https?:\/\/(www\.)?youtube\.com\/@?/, '').replace(/[?#].*$/, '').replace(/\/$/, '').replace(/^@/, ''),
+    } : null,
   ].filter(Boolean);
 
   return (
-    <section className="about-section" aria-label={t('profile.aboutCreator')}>
-      <article>
-        <span>{t('profile.activity')}</span>
-        <strong>{profile.profession}</strong>
-      </article>
-      <article>
-        <span>{t('profile.location')}</span>
-        <strong>{profile.city}, {profile.country}</strong>
-      </article>
-      {profile.languages?.length ? (
+    <>
+      <section className="about-section" aria-label={t('profile.aboutCreator')}>
         <article>
-          <span>{t('profile.spokenLanguages')}</span>
-          <strong>{profile.languages.join(' · ')}</strong>
+          <span>{t('profile.activity')}</span>
+          <strong>{profile.profession}</strong>
         </article>
-      ) : null}
-      {profile.categories?.length ? (
         <article>
-          <span>{t('profile.categories')}</span>
-          <strong>{profile.categories.join(' · ')}</strong>
+          <span>{t('profile.location')}</span>
+          <strong>{profile.city}, {profile.country}</strong>
         </article>
-      ) : null}
-      {formatCreatedAt(profile.createdAt) ? (
-        <article>
-          <span>{t('profile.memberSince')}</span>
-          <strong>{formatCreatedAt(profile.createdAt)}</strong>
-        </article>
-      ) : null}
+        {profile.languages?.length ? (
+          <article>
+            <span>{t('profile.spokenLanguages')}</span>
+            <strong>{profile.languages.join(' · ')}</strong>
+          </article>
+        ) : null}
+        {profile.categories?.length ? (
+          <article>
+            <span>{t('profile.categories')}</span>
+            <strong>{profile.categories.join(' · ')}</strong>
+          </article>
+        ) : null}
+        {formatCreatedAt(profile.createdAt) ? (
+          <article>
+            <span>{t('profile.memberSince')}</span>
+            <strong>{formatCreatedAt(profile.createdAt)}</strong>
+          </article>
+        ) : null}
+      </section>
       {links.length ? (
-        <article>
-          <span>{t('profile.links')}</span>
-          <div className="about-section__links">
-            {links.map((link) => (
-              <button key={link.label} type="button">{link.label} · {link.value}</button>
-            ))}
-          </div>
-        </article>
+        <div className="about-section__links">
+          <span className="about-section__links-label">{t('profile.links')}</span>
+          {links.map((link) => (
+            <a key={link.href} href={link.href} target="_blank" rel="noopener noreferrer" className="about-section__link">
+              {link.icon}
+              <span>{link.value}</span>
+            </a>
+          ))}
+        </div>
       ) : null}
-    </section>
+    </>
   );
 }
 
 function EquipmentTab({ equipment, liveEquipment, isOwnProfile, displayName, onManage, onViewLive }) {
   const { t } = useTranslation();
   const [activeCategoryId, setActiveCategoryId] = useState(null);
-  const [sponsorshipOpen, setSponsorshipOpen] = useState(false);
   const publicEquipment = equipment.filter((item) => item.isPublic);
   const groups = groupEquipmentByCategory(publicEquipment);
   const selectedGroup = groups.find((group) => group.id === activeCategoryId);
@@ -671,9 +738,6 @@ function EquipmentTab({ equipment, liveEquipment, isOwnProfile, displayName, onM
           <h2>{isOwnProfile ? t('equipment.myEquipment') : t('equipment.creatorEquipment', { name: displayName })}</h2>
           <p>{isOwnProfile ? t('equipment.ownDescription') : t('equipment.creatorDescription', { name: displayName })}</p>
         </div>
-        {!isOwnProfile || publicEquipment.length ? (
-          <button type="button" onClick={() => setSponsorshipOpen(true)}>{t('equipment.aboutSponsorships')}</button>
-        ) : null}
       </div>
 
       {isOwnProfile && !publicEquipment.length ? (
@@ -685,51 +749,32 @@ function EquipmentTab({ equipment, liveEquipment, isOwnProfile, displayName, onM
 
       <div className="equipment-category-list">
         {groups.map((category) => (
-          <EquipmentCategoryCard
-            key={category.id}
-            category={category}
-            count={category.items.length}
-            onClick={() => setActiveCategoryId((current) => (current === category.id ? null : category.id))}
-          />
+          <React.Fragment key={category.id}>
+            <EquipmentCategoryCard
+              category={category}
+              count={category.items.length}
+              onClick={() => setActiveCategoryId((current) => (current === category.id ? null : category.id))}
+            />
+            {activeCategoryId === category.id && category.items.length > 0 ? (
+              <section className="equipment-detail-panel" aria-label={t('equipment.categoryEquipment', { label: category.label })}>
+                <header>
+                  <h3>{category.label}</h3>
+                  <button type="button" onClick={() => setActiveCategoryId(null)}>{t('common.close')}</button>
+                </header>
+                {category.items.map((item) => (
+                  <EquipmentItemRow key={item.id} item={item} />
+                ))}
+              </section>
+            ) : null}
+          </React.Fragment>
         ))}
       </div>
-
-      {selectedGroup ? (
-        <section className="equipment-detail-panel" aria-label={t('equipment.categoryEquipment', { label: selectedGroup.label })}>
-          <header>
-            <h3>{selectedGroup.label}</h3>
-            <button type="button" onClick={() => setActiveCategoryId(null)}>{t('common.close')}</button>
-          </header>
-          {selectedGroup.items.map((item) => (
-            <EquipmentItemRow key={item.id} item={item} />
-          ))}
-        </section>
-      ) : null}
 
       <GearInLive items={liveEquipment} onViewLive={onViewLive} />
       <EquipmentDisclosure items={publicEquipment} />
 
-      <section className="equipment-partnership-card">
-        <div>
-          <h2>{t('equipment.partnershipTitle')}</h2>
-          <p>{t('equipment.partnershipDescription')}</p>
-        </div>
-        <button type="button" onClick={() => setSponsorshipOpen(true)}>{t('equipment.partnershipInquiries')}</button>
-      </section>
-
       {isOwnProfile ? (
         <button type="button" className="equipment-manage-link" onClick={onManage}>{t('profile.manageEquipment')}</button>
-      ) : null}
-
-      {sponsorshipOpen ? (
-        <div className="equipment-info-modal" role="dialog" aria-modal="true" aria-label={t('equipment.aboutSponsorships')}>
-          <button type="button" className="equipment-info-modal__backdrop" onClick={() => setSponsorshipOpen(false)} aria-label={t('common.close')} />
-          <div className="equipment-info-modal__panel">
-            <h2>{t('equipment.aboutSponsorships')}</h2>
-            <p>{t('equipment.sponsorshipDescription')}</p>
-            <button type="button" onClick={() => setSponsorshipOpen(false)}>{t('common.close')}</button>
-          </div>
-        </div>
       ) : null}
     </section>
   );
@@ -742,7 +787,7 @@ function OwnProfileShortcuts() {
     { key: 'favorites', label: t('profile.myFavorites'), icon: Bookmark, action: null },
     { key: 'following', label: t('common.following'), icon: Check, action: () => navigate('/profile/following') },
     { key: 'notifications', label: t('profile.myNotifications'), icon: Bell, action: null },
-    { key: 'stats', label: t('profile.stats'), icon: Sparkles, action: null },
+    { key: 'stats', label: t('profile.stats'), icon: Sparkles, action: () => navigate('/profile/stats') },
     { key: 'settings', label: t('common.settings'), icon: Settings, action: () => navigate('/settings') },
   ];
 
@@ -1103,7 +1148,7 @@ export default function ProfilePage() {
               lives={profile.recentLives}
               isOwnProfile={isOwnProfile}
               openMenuId={openMenuId}
-              onOpenLive={(live) => navigate(`/discover?live=${encodeURIComponent(live.id)}`)}
+              onOpenLive={(live) => navigate(`/watch?live=${encodeURIComponent(live.id)}`)}
               onMenu={(id) => setOpenMenuId((current) => (current === id ? null : id))}
             />
           ) : null}
@@ -1120,7 +1165,7 @@ export default function ProfilePage() {
               isOwnProfile={isOwnProfile}
               displayName={profile.displayName}
               onManage={() => navigate('/profile/equipment')}
-              onViewLive={() => navigate(`/discover?live=${encodeURIComponent(profile.currentLive?.id ?? '')}`)}
+              onViewLive={() => navigate(`/watch?live=${encodeURIComponent(profile.currentLive?.id ?? '')}`)}
             />
           ) : null}
           {activeTab === 'highlights' ? (
