@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { Trans, useTranslation } from 'react-i18next';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import BrandMark from '../components/BrandMark.jsx';
+import SEO from '../components/SEO.jsx';
 import { useAuth } from '../context/AuthContext.jsx';
 
 function GoogleIcon() {
@@ -107,6 +108,7 @@ export default function SignupPage() {
 
   return (
     <div className="auth-screen">
+      <SEO title="Creer un compte | Vuvio" description="Creation de compte Vuvio." canonical="/signup" robots="noindex,follow" />
       <div className="auth-panel">
         <Link to="/watch" className="auth-brand" aria-label={t('auth.signup.brandAria')}>
           <BrandMark size={34} showName />

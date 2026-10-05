@@ -7,6 +7,7 @@ import { useStreamView } from '../hooks/useStreamView';
 import { useScheduledStreams } from '../hooks/useScheduledStreams.ts';
 import { analyticsService } from '../services/analytics';
 import BrandMark from '../components/BrandMark.jsx';
+import SEO, { SITE_URL } from '../components/SEO.jsx';
 import CreatorLink from '../components/CreatorLink.jsx';
 import { EquipmentViewerSheet } from '../components/equipment/EquipmentKit.jsx';
 import ShareLiveSheet from '../components/ShareLiveSheet.jsx';

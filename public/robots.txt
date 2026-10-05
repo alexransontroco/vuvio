@@ -1,0 +1,17 @@
+User-agent: *
+Allow: /
+Disallow: /admin
+Disallow: /internal
+Disallow: /login
+Disallow: /signup
+Disallow: /forgot-password
+Disallow: /verify-email
+Disallow: /settings
+Disallow: /messages
+Disallow: /profile/edit
+Disallow: /profile/equipment
+Disallow: /profile/gear
+Disallow: /globe-test-
+Disallow: /splash-test
+
+Sitemap: https://vuvio.app/sitemap.xml

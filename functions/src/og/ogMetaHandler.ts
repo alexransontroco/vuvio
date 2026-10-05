@@ -4,7 +4,7 @@ import { db, collections } from '../shared/firestore.js';
 import { cloudflareCustomerCode } from '../config/env.js';
 import type { StreamDocument } from '../types/stream.js';
 
-const APP_URL = 'https://vuvio-bf328.web.app';
+const APP_URL = 'https://vuvio.app';
 const DEFAULT_IMAGE = 'https://storage.googleapis.com/vuvio-bf328.firebasestorage.app/mock-videos/live-mockups/mockup-dubai-thumb.jpg';
 const LOGO_IMAGE = `${APP_URL}/assets/logo/vuvio-logo.png`;
 const STORAGE_BASE = 'https://storage.googleapis.com/vuvio-bf328.firebasestorage.app/';

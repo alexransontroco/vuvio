@@ -1,7 +1,7 @@
 {
   "name": "Vuvio",
   "short_name": "Vuvio",
-  "description": "Immersive POV lives around the world.",
+  "description": "Métiers, passions et expériences réelles en direct, en POV.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",

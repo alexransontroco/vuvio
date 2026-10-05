@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { Trans, useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 import BrandMark from '../components/BrandMark.jsx';
+import SEO from '../components/SEO.jsx';
 import { useAuth } from '../context/AuthContext.jsx';
 
 export default function ForgotPasswordPage() {
@@ -29,6 +30,7 @@ export default function ForgotPasswordPage() {
 
   return (
     <div className="auth-screen">
+      <SEO title="Mot de passe oublie | Vuvio" description="Reinitialisation du mot de passe Vuvio." canonical="/forgot-password" robots="noindex,follow" />
       <div className="auth-panel">
         <Link to="/home" className="auth-brand" aria-label={t('auth.forgot.brandAria')}>
           <BrandMark size={34} showName />

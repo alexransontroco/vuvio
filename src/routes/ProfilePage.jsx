@@ -43,7 +43,7 @@ function IconYouTube({ size = 16 }) {
   );
 }
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
+import { Link, useLocation, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { getDoc, doc, collection, query, where, getDocs } from 'firebase/firestore';
 import { db } from '../firebase.js';
@@ -76,6 +76,8 @@ import ScheduleLiveSheet from '../components/ScheduleLiveSheet.jsx';
 import { ACTIVITY_CATEGORIES } from '../data/activityCategories.js';
 import NotifPopover from '../components/NotifPopover.jsx';
 import { useNotifications } from '../hooks/useNotifications.js';
+import SEO, { SITE_URL } from '../components/SEO.jsx';
+import { profileDescription, profileUrl } from '../utils/seoData.js';
 
 function formatCompact(value = 0) {
   if (value >= 1000) {
@@ -808,6 +810,7 @@ function OwnProfileShortcuts() {
 
 export default function ProfilePage() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { t } = useTranslation();
   const { creatorId } = useParams();
   const [searchParams] = useSearchParams();
@@ -1041,7 +1044,14 @@ export default function ProfilePage() {
   };
 
   if (state.loading) return <ProfileSkeleton />;
-  if (!state.viewedProfile) return <ProfileState title={t('profile.notFound')}>{t('profile.notFoundBody')}</ProfileState>;
+  if (!state.viewedProfile) {
+    return (
+      <>
+        <SEO title="Profil introuvable | Vuvio" description="Ce profil Vuvio n existe pas ou n est pas public." canonical={location.pathname} robots="noindex,follow" />
+        <ProfileState title={t('profile.notFound')}>{t('profile.notFoundBody')}</ProfileState>
+      </>
+    );
+  }
 
   const profile = {
     ...state.viewedProfile,
@@ -1058,6 +1068,29 @@ export default function ProfilePage() {
     : [];
   const shareProfile = () => showToast(t('profile.linkCopied'));
   const manageLive = (live = null) => { setEditingLive(live); setShowScheduleSheet(true); };
+  const canonical = profileUrl(profile);
+  const description = profileDescription(profile);
+  const image = profile.coverUrl || profile.avatarUrl || '/assets/icons/icon-512.png';
+  const profileJsonLd = [
+    {
+      '@context': 'https://schema.org',
+      '@type': 'ProfilePage',
+      name: `${profile.displayName} - Vuvio`,
+      url: `${SITE_URL}${canonical}`,
+      mainEntity: {
+        '@type': 'Person',
+        name: profile.displayName,
+        description,
+        jobTitle: profile.profession || undefined,
+        image: image.startsWith('http') ? image : `${SITE_URL}${image}`,
+        homeLocation: [profile.city, profile.country].filter(Boolean).length ? {
+          '@type': 'Place',
+          name: [profile.city, profile.country].filter(Boolean).join(', '),
+        } : undefined,
+        knowsAbout: profile.categories?.length ? profile.categories : undefined,
+      },
+    },
+  ];
 
   const handleCancelLive = async (liveId) => {
     try {
@@ -1071,6 +1104,14 @@ export default function ProfilePage() {
 
   return (
     <section className="screen-scroll creator-profile-screen" aria-label={t('profile.profileOf', { name: profile.displayName })}>
+      <SEO
+        title={`${profile.displayName} - Activites et Lives | Vuvio`}
+        description={description}
+        canonical={canonical}
+        image={image}
+        type="profile"
+        jsonLd={profileJsonLd}
+      />
       <ProfilePageHeader isOwnProfile={isOwnProfile} />
       <ProfileCover
         profile={profile}
