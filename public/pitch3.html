@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Vuvio — Pitch Investisseurs 2026</title>
+<style>
+:root{
+  --bg:#06111e;--bg2:#0a1c2f;--card:#0b2135;--line:#0c6f8b;
+  --cyan:#1ed6e5;--text:#f7fbff;--muted:#b5c7d6;--green:#5ce1b9;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:#020811;color:var(--text);font-family:Arial,"Helvetica Neue",Helvetica,sans-serif}
+body{overflow-x:hidden}.deck{width:100%}
+.slide{
+  width:1600px;height:900px;margin:0 auto 24px;padding:48px 60px 48px;position:relative;overflow:hidden;
+  background:radial-gradient(circle at 82% 12%,rgba(0,185,214,.10),transparent 24%),linear-gradient(180deg,var(--bg2),var(--bg));
+  border:1px solid #0c2d46;
+}
+.eyebrow{font-size:15px;letter-spacing:.16em;text-transform:uppercase;color:#d7e5ef;margin-bottom:14px}
+h1{margin:0;font-size:52px;line-height:1.02;letter-spacing:-.03em}
+h2{margin:0;font-size:28px;line-height:1.08}
+h3{margin:0;font-size:19px;line-height:1.12}
+p{margin:0;color:var(--muted);font-size:16px;line-height:1.55}
+.lead{font-size:17px;margin-top:14px;max-width:1350px}.small{font-size:14px}
+.slide-brand{position:absolute;right:24px;bottom:14px;color:#59e2eb;font-size:14px;font-weight:700}
+.card{background:linear-gradient(180deg,rgba(11,33,53,.98),rgba(8,25,41,.98));border:1px solid #0b5874;border-radius:12px;padding:22px}
+.card.compact{min-height:148px}
+.card-title{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+.icon{width:32px;height:32px;border-radius:7px;border:1px solid var(--cyan);display:inline-flex;align-items:center;justify-content:center;color:var(--cyan);font-weight:700;font-size:13px;flex:0 0 auto}
+.step-num{font-size:13px;color:var(--cyan);font-weight:700;letter-spacing:.14em}
+.section-label{font-size:13px;letter-spacing:.12em;text-transform:uppercase;color:#e7f0f7}
+.accent-line{height:4px;width:240px;background:var(--cyan);margin:28px 0 34px}
+.mini-rule{height:1px;background:#0d5672;margin:16px 0}
+figure{margin:0}img{display:block;width:100%;height:100%;object-fit:cover}
+
+/* ── Cover ── */
+.slide-cover{padding:0;background:#020913;position:relative}
+.cover-bg{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center}
+.cover-overlay{position:absolute;inset:0;background:linear-gradient(90deg,rgba(2,9,19,.92) 38%,rgba(2,9,19,.35) 70%,transparent 100%)}
+.cover-copy{position:absolute;top:0;left:0;bottom:0;width:52%;padding:60px 64px;display:flex;flex-direction:column;justify-content:center}
+.slide-cover h1{font-size:72px;line-height:1.06;max-width:800px}.slide-cover h1 span{color:var(--cyan)}
+.cover-subtitle{font-size:21px;color:#d2dde7;max-width:580px}
+.cover-logo{position:absolute;right:80px;top:50%;transform:translateY(-50%);width:260px;height:80px;background:url('/assets/brand/logo2.png') no-repeat center/contain}
+.footer-note{position:absolute;left:64px;bottom:28px;color:#66859b;font-size:12px;letter-spacing:.16em}
+
+/* ── 02 Vision ── */
+.vision-grid{display:grid;grid-template-columns:1.05fr .95fr;gap:24px;margin-top:36px}
+.vision-copy>p{font-size:18px;line-height:1.65}
+.principles{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:28px}.principles h3{margin:12px 0}
+.vision-images{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+.vision-images figure{display:flex;flex-direction:column;gap:9px}
+.vision-images img{height:516px;border:1px solid #0b5874;border-radius:11px}.vision-images figcaption{font-size:12px;letter-spacing:.12em;color:#e7f0f7}
+
+/* ── 03 Positionnement ── */
+.position-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-top:32px}
+.media-card img{height:266px;border-radius:9px;margin-bottom:16px}
+.position-summary{display:grid;grid-template-columns:1.25fr .75fr;gap:16px;margin-top:22px}
+.position-summary>div{padding:22px 24px;border:1px solid #0b5874;border-radius:10px;background:#091b2d}
+.formula{font-size:20px;font-weight:800;display:flex;align-items:center;justify-content:center}.formula span{color:var(--cyan)}
+
+/* ── 04 Écosystème ── */
+.ecosystem-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-top:32px}.ecosystem-grid .card{min-height:210px}
+.journey{display:grid;grid-template-columns:repeat(7,auto);align-items:center;justify-content:space-between;gap:8px;margin-top:44px}
+.journey-step{width:300px}.journey-step img{width:140px;height:140px;border-radius:50%;border:2px solid #0b5874;margin-bottom:12px}
+.journey-step h3{font-size:21px;margin:5px 0}.journey-step p{font-size:14px}
+.journey-arrow{font-size:24px;color:var(--cyan);font-weight:800}
+.journey-quote{margin-top:36px;color:#fff;font-size:24px;font-weight:700}.journey-quote span{color:var(--cyan)}
+
+/* ── 05 Produit (legacy, kept for safety) ── */
+.product-layout{display:grid;grid-template-columns:1.15fr .85fr;gap:16px;margin-top:30px}
+.product-feature-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.product-feature{display:grid;grid-template-columns:145px 1fr;gap:14px}.product-feature img{height:272px;border-radius:8px}
+.product-mini-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:14px}
+.mini-product img{height:100px;border-radius:8px;margin-bottom:12px}.mini-product p{font-size:14px}
+.product-side{display:grid;grid-template-columns:1fr 1fr;gap:14px}.product-side .tall img{height:148px}
+.product-principle{grid-column:1/span 2;min-height:156px}
+
+/* ── 05 Expérience produit v2 ── */
+.slide-05{padding:40px 60px 44px}
+.slide-05 h1{font-size:52px;margin:0 0 20px;line-height:1.04;letter-spacing:-.03em}
+.s05-main-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;height:636px}
+.s05-big-card{background:linear-gradient(180deg,rgba(10,28,48,.98),rgba(7,20,36,.98));border:1px solid #0b5874;border-radius:14px;overflow:hidden;display:flex;flex-direction:column}
+.s05-big-img{height:420px;flex:0 0 420px;overflow:hidden;background:#030c18;display:flex;align-items:center;justify-content:center}
+.s05-big-img img{width:auto;height:100%;max-width:100%;object-fit:contain;display:block}
+.s05-card-info{padding:20px 22px 22px;flex:1;display:flex;flex-direction:column;gap:10px}
+.s05-card-header{display:flex;align-items:center;gap:12px}
+.s05-card-header h2{font-size:24px;margin:0;letter-spacing:-.02em}
+.s05-card-info>p{color:var(--muted);font-size:15px;line-height:1.55;margin:0}
+.s05-bottom-band{display:grid;grid-template-columns:290px 1fr;gap:24px;background:linear-gradient(180deg,rgba(11,33,53,.95),rgba(8,25,41,.95));border:1px solid #0b5874;border-radius:12px;padding:18px 22px 20px;margin-top:14px;align-items:center}
+.s05-et-aussi{font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--cyan);font-weight:700;margin-bottom:7px}
+.s05-bottom-intro>p{font-size:13px;color:var(--muted);line-height:1.55;margin:0}
+.s05-mini-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+.s05-mini-card{background:rgba(8,25,41,.7);border:1px solid #0c3d58;border-radius:10px;overflow:hidden;display:flex;flex-direction:column}
+.s05-mini-img{height:72px;flex:0 0 72px;overflow:hidden;background:#030c18;display:flex;align-items:center;justify-content:center}
+.s05-mini-img img{width:auto;height:100%;max-width:100%;object-fit:contain;display:block}
+.s05-placeholder-img{background:rgba(5,18,32,.9);display:flex;align-items:center;justify-content:center}
+.s05-placeholder-img span{color:#2a4a62;font-size:10px;letter-spacing:.12em;text-transform:uppercase}
+.s05-mini-info{padding:9px 12px 11px}
+.s05-mini-header{display:flex;align-items:center;gap:7px;margin-bottom:4px}
+.s05-mini-header h3{font-size:13px;margin:0;font-weight:700}
+.s05-mini-info>p{font-size:11px;color:var(--muted);line-height:1.4;margin:0}
+.icon-sm{width:22px;height:22px;border-radius:5px;font-size:10px}
+
+/* ── 06 Marché ── */
+.market-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-top:36px}.market-grid .card{min-height:178px}
+.comparison{width:100%;border-collapse:collapse;font-size:14px;margin-top:30px}
+.comparison th,.comparison td{padding:17px 14px;border-bottom:1px solid #0d5672;text-align:left}
+.comparison th{color:#eef7fb}.comparison td{color:#c9d8e4}.comparison td:first-child{font-weight:700;color:#eef7fb}.comparison .focus{background:#0b3b58}
+.market-bottom{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:26px}.market-bottom .card{min-height:170px}
+.pills{display:flex;flex-wrap:wrap;gap:9px;margin-top:16px}.pills span{padding:9px 13px;border-radius:999px;background:#0b324c;border:1px solid #0d6483;font-size:13px;color:#dffaff}
+.market-note{margin-top:24px;padding:18px 20px;border:1px solid #0d5672;border-radius:9px;background:#071b2c;color:#cbd9e4;font-size:15px}
+
+/* ── 07 Business model ── */
+.business-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-top:40px}.business-grid .card{min-height:268px}.business-grid h3{margin:12px 0}
+.business-path{display:grid;grid-template-columns:1fr auto 1fr auto 1fr;gap:14px;align-items:center;margin-top:38px}.business-path h3{margin:10px 0}.business-path .card{min-height:130px}
+.business-footer{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:32px}
+.business-footer div{padding:22px 24px;border:1px solid #0b5874;border-radius:10px;background:#091b2d;color:#cddae5;font-size:16px}
+
+/* ── 08 MVP ── */
+.mvp-top{display:grid;grid-template-columns:1.1fr .9fr;gap:16px;margin-top:32px}
+.mvp-main{display:grid;grid-template-columns:145px 1fr;gap:16px}.mvp-main img{height:272px;border-radius:9px}.mvp-main h2{margin:14px 0}
+.status{display:inline-flex;padding:7px 12px;border-radius:999px;background:var(--green);color:#062018;font-size:12px;font-weight:800}
+.activity-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-top:14px}.activity-grid img{height:136px;border-radius:8px}.activity-grid figcaption{font-size:12px;margin-top:7px;color:#d8e5ee}
+.validation-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-top:22px}.validation-grid .card{min-height:140px}.validation-grid h3{margin:10px 0}
+.mvp-footer-grid{display:grid;grid-template-columns:.8fr 1.2fr 1fr;gap:16px;margin-top:18px}.mvp-footer-grid .card{min-height:140px}
+
+/* ── 09 Équipe ── */
+.team-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-top:30px}
+.person-card{display:grid;grid-template-columns:145px 1fr;gap:22px;align-items:start}.person-card img{width:145px;height:145px;border-radius:12px;object-fit:cover;margin-top:4px}.person-card p{margin-top:12px;font-size:15px;line-height:1.6}
+.impact-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-top:24px}.impact-grid .card{min-height:146px}.impact-grid .icon{margin-bottom:12px}
+.impact-note{margin-top:20px;padding:17px 20px;border:1px solid #0b5874;border-radius:10px;background:#091b2d;color:#cbd9e4;font-size:14px}
+
+/* ── 10 Demande ── */
+.ask-layout{display:grid;grid-template-columns:1.1fr .9fr;gap:24px;margin-top:32px}
+.ask-amount{padding:34px 36px;border:1.5px solid var(--cyan);border-radius:16px;background:linear-gradient(160deg,#0b2e46,#071825);text-align:center}
+.ask-amount .ask-label{font-size:12px;letter-spacing:.2em;color:#8abdd2;margin-bottom:14px}
+.ask-amount .ask-val{font-size:60px;font-weight:800;color:#fff;line-height:1}
+.ask-amount .ask-type{font-size:18px;color:var(--cyan);margin-top:10px;font-weight:700;letter-spacing:.06em}
+.ask-amount .ask-sub{font-size:14px;color:#5a8ca8;margin-top:14px}
+.use-of-funds{display:flex;flex-direction:column;gap:14px;margin-top:20px}
+.fund-row{display:grid;grid-template-columns:90px 1fr 52px;align-items:center;gap:12px}
+.fund-bar-wrap{height:9px;border-radius:4px;background:#0b2135;overflow:hidden}
+.fund-bar{height:100%;border-radius:4px;background:var(--cyan)}
+.fund-label{font-size:13px;color:#8abdd2;letter-spacing:.08em}
+.fund-pct{font-size:13px;font-weight:700;color:#e0edf5;text-align:right}
+.ms-item{padding:18px 20px;border:1px solid #0b5874;border-radius:10px;background:rgba(11,33,53,.85);display:grid;grid-template-columns:28px 1fr;gap:12px;align-items:start;margin-bottom:14px}
+.ms-num{width:28px;height:28px;border-radius:50%;border:1.5px solid var(--cyan);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;color:var(--cyan);flex:0 0 auto}
+.ms-item h4{font-size:14px;margin:0 0 5px;color:#e8f4fb}
+.final-tagline{position:absolute;left:60px;bottom:28px;font-size:20px;letter-spacing:.08em}
+
+@media print{
+  @page{size:16in 9in;margin:0}
+  html,body{background:white}
+  .slide{margin:0;border:none;page-break-after:always;break-after:page;transform:none!important}
+  .deck{width:auto!important}
+}
+</style>
+</head>
+<body>
+<div class="deck" id="deck">
+
+<section class="slide slide-cover">
+  <img class="cover-bg" src="/pitch-assets/globe-branded.png" alt="">
+  <div class="cover-overlay"></div>
+  <div class="cover-copy">
+    <div class="eyebrow">01 · VUVIO · PITCH INVESTISSEURS 2026</div>
+    <h1>Des passions, des métiers,<br>des expériences<br><span>— en direct.</span></h1>
+    <div class="accent-line"></div>
+    <p class="cover-subtitle">Découvrez des activités et des passions à travers ceux qui les vivent.</p>
+  </div>
+  <div class="footer-note">VUVIO — PITCH INVESTISSEURS 2026 · CONFIDENTIEL</div>
+  <div class="cover-logo"></div>
+</section>
+
+<section class="slide">
+  <div class="eyebrow">02 — LA VISION</div>
+  <h1>Le monde est déjà en train de se passer.</h1>
+  <p class="lead">Vuvio permet de découvrir des activités, des métiers, des passions et des expériences réelles, au moment où elles se déroulent, à travers le point de vue des personnes qui les vivent.</p>
+  <div class="vision-grid">
+    <div class="vision-copy">
+      <p>Un artisan travaille dans son atelier. Un cycliste traverse les Alpes. Un guide parcourt les rues de Tokyo. Un chef est en plein service. Un musicien répète avant un concert.</p>
+      <div class="principles">
+        <article class="card compact"><span class="step-num">01</span><h3>En direct</h3><p>Découvrir une activité pendant qu'elle se déroule, avec sa spontanéité et ses imprévus.</p></article>
+        <article class="card compact"><span class="step-num">02</span><h3>Dans le monde réel</h3><p>Explorer des métiers, des passions, des lieux et des expériences concrètes.</p></article>
+        <article class="card compact"><span class="step-num">03</span><h3>Depuis un point de vue</h3><p>Voir l'activité depuis la perspective de la personne qui la pratique.</p></article>
+      </div>
+    </div>
+    <div class="vision-images">
+      <figure><img src="/pitch-assets/cabinetmaker.jpg"><figcaption>ARTISAN</figcaption></figure>
+      <figure><img src="/pitch-assets/chef.jpg"><figcaption>CUISINE</figcaption></figure>
+      <figure><img src="/pitch-assets/creator-cycling.jpg"><figcaption>SPORT</figcaption></figure>
+      <figure><img src="/pitch-assets/Artisan.jpg"><figcaption>MUSIQUE</figcaption></figure>
+    </div>
+  </div>
+  <div class="slide-brand">Vuvio 02</div>
+</section>
+
+<section class="slide">
+  <div class="eyebrow">03 — POSITIONNEMENT & INNOVATION</div>
+  <h1>Découvrir des personnes par ce qu'elles font.</h1>
+  <p class="lead">Le Live existe déjà. Vuvio ne cherche pas à réinventer le direct, mais à organiser sa découverte autrement. La découverte commence par une activité, un métier, une passion ou une expérience qui nous intéresse.</p>
+  <div class="position-grid">
+    <article class="card media-card"><img src="/pitch-assets/creator-field.jpg"><div class="card-title"><span class="icon">01</span><h3>L'activité comme point d'entrée</h3></div><p>Découvrir un créateur parce qu'on s'intéresse à ce qu'il fait, sans avoir besoin de le connaître à l'avance.</p></article>
+    <article class="card media-card"><img src="/pitch-assets/spectator-phone.jpg"><div class="card-title"><span class="icon">02</span><h3>Le direct et le point de vue</h3></div><p>Voir les gestes, l'environnement, les conditions réelles et les moments imprévus depuis la perspective de la personne qui pratique.</p></article>
+    <article class="card media-card"><img src="/pitch-assets/globevuvio.png"><div class="card-title"><span class="icon">03</span><h3>Une découverte géographique</h3></div><p>Explorer les Lives selon leur localisation et découvrir des activités dans d'autres villes, régions ou pays.</p></article>
+  </div>
+  <div class="position-summary">
+    <div><h3>Le Live n'est pas nouveau.</h3><p>La manière dont Vuvio associe activité, point de vue et découverte géographique constitue son positionnement.</p></div>
+    <div class="formula"><span>ACTIVITÉ</span>&nbsp;+ POV + GÉOGRAPHIE</div>
+  </div>
+  <div class="slide-brand">Vuvio 03</div>
+</section>
+
+<section class="slide">
+  <div class="eyebrow">04 — UTILISATEURS & ÉCOSYSTÈME</div>
+  <h1>Découvrir, partager et faire vivre des activités réelles.</h1>
+  <div class="ecosystem-grid">
+    <article class="card"><div class="card-title"><span class="icon">◉</span><h3>Ceux qui regardent</h3></div><p>Découvrir des métiers, des passions, des pratiques et des lieux à travers les personnes qui les vivent.</p><div class="mini-rule"></div><p class="small">Atelier d'artisan · service en cuisine · guide dans une ville · pratique sportive · répétition musicale.</p></article>
+    <article class="card"><div class="card-title"><span class="icon">◎</span><h3>Ceux qui partagent</h3></div><p>Sportif, guide, artisan, musicien, cuisinier, voyageur ou professionnel de terrain : chacun peut partager une passion ou un métier en direct.</p><div class="mini-rule"></div><p class="small">Être découvert par son activité · transmettre un savoir-faire · partager sans vidéo montée · développer une communauté.</p></article>
+    <article class="card"><div class="card-title"><span class="icon">▣</span><h3>Marques & partenaires</h3></div><p>Équipement, lieux, événements, tourisme, culture : une présence utile, cohérente avec l'activité et clairement identifiable.</p><div class="mini-rule"></div><p class="small">Partenariats liés à des usages réels, non plaqués sur l'expérience.</p></article>
+  </div>
+  <div class="journey">
+    <article class="journey-step"><img src="/pitch-assets/watchvuvio.jpg" style="width:122px;height:122px;border-radius:50%;border:2px solid #0b5874;object-fit:cover"><span class="step-num">01</span><h3>DÉCOUVRIR</h3><p>Depuis Watch, Explore ou le Globe.</p></article>
+    <div class="journey-arrow">→</div>
+    <article class="journey-step"><img src="/pitch-assets/explorevuvio.jpg" style="width:122px;height:122px;border-radius:50%;border:2px solid #0b5874;object-fit:cover"><span class="step-num">02</span><h3>EXPLORER</h3><p>L'activité et la personne.</p></article>
+    <div class="journey-arrow">→</div>
+    <article class="journey-step"><img src="/pitch-assets/profilvuvio.jpg" style="width:122px;height:122px;border-radius:50%;border:2px solid #0b5874;object-fit:cover"><span class="step-num">03</span><h3>SUIVRE</h3><p>Un créateur ou un centre d'intérêt.</p></article>
+    <div class="journey-arrow">→</div>
+    <article class="journey-step"><img src="/pitch-assets/spectator-phone.jpg" style="width:122px;height:122px;border-radius:50%;border:2px solid #0b5874;object-fit:cover"><span class="step-num">04</span><h3>REVENIR</h3><p>Retrouver les activités et personnes suivies.</p></article>
+  </div>
+  <p class="journey-quote">Le Live crée l'entrée. L'activité crée l'intérêt. <span>La personne crée la connexion.</span></p>
+  <div class="slide-brand">Vuvio 04</div>
+</section>
+
+<section class="slide slide-05">
+  <div class="eyebrow">05 — EXPÉRIENCE PRODUIT</div>
+  <h1>Trois façons de découvrir le monde en direct.</h1>
+  <div class="s05-main-grid">
+    <article class="s05-big-card">
+      <div class="s05-big-img"><img src="/pitch-assets/watchvuvio.jpg" alt="Watch"></div>
+      <div class="s05-card-info">
+        <div class="s05-card-header"><span class="icon">▶</span><h2>Watch</h2></div>
+        <p>Entrer directement dans un Live et passer simplement d'une expérience à une autre.</p>
+      </div>
+    </article>
+    <article class="s05-big-card">
+      <div class="s05-big-img"><img src="/pitch-assets/globevuvio.png" alt="Globe"></div>
+      <div class="s05-card-info">
+        <div class="s05-card-header"><span class="icon">◎</span><h2>Globe</h2></div>
+        <p>Explorer les activités en direct à travers le monde et découvrir des Lives par localisation.</p>
+      </div>
+    </article>
+    <article class="s05-big-card">
+      <div class="s05-big-img"><img src="/pitch-assets/explorevuvio.jpg" alt="Explore"></div>
+      <div class="s05-card-info">
+        <div class="s05-card-header"><span class="icon">✦</span><h2>Explore</h2></div>
+        <p>Découvrir des activités, métiers, lieux et créateurs selon ses centres d'intérêt.</p>
+      </div>
+    </article>
+  </div>
+  <div class="slide-brand">Vuvio 05</div>
+</section>
+
+<section class="slide">
+  <div class="eyebrow">06 — MARCHÉ & POSITIONNEMENT CONCURRENTIEL</div>
+  <h1>Un usage à la croisée de plusieurs marchés.</h1>
+  <div class="market-grid">
+    <article class="card"><div class="card-title"><span class="icon">L</span><h3>Live streaming</h3></div><p>Une immédiateté que les contenus enregistrés ne reproduisent pas.</p></article>
+    <article class="card"><div class="card-title"><span class="icon">C</span><h3>Creator economy</h3></div><p>Des créateurs qui bâtissent une communauté autour de leurs passions.</p></article>
+    <article class="card"><div class="card-title"><span class="icon">S</span><h3>Social discovery</h3></div><p>Découverte structurée par comptes, algorithmes et tendances.</p></article>
+    <article class="card"><div class="card-title"><span class="icon">◎</span><h3>Locale & expérientielle</h3></div><p>Lieux, territoires, métiers, pratiques et expériences réelles.</p></article>
+  </div>
+  <table class="comparison">
+    <thead><tr><th></th><th class="focus">VUVIO</th><th>TIKTOK / INSTAGRAM</th><th>TWITCH</th><th>YOUTUBE LIVE</th></tr></thead>
+    <tbody>
+      <tr><td>Live</td><td class="focus">Au cœur du produit</td><td>Fonctionnalité parmi d'autres</td><td>Au cœur du produit</td><td>Intégré à un écosystème vidéo</td></tr>
+      <tr><td>Activité comme entrée</td><td class="focus">Central</td><td>Possible, non structurante</td><td>Catégories, surtout gaming</td><td>Via recherche et chaînes</td></tr>
+      <tr><td>POV terrain</td><td class="focus">Central</td><td>Possible</td><td>Possible</td><td>Possible</td></tr>
+      <tr><td>Géographie</td><td class="focus">Globe dédié</td><td>Limitée</td><td>Non centrale</td><td>Non centrale</td></tr>
+    </tbody>
+  </table>
+  <div class="market-bottom">
+    <article class="card"><span class="section-label">POURQUOI MAINTENANT ?</span><p>Le direct est déjà un usage installé, mais il reste peu structuré autour des activités réelles. En parallèle, les créateurs cherchent des formats plus authentiques et les utilisateurs veulent découvrir des expériences, des lieux et des personnes, pas seulement des contenus.</p></article>
+    <article class="card"><span class="section-label">VERTICALES DE DÉPART</span><div class="pills"><span>Métiers & artisanat</span><span>Musique & culture</span><span>Cuisine</span><span>Sport & outdoor</span><span>Voyage & découverte locale</span></div></article>
+  </div>
+  <div class="market-note">Vuvio ne remplace pas les plateformes sociales : il crée un usage spécifique, <strong>découvrir le monde réel en direct à travers ceux qui le vivent.</strong></div>
+  <div class="slide-brand">Vuvio 06</div>
+</section>
+
+<section class="slide">
+  <div class="eyebrow">07 — MODÈLE ÉCONOMIQUE</div>
+  <h1>Construire les revenus autour des usages réels.</h1>
+  <p class="lead">Vuvio doit d'abord créer de la valeur pour les spectateurs et les créateurs. La monétisation se développe ensuite autour des activités, de l'équipement réellement utilisé et des besoins des créateurs.</p>
+  <div class="business-grid">
+    <article class="card"><span class="step-num">01</span><h3>Équipement & affiliation</h3><p>Les créateurs indiquent le matériel qu'ils utilisent réellement : caméra, vélo, micro, vêtements, outils ou accessoires.</p><div class="mini-rule"></div><p class="small"><strong>Le produit est montré parce qu'il est utilisé, pas parce qu'il doit être vendu.</strong></p></article>
+    <article class="card"><span class="step-num">02</span><h3>Marques & partenariats</h3><p>Des marques peuvent accompagner des créateurs, activités, séries, événements ou expériences, avec identification claire.</p></article>
+    <article class="card"><span class="step-num">03</span><h3>Outils pour les créateurs</h3><p>À terme : programmation, statistiques, profil professionnel, séries, replays et outils avancés.</p></article>
+  </div>
+  <div class="business-path">
+    <article class="card"><span class="section-label">D'ABORD</span><h3>L'usage</h3><p>Développer les Lives, la découverte et la récurrence.</p></article>
+    <div class="journey-arrow">→</div>
+    <article class="card"><span class="section-label">ENSUITE</span><h3>Affiliation & partenariats</h3><p>Valider des revenus complémentaires utiles à l'expérience.</p></article>
+    <div class="journey-arrow">→</div>
+    <article class="card"><span class="section-label">PLUS TARD</span><h3>Outils premium</h3><p>Développer de nouvelles possibilités à partir des besoins réels.</p></article>
+  </div>
+  <div class="business-footer"><div><strong>Modèle :</strong> B2C + B2B2C + B2B</div><div><strong>Principe :</strong> monétiser progressivement sans dégrader l'expérience utilisateur.</div></div>
+  <div class="slide-brand">Vuvio 07</div>
+</section>
+
+<section class="slide">
+  <div class="eyebrow">08 — MVP, VALIDATION & FEUILLE DE ROUTE</div>
+  <h1>Du MVP fonctionnel aux premiers usages réels.</h1>
+  <div class="mvp-top">
+    <article class="card mvp-main"><img src="/pitch-assets/watchvuvio.jpg"><div><span class="status">✓ FONCTIONNEL</span><h2>MVP fonctionnel</h2><p>Le Live fonctionne. Un créateur peut lancer un Live et un spectateur peut regarder. Watch, Explore, Globe et profils structurent déjà l'expérience.</p></div></article>
+    <article class="card activity-panel"><h3>Premières activités</h3><div class="activity-grid">
+      <figure><img src="/pitch-assets/Cycliste.jpg"><figcaption>Outdoor & sport</figcaption></figure>
+      <figure><img src="/pitch-assets/cabinetmaker.jpg"><figcaption>Métiers & artisanat</figcaption></figure>
+      <figure><img src="/pitch-assets/chef.jpg"><figcaption>Cuisine</figcaption></figure>
+      <figure><img src="/pitch-assets/Artisan.jpg"><figcaption>Musique & culture</figcaption></figure>
+      <figure><img src="/pitch-assets/Guide.jpg"><figcaption>Voyage & découverte locale</figcaption></figure>
+    </div></article>
+  </div>
+  <div class="validation-grid">
+    <article class="card"><span class="step-num">01</span><h3>Recruter des créateurs pilotes</h3><p>Identifier et accompagner les premiers créateurs.</p></article>
+    <article class="card"><span class="step-num">02</span><h3>Tester avec de vrais spectateurs</h3><p>Observer les premiers usages réels.</p></article>
+    <article class="card"><span class="step-num">03</span><h3>Comprendre l'intérêt</h3><p>Analyser ce qui plaît et ce qui doit être amélioré.</p></article>
+    <article class="card"><span class="step-num">04</span><h3>Mesurer le retour</h3><p>Évaluer l'engagement et la récurrence.</p></article>
+  </div>
+  <div class="mvp-footer-grid">
+    <article class="card"><h3>Risques principaux</h3><p>Adoption plus lente que prévu · acquisition trop coûteuse · dépendance à certains créateurs.</p></article>
+    <article class="card"><h3>Feuille de route</h3><p>Lancement auprès de créateurs pilotes · montée progressive du nombre de Lives · validation du retour · développement progressif du modèle économique.</p></article>
+    <article class="card"><h3>Financement</h3><p>Infrastructure, streaming, tests pilotes, acquisition, partenariats, structuration.</p></article>
+  </div>
+  <div class="slide-brand">Vuvio 08</div>
+</section>
+
+<section class="slide">
+  <div class="eyebrow">09 — L'ÉQUIPE & L'IMPACT</div>
+  <h1>Une équipe complémentaire, un impact à mesurer.</h1>
+  <div class="team-grid">
+    <article class="card person-card"><img src="/pitch-assets/alexvuv.png"><div><span class="section-label">ALEXANDRE RANSON — PRODUIT & TECHNOLOGIE</span><p>Formation en informatique et génie logiciel (DUT Informatique), complétée par un parcours dans la musique, la production et les nouvelles technologies. Sur Vuvio, Alexandre pilote le développement produit, l'architecture technique et l'expérience utilisateur.</p></div></article>
+    <article class="card person-card"><img src="/pitch-assets/ceciliaimagevuv.jpeg"><div><span class="section-label">CÉCILIA RANSON — MARKETING, STRATÉGIE & PARTENARIATS</span><p>Expérience en marketing, stratégie et développement de marché, acquise notamment chez leboncoin où elle travaille depuis plusieurs années. Sur Vuvio, Cécilia intervient sur la stratégie, le modèle économique, les partenariats et le développement du projet.</p></div></article>
+  </div>
+  <div class="impact-grid">
+    <article class="card"><span class="icon">01</span><h3>Métiers & savoir-faire</h3><p>Rendre observables les gestes, pratiques et environnements réels.</p></article>
+    <article class="card"><span class="icon">02</span><h3>Ouverture culturelle</h3><p>Découvrir des pratiques et des personnes dans d'autres territoires.</p></article>
+    <article class="card"><span class="icon">03</span><h3>Territoires</h3><p>Donner de la visibilité à des lieux, initiatives et acteurs locaux.</p></article>
+    <article class="card"><span class="icon">04</span><h3>Connexion sociale</h3><p>Faire se découvrir des personnes autour d'une passion ou d'une pratique commune.</p></article>
+  </div>
+  <div class="impact-note"><strong>Démarche en structuration :</strong> diversité des activités, créateurs pilotes, territoires représentés, taux de retour, engagement et créateurs suivis. Pas encore de certification ni de mesure formelle.</div>
+  <div class="slide-brand">Vuvio 09</div>
+</section>
+
+<section class="slide">
+  <div class="eyebrow">10 — LA DEMANDE</div>
+  <h1>Amorçage pour valider l'usage et atteindre la traction.</h1>
+  <div class="ask-layout">
+    <div style="display:flex;flex-direction:column;gap:14px">
+      <div class="ask-amount">
+        <div class="ask-label">LEVÉE DE FONDS RECHERCHÉE</div>
+        <div class="ask-val">€ 500 K</div>
+        <div class="ask-type">SEED · Amorçage</div>
+        <div class="ask-sub">Prises de participation · BSPCE · dispositif JEI disponible</div>
+      </div>
+      <div style="padding:16px 18px;border:1px solid #0b5874;border-radius:12px;background:rgba(11,33,53,.85)">
+        <h3 style="margin:0 0 14px;font-size:16px;color:#e0edf5">Utilisation des fonds</h3>
+        <div class="use-of-funds">
+          <div class="fund-row"><span class="fund-label">INFRASTRUCTURE</span><div class="fund-bar-wrap"><div class="fund-bar" style="width:20%"></div></div><span class="fund-pct">20 %</span></div>
+          <div class="fund-row"><span class="fund-label">ACQUISITION</span><div class="fund-bar-wrap"><div class="fund-bar" style="width:30%"></div></div><span class="fund-pct">30 %</span></div>
+          <div class="fund-row"><span class="fund-label">ÉQUIPE</span><div class="fund-bar-wrap"><div class="fund-bar" style="width:30%"></div></div><span class="fund-pct">30 %</span></div>
+          <div class="fund-row"><span class="fund-label">PARTENARIATS</span><div class="fund-bar-wrap"><div class="fund-bar" style="width:12%"></div></div><span class="fund-pct">12 %</span></div>
+          <div class="fund-row"><span class="fund-label">STRUCTURATION</span><div class="fund-bar-wrap"><div class="fund-bar" style="width:8%"></div></div><span class="fund-pct">8 %</span></div>
+        </div>
+      </div>
+    </div>
+    <div>
+      <div style="font-size:13px;letter-spacing:.12em;color:#8abdd2;margin-bottom:10px;text-transform:uppercase">Milestones financés par la levée</div>
+      <div class="ms-item"><div class="ms-num">1</div><div><h4>20 créateurs pilotes actifs · Q4 2026</h4><p>Recrutement, onboarding, accompagnement et premiers Lives réguliers.</p></div></div>
+      <div class="ms-item"><div class="ms-num">2</div><div><h4>10 000 utilisateurs actifs · Q2 2027</h4><p>Beta ouverte, campagne organique, couverture presse spécialisée.</p></div></div>
+      <div class="ms-item"><div class="ms-num">3</div><div><h4>Premiers revenus affiliation · Q3 2027</h4><p>Validation du modèle, premières commissions, partenaires équipement.</p></div></div>
+      <div class="ms-item"><div class="ms-num">4</div><div><h4>200 créateurs · Série A prête · 2028</h4><p>Métriques suffisantes pour une Série A visant l'expansion européenne.</p></div></div>
+      <div style="padding:14px 16px;border:1px solid #0c6f8b;border-radius:10px;background:#071e30">
+        <div style="font-size:12px;letter-spacing:.12em;color:#8abdd2;margin-bottom:5px">RUNWAY ESTIMÉ</div>
+        <div style="font-size:20px;font-weight:800;color:#fff">18 – 24 mois</div>
+        <div style="font-size:13px;color:#5a8ca8;margin-top:3px">Jusqu'aux métriques Série A</div>
+      </div>
+    </div>
+  </div>
+  <div class="final-tagline">DES PASSIONS, DES MÉTIERS, DES EXPÉRIENCES — EN DIRECT.</div>
+  <div class="slide-brand">Vuvio 10</div>
+</section>
+
+</div>
+<script>
+(function(){
+  const W=1600,H=900,GAP=24;
+  function fit(){
+    if(window.matchMedia('print').matches) return;
+    const scale=Math.min((window.innerWidth-20)/W,1);
+    document.querySelectorAll('.slide').forEach(slide=>{
+      slide.style.transformOrigin='top left';
+      slide.style.transform='scale('+scale+')';
+      slide.style.marginBottom=(GAP-H*(1-scale))+'px';
+    });
+    const deck=document.getElementById('deck');
+    if(deck) deck.style.width=(W*scale)+'px';
+  }
+  window.addEventListener('load',fit);
+  window.addEventListener('resize',fit);
+})();
+</script>
+</body>
+</html>
