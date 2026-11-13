@@ -15,17 +15,35 @@ const MARKER_TYPES = {
 };
 
 const INITIAL_CENTER = [14, 10];
-const STYLE_URL = 'https://basemaps.cartocdn.com/gl/positron-nolabels-gl-style/style.json';
+const STYLE_URL = 'https://basemaps.cartocdn.com/gl/dark-matter-nolabels-gl-style/style.json';
+
+/* Vuvio Midnight Blue palette — applied to all vector layers after style.load */
+const PAL = {
+  space:      '#030816',
+  ocean:      '#07182E',
+  oceanDeep:  '#040E1F',
+  land:       '#102B46',
+  landLow:    '#0B1F35',
+  landHigh:   '#17375C',
+  park:       '#164A49',
+  road:       '#41617C',
+  roadMinor:  '#2B445C',
+  motorway:   '#5A7EA0',
+  atmosphere: '#248BEB',
+  marker:     '#36D9A0',
+  label:      '#D8E6F2',
+  labelDim:   '#8EA3BA',
+};
 const LIVE_COLOR = '#ff0066';
 const UPCOMING_COLOR = '#0099ff';
 const ROTATE_DEGREES_PER_SECOND = 1.8;
-const ACTUAL_ROTATION_INTERVAL = 24;
+const ACTUAL_ROTATION_INTERVAL = 48;
 const INITIAL_ZOOM = 1.15;
 const SELECTED_LIVE_ZOOM = 4.0;
 const REQUESTED_LIVE_ZOOM = 4.2;
 const PING_COLOR = '#ff8a1f';
 const PING_TTL_MS = 12000;
-const PULSE_INTERVAL = 240;
+const PULSE_INTERVAL = 480;
 
 const statusColor = [
   'case',
@@ -405,38 +423,169 @@ function buildCollection(streams) {
 
 function brightenBaseGlobe(map) {
   try {
+    /* Atmospheric cyan halo + midnight space */
     map.setFog?.({
-      color: 'rgba(8, 15, 28, 0.78)',
-      'high-color': 'rgba(20, 50, 90, 0.35)',
-      'horizon-blend': 0.08,
-      'space-color': '#0a0f1a',
+      color: 'rgba(36, 139, 235, 0.22)',
+      'high-color': 'rgba(36, 139, 235, 0.32)',
+      'horizon-blend': 0.12,
+      'space-color': PAL.space,
       'star-intensity': 0.88,
+    });
+    map.setSky?.({
+      'sky-color': PAL.space,
+      'horizon-color': '#0A2140',
+      'fog-color': PAL.atmosphere,
+      'sky-horizon-blend': 0.5,
+      'horizon-fog-blend': 0.7,
+      'fog-ground-blend': 0.05,
+      'atmosphere-blend': ['interpolate', ['linear'], ['zoom'], 0, 1, 5, 0.7, 10, 0.1],
     });
 
     map.getStyle().layers?.forEach((layer) => {
       const id = layer.id.toLowerCase();
       const sourceLayer = String(layer['source-layer'] ?? '').toLowerCase();
-      if (layer.type === 'background') {
-        map.setPaintProperty(layer.id, 'background-color', '#0a0f1a');
-      }
-      if ((layer.type === 'fill' || layer.type === 'line' || layer.type === 'symbol') && (id.includes('water') || sourceLayer.includes('water'))) {
-        if (layer.type === 'fill') {
-          map.setPaintProperty(layer.id, 'fill-color', '#1255a0');
-          map.setPaintProperty(layer.id, 'fill-opacity', 1);
+      const type = layer.type;
+
+      try {
+        /* Background — outer space */
+        if (type === 'background') {
+          map.setPaintProperty(layer.id, 'background-color', PAL.space);
+          return;
         }
-      }
-      if (layer.type === 'fill' && (id.includes('land') || sourceLayer.includes('land'))) {
-        map.setPaintProperty(layer.id, 'fill-color', '#0f1e30');
-        map.setPaintProperty(layer.id, 'fill-opacity', 1);
-      }
-      if (layer.type === 'line' && (id.includes('boundary') || id.includes('admin') || sourceLayer.includes('boundary'))) {
-        map.setPaintProperty(layer.id, 'line-color', 'rgba(100, 160, 220, 0.35)');
-        map.setPaintProperty(layer.id, 'line-opacity', 0.4);
-      }
-      // Hide all base map circles and symbols (city dots, poi, labels, etc.)
-      if (layer.type === 'circle' || layer.type === 'symbol') {
-        map.setLayoutProperty(layer.id, 'visibility', 'none');
-      }
+
+        /* Water (fills + lines for rivers) */
+        if (type === 'fill' && (id.includes('water') || id.includes('ocean') || id.includes('sea')
+            || sourceLayer.includes('water'))) {
+          map.setPaintProperty(layer.id, 'fill-color', PAL.ocean);
+          map.setPaintProperty(layer.id, 'fill-opacity', 1);
+          return;
+        }
+        if (type === 'line' && (id.includes('water') || id.includes('river') || id.includes('stream')
+            || sourceLayer.includes('water'))) {
+          map.setPaintProperty(layer.id, 'line-color', PAL.ocean);
+          map.setPaintProperty(layer.id, 'line-opacity', 0.9);
+          return;
+        }
+
+        /* Parks / forest / green */
+        if (type === 'fill' && (id.includes('park') || id.includes('wood') || id.includes('forest')
+            || id.includes('green') || id.includes('grass') || id.includes('scrub')
+            || id.includes('meadow') || id.includes('golf') || id.includes('pitch'))) {
+          map.setPaintProperty(layer.id, 'fill-color', PAL.park);
+          map.setPaintProperty(layer.id, 'fill-opacity', 0.78);
+          return;
+        }
+
+        /* Land / landcover / landuse — tiered */
+        if (type === 'fill' && (id.includes('landcover') || id.includes('landuse'))) {
+          map.setPaintProperty(layer.id, 'fill-color', PAL.landLow);
+          map.setPaintProperty(layer.id, 'fill-opacity', 0.55);
+          return;
+        }
+        if (type === 'fill' && (id.includes('residential') || id.includes('urban')
+            || id.includes('builtup') || id.includes('industrial'))) {
+          map.setPaintProperty(layer.id, 'fill-color', PAL.landHigh);
+          map.setPaintProperty(layer.id, 'fill-opacity', 0.55);
+          return;
+        }
+        if (type === 'fill' && (id.includes('land') || sourceLayer.includes('land'))) {
+          map.setPaintProperty(layer.id, 'fill-color', PAL.land);
+          map.setPaintProperty(layer.id, 'fill-opacity', 1);
+          return;
+        }
+
+        /* Buildings — subtle highlight */
+        if (type === 'fill' && id.includes('building')) {
+          map.setPaintProperty(layer.id, 'fill-color', PAL.landHigh);
+          map.setPaintProperty(layer.id, 'fill-opacity', 0.78);
+          return;
+        }
+        if (type === 'fill-extrusion' && id.includes('building')) {
+          /* Fill-extrusion is expensive at close zoom — hide instead of paint */
+          map.setLayoutProperty(layer.id, 'visibility', 'none');
+          return;
+        }
+
+        /* Admin boundaries */
+        if (type === 'line' && (id.includes('admin') || id.includes('boundary')
+            || id.includes('border') || sourceLayer.includes('boundary'))) {
+          map.setPaintProperty(layer.id, 'line-color', PAL.road);
+          map.setPaintProperty(layer.id, 'line-opacity', 0.38);
+          return;
+        }
+
+        /* Roads tiered */
+        if (type === 'line' && (id.includes('motorway') || id.includes('trunk'))) {
+          map.setPaintProperty(layer.id, 'line-color', PAL.motorway);
+          map.setPaintProperty(layer.id, 'line-opacity', 0.78);
+          return;
+        }
+        if (type === 'line' && (id.includes('primary') || id.includes('secondary'))) {
+          map.setPaintProperty(layer.id, 'line-color', PAL.road);
+          map.setPaintProperty(layer.id, 'line-opacity', 0.7);
+          return;
+        }
+        if (type === 'line' && (id.includes('road') || id.includes('street')
+            || id.includes('tertiary') || id.includes('minor') || id.includes('service')
+            || id.includes('path') || id.includes('track'))) {
+          map.setPaintProperty(layer.id, 'line-color', PAL.roadMinor);
+          map.setPaintProperty(layer.id, 'line-opacity', 0.55);
+          return;
+        }
+
+        /* Rail */
+        if (type === 'line' && (id.includes('rail') || id.includes('transit'))) {
+          map.setPaintProperty(layer.id, 'line-color', PAL.road);
+          map.setPaintProperty(layer.id, 'line-opacity', 0.32);
+          return;
+        }
+
+        /* Hide base-style city/POI circles (conflict with Vuvio Live markers) */
+        if (type === 'circle') {
+          map.setLayoutProperty(layer.id, 'visibility', 'none');
+          return;
+        }
+
+        /* Labels (symbols) — keep visible, repaint in Vuvio palette for progressive reveal */
+        if (type === 'symbol') {
+          /* Hide icon-only POI markers to avoid clutter against Live markers */
+          try {
+            const iconImage = layer.layout?.['icon-image'];
+            const hasText = !!layer.layout?.['text-field'];
+            if (iconImage && !hasText) {
+              map.setLayoutProperty(layer.id, 'visibility', 'none');
+              return;
+            }
+          } catch { /* layout may be undefined */ }
+
+          if (id.includes('country') || id.includes('continent')) {
+            map.setPaintProperty(layer.id, 'text-color', PAL.label);
+            map.setPaintProperty(layer.id, 'text-halo-color', PAL.space);
+            map.setPaintProperty(layer.id, 'text-halo-width', 1.5);
+            return;
+          }
+          if (id.includes('water') || id.includes('ocean') || id.includes('sea') || id.includes('marine')) {
+            map.setPaintProperty(layer.id, 'text-color', PAL.labelDim);
+            map.setPaintProperty(layer.id, 'text-halo-color', PAL.space);
+            map.setPaintProperty(layer.id, 'text-halo-width', 1);
+            return;
+          }
+          if (id.includes('city') || id.includes('place') || id.includes('town')
+              || id.includes('village') || id.includes('suburb') || id.includes('neighbourhood')
+              || id.includes('neighborhood')) {
+            map.setPaintProperty(layer.id, 'text-color', PAL.label);
+            map.setPaintProperty(layer.id, 'text-halo-color', PAL.space);
+            map.setPaintProperty(layer.id, 'text-halo-width', 1.2);
+            return;
+          }
+          /* Any remaining text label: dim (streets, POI names at close zoom) */
+          try {
+            map.setPaintProperty(layer.id, 'text-color', PAL.labelDim);
+            map.setPaintProperty(layer.id, 'text-halo-color', PAL.space);
+            map.setPaintProperty(layer.id, 'text-halo-width', 1);
+          } catch { /* layer without text-color */ }
+        }
+      } catch { /* paint property may not exist on all layers */ }
     });
   } catch {
     // Base style support can differ entre MapLibre versions/providers.
@@ -465,7 +614,10 @@ export default function CurrentGlobe({ streams, onboarding = false, onOnboarding
   const [pingRefreshTick, setPingRefreshTick] = useState(0);
   const [mapError, setMapError] = useState('');
   const [isMapLoaded, setIsMapLoaded] = useState(false);
+  const [fpsHud, setFpsHud] = useState({ fps: 0, zoom: 0, tiles: 0, mem: 0 });
   const lastHaloZoomRef = useRef(-1);
+  const fpsBufRef = useRef([]);
+  const fpsEnabled = searchParams.get('fps') === '1' || searchParams.get('fps') === 'true';
 
   const enrichedStreams = useMemo(() => streams.map(enrichExperience), [streams]);
   const requestedLiveId = searchParams.get('live') ?? '';
@@ -549,7 +701,7 @@ export default function CurrentGlobe({ streams, onboarding = false, onOnboarding
       logoPosition: 'bottom-left',
       renderWorldCopies: false,
       fadeDuration: 0,
-      pixelRatio: Math.min(window.devicePixelRatio || 1, 1.25),
+      pixelRatio: Math.min(window.devicePixelRatio || 1, window.matchMedia?.('(pointer: coarse)').matches ? 1 : 1.25),
     });
 
     mapRef.current = map;
@@ -604,6 +756,21 @@ export default function CurrentGlobe({ streams, onboarding = false, onOnboarding
         setIsMapLoaded(true);
         map.setProjection({ type: 'globe' });
         brightenBaseGlobe(map);
+
+        // PERF: SVG unsharp-mask disabled — was re-filtering the whole WebGL canvas
+        // every frame via CSS filter, costing 30-50% of frame time. Opt-in with ?sharpen=1.
+        if (searchParams.get('sharpen') === '1') {
+          if (!document.getElementById('vuvio-globe-svg-filters')) {
+            const svgEl = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+            svgEl.id = 'vuvio-globe-svg-filters';
+            svgEl.setAttribute('width', '0');
+            svgEl.setAttribute('height', '0');
+            svgEl.style.cssText = 'position:absolute;pointer-events:none;overflow:hidden;';
+            svgEl.innerHTML = '<defs><filter id="vuvio-globe-sharpen" x="0%" y="0%" width="100%" height="100%" color-interpolation-filters="sRGB"><feConvolveMatrix order="3" kernelMatrix="0 -1 0 -1 5 -1 0 -1 0" preserveAlpha="true" edgeMode="none"/></filter></defs>';
+            document.body.appendChild(svgEl);
+          }
+          map.getCanvas().style.filter = 'url(#vuvio-globe-sharpen) contrast(1.08)';
+        }
 
         if (searchParams.get('filter') === 'nearby' && navigator.geolocation) {
           navigator.geolocation.getCurrentPosition(
@@ -825,17 +992,20 @@ export default function CurrentGlobe({ streams, onboarding = false, onOnboarding
       for (const marker of Object.values(dvMarkersRef.current)) marker.remove();
       dvMarkersRef.current = {};
       if (haloCanvasRef.current?.parentNode) haloCanvasRef.current.parentNode.removeChild(haloCanvasRef.current);
+      document.getElementById('vuvio-globe-svg-filters')?.remove();
       map.remove();
       mapRef.current = null;
     };
   }, []);
 
+  const liveStreamsCollection = useMemo(() => buildCollection(liveStreams), [liveStreams]);
+
   useEffect(() => {
     const map = mapRef.current;
     const source = map?.getSource('vuvio-test-lives');
     if (!source) return;
-    source.setData(buildCollection(liveStreams));
-  }, [liveStreams]);
+    source.setData(liveStreamsCollection);
+  }, [liveStreamsCollection]);
 
   useEffect(() => {
     if (!requestedLive || !Array.isArray(requestedLive.coordinates)) return undefined;
@@ -919,7 +1089,11 @@ export default function CurrentGlobe({ streams, onboarding = false, onOnboarding
     let totalRotation = 0;
 
     const tick = (time) => {
-      if (time - lastPulseTime >= PULSE_INTERVAL) {
+      const zoom = map.getZoom();
+      const isZoomed = zoom > 2.5;
+
+      // Skip pulse animations when zoomed in — markers barely visible, save CPU/GPU.
+      if (zoom < 3 && time - lastPulseTime >= PULSE_INTERVAL) {
         lastPulseTime = time;
         const clock = (time % 2400) / 2400;
         try {
@@ -953,9 +1127,6 @@ export default function CurrentGlobe({ streams, onboarding = false, onOnboarding
         }
       }
 
-      const zoom = map.getZoom();
-      const isZoomed = zoom > 2.5;
-
       if (document.visibilityState === 'hidden' || Date.now() <= pauseUntilRef.current || selectedId || isZoomed) {
         lastRotationTime = time;
         const center = map.getCenter();
@@ -987,6 +1158,43 @@ export default function CurrentGlobe({ streams, onboarding = false, onOnboarding
       if (animationRef.current) cancelAnimationFrame(animationRef.current);
     };
   }, [selectedId]);
+
+  /* FPS HUD — visible via ?fps=1 to diagnose perf without devtools */
+  useEffect(() => {
+    if (!fpsEnabled) return undefined;
+    let raf = 0;
+    let lastUpdate = 0;
+    const tick = (time) => {
+      fpsBufRef.current.push(time);
+      if (fpsBufRef.current.length > 90) fpsBufRef.current.shift();
+      if (time - lastUpdate > 250) {
+        lastUpdate = time;
+        const samples = fpsBufRef.current;
+        const fps = samples.length > 1
+          ? Math.round((samples.length - 1) * 1000 / (samples[samples.length - 1] - samples[0]))
+          : 0;
+        const map = mapRef.current;
+        let zoom = 0;
+        let tiles = 0;
+        if (map) {
+          zoom = map.getZoom();
+          try {
+            const srcs = Object.keys(map.getStyle()?.sources ?? {});
+            srcs.forEach((srcId) => {
+              const src = map.getSource(srcId);
+              if (src?._tiles) tiles += Object.keys(src._tiles).length;
+            });
+          } catch { /* best-effort */ }
+        }
+        const mem = performance.memory?.usedJSHeapSize
+          ? Math.round(performance.memory.usedJSHeapSize / 1048576) : 0;
+        setFpsHud({ fps, zoom, tiles, mem });
+      }
+      raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [fpsEnabled]);
 
   useEffect(() => {
     const map = mapRef.current;
@@ -1085,6 +1293,34 @@ export default function CurrentGlobe({ streams, onboarding = false, onOnboarding
         {!isMapLoaded && <div className="test-old-globe__loading-mask" aria-hidden="true" />}
         <div className="test-old-globe__vignette" />
         {mapError ? <div className="test-old-globe__error">Error: {mapError}</div> : null}
+
+        {fpsEnabled && (
+          <div
+            role="status"
+            style={{
+              position: 'absolute',
+              top: 12,
+              right: 12,
+              zIndex: 20,
+              padding: '8px 10px',
+              borderRadius: 8,
+              background: 'rgba(3, 8, 22, 0.86)',
+              border: `1px solid ${fpsHud.fps >= 50 ? '#36D9A0' : fpsHud.fps >= 30 ? '#f0b400' : '#ff5a5f'}`,
+              color: '#E8FFF5',
+              fontFamily: 'ui-monospace, Menlo, monospace',
+              fontSize: 11,
+              lineHeight: 1.45,
+              minWidth: 96,
+              pointerEvents: 'none',
+              textAlign: 'left',
+            }}
+          >
+            <div>FPS <b style={{ color: '#fff' }}>{fpsHud.fps}</b></div>
+            <div>Zoom <b style={{ color: '#fff' }}>{fpsHud.zoom.toFixed(2)}</b></div>
+            <div>Tiles <b style={{ color: '#fff' }}>{fpsHud.tiles}</b></div>
+            {fpsHud.mem > 0 && <div>Heap <b style={{ color: '#fff' }}>{fpsHud.mem}MB</b></div>}
+          </div>
+        )}
 
         {!onboarding ? (
         <div className="test-old-globe__controls" aria-label="Map controls">

@@ -331,7 +331,7 @@ Single entry point for navigating project documentation.
 
 ---
 
-**Production URL:** https://vuvio-bf328.web.app`,
+**Production URL:** https://vuvio.app`,
   },
   'docs/README.md': {
     fr: `# Vuvio Docs
@@ -1265,6 +1265,7 @@ export default function AdminDocsPage() {
 
   return (
     <section className="admin-docs" aria-label={copy.aria}>
+      <a href="/watch" title="Fermer" style={{ position: 'fixed', top: 16, right: 16, zIndex: 999, width: 36, height: 36, borderRadius: '50%', background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'rgba(255,255,255,0.6)', fontSize: 18, textDecoration: 'none', lineHeight: 1 }}>✕</a>
       <header className="admin-docs-hero">
         <div className="admin-docs-hero__copy">
           <p>{copy.eyebrow}</p>

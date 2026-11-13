@@ -2,11 +2,14 @@ import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
 import App from './App.jsx';
+import PasswordGate from './components/PasswordGate.jsx';
 import { AuthProvider } from './context/AuthContext.jsx';
 import { LanguageProvider } from './context/LanguageContext.jsx';
 import { MessagingProvider } from './context/MessagingContext.jsx';
 import { ThemeProvider } from './context/ThemeContext.jsx';
 import { ViewModeProvider } from './context/ViewModeContext.jsx';
+import { initializeMobilePlatform } from './platform/nativeShell.js';
+import { isNativePlatform } from './platform/platform.js';
 import './i18n/index.js';
 import './styles/tokens.css';
 import './styles/theme-midnight-sky.css';
@@ -16,6 +19,8 @@ import './styles/layout.css';
 import './styles/app-shell-desktop.css';
 import './styles/components.css';
 import './styles/components/notification-toast.css';
+import './styles/components/intro.css';
+import './styles/components/intro-v2.css';
 import './styles/pages/live.css';
 import './styles/pages/live-recap.css';
 import './styles/pages/explore.css';
@@ -35,25 +40,29 @@ import './styles/pages/admin-docs.css';
 import './styles/pages/agents.css';
 import './components/social/social.css';
 
+initializeMobilePlatform();
+
 createRoot(document.getElementById('root')).render(
   <StrictMode>
     <BrowserRouter future={{ v7_relativeSplatPath: true, v7_startTransition: true }}>
-      <LanguageProvider>
-        <ThemeProvider>
-          <AuthProvider>
-            <MessagingProvider>
-              <ViewModeProvider>
-                <App />
-              </ViewModeProvider>
-            </MessagingProvider>
-          </AuthProvider>
-        </ThemeProvider>
-      </LanguageProvider>
+      <PasswordGate>
+        <LanguageProvider>
+          <ThemeProvider>
+            <AuthProvider>
+              <MessagingProvider>
+                <ViewModeProvider>
+                  <App />
+                </ViewModeProvider>
+              </MessagingProvider>
+            </AuthProvider>
+          </ThemeProvider>
+        </LanguageProvider>
+      </PasswordGate>
     </BrowserRouter>
   </StrictMode>,
 );
 
-if ('serviceWorker' in navigator) {
+if ('serviceWorker' in navigator && !isNativePlatform()) {
   if (import.meta.env.PROD) {
     window.addEventListener('load', () => {
       navigator.serviceWorker.register('/sw.js', { updateViaCache: 'none' });

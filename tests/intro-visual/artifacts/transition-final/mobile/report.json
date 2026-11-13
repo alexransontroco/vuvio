@@ -1,0 +1,21 @@
+{
+  "url": "https://127.0.0.1:5177/intro-preview",
+  "viewport": {
+    "width": 390,
+    "height": 844
+  },
+  "errors": [
+    "request: https://127.0.0.1:5177/intro/chef-pov.mp4 net::ERR_ABORTED"
+  ],
+  "observations": [
+    {
+      "label": "end",
+      "state": {
+        "phase": "enter",
+        "videoTime": 3.014321,
+        "globeCanvas": false,
+        "globeSnapshot": false
+      }
+    }
+  ]
+}

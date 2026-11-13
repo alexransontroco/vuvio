@@ -91,8 +91,11 @@ export function normalizeEquipmentItem(item) {
 
 function toFirestoreDoc(item, userId) {
   const { id, userId: _uid, ...rest } = item;
+  // base64 data URLs would exceed Firestore's 1MB document limit — strip them
+  const imageUrl = rest.imageUrl?.startsWith('data:') ? null : (rest.imageUrl ?? null);
   return {
     ...rest,
+    imageUrl,
     creatorId: userId,
     updatedAt: serverTimestamp(),
   };
@@ -217,7 +220,16 @@ export function saveEquipmentLibrary(items) {
   const normalized = items.map(normalizeEquipmentItem).filter(Boolean);
   const win = safeWindow();
   if (win) {
-    win.localStorage.setItem(EQUIPMENT_KEY, JSON.stringify(normalized));
+    try {
+      win.localStorage.setItem(EQUIPMENT_KEY, JSON.stringify(normalized));
+    } catch {
+      // QuotaExceededError — strip base64 images from all items and retry
+      const stripped = normalized.map((item) => ({
+        ...item,
+        imageUrl: item.imageUrl?.startsWith('data:') ? null : (item.imageUrl ?? null),
+      }));
+      win.localStorage.setItem(EQUIPMENT_KEY, JSON.stringify(stripped));
+    }
     win.dispatchEvent(new CustomEvent(EQUIPMENT_EVENT, { detail: normalized }));
   }
   return normalized;
@@ -240,7 +252,7 @@ export function addEquipmentItem(input) {
     isDefault: false,
     createdAt: nowIso(),
     updatedAt: nowIso(),
-    provider: input.provider || (input.productId ? 'user' : 'demo'),
+    provider: input.provider || 'user',
     imageSource: input.imageSource || (input.productId ? 'product-catalog' : 'placeholder'),
     status: input.status || (input.productId ? 'active' : 'placeholder'),
     ...input,

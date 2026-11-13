@@ -1,0 +1,313 @@
+{
+  "url": "https://127.0.0.1:5177/intro-preview",
+  "viewport": {
+    "width": 390,
+    "height": 844
+  },
+  "errors": [
+    "screenshot welcome-start: CDP screenshot timeout",
+    "screenshot live: CDP screenshot timeout"
+  ],
+  "observations": [
+    {
+      "label": "welcome-start",
+      "at": 8709,
+      "state": {
+        "phase": "live",
+        "video": {
+          "readyState": 2,
+          "currentTime": 6.564029,
+          "width": 720,
+          "height": 1280
+        },
+        "globe": null,
+        "livePoint": false,
+        "selectedLive": false,
+        "stage": {
+          "width": 390,
+          "height": 844
+        }
+      }
+    },
+    {
+      "label": "welcome-pov",
+      "at": 16453,
+      "state": {
+        "phase": "live",
+        "video": {
+          "readyState": 4,
+          "currentTime": 10.329945,
+          "width": 720,
+          "height": 1280
+        },
+        "globe": null,
+        "livePoint": false,
+        "selectedLive": false,
+        "stage": {
+          "width": 390,
+          "height": 844
+        }
+      }
+    },
+    {
+      "label": "welcome-watch",
+      "at": 20609,
+      "state": {
+        "phase": "live",
+        "video": {
+          "readyState": 4,
+          "currentTime": 13.738199,
+          "width": 720,
+          "height": 1280
+        },
+        "globe": null,
+        "livePoint": false,
+        "selectedLive": false,
+        "stage": {
+          "width": 390,
+          "height": 844
+        }
+      }
+    },
+    {
+      "label": "watch",
+      "at": 25536,
+      "state": {
+        "phase": "live",
+        "video": {
+          "readyState": 4,
+          "currentTime": 16.840725,
+          "width": 720,
+          "height": 1280
+        },
+        "globe": null,
+        "livePoint": false,
+        "selectedLive": false,
+        "stage": {
+          "width": 390,
+          "height": 844
+        }
+      }
+    },
+    {
+      "label": "watch-live",
+      "at": 29488,
+      "state": {
+        "phase": "live",
+        "video": {
+          "readyState": 2,
+          "currentTime": 19.874037,
+          "width": 720,
+          "height": 1280
+        },
+        "globe": null,
+        "livePoint": false,
+        "selectedLive": false,
+        "stage": {
+          "width": 390,
+          "height": 844
+        }
+      }
+    },
+    {
+      "label": "live",
+      "at": 37506,
+      "state": {
+        "phase": "live",
+        "video": {
+          "readyState": 2,
+          "currentTime": 23.088032,
+          "width": 720,
+          "height": 1280
+        },
+        "globe": null,
+        "livePoint": false,
+        "selectedLive": false,
+        "stage": {
+          "width": 390,
+          "height": 844
+        }
+      }
+    },
+    {
+      "label": "live-equipment",
+      "at": 41813,
+      "state": {
+        "phase": "live",
+        "video": {
+          "readyState": 4,
+          "currentTime": 23.208333,
+          "width": 720,
+          "height": 1280
+        },
+        "globe": null,
+        "livePoint": false,
+        "selectedLive": false,
+        "stage": {
+          "width": 390,
+          "height": 844
+        }
+      }
+    },
+    {
+      "label": "equipment",
+      "at": 45174,
+      "state": {
+        "phase": "live",
+        "video": {
+          "readyState": 4,
+          "currentTime": 23.208333,
+          "width": 720,
+          "height": 1280
+        },
+        "globe": null,
+        "livePoint": false,
+        "selectedLive": false,
+        "stage": {
+          "width": 390,
+          "height": 844
+        }
+      }
+    },
+    {
+      "label": "equipment-globe",
+      "at": 48112,
+      "state": {
+        "phase": "live",
+        "video": {
+          "readyState": 4,
+          "currentTime": 23.208333,
+          "width": 720,
+          "height": 1280
+        },
+        "globe": null,
+        "livePoint": false,
+        "selectedLive": false,
+        "stage": {
+          "width": 390,
+          "height": 844
+        }
+      }
+    },
+    {
+      "label": "globe-start",
+      "at": 50648,
+      "state": {
+        "phase": "live",
+        "video": {
+          "readyState": 4,
+          "currentTime": 23.208333,
+          "width": 720,
+          "height": 1280
+        },
+        "globe": null,
+        "livePoint": false,
+        "selectedLive": false,
+        "stage": {
+          "width": 390,
+          "height": 844
+        }
+      }
+    },
+    {
+      "label": "globe",
+      "at": 54058,
+      "state": {
+        "phase": "live",
+        "video": {
+          "readyState": 4,
+          "currentTime": 23.208333,
+          "width": 720,
+          "height": 1280
+        },
+        "globe": null,
+        "livePoint": false,
+        "selectedLive": false,
+        "stage": {
+          "width": 390,
+          "height": 844
+        }
+      }
+    },
+    {
+      "label": "globe-startlive",
+      "at": 56046,
+      "state": {
+        "phase": "live",
+        "video": {
+          "readyState": 4,
+          "currentTime": 23.208333,
+          "width": 720,
+          "height": 1280
+        },
+        "globe": null,
+        "livePoint": false,
+        "selectedLive": false,
+        "stage": {
+          "width": 390,
+          "height": 844
+        }
+      }
+    },
+    {
+      "label": "startlive",
+      "at": 59936,
+      "state": {
+        "phase": "live",
+        "video": {
+          "readyState": 4,
+          "currentTime": 23.208333,
+          "width": 720,
+          "height": 1280
+        },
+        "globe": null,
+        "livePoint": false,
+        "selectedLive": false,
+        "stage": {
+          "width": 390,
+          "height": 844
+        }
+      }
+    },
+    {
+      "label": "startlive-enter",
+      "at": 62326,
+      "state": {
+        "phase": "live",
+        "video": {
+          "readyState": 4,
+          "currentTime": 23.208333,
+          "width": 720,
+          "height": 1280
+        },
+        "globe": null,
+        "livePoint": false,
+        "selectedLive": false,
+        "stage": {
+          "width": 390,
+          "height": 844
+        }
+      }
+    },
+    {
+      "label": "enter",
+      "at": 64718,
+      "state": {
+        "phase": "live",
+        "video": {
+          "readyState": 4,
+          "currentTime": 23.208333,
+          "width": 720,
+          "height": 1280
+        },
+        "globe": null,
+        "livePoint": false,
+        "selectedLive": false,
+        "stage": {
+          "width": 390,
+          "height": 844
+        }
+      }
+    }
+  ]
+}

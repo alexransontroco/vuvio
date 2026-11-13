@@ -1,0 +1,19 @@
+{
+  "url": "https://127.0.0.1:5177/intro-preview",
+  "viewport": {
+    "width": 1440,
+    "height": 900
+  },
+  "errors": [],
+  "observations": [
+    {
+      "label": "end",
+      "state": {
+        "phase": "enter",
+        "videoTime": 13.000166,
+        "globeCanvas": false,
+        "globeSnapshot": false
+      }
+    }
+  ]
+}

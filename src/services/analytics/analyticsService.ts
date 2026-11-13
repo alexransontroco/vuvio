@@ -259,6 +259,63 @@ class AnalyticsService {
     });
   }
 
+  trackPageView(pageType: string, pagePath: string): string {
+    return analyticsQueue.enqueue({
+      eventName: 'page_view',
+      pageType,
+      pagePath,
+    });
+  }
+
+  trackSessionStart(): string {
+    const acquisition = analyticsSessionManager.getOrCaptureAcquisition();
+    analyticsSessionManager.markSessionStarted();
+    return analyticsQueue.enqueue({
+      eventName: 'session_start',
+      acquisitionSource: acquisition.source,
+      acquisitionMedium: acquisition.medium,
+      acquisitionCampaign: acquisition.campaign || null,
+      acquisitionReferrer: acquisition.referrer || null,
+    });
+  }
+
+  trackSessionEnd(durationSeconds: number): string {
+    return analyticsQueue.enqueue({
+      eventName: 'session_end',
+      metadata: { durationSeconds },
+    });
+  }
+
+  setupSessionEndTracking(): void {
+    let fired = false;
+    const fire = () => {
+      if (fired) return;
+      fired = true;
+      const start = analyticsSessionManager.getSessionCreatedAt();
+      const durationSeconds = Math.round((Date.now() - start) / 1000);
+      if (durationSeconds >= 1) {
+        this.trackSessionEnd(durationSeconds);
+        analyticsQueue.flush().catch(() => {});
+      }
+    };
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'hidden') fire();
+    });
+    window.addEventListener('pagehide', fire);
+  }
+
+  trackSignUp(): string {
+    return analyticsQueue.enqueue({ eventName: 'sign_up' });
+  }
+
+  trackLogin(): string {
+    return analyticsQueue.enqueue({ eventName: 'login' });
+  }
+
+  isNewSession(): boolean {
+    return analyticsSessionManager.isNewSession();
+  }
+
   setUserId(userId: string | null): void {
     analyticsSessionManager.setUserId(userId);
   }

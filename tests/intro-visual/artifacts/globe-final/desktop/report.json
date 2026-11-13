@@ -1,0 +1,83 @@
+{
+  "url": "https://127.0.0.1:5177/intro-preview",
+  "viewport": {
+    "width": 1440,
+    "height": 900
+  },
+  "errors": [
+    "screenshot globe-early: page.screenshot: Timeout 8000ms exceeded.\nCall log:\n  \u001b[2m- taking page screenshot\u001b[22m\n\u001b[2m  - waiting for fonts to load...\u001b[22m\n\u001b[2m  - fonts loaded\u001b[22m\n",
+    "screenshot globe-middle: page.screenshot: Timeout 8000ms exceeded.\nCall log:\n  \u001b[2m- taking page screenshot\u001b[22m\n\u001b[2m  - waiting for fonts to load...\u001b[22m\n\u001b[2m  - fonts loaded\u001b[22m\n",
+    "screenshot globe-late: page.screenshot: Timeout 8000ms exceeded.\nCall log:\n  \u001b[2m- taking page screenshot\u001b[22m\n\u001b[2m  - waiting for fonts to load...\u001b[22m\n\u001b[2m  - fonts loaded\u001b[22m\n"
+  ],
+  "observations": [
+    {
+      "label": "globe-early",
+      "at": 9007,
+      "state": {
+        "phase": "globe",
+        "video": {
+          "readyState": 4,
+          "currentTime": 8.807268,
+          "width": 721,
+          "height": 1280
+        },
+        "globe": {
+          "opacity": "1",
+          "canvas": true,
+          "canvasWidth": 390,
+          "canvasHeight": 845
+        },
+        "stage": {
+          "width": 390,
+          "height": 845
+        }
+      }
+    },
+    {
+      "label": "globe-middle",
+      "at": 17020,
+      "state": {
+        "phase": "globe",
+        "video": {
+          "readyState": 4,
+          "currentTime": 13.264339,
+          "width": 721,
+          "height": 1280
+        },
+        "globe": {
+          "opacity": "1",
+          "canvas": true,
+          "canvasWidth": 390,
+          "canvasHeight": 845
+        },
+        "stage": {
+          "width": 390,
+          "height": 845
+        }
+      }
+    },
+    {
+      "label": "globe-late",
+      "at": 25027,
+      "state": {
+        "phase": "globe",
+        "video": {
+          "readyState": 4,
+          "currentTime": 17.044415,
+          "width": 721,
+          "height": 1280
+        },
+        "globe": {
+          "opacity": "1",
+          "canvas": true,
+          "canvasWidth": 390,
+          "canvasHeight": 845
+        },
+        "stage": {
+          "width": 390,
+          "height": 845
+        }
+      }
+    }
+  ]
+}

@@ -1,5 +1,6 @@
 import { collection, doc, setDoc, getDoc, onSnapshot, updateDoc, deleteDoc, serverTimestamp } from 'firebase/firestore';
 import { auth, db } from '../firebase.js';
+import { requestVuvioMediaStream } from '../platform/media.js';
 
 
 let localStream = null;
@@ -193,8 +194,9 @@ async function startRtmpRelayIngest(relayUrl, liveInputId, ingestUrl, streamKey,
 
   const fixedStream = await createFixedResolutionStream(stream, 854, 480, 15);
 
+  const rtcConfig = await getRtcConfig();
   const pc = new RTCPeerConnection({
-    iceServers: [{ urls: 'stun:stun.cloudflare.com:3478' }],
+    ...rtcConfig,
     bundlePolicy: 'max-bundle',
   });
   relayPeerConnection = pc;
@@ -262,7 +264,7 @@ async function startRtmpRelayIngest(relayUrl, liveInputId, ingestUrl, streamKey,
     response = await fetch(`${relayBaseUrl}/sessions`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ liveInputId, ingestUrl, streamKey, sdpOffer: pc.localDescription.sdp }),
+      body: JSON.stringify({ liveInputId, ingestUrl, streamKey, sdpOffer: pc.localDescription.sdp, iceServers: rtcConfig.iceServers }),
     });
     console.log('[relay-browser] relay response status=%s', response.status);
   } catch (fetchErr) {
@@ -281,7 +283,8 @@ async function startRtmpRelayIngest(relayUrl, liveInputId, ingestUrl, streamKey,
 
   // Lock video resolution once ICE is connected — encodings are only active at that point
   const connectionPromise = new Promise((resolve, reject) => {
-    const timeout = setTimeout(() => reject(new Error('Relay ICE connection timeout')), 3000);
+    const timeout = setTimeout(() => reject(new Error('Relay ICE connection timeout')), 12000);
+    pc.oniceconnectionstatechange = () => console.log('[relay] ICE state:', pc.iceConnectionState);
     pc.onconnectionstatechange = () => {
     console.log('[relay] WebRTC state:', pc.connectionState);
     if (pc.connectionState === 'connected') {
@@ -401,7 +404,7 @@ export async function startBroadcast(liveId, userId, existingStream = null, whip
       // Get camera stream
       console.log('[webrtcService] Requesting camera stream...');
       try {
-        localStream = await navigator.mediaDevices.getUserMedia({
+        localStream = await requestVuvioMediaStream({
           video: { width: 1280, height: 720 },
           audio: true,
         });
@@ -805,7 +808,7 @@ export async function startRtmpRelayBroadcast(liveId, userId, existingStream = n
     if (existingStream?.getTracks?.().length) {
       localStream = existingStream;
     } else {
-      localStream = await navigator.mediaDevices.getUserMedia({ video: { width: 1280, height: 720 }, audio: true });
+      localStream = await requestVuvioMediaStream({ video: { width: 1280, height: 720 }, audio: true });
     }
     await startRtmpRelayIngest(relayUrl, liveId, ingestUrl, streamKey, localStream);
     return localStream;
@@ -873,20 +876,20 @@ export async function startWhepViewer(whepUrl, onStream) {
   pc.addTransceiver('video', { direction: 'recvonly' });
   pc.addTransceiver('audio', { direction: 'recvonly' });
 
-  let pendingStream = null;
+  // Cloudflare WHEP sends each track in its own stream — combine them manually.
+  const combinedStream = new MediaStream();
 
   pc.ontrack = (event) => {
     console.log('[WHEP] ontrack:', event.track.kind);
-    if (event.streams?.[0]) pendingStream = event.streams[0];
+    combinedStream.addTrack(event.track);
   };
 
   pc.onconnectionstatechange = () => {
     const state = pc.connectionState;
     console.log('[WHEP] connectionState:', state);
-    if (state === 'connected' && pendingStream) {
+    if (state === 'connected') {
       console.log('[WHEP] DTLS connected — delivering stream');
-      onStream(pendingStream);
-      pendingStream = null;
+      onStream(combinedStream);
     } else if (state === 'failed' || state === 'disconnected') {
       onStream(null, state);
     }
@@ -932,9 +935,8 @@ export async function startWhepViewer(whepUrl, onStream) {
   console.log('[WHEP] remote description set — waiting for DTLS');
 
   // Post-setRemoteDescription check for ultra-fast connections
-  if (pc.connectionState === 'connected' && pendingStream) {
-    onStream(pendingStream);
-    pendingStream = null;
+  if (pc.connectionState === 'connected' && combinedStream.getTracks().length > 0) {
+    onStream(combinedStream);
   }
 
   return pc;

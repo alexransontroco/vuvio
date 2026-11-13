@@ -119,6 +119,7 @@ export async function createUserProfileIfMissing(firebaseUser, extra = {}) {
     emailNormalized:    (firebaseUser.email || '').toLowerCase(),
     emailVerified:      firebaseUser.emailVerified || false,
     displayName,
+    displayNameNormalized: displayName.toLowerCase(),
     username:           null,
     usernameNormalized: null,
     photoURL:           firebaseUser.photoURL || null,
@@ -165,7 +166,10 @@ export async function getUserProfile(uid) {
 
 export async function updateUserProfile(uid, data) {
   const ref = doc(db, 'users', uid);
-  await setDoc(ref, { uid, ...data, updatedAt: serverTimestamp() }, { merge: true });
+  const extra = data.displayName != null
+    ? { displayNameNormalized: data.displayName.toLowerCase() }
+    : {};
+  await setDoc(ref, { uid, ...data, ...extra, updatedAt: serverTimestamp() }, { merge: true });
 }
 
 /* ─── Username reservation ────────────────────────────────────── */

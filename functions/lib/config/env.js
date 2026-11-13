@@ -16,8 +16,12 @@ export const amazonPaSecretKey = defineSecret('AMAZON_PA_SECRET_KEY');
 export const amazonAssociateTagFr = defineSecret('AMAZON_ASSOCIATE_TAG_FR');
 export const awinApiKey = defineSecret('AMAZON_AWIN_API_KEY');
 export const awinPublisherId = defineSecret('AWIN_PUBLISHER_ID');
+export const ebayClientId = defineSecret('EBAY_CLIENT_ID');
+export const ebayClientSecret = defineSecret('EBAY_CLIENT_SECRET');
 export const icecatLanguage = process.env.ICECAT_LANGUAGE || 'en';
 export const icecatMarket = process.env.ICECAT_MARKET || 'GB';
+export const ebayMarketplaceId = process.env.EBAY_MARKETPLACE_ID || 'EBAY_FR';
+export const ebayAcceptLanguage = process.env.EBAY_ACCEPT_LANGUAGE || 'fr-FR';
 export const STREAM_TIMEOUTS = {
     reconnectAfterSeconds: 30,
     endAfterSeconds: 180,
@@ -59,5 +63,13 @@ export function getAffiliateEnv() {
         amazonAssociateTagFr: sv(amazonAssociateTagFr, 'AMAZON_ASSOCIATE_TAG_FR'),
         awinApiKey: sv(awinApiKey, 'AMAZON_AWIN_API_KEY'),
         awinPublisherId: sv(awinPublisherId, 'AWIN_PUBLISHER_ID'),
+    };
+}
+export function getEbayEnv() {
+    return {
+        clientId: sv(ebayClientId, 'EBAY_CLIENT_ID'),
+        clientSecret: sv(ebayClientSecret, 'EBAY_CLIENT_SECRET'),
+        marketplaceId: ebayMarketplaceId,
+        acceptLanguage: ebayAcceptLanguage,
     };
 }

@@ -12,8 +12,8 @@ export const EXPERIENCE_FAMILIES = {
   earth: {
     id: 'earth',
     label: 'Land',
-    color: '#45B86B',
-    glow: 'rgba(69, 184, 107, 0.24)',
+    color: '#4CD97B',
+    glow: 'rgba(76, 217, 123, 0.28)',
     shape: 'circle',
     altitudeOffset: 0,
     description: 'Walking, work, cycling, cooking',

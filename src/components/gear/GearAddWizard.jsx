@@ -99,9 +99,9 @@ export function GearAddWizard({
 
     // Check for duplicates
     const duplicate = checkForDuplicate(userGearItems, {
-      activityId: prev.activityId,
-      categoryId: prev.categoryId,
-      subcategoryId: prev.subcategoryId,
+      activityId: formData.activityId,
+      categoryId: formData.categoryId,
+      subcategoryId: formData.subcategoryId,
       brandId: data.brandId,
       brandName: data.brandName,
       modelName: data.modelName,

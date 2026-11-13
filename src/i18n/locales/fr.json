@@ -46,7 +46,7 @@
     "create": "Créer",
     "showNavigation": "Afficher la navigation",
     "collapseNavigation": "Réduire la navigation",
-    "watch": "Watch",
+    "watch": "Live",
     "explore": "Explore",
     "notifications": "Notifications"
   },
@@ -132,6 +132,152 @@
       "chestCamera": "Caméra poitrine",
       "vehicle": "À bord",
       "fallback": "POV"
+    },
+    "title": "Explorer",
+    "screenAria": "Explorer",
+    "messagesAria": "Messages",
+    "notificationsAria": "Notifications",
+    "openFiltersAria": "Ouvrir les filtres",
+    "unreadCount": "{{count}} non lu",
+    "searchPlaceholder": "Activités, métiers, lieux ou matériel",
+    "searchAria": "Rechercher des lives",
+    "clearSearch": "Effacer la recherche",
+    "quickFiltersAria": "Filtres rapides",
+    "seeAll": "Voir tout",
+    "sectionLiveNow": "En live maintenant",
+    "sectionLiveNearby": "Lives à proximité",
+    "sectionUpcoming": "À venir",
+    "sectionBrowseByCategory": "Parcourir par catégorie",
+    "upcomingBadge": "À venir",
+    "liveNow": "En live",
+    "remindMe": "Me rappeler",
+    "reminderOn": "Rappel activé",
+    "setReminder": "Activer le rappel",
+    "reminderSet": "Rappel activé",
+    "close": "Fermer",
+    "detailsFor": "Détails de {{title}}",
+    "locationTbc": "Lieu à confirmer",
+    "povVehicle": "POV véhicule",
+    "povFixed": "Caméra fixe",
+    "interestedCount": "{{count}} intéressé",
+    "detailsBeforeLive": "Les détails seront disponibles avant le début du live.",
+    "dateToday": "Aujourd’hui · {{time}}",
+    "dateTomorrow": "Demain · {{time}}",
+    "creatorCount_one": "{{count}} créateur",
+    "creatorCount_other": "{{count}} créateurs",
+    "perspectivesCount_one": "{{count}} perspective",
+    "perspectivesCount_other": "{{count}} perspectives",
+    "noCreatorsFound": "Aucun créateur trouvé",
+    "tryAnotherCreator": "Essaie de chercher un autre créateur.",
+    "noPerspectivesFound": "Aucune perspective live trouvée",
+    "tryAnotherFilter": "Essaie une autre activité, un lieu ou un filtre.",
+    "resetSearch": "Réinitialiser la recherche",
+    "noLiveStreamsRightNow": "Aucun live en ce moment",
+    "exploreUpcomingOrCategory": "Explore les prochains lives ou une autre catégorie.",
+    "nothingLiveNearby": "Rien en live à proximité",
+    "expandLocationOrWorldwide": "Élargis ta zone ou parcours le monde entier.",
+    "filterSheetAria": "Filtrer les lives",
+    "filterTitle": "Filtrer",
+    "reset": "Réinitialiser",
+    "groupStatus": "Statut",
+    "groupTheme": "Thème",
+    "groupActivity": "Activité ou métier",
+    "groupEnvironment": "Environnement",
+    "groupEquipment": "Équipement",
+    "groupLocation": "Localisation",
+    "statusLiveNow": "En live",
+    "statusBoth": "Les deux",
+    "searchActivitiesPlaceholder": "Rechercher des activités...",
+    "showResults_one": "Voir {{count}} perspective",
+    "showResults_other": "Voir {{count}} perspectives",
+    "quickFilters": {
+      "forYou": "Pour toi",
+      "nearby": "À proximité",
+      "jobs": "Métiers",
+      "sports": "Sports",
+      "crafts": "Artisanat",
+      "travel": "Voyage",
+      "nature": "Nature",
+      "music": "Musique"
+    },
+    "categoryTiles": {
+      "jobs": {
+        "label": "Métiers",
+        "desc": "Découvrez de vraies journées de travail"
+      },
+      "sports": {
+        "label": "Sports",
+        "desc": "Bougez, roulez et explorez"
+      },
+      "crafts": {
+        "label": "Artisanat",
+        "desc": "Regardez les gens créer"
+      },
+      "nature": {
+        "label": "Nature",
+        "desc": "Voyez le monde extérieur"
+      },
+      "food": {
+        "label": "Gastronomie",
+        "desc": "Savourez le monde en live"
+      },
+      "transport": {
+        "label": "Transport",
+        "desc": "À bord, en mouvement"
+      },
+      "travel": {
+        "label": "Voyage",
+        "desc": "Explorez depuis n’importe où"
+      },
+      "cityTours": {
+        "label": "Visites de villes",
+        "desc": "Parcourez le monde en live"
+      },
+      "music": {
+        "label": "Musique",
+        "desc": "Son live du monde entier"
+      }
+    },
+    "themes": {
+      "food": "Gastronomie",
+      "adventure": "Aventure",
+      "transport": "Transport",
+      "nature": "Nature",
+      "art": "Art",
+      "music": "Musique",
+      "daily": "Vie quotidienne",
+      "tech": "Technologie"
+    },
+    "activities": {
+      "fishing": "Pêche",
+      "surfing": "Surf",
+      "cycling": "Cyclisme",
+      "hiking": "Randonnée",
+      "skiing": "Ski",
+      "cooking": "Cuisine",
+      "architecture": "Architecture",
+      "medicine": "Médecine",
+      "pottery": "Poterie",
+      "photography": "Photographie",
+      "tourGuide": "Guide touristique",
+      "farming": "Agriculture",
+      "carpentry": "Menuiserie",
+      "welding": "Soudure",
+      "sailing": "Voile"
+    },
+    "equipment": {
+      "gopro": "GoPro",
+      "drone": "Drone",
+      "bicycle": "Vélo",
+      "smartphone": "Smartphone",
+      "boat": "Bateau",
+      "motorbike": "Moto"
+    },
+    "locations": {
+      "nearby": "À proximité",
+      "city": "Ville",
+      "country": "Pays",
+      "worldwide": "Monde entier"
     }
   },
   "globe": {
@@ -183,6 +329,7 @@
       "appLanguage": "Langue de l’application",
       "helpCenter": "Centre d’aide",
       "reportProblem": "Signaler un problème",
+      "communityGuidelines": "Règles de la communauté",
       "terms": "Conditions d’utilisation",
       "privacyPolicy": "Politique de confidentialité",
       "signOut": "Se déconnecter",
@@ -325,6 +472,8 @@
     "statsLives": "Lives",
     "statsFollowers": "Abonnés",
     "statsFollowing": "Suivis",
+    "statsViews": "Vues",
+    "statsHours": "Heures live",
     "noLiveScheduled": "Aucun live programmé",
     "upcomingLive": "Live à venir",
     "liveNowLabel": "Live",
@@ -383,7 +532,82 @@
     "partnershipInquiries": "Demandes de partenariat",
     "sponsorshipDescription": "Les créateurs peuvent marquer leur matériel comme Sponsorisé, Lien affilié ou Fourni par une marque. Vuvio maintient ces étiquettes visibles par souci de transparence.",
     "nudgeText": "Partage le matériel que tu utilises — les viewers adorent savoir ce qui rend ton POV possible.",
-    "nudgeCta": "Ajouter mon équipement"
+    "nudgeCta": "Ajouter mon équipement",
+    "affiliateLink": "Lien affilié",
+    "defaultType": "Équipement",
+    "item_one": "article",
+    "item_other": "articles",
+    "viewer": {
+      "titlePart1": "Équipement",
+      "titleKeyword": "utilisé",
+      "titlePart2": "dans ce live",
+      "subtitle": "Tout ce que le créateur utilise en ce moment.",
+      "activityGroup": "Équipement d’activité",
+      "recordingGroup": "Équipement de capture",
+      "mainBadge": "Principal",
+      "viewProduct": "Voir le produit",
+      "affiliateDisclosure": "Certains liens peuvent être des liens affiliés."
+    },
+    "ownership": {
+      "borrowed": "Emprunté",
+      "sponsored": "Sponsorisé",
+      "brandProvided": "Fourni par une marque"
+    },
+    "disclosure": {
+      "title": "Certains liens peuvent être des liens affiliés.",
+      "body": "En les utilisant, vous pouvez soutenir le créateur sans coût supplémentaire.",
+      "learnMore": "En savoir plus"
+    },
+    "gearInLive": {
+      "title": "Matériel dans ce live",
+      "subtitle": "L’équipement utilisé pour ce live.",
+      "capturedWith": "Capturé avec",
+      "activityGroup": "Équipement d’activité",
+      "viewLive": "Voir le live"
+    },
+    "selector": {
+      "title": "Matériel pour ce live",
+      "subtitle": "Vérifiez le matériel que vous utiliserez avant de démarrer.",
+      "useSuggested": "Utiliser le matériel suggéré",
+      "previousSetup": "Configuration précédente",
+      "hideAll": "Masquer tout",
+      "viewAll": "Voir tout",
+      "skip": "Passer",
+      "allEquipment": "Tout l’équipement",
+      "allEquipmentDesc": "Toute votre bibliothèque d’équipement.",
+      "captureSetup": "Configuration de capture",
+      "captureSetupDesc": "Matériel utilisé pour filmer et diffuser votre live.",
+      "activityEquipment": "Équipement d’activité",
+      "activityEquipmentDesc": "Matériel lié à votre activité {{subcategory}}.",
+      "addCapture": "Ajouter du matériel de capture",
+      "addActivity": "Ajouter du matériel {{subcategory}}",
+      "noActivity": "Aucun équipement {{subcategory}} dans votre bibliothèque.",
+      "suggestedTypes": "Types suggérés :",
+      "usedInPrevious": "Utilisé dans votre dernier live {{subcategory}}",
+      "suggestedFromActivity": "Suggéré depuis votre activité {{subcategory}}",
+      "suggestedGeneral": "Suggéré depuis vos activités",
+      "selected_one": "{{count}} article sélectionné",
+      "selected_other": "{{count}} articles sélectionnés",
+      "noneSelected": "Vous pouvez continuer sans ajouter de matériel."
+    },
+    "quickAdd": {
+      "titleActivity": "Ajouter du matériel d’activité",
+      "title": "Ajouter du matériel",
+      "subtitle": "Vous pouvez compléter les détails plus tard depuis Mon équipement.",
+      "category": "Catégorie",
+      "searchPlaceholder": "Rechercher par marque ou modèle…",
+      "addManually": "Ajouter manuellement",
+      "equipmentType": "Type d’équipement",
+      "brand": "Marque",
+      "model": "Modèle",
+      "addAndSelect": "Ajouter et sélectionner"
+    },
+    "manage": {
+      "hide": "Masquer",
+      "show": "Afficher",
+      "setDefault": "Définir par défaut",
+      "unsetDefault": "Retirer par défaut"
+    }
   },
   "messages": {
     "title": "Messages",
@@ -401,8 +625,23 @@
     "unavailableUser": "Utilisateur indisponible",
     "now": "à l’instant",
     "filtersAria": "Filtrer les conversations",
+    "newMessage": "Nouveau message",
+    "searchByNameOrUsername": "Rechercher par nom ou pseudo",
+    "searchConversations": "Rechercher une conversation",
+    "clear": "Effacer",
+    "activeConversations": "Actives",
+    "messageRequests": "Demandes de messages",
+    "liveNowAria": "En direct maintenant",
+    "liveBadge": "LIVE",
+    "upcomingLiveAria": "Live à venir",
+    "sharedALive": "A partagé un live",
     "noUsersFound": "Aucun utilisateur trouvé",
     "startTypingHint": "Commence à taper pour rechercher des utilisateurs",
+    "requestTypes": {
+      "partnership": "Partenariat",
+      "collaboration": "Collaboration",
+      "default": "Demande de message"
+    },
     "filters": {
       "all": "Tous",
       "unread": "Non lus",
@@ -418,6 +657,42 @@
       "tryAnother": "Essaie une autre recherche",
       "ctaBody": "Découvre des créateurs et commence une conversation",
       "exploreCta": "Explorer"
+    }
+  },
+  "conversation": {
+    "dismiss": "Fermer",
+    "liveNow": "En direct",
+    "liveNowUpper": "LIVE",
+    "liveUnavailable": "Ce live n'est plus disponible",
+    "optionsAria": "Options de la conversation",
+    "muteNotifications": "Désactiver les notifications",
+    "unmuteNotifications": "Réactiver les notifications",
+    "deleteConversation": "Supprimer la conversation",
+    "shareALive": "Partager un live",
+    "attachContent": "Joindre du contenu",
+    "sendReport": "Envoyer le signalement",
+    "collapseSuggestions": "Réduire les suggestions",
+    "attach": "Joindre",
+    "cannotReply": "Tu ne peux pas répondre à cette conversation",
+    "writeMessage": "Écris un message…",
+    "emoji": "Emoji",
+    "notFound": "Conversation introuvable",
+    "backToMessages": "Retour aux messages",
+    "withPerson": "Conversation avec {{name}}",
+    "watchLive": "Regarder le live",
+    "options": "Options",
+    "blockedBanner": "Tu as bloqué cet utilisateur",
+    "unblock": "Débloquer",
+    "blockConfirmTitle": "Bloquer {{name}} ?",
+    "blockConfirmBody": "Il ne pourra plus t'envoyer de messages.",
+    "deleteConfirmTitle": "Supprimer cette conversation ?",
+    "deleteConfirmBody": "Cette action est irréversible.",
+    "reportReasons": {
+      "spam": "Spam",
+      "harassment": "Harcèlement",
+      "inappropriate": "Contenu inapproprié",
+      "fakeProfile": "Faux profil",
+      "other": "Autre"
     }
   },
   "categories": {
@@ -556,6 +831,18 @@
       "scheduleFailed": "Impossible d'enregistrer. Réessaie."
     }
   },
+  "countdown": {
+    "dateUnavailable": "Date indisponible",
+    "startDateUnavailable": "Date de début indisponible",
+    "liveNow": "En direct",
+    "startingSoon": "Bientôt en direct",
+    "startingIn": "Début dans",
+    "startsIn": "Dans",
+    "day": "jour",
+    "days": "jours",
+    "today": "Aujourd'hui",
+    "tomorrow": "Demain"
+  },
   "social": {
     "privacy": {
       "title": "Activité en direct",
@@ -567,6 +854,573 @@
       "showIndicatorDesc": "Permet aux autres de voir une pulsation quand tu regardes un live.",
       "proTipLabel": "Astuce :",
       "proTipBody": "Mettre sur « Personne » masque ta présence dans tous les fils live et l'activité de tes amis."
+    }
+  },
+  "terms": {
+    "title": "Conditions d'utilisation",
+    "label": "CGU",
+    "heroTitle": "Conditions générales d'utilisation",
+    "lastUpdated": "Dernière mise à jour : {{date}}",
+    "summary": "Sommaire",
+    "summaryAriaLabel": "Sections des conditions",
+    "sections": {
+      "purpose": {
+        "title": "Objet",
+        "body1": "Les présentes conditions générales d'utilisation (CGU) régissent l'accès et l'utilisation de la plateforme Vuvio, accessible via l'application mobile et le site web.",
+        "body2": "En créant un compte ou en utilisant Vuvio, vous acceptez sans réserve les présentes CGU. Si vous n'acceptez pas ces conditions, veuillez ne pas utiliser la plateforme."
+      },
+      "publisher": {
+        "title": "Éditeur de la plateforme",
+        "legalName": "Raison sociale : {{value}}",
+        "legalForm": "Forme juridique : {{value}}",
+        "address": "Adresse : {{value}}",
+        "registration": "Immatriculation : {{value}}",
+        "email": "Contact : {{value}}",
+        "director": "Directeur de publication : {{value}}"
+      },
+      "account": {
+        "title": "Création de compte",
+        "body": "Pour accéder aux fonctionnalités de Vuvio, vous devez créer un compte avec une adresse e-mail valide. Vous êtes responsable de la confidentialité de vos identifiants et de toute activité effectuée depuis votre compte."
+      },
+      "age": {
+        "title": "Âge minimum",
+        "body": "L'utilisation de Vuvio est réservée aux personnes âgées d'au moins {{age}} ans. En créant un compte, vous certifiez avoir l'âge requis."
+      },
+      "userContent": {
+        "title": "Contenus publiés par les utilisateurs",
+        "body": "En diffusant ou publiant du contenu sur Vuvio, vous accordez à la plateforme une licence non exclusive, mondiale et gratuite pour afficher, distribuer et promouvoir ce contenu dans le cadre du service. Vous restez propriétaire de vos contenus."
+      },
+      "imageRights": {
+        "title": "Droit à l'image",
+        "body": "Vous vous engagez à ne pas filmer ni diffuser des personnes sans leur consentement. Vuvio ne peut être tenu responsable des diffusions effectuées par ses utilisateurs. En cas de signalement, le contenu concerné sera examiné et pourra être supprimé."
+      },
+      "safety": {
+        "title": "Sécurité et comportement",
+        "body": "Vous vous engagez à ne pas mettre en danger votre sécurité ou celle d'autrui lors de vos diffusions. Les activités illégales, dangereuses ou portant atteinte à l'ordre public sont strictement interdites."
+      },
+      "forbidden": {
+        "title": "Contenus interdits",
+        "body": "Sont strictement interdits sur Vuvio : les contenus à caractère haineux, discriminatoire, pornographique, violent ou incitant à des activités illégales, ainsi que tout contenu portant atteinte aux droits de tiers (droits d'auteur, marques, vie privée)."
+      },
+      "moderation": {
+        "title": "Modération",
+        "body": "Vuvio se réserve le droit de modérer, suspendre ou supprimer tout contenu contrevenant aux présentes CGU, sans préavis ni justification. Une équipe de modération peut intervenir à tout moment."
+      },
+      "reports": {
+        "title": "Signalements",
+        "body": "Tout utilisateur peut signaler un contenu inapproprié via l'application. Vuvio s'engage à examiner les signalements dans les meilleurs délais et à prendre les mesures appropriées."
+      },
+      "location": {
+        "title": "Données de localisation",
+        "body": "Vuvio peut utiliser votre position géographique pour afficher vos lives sur la carte mondiale et améliorer la découverte de contenus. Ces données ne sont pas revendues à des tiers. Vous pouvez désactiver la localisation dans les paramètres de confidentialité."
+      },
+      "availability": {
+        "title": "Disponibilité du service",
+        "body": "Vuvio s'efforce d'assurer la continuité du service mais ne peut garantir une disponibilité sans interruption. Des maintenances planifiées ou des incidents techniques peuvent entraîner des interruptions temporaires."
+      },
+      "paid": {
+        "title": "Fonctionnalités payantes",
+        "body": "Certaines fonctionnalités de Vuvio pourront être proposées contre paiement. Les conditions tarifaires seront précisées au moment de leur introduction et feront l'objet d'une acceptation explicite."
+      },
+      "advertising": {
+        "title": "Publicité",
+        "body": "Vuvio peut afficher des publicités ou du contenu sponsorisé dans l'application. Ces revenus contribuent au financement de la plateforme et permettent de maintenir un accès gratuit aux fonctionnalités de base."
+      },
+      "suspension": {
+        "title": "Suspension et résiliation",
+        "body": "Vuvio se réserve le droit de suspendre ou supprimer tout compte en cas de violation des présentes CGU, de comportement frauduleux ou de mise en danger d'autrui, sans préavis dans les cas graves."
+      },
+      "liability": {
+        "title": "Limitation de responsabilité",
+        "body": "Vuvio ne saurait être tenu responsable des dommages directs ou indirects résultant de l'utilisation de la plateforme, des contenus publiés par les utilisateurs, ou d'interruptions de service. La plateforme est fournie en l'état."
+      },
+      "changes": {
+        "title": "Modification des CGU",
+        "body": "Vuvio se réserve le droit de modifier les présentes CGU à tout moment. Les utilisateurs seront informés des modifications substantielles. La poursuite de l'utilisation de la plateforme après notification vaut acceptation des nouvelles conditions."
+      },
+      "law": {
+        "title": "Droit applicable",
+        "body": "Les présentes CGU sont soumises au droit français. En cas de litige, les tribunaux compétents seront ceux du ressort du siège social de Vuvio, sauf disposition légale contraire."
+      },
+      "contact": {
+        "title": "Contact",
+        "body": "Pour toute question relative aux présentes CGU, vous pouvez nous contacter à l'adresse suivante :"
+      }
+    }
+  },
+  "privacy": {
+    "title": "Confidentialité",
+    "label": "Vie privée",
+    "heroTitle": "Politique de confidentialité",
+    "lastUpdated": "Dernière mise à jour : {{date}}",
+    "intro": "Vuvio s'engage à protéger vos données personnelles. Cette politique explique quelles données nous collectons, pourquoi, combien de temps nous les conservons et quels sont vos droits.",
+    "sections": {
+      "controller": {
+        "title": "Responsable du traitement",
+        "companyName": "Société : {{value}}",
+        "address": "Adresse : {{value}}",
+        "privacyEmail": "Contact DPO / vie privée : {{value}}",
+        "dpo": "Délégué à la protection des données : {{value}}"
+      },
+      "data": {
+        "title": "Données collectées",
+        "body": "Nous collectons les données que vous nous fournissez directement (nom, e-mail, photo de profil, bio, équipement), les données générées par votre activité (lives diffusés, abonnements, messages, interactions), les données techniques (adresse IP, type d'appareil, navigateur, logs de connexion) et, avec votre accord, votre position géographique."
+      },
+      "purposes": {
+        "title": "Finalités et bases légales"
+      },
+      "location": {
+        "title": "Localisation",
+        "body": "Votre position géographique est utilisée uniquement pour afficher vos lives sur la carte mondiale et améliorer la pertinence des contenus proposés. Elle n'est pas revendue. Vous pouvez désactiver la localisation à tout moment dans les paramètres de confidentialité de l'application."
+      },
+      "sharing": {
+        "title": "Partage des données",
+        "body": "Vuvio ne vend pas vos données personnelles. Elles peuvent être partagées avec des prestataires techniques (hébergement, infrastructure vidéo, analytiques) dans le strict cadre de la fourniture du service, et sous contrat de traitement. En cas d'obligation légale, certaines données peuvent être communiquées aux autorités compétentes."
+      },
+      "retention": {
+        "title": "Durées de conservation"
+      },
+      "rights": {
+        "title": "Vos droits",
+        "body": "Conformément au RGPD, vous disposez d'un droit d'accès, de rectification, d'effacement, de limitation, de portabilité et d'opposition. Pour exercer ces droits, contactez-nous à"
+      },
+      "security": {
+        "title": "Sécurité",
+        "body": "Vuvio met en œuvre des mesures techniques et organisationnelles adaptées pour protéger vos données contre tout accès non autorisé, perte ou altération : chiffrement des communications (HTTPS/TLS), contrôle d'accès strict, règles Firestore et authentification Firebase."
+      },
+      "children": {
+        "title": "Mineurs",
+        "body": "Vuvio n'est pas destiné aux mineurs. Nous ne collectons pas sciemment de données personnelles de personnes de moins de 13 ans. Si nous découvrons qu'un compte appartient à un mineur, nous le supprimerons dans les meilleurs délais."
+      },
+      "changes": {
+        "title": "Modifications",
+        "body": "Cette politique peut être mise à jour. Toute modification substantielle vous sera notifiée dans l'application. La poursuite de l'utilisation de Vuvio après notification vaut acceptation de la nouvelle politique."
+      }
+    },
+    "purposes": {
+      "rows": {
+        "account": {
+          "label": "Gestion du compte",
+          "value": "Nom, e-mail, photo, bio",
+          "basis": "Exécution du contrat"
+        },
+        "broadcast": {
+          "label": "Diffusion de lives",
+          "value": "Vidéo, audio, titre, localisation",
+          "basis": "Exécution du contrat"
+        },
+        "map": {
+          "label": "Carte mondiale",
+          "value": "Coordonnées GPS approximatives",
+          "basis": "Consentement"
+        },
+        "messaging": {
+          "label": "Messagerie",
+          "value": "Contenu des messages, horodatage",
+          "basis": "Exécution du contrat"
+        },
+        "secure": {
+          "label": "Sécurité",
+          "value": "IP, logs de connexion",
+          "basis": "Intérêt légitime"
+        },
+        "moderate": {
+          "label": "Modération",
+          "value": "Signalements, contenus signalés",
+          "basis": "Obligation légale / intérêt légitime"
+        },
+        "support": {
+          "label": "Support",
+          "value": "E-mail, description du problème",
+          "basis": "Exécution du contrat"
+        },
+        "improve": {
+          "label": "Amélioration du service",
+          "value": "Données d'usage anonymisées",
+          "basis": "Intérêt légitime"
+        },
+        "marketing": {
+          "label": "Communication",
+          "value": "E-mail",
+          "basis": "Consentement"
+        },
+        "legal": {
+          "label": "Obligations légales",
+          "value": "Données requises par la loi",
+          "basis": "Obligation légale"
+        }
+      }
+    },
+    "retention": {
+      "rows": {
+        "active": {
+          "label": "Compte actif",
+          "value": "Durée de vie du compte"
+        },
+        "deleted": {
+          "label": "Compte supprimé",
+          "value": "30 jours (puis suppression définitive)"
+        },
+        "unsavedLives": {
+          "label": "Lives non sauvegardés",
+          "value": "24 h après la fin du live"
+        },
+        "replays": {
+          "label": "Replays",
+          "value": "Durée de vie du compte ou jusqu'à suppression manuelle"
+        },
+        "messages": {
+          "label": "Messages",
+          "value": "Durée de vie du compte"
+        },
+        "logs": {
+          "label": "Logs techniques",
+          "value": "90 jours"
+        },
+        "support": {
+          "label": "Tickets support",
+          "value": "2 ans"
+        },
+        "consents": {
+          "label": "Consentements",
+          "value": "5 ans"
+        },
+        "billing": {
+          "label": "Données de facturation",
+          "value": "10 ans (obligation comptable)"
+        }
+      }
+    }
+  },
+  "reportProblem": {
+    "ariaLabel": "Signaler un problème",
+    "title": "Signaler un problème",
+    "intro": "Décris le problème rencontré et nous ferons de notre mieux pour le résoudre rapidement.",
+    "alert": {
+      "title": "Urgence ou danger immédiat ?",
+      "p1": "Si tu es en danger ou si tu observes un contenu illégal, contacte directement les services d'urgence (15, 17, 18 ou 112).",
+      "p2": "Ce formulaire est réservé aux problèmes techniques et aux signalements non urgents."
+    },
+    "form": {
+      "fields": {
+        "category": "Catégorie",
+        "subject": "Sujet",
+        "description": "Description",
+        "steps": "Étapes pour reproduire (facultatif)",
+        "email": "Ton adresse e-mail"
+      },
+      "types": {
+        "connection": "Problème de connexion",
+        "account": "Problème de compte",
+        "cannotStart": "Impossible de démarrer un live",
+        "poorQuality": "Qualité vidéo/audio dégradée",
+        "interrupted": "Live interrompu",
+        "location": "Problème de localisation / carte",
+        "messaging": "Problème de messagerie",
+        "notification": "Problème de notifications",
+        "payment": "Problème de paiement",
+        "inappropriate": "Contenu inapproprié",
+        "security": "Problème de sécurité",
+        "other": "Autre"
+      },
+      "placeholders": {
+        "subject": "Ex : L'application plante au démarrage d'un live",
+        "description": "Décris ce qui se passe, ce que tu attendais et ce qui s'est passé à la place…",
+        "steps": "1. J'ouvre l'app\n2. Je tape sur « Démarrer »\n3. L'écran devient noir…"
+      },
+      "upload": {
+        "addImage": "Joindre une capture d'écran",
+        "notice": "Formats acceptés : JPG, PNG, GIF — max 10 Mo"
+      },
+      "tech": {
+        "title": "Inclure les infos techniques",
+        "body": "Système d'exploitation, version de l'app, type d'appareil — utile pour diagnostiquer."
+      },
+      "submit": "Envoyer le signalement",
+      "errors": {
+        "invalid": "Merci de remplir le sujet, la description et ton adresse e-mail."
+      },
+      "success": {
+        "title": "Signalement envoyé !",
+        "body": "Merci, nous avons bien reçu ton message et nous reviendrons vers toi dans les meilleurs délais.",
+        "reference": "Référence : {{reference}}",
+        "sendAnother": "Envoyer un autre signalement"
+      }
+    }
+  },
+  "privacySettings": {
+    "title": "Confidentialité",
+    "comingSoon": "Bientôt",
+    "profileVisibility": "Visibilité du profil",
+    "whoCanSeeProfile": "Qui peut voir mon profil",
+    "everyone": "Tout le monde",
+    "followersOnly": "Abonnés uniquement",
+    "showOnGlobe": "Apparaître sur le globe",
+    "showOnGlobeDesc": "Ton live sera visible sur la carte mondiale",
+    "showInExplore": "Afficher dans Explore",
+    "showInExploreDesc": "Tes lives apparaissent dans la page de découverte",
+    "showFollowing": "Afficher mes Suivis",
+    "showFollowingDesc": "Les autres peuvent voir qui tu suis",
+    "platformNote": "Certaines options seront disponibles lors du lancement complet de la plateforme.",
+    "privateMessages": "Messages privés",
+    "whoCanMessage": "Qui peut m'envoyer un message",
+    "messageEveryone": "Tout le monde",
+    "messageFollowing": "Personnes que je suis",
+    "messageNobody": "Personne",
+    "showOnlineStatus": "Afficher mon statut en ligne",
+    "readReceipts": "Accusés de lecture",
+    "watchingActivity": "Activité de visionnage",
+    "whoCanSeeWatching": "Qui peut voir ce que je regarde",
+    "watchingControlDesc": "Contrôle si tes amis peuvent voir tes lives en cours",
+    "showWatchingIndicator": "Afficher l'indicateur watching",
+    "showWatchingDesc": "Visible par les autres spectateurs du même live",
+    "dataLegal": "Données & légal",
+    "privacyPolicy": "Politique de confidentialité",
+    "terms": "Conditions d'utilisation"
+  },
+  "creatorStats": {
+    "title": "Mes statistiques",
+    "loading": "Chargement…",
+    "noLives": "Aucun live trouvé.",
+    "recentLives": "Lives récents",
+    "views": "vues",
+    "duration": "durée",
+    "untitled": "Sans titre",
+    "statFollowers": "Abonnés",
+    "statViews": "Vues totales",
+    "statHours": "Heures live"
+  },
+  "following": {
+    "loginRequired": "Connecte-toi pour voir ta liste de suivis.",
+    "title": "Suivis ({{count}})",
+    "loading": "Chargement...",
+    "empty": "Tu ne suis encore personne.",
+    "emptyHint": "Découvre des créateurs dans Explorer !"
+  },
+  "editProfile": {
+    "profileImages": "Photos du profil",
+    "coverPreview": "Photo de couverture",
+    "avatarPreview": "Photo de profil",
+    "editAvatar": "Modifier la photo de profil",
+    "required": "requis",
+    "playlists": "Playlists",
+    "playlistsDescription": "Ajoute tes playlists Spotify pour les afficher sur ton profil.",
+    "playlistName": "Nom de la playlist",
+    "playlistNamePlaceholder": "Ex : Ma playlist running",
+    "playlistUrl": "URL Spotify",
+    "playlistUrlPlaceholder": "https://open.spotify.com/playlist/...",
+    "playlistAdd": "Ajouter la playlist",
+    "playlistNameRequired": "Le nom est requis.",
+    "playlistNameTooLong": "Le nom ne peut pas dépasser 100 caractères.",
+    "playlistUrlRequired": "L'URL Spotify est requise.",
+    "playlistUrlInvalid": "URL Spotify invalide. Ex : https://open.spotify.com/playlist/..."
+  },
+  "onboarding": {
+    "skip": "Passer",
+    "stepXofY": "Étape {{step}} sur {{total}}",
+    "stepLabel": "Étape {{n}}",
+    "step1": {
+      "title": "Ton profil",
+      "sub": "Ajoute une photo et choisis un nom d'affichage.",
+      "uploadAria": "Télécharger une photo de profil",
+      "previewAlt": "Aperçu de la photo de profil",
+      "addPhoto": "Ajouter une photo",
+      "changePhoto": "Changer la photo",
+      "displayName": "Nom d'affichage",
+      "namePlaceholder": "Ton prénom"
+    },
+    "step2": {
+      "title": "Tes centres d'intérêt",
+      "sub": "Choisis les catégories que tu aimes. On personnalisera ton fil."
+    },
+    "step3": {
+      "title": "Tes activités",
+      "subFiltered": "Sélectionne les activités que tu pratiques ou suis.",
+      "subAny": "Sélectionne les activités que tu pratiques ou suis.",
+      "empty": "Sélectionne d'abord au moins une catégorie."
+    },
+    "step4": {
+      "title": "Ton équipement",
+      "subFiltered": "Voici du matériel qui correspond à tes activités.",
+      "subAny": "Coche le matériel que tu utilises.",
+      "addCustom": "Ajouter du matériel",
+      "brand": "Marque",
+      "model": "Modèle",
+      "add": "Ajouter"
+    },
+    "step5": {
+      "title": "Parle de toi",
+      "sub": "Écris une courte bio pour que les autres te connaissent.",
+      "bioLabel": "Bio",
+      "bioPlaceholder": "Présente-toi…"
+    },
+    "step6": {
+      "welcome": "C'est parti !",
+      "welcomeName": "Bienvenue, {{name}} !",
+      "body": "Ton profil est prêt. Explore les lives du monde entier."
+    },
+    "cta": {
+      "continue": "Continuer",
+      "continueWithCount": "Continuer ({{count}})",
+      "explore": "Explorer"
+    },
+    "gearCats": {
+      "camera": "Caméra",
+      "audio": "Audio",
+      "gear": "Équipement",
+      "stream": "Streaming",
+      "power": "Batterie"
+    },
+    "errors": {
+      "sessionLoading": "Session non prête, réessaie.",
+      "finishFailed": "Une erreur est survenue. Réessaie."
+    }
+  },
+  "help": {
+    "title": "Centre d'aide",
+    "intro": "Trouve les réponses aux questions les plus courantes sur Vuvio.",
+    "ariaLabel": "Centre d'aide",
+    "search": { "label": "Recherche", "placeholder": "Chercher une question…" },
+    "categories": {
+      "discover": {
+        "title": "Découvrir",
+        "items": {
+          "whatIsVuvio": {
+            "question": "C'est quoi Vuvio ?",
+            "p1": "Vuvio est une plateforme de live streaming où des créateurs partagent des expériences en POV depuis n'importe où dans le monde — concerts, marchés, cuisines, montagnes.",
+            "p2": "En tant que spectateur, tu voyages dans le monde en temps réel. En tant que créateur, tu partages ton quotidien ou ta passion avec une audience mondiale."
+          },
+          "howDiscover": {
+            "question": "Comment je découvre des lives ?",
+            "intro": "Plusieurs façons d'explorer ce qui est en live :",
+            "item1": "Watch — le fil principal avec tous les lives en cours et récents",
+            "item2": "Explore — parcourir par catégorie ou thème",
+            "item3": "Globe — visualiser les lives sur une carte interactive",
+            "item4": "Recherche — trouver des créateurs ou du contenu précis",
+            "item5": "Notifications — être alerté quand un créateur que tu suis passe en live",
+            "footer": "Les lives s'affichent en temps réel — le fil se met à jour automatiquement."
+          },
+          "mapCategories": {
+            "question": "Quelles catégories sont disponibles sur la carte ?",
+            "intro": "Les lives sont organisés par catégories thématiques :",
+            "item1": "Nature & Faune — randonnée, animaux, paysages",
+            "item2": "Vie urbaine — rues, marchés, quartiers",
+            "item3": "Cuisine & Food — cuisine en direct, restaurants",
+            "item4": "Musique & Arts — concerts, studios, performances",
+            "footer": "De nouvelles catégories sont ajoutées régulièrement au fil de la croissance de la communauté."
+          }
+        }
+      },
+      "watch": {
+        "title": "Regarder",
+        "items": {
+          "openLive": {
+            "question": "Comment ouvrir et regarder un live ?",
+            "p1": "Appuie sur n'importe quelle carte live dans le fil ou sur la carte pour l'ouvrir.",
+            "p2": "Une fois ouvert, tu peux :",
+            "item1": "Regarder le live en plein écran",
+            "item2": "Voir la localisation du créateur sur la mini-carte",
+            "item3": "Lire et envoyer des commentaires",
+            "item4": "Voir l'équipement que le créateur utilise",
+            "item5": "Suivre le créateur pour être notifié de ses prochains lives",
+            "item6": "Partager le live avec des amis"
+          },
+          "videoStops": {
+            "question": "La vidéo s'arrête souvent — que faire ?",
+            "intro": "Le buffering peut avoir plusieurs causes :",
+            "item1": "Connexion internet faible ou instable",
+            "item2": "Qualité de connexion du créateur",
+            "item3": "Nombre élevé de spectateurs simultanés",
+            "item4": "Applications en arrière-plan sur ton appareil",
+            "item5": "Limitations du navigateur ou de l'appareil",
+            "footer": "Essaie de rafraîchir la page ou de changer de réseau. Si le problème persiste, essaie un autre navigateur."
+          },
+          "afterEnds": {
+            "question": "Que se passe-t-il quand un live se termine ?",
+            "p1": "Quand un créateur termine son live, il s'arrête automatiquement pour tous les spectateurs.",
+            "p2": "Un récap est généré et disponible sur le profil du créateur."
+          }
+        }
+      },
+      "broadcast": {
+        "title": "Diffuser",
+        "items": {
+          "startLive": {
+            "question": "Comment lancer un live ?",
+            "step1": "Crée un compte Vuvio ou connecte-toi",
+            "step2": "Appuie sur le bouton + dans la barre de navigation",
+            "step3": "Autorise l'accès à la caméra et au micro",
+            "step4": "Choisis ta localisation et ta catégorie",
+            "step5": "Ajoute un titre et une description optionnelle",
+            "step6": "Appuie sur Go Live — tu diffuses !"
+          },
+          "chooseLocation": {
+            "question": "Comment choisir la bonne localisation ?",
+            "intro": "Ta localisation apparaît sur le globe et aide les spectateurs à te trouver :",
+            "item1": "Utilise ta localisation GPS réelle pour l'authenticité",
+            "item2": "Ou définis une localisation manuelle si tu préfères la confidentialité",
+            "item3": "Sois aussi précis qu'une ville ou aussi large qu'une région",
+            "item4": "Une localisation précise améliore ta visibilité sur la carte",
+            "footer": "Ton adresse précise n'est jamais partagée — seulement la zone approximative."
+          },
+          "permissions": {
+            "question": "L'appli demande l'accès à la caméra ou au micro — c'est normal ?",
+            "p1": "Oui. L'accès à la caméra et au micro est nécessaire pour diffuser un live.",
+            "p2": "Ces autorisations ne sont utilisées que pendant ta diffusion. Tu peux les révoquer à tout moment depuis les réglages de ton appareil."
+          },
+          "pause": {
+            "question": "Peut-on mettre un live en pause ?",
+            "p1": "Il n'y a pas de fonction pause — un stream est soit en live, soit terminé.",
+            "p2": "Si tu dois t'arrêter temporairement, tu peux terminer le stream et en démarrer un nouveau. Les spectateurs seront notifiés quand tu repasseras en live."
+          }
+        }
+      },
+      "account": {
+        "title": "Compte",
+        "items": {
+          "editProfile": {
+            "question": "Comment modifier mon profil ?",
+            "p1": "Va sur ton profil et appuie sur Modifier le profil.",
+            "p2": "Tu peux mettre à jour :",
+            "item1": "Nom d'affichage et nom d'utilisateur",
+            "item2": "Photo de profil et image de couverture",
+            "item3": "Bio et profession",
+            "item4": "Ville et pays",
+            "item5": "Liens sociaux (Instagram, YouTube…)",
+            "item6": "Langues parlées et catégories de contenu"
+          },
+          "changeEmail": {
+            "question": "Comment changer mon adresse email ?",
+            "answer": "Va dans Paramètres → Compte. Tu devras confirmer ton mot de passe actuel avant toute modification. Si tu t'es connecté avec Google, ton email est géré via ton compte Google."
+          },
+          "deleteAccount": {
+            "question": "Comment supprimer mon compte ?",
+            "answer": "Pour demander la suppression de ton compte, contacte-nous à hello@vuvio.app avec ton adresse email enregistrée. Nous traiterons ta demande dans les 30 jours conformément à la réglementation applicable."
+          }
+        }
+      },
+      "safety": {
+        "title": "Sécurité",
+        "items": {
+          "report": {
+            "question": "Comment signaler un contenu inapproprié ?",
+            "answer": "Pendant un live, appuie sur le menu (⋯) et sélectionne Signaler. Décris le problème et envoie. Notre équipe de modération examine tous les signalements rapidement."
+          },
+          "block": {
+            "question": "Puis-je bloquer un utilisateur ?",
+            "answer": "Le blocage est en cours de déploiement. En attendant, tu peux signaler tout utilisateur via l'option Signaler dans le menu du live ou du profil."
+          },
+          "danger": {
+            "question": "Que faire si quelqu'un est en danger ?",
+            "answer": "Si tu es témoin d'une situation d'urgence pendant un live, contacte immédiatement les secours locaux (15, 17, 18 ou 112 en France). Tu peux aussi nous signaler le stream à hello@vuvio.app."
+          }
+        }
+      }
+    },
+    "footer": {
+      "noAnswer": "Tu n'as pas trouvé ta réponse ?",
+      "reportProblem": "Signaler un problème",
+      "contactSupport": "Contacter le support"
     }
   }
 }

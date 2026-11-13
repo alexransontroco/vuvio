@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Vuvio — Pitch Deck Paris&Co — Editable HTML</title>
+<style>
+:root{
+  --bg:#0b1f36;
+  --bg-dark:#071523;
+  --panel:#102845;
+  --panel-2:#12375a;
+  --text:#f7f9fc;
+  --muted:#c3d0dd;
+  --muted2:#8fa5b8;
+  --cyan:#1fd0df;
+  --line:#1b6889;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:#020913;color:var(--text);font-family:"Arial Narrow","Helvetica Neue Condensed","Roboto Condensed",Arial,sans-serif}
+.deck{width:100%}
+.slide{
+  width:1600px;height:900px;margin:0 auto 24px;padding:64px 78px 54px;
+  position:relative;overflow:hidden;background:var(--bg);
+  page-break-after:always;
+}
+.kicker{
+  color:var(--cyan);font-size:18px;letter-spacing:.08em;text-transform:uppercase;margin-bottom:18px
+}
+h1{
+  margin:0;color:#fff;font-weight:800;font-stretch:condensed;
+  font-size:64px;line-height:1.02;letter-spacing:-.03em;max-width:1320px
+}
+h2{font-size:31px;line-height:1.1;margin:0 0 10px}
+h3{font-size:24px;line-height:1.1;margin:0 0 10px}
+p{font-size:23px;line-height:1.45;color:var(--muted);margin:0}
+.small{font-size:18px}
+.micro{font-size:15px}
+.accent-line{width:240px;height:5px;background:var(--cyan);margin:28px 0 32px}
+.footer-page{position:absolute;right:66px;bottom:44px;color:#8198ae;font-size:18px}
+.footer-left{position:absolute;left:78px;bottom:42px;color:#8198ae;font-size:18px}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:38px}
+.grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:28px}
+.grid-4{display:grid;grid-template-columns:repeat(4,1fr);gap:24px}
+.card{background:var(--panel);border:1px solid rgba(31,208,223,.16);padding:28px}
+.card-blue{background:#0c2f4f;border:1px solid #14567a}
+.rule{height:1px;background:#1a607f;margin:18px 0}
+.label{font-size:18px;letter-spacing:.13em;text-transform:uppercase;color:#dbe6ef}
+.num{font-size:18px;color:var(--cyan);font-weight:700;letter-spacing:.14em}
+.placeholder{
+  border:2px dashed rgba(31,208,223,.72);
+  background:rgba(4,18,31,.48);color:#9bdce3;
+  display:flex;align-items:center;justify-content:center;text-align:center;
+  font-size:20px;letter-spacing:.06em;padding:20px
+}
+.placeholder small{display:block;color:#6fb0ba;font-size:14px;margin-top:8px}
+.table{width:100%;border-collapse:collapse;font-size:18px}
+.table th,.table td{padding:15px 16px;border-bottom:1px solid #1a5a79;text-align:left}
+.table th{color:#d8e5ef;font-weight:600}
+.table td{color:#d2dee8}
+.table .focus{background:#0d496c}
+.cols-usage{display:grid;grid-template-columns:1.15fr 1fr 1fr;gap:26px;margin-top:22px}
+.usage-box{padding-right:22px}
+.process{display:grid;grid-template-columns:repeat(4,1fr);gap:26px;margin-top:44px}
+.process .step{padding-top:12px;border-top:1px solid #2a6685}
+.process .step p{font-size:18px}
+.process .step h3{font-size:23px}
+.product-layout{display:grid;grid-template-columns:1.05fr .95fr;gap:46px;align-items:stretch}
+.feature-grid{display:grid;grid-template-columns:1fr 1fr;gap:30px 46px;margin-top:22px}
+.feature{display:grid;grid-template-columns:48px 1fr;gap:16px}
+.iconbox{width:40px;height:40px;border:2px solid var(--cyan);border-radius:9px}
+.feature p{font-size:19px}
+.market-cards{display:grid;grid-template-columns:repeat(4,1fr);gap:28px;margin-bottom:28px}
+.market-cards .mkt{border-right:1px solid #226784;padding-right:26px}
+.market-cards .mkt:last-child{border-right:0}
+.market-cards h3{font-size:18px;letter-spacing:.12em;text-transform:uppercase;color:#dce7ef}
+.market-cards p{font-size:19px}
+.model-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:34px;margin-top:26px}
+.model-grid p{font-size:20px}
+.model-steps{display:grid;grid-template-columns:repeat(3,1fr);gap:34px;margin-top:44px}
+.model-step{border-top:1px solid #1b6484;padding-top:18px}
+.mvp-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:32px;margin-top:26px}
+.mvp-col p{font-size:19px}
+.mvp-col .placeholder{height:240px;margin-top:20px}
+.trajectory{display:grid;grid-template-columns:1.3fr .7fr;gap:54px;margin-top:28px}
+.trajectory ol{padding-left:28px;margin:0}
+.trajectory li{font-size:22px;line-height:1.5;color:#d7e2eb;margin-bottom:10px}
+.team-grid{display:grid;grid-template-columns:1fr 1fr;gap:42px;margin-top:26px}
+.person{background:var(--panel);padding:20px}
+.person .placeholder{height:190px;width:320px;margin-bottom:18px}
+.impact-row{display:grid;grid-template-columns:1fr 1fr;gap:36px;margin-top:24px}
+.final-bg{
+  position:absolute;inset:0;z-index:0;background:linear-gradient(rgba(2,9,17,.55),rgba(2,9,17,.78));
+}
+.final-placeholder{position:absolute;inset:0;z-index:-1}
+.final-content{position:relative;z-index:2;width:86%}
+.final-list{margin-top:30px}
+.final-item{padding:22px 0;border-bottom:1px solid #16749a;font-size:21px;color:#dbe6ee}
+.final-item b{color:#fff}
+.cover{
+  background:#050c14;
+}
+.cover .bgph{position:absolute;right:0;top:0;width:52%;height:100%}
+.cover-content{position:relative;z-index:2;width:58%;padding-top:24px}
+.cover h1{font-size:84px;line-height:1.02}
+.cover .subtitle{font-size:26px;max-width:760px;color:#d4dde6;margin-top:26px}
+.cover .kicker{color:#d3dce6;font-size:18px}
+@media print{
+  @page{size:16in 9in;margin:0}
+  body{background:#fff}
+  .slide{margin:0;break-after:page}
+}
+</style>
+</head>
+<body>
+<div class="deck">
+
+<!-- 01 -->
+<section class="slide cover">
+  <div class="bgph placeholder">IMAGE DE COUVERTURE À AJOUTER
+    <small>Ex. globe nocturne / monde connecté</small>
+  </div>
+  <div class="cover-content">
+    <div class="kicker">VUVIO · CANDIDATURE PARIS&CO</div>
+    <h1>Des passions,<br>des métiers,<br>des expériences<br><span style="color:#fff">—</span><br><span style="color:var(--cyan)">en direct.</span></h1>
+    <div class="accent-line"></div>
+    <p class="subtitle">Découvrez des activités et des passions à travers ceux qui les vivent.</p>
+  </div>
+</section>
+
+<!-- 02 -->
+<section class="slide">
+  <div class="kicker">02 — LA VISION</div>
+  <h1>Découvrir des personnes par ce qu’elles font</h1>
+  <div class="accent-line"></div>
+
+  <div class="grid-2" style="grid-template-columns:1.15fr .85fr">
+    <div>
+      <p>Le Live existe déjà, mais il reste une fonctionnalité parmi d’autres, organisée autour de créateurs déjà connus. Vuvio part de ce que les gens font réellement : un artisan dans son atelier, un cycliste dans les Alpes, un guide à Tokyo, un chef en plein service.</p>
+
+      <div style="margin-top:24px">
+        <p class="small"><b style="color:#fff">Activité :</b> le point d’entrée, pour découvrir un créateur sans le connaître à l’avance.</p>
+        <p class="small" style="margin-top:16px"><b style="color:#fff">Point de vue (POV) :</b> les gestes, l’environnement et les imprévus, au moment où l’activité a lieu.</p>
+        <p class="small" style="margin-top:16px"><b style="color:#fff">Géographie :</b> le Globe pour explorer des activités dans d’autres villes, régions ou pays.</p>
+      </div>
+
+      <div class="rule"></div>
+      <p class="micro">Le Live n’est pas nouveau. La manière dont Vuvio associe ces trois dimensions constitue son positionnement.</p>
+    </div>
+
+    <div class="grid-2" style="gap:20px">
+      <div>
+        <div class="placeholder" style="height:185px">IMAGE À AJOUTER<small>ARTISAN</small></div>
+        <div class="label" style="margin-top:10px">ARTISAN</div>
+      </div>
+      <div>
+        <div class="placeholder" style="height:185px">IMAGE À AJOUTER<small>CYCLISTE</small></div>
+        <div class="label" style="margin-top:10px">CYCLISTE</div>
+      </div>
+      <div>
+        <div class="placeholder" style="height:185px">IMAGE À AJOUTER<small>GUIDE</small></div>
+        <div class="label" style="margin-top:10px">GUIDE</div>
+      </div>
+      <div>
+        <div class="placeholder" style="height:185px">IMAGE À AJOUTER<small>CHEF</small></div>
+        <div class="label" style="margin-top:10px">CHEF</div>
+      </div>
+    </div>
+  </div>
+  <div class="footer-page">02</div>
+</section>
+
+<!-- 03 -->
+<section class="slide">
+  <div class="kicker">03 — L’USAGE</div>
+  <h1>Découvrir, partager, suivre, revenir</h1>
+  <div class="accent-line"></div>
+
+  <div class="cols-usage">
+    <div class="usage-box">
+      <div class="label">REGARDER</div>
+      <p class="small" style="margin-top:14px">Entrer dans l’atelier d’un artisan, suivre un service en cuisine, accompagner un guide, explorer une activité dans un autre pays.</p>
+    </div>
+    <div class="usage-box">
+      <div class="label">PARTAGER</div>
+      <p class="small" style="margin-top:14px">Sportif, guide, artisan, musicien, cuisinier ou voyageur partage en direct, sans vidéo montée, et bâtit une communauté.</p>
+    </div>
+    <div class="usage-box">
+      <div class="label">PARTENAIRES</div>
+      <p class="small" style="margin-top:14px">Équipement, lieux, événements, tourisme, culture : une présence utile, cohérente avec l’activité et clairement identifiable.</p>
+    </div>
+  </div>
+
+  <div class="process">
+    <div class="step"><div class="num">01</div><h3>DÉCOUVRIR</h3><p>Depuis Watch, Explore ou le Globe.</p></div>
+    <div class="step"><div class="num">02</div><h3>EXPLORER</h3><p>L’activité et la personne.</p></div>
+    <div class="step"><div class="num">03</div><h3>SUIVRE</h3><p>Un créateur ou un centre d’intérêt.</p></div>
+    <div class="step"><div class="num">04</div><h3>REVENIR</h3><p>Retrouver les activités et personnes suivies.</p></div>
+  </div>
+
+  <p style="margin-top:42px;color:#fff;font-size:28px"><b>Le Live crée l’entrée. L’activité crée l’intérêt. <span style="color:var(--cyan)">La personne crée la connexion.</span></b></p>
+  <div class="footer-page">03</div>
+</section>
+
+<!-- 04 -->
+<section class="slide">
+  <div class="product-layout">
+    <div>
+      <div class="kicker">04 — LE PRODUIT</div>
+      <h1 style="font-size:56px;font-weight:500">Six fonctionnalités pour découvrir,<br>explorer et partager</h1>
+      <div class="accent-line"></div>
+
+      <div class="feature-grid">
+        <div class="feature"><div class="iconbox"></div><div><div class="label">WATCH</div><p>Entrer dans un Live en cours.</p></div></div>
+        <div class="feature"><div class="iconbox" style="border-radius:50%"></div><div><div class="label">GLOBE</div><p>Zoomer sur une région et trouver des Lives que la recherche n’aurait pas montrés.</p></div></div>
+        <div class="feature"><div class="iconbox"></div><div><div class="label">EXPLORE</div><p>Catégories, métiers, passions, créateurs, lieux, activités à proximité.</p></div></div>
+        <div class="feature"><div class="iconbox"></div><div><div class="label">PROFIL</div><p>Activités, équipement, Lives passés et à venir.</p></div></div>
+        <div class="feature"><div class="iconbox"></div><div><div class="label">REPLAY & RECAP</div><p>Prolonger certaines expériences.</p></div></div>
+        <div class="feature"><div class="iconbox"></div><div><div class="label">START LIVE</div><p>Préparer, cadrer, démarrer.</p></div></div>
+      </div>
+    </div>
+
+    <div class="placeholder" style="height:100%">
+      GRANDE IMAGE À AJOUTER
+      <small>Ex. main tenant un smartphone / ambiance urbaine / usage mobile</small>
+    </div>
+  </div>
+  <div class="footer-left">04</div>
+</section>
+
+<!-- 05 -->
+<section class="slide">
+  <div class="kicker">05 — POSITIONNEMENT</div>
+  <h1>Un usage à la croisée de plusieurs marchés</h1>
+  <div class="accent-line"></div>
+
+  <div class="market-cards">
+    <div class="mkt"><h3>LIVE STREAMING</h3><p>Une immédiateté que les contenus enregistrés ne reproduisent pas.</p></div>
+    <div class="mkt"><h3>CREATOR ECONOMY</h3><p>Des créateurs qui bâtissent une communauté autour de leurs passions.</p></div>
+    <div class="mkt"><h3>SOCIAL DISCOVERY</h3><p>Découverte structurée par comptes, algorithmes et tendances.</p></div>
+    <div class="mkt"><h3>LOCALE & EXPÉRIENTIELLE</h3><p>Lieux, territoires, métiers, pratiques.</p></div>
+  </div>
+
+  <table class="table">
+    <thead>
+      <tr><th></th><th class="focus">VUVIO</th><th>TIKTOK / INSTAGRAM</th><th>TWITCH</th><th>YOUTUBE LIVE</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><b>Live</b></td><td class="focus">Au cœur du produit</td><td>Fonctionnalité parmi d’autres</td><td>Au cœur du produit</td><td>Intégré à un écosystème vidéo</td></tr>
+      <tr><td><b>Activité comme entrée</b></td><td class="focus">Central</td><td>Possible, non structurante</td><td>Catégories, surtout gaming</td><td>Via recherche et chaînes</td></tr>
+      <tr><td><b>POV terrain</b></td><td class="focus">Central</td><td>Possible</td><td>Possible</td><td>Possible</td></tr>
+      <tr><td><b>Géographie</b></td><td class="focus">Globe dédié</td><td>Limitée</td><td>Non centrale</td><td>Non centrale</td></tr>
+    </tbody>
+  </table>
+
+  <p class="micro" style="margin-top:22px">Vuvio ne remplace pas les plateformes sociales : il crée un usage spécifique, découvrir le monde réel en direct à travers ceux qui le vivent. Aucun chiffre de marché n’est affiché tant qu’il n’est pas vérifié et sourcé.</p>
+  <div class="footer-page">05</div>
+</section>
+
+<!-- 06 -->
+<section class="slide">
+  <div class="kicker">06 — LE MODÈLE</div>
+  <h1>Construire les revenus autour des usages réels</h1>
+  <div class="accent-line"></div>
+
+  <div class="model-grid">
+    <div>
+      <div class="num">01</div>
+      <div class="label" style="margin-top:12px">ÉQUIPEMENT & AFFILIATION</div>
+      <p style="margin-top:16px">Le matériel réellement utilisé par le créateur, montré parce qu’il sert, pas pour être vendu.</p>
+    </div>
+    <div>
+      <div class="num">02</div>
+      <div class="label" style="margin-top:12px">MARQUES & PARTENARIATS</div>
+      <p style="margin-top:16px">Accompagner un créateur, une activité, une série de Lives ou un événement, de façon claire.</p>
+    </div>
+    <div>
+      <div class="num">03</div>
+      <div class="label" style="margin-top:12px">OUTILS CRÉATEURS</div>
+      <p style="margin-top:16px">Programmation, statistiques, profil pro, séries, recap.</p>
+    </div>
+  </div>
+
+  <div class="model-steps">
+    <div class="model-step"><div class="label">D’ABORD</div><h3 style="margin-top:12px">L’USAGE</h3></div>
+    <div class="model-step"><div class="label">ENSUITE</div><h3 style="margin-top:12px">AFFILIATION & PARTENARIATS</h3></div>
+    <div class="model-step"><div class="label">PLUS TARD</div><h3 style="margin-top:12px">OUTILS PREMIUM</h3></div>
+  </div>
+
+  <p style="margin-top:50px;color:#fff"><b>Modèle : B2C + B2B2C + B2B.</b></p>
+  <div class="footer-page">06</div>
+</section>
+
+<!-- 07 -->
+<section class="slide">
+  <div class="kicker">07 — LE MVP</div>
+  <h1>Vuvio n’est plus seulement un concept</h1>
+  <p style="margin-top:14px">Le MVP et l’infrastructure Live sont fonctionnels. L’enjeu : valider les usages avec de vrais utilisateurs.</p>
+  <div class="accent-line"></div>
+
+  <div class="mvp-grid">
+    <div class="mvp-col">
+      <div class="label">PRODUIT</div>
+      <p style="margin-top:12px">Watch, Explore, Globe, profils, équipement, Live Recap, interface mobile.</p>
+      <div class="placeholder">CAPTURE À AJOUTER<small>WATCH — vraie capture produit</small></div>
+      <div class="label" style="margin-top:10px">WATCH</div>
+    </div>
+    <div class="mvp-col">
+      <div class="label">LIVE</div>
+      <p style="margin-top:12px">Diffusion depuis mobile, replay, expérience spectateur, testés.</p>
+      <div class="placeholder">CAPTURE À AJOUTER<small>GLOBE — vraie capture produit</small></div>
+      <div class="label" style="margin-top:10px">GLOBE</div>
+    </div>
+    <div class="mvp-col">
+      <div class="label">INFRASTRUCTURE</div>
+      <p style="margin-top:12px">Backend Firebase, authentification, streaming, premiers systèmes d’équipement et d’affiliation.</p>
+      <div class="placeholder">CAPTURE À AJOUTER<small>EXPLORE — vraie capture produit</small></div>
+      <div class="label" style="margin-top:10px">EXPLORE</div>
+    </div>
+  </div>
+
+  <p class="small" style="margin-top:28px">Prochaine étape : recruter des créateurs pilotes, tester avec de vrais spectateurs, mesurer ce qui donne envie de revenir, tester les premiers partenariats.</p>
+  <div class="footer-page">07</div>
+</section>
+
+<!-- 08 -->
+<section class="slide">
+  <div class="kicker">08 — LA TRAJECTOIRE</div>
+  <h1 style="font-size:58px;font-weight:500">Du MVP aux premiers usages, financés par étapes</h1>
+  <div class="accent-line"></div>
+
+  <div class="trajectory">
+    <div>
+      <ol>
+        <li><b>Pilotes :</b> tester l’usage avec des créateurs motivés.</li>
+        <li><b>Lancement :</b> métiers & artisanat, musique & culture, cuisine, sport & outdoor, voyage.</li>
+        <li><b>Communauté :</b> comprendre ce qui crée du retour.</li>
+        <li><b>Premiers revenus :</b> affiliation, premiers partenaires, tests B2B / B2B2C.</li>
+        <li><b>Développement :</b> plus de catégories, nouveaux territoires, international progressif.</li>
+      </ol>
+    </div>
+
+    <div>
+      <p class="small"><b style="color:#fff">Financement :</b> infrastructure, streaming, tests pilotes, acquisition, partenariats, structuration.</p>
+      <p class="small" style="margin-top:24px"><b style="color:#fff">Sources envisagées :</b> apports des fondateurs, aides à l’innovation, FPI, Paris&Co, partenaires.</p>
+      <p class="small" style="margin-top:24px"><b style="color:#fff">Principe :</b> financer ce qui a été validé, sans surdimensionner.</p>
+    </div>
+  </div>
+  <div class="footer-page">08</div>
+</section>
+
+<!-- 09 -->
+<section class="slide">
+  <div class="kicker">09 — L’ÉQUIPE & L’IMPACT</div>
+  <h1>Une équipe complémentaire, un impact à mesurer</h1>
+  <div class="accent-line"></div>
+
+  <div class="team-grid">
+    <div class="person">
+      <div class="placeholder">PHOTO À AJOUTER<small>Alexandre Ranson</small></div>
+      <div class="label">ALEXANDRE RANSON — PRODUIT & TECHNOLOGIE</div>
+      <p class="small" style="margin-top:14px">Conception, MVP, infrastructure Live ; formation en informatique, expérience dans la musique et l’enseignement.</p>
+    </div>
+
+    <div class="person card-blue">
+      <div class="placeholder">PHOTO À AJOUTER<small>Cécilia Ranson</small></div>
+      <div class="label">CÉCILIA RANSON — MARKETING, FINANCE & PARTENARIATS</div>
+      <p class="small" style="margin-top:14px">Positionnement, modèle économique, partenariats ; expérience senior en marketing, notamment chez Leboncoin.</p>
+    </div>
+  </div>
+
+  <div class="impact-row">
+    <div>
+      <div class="label">IMPACT SOCIAL</div>
+      <p class="small" style="margin-top:14px">Rendre observables les métiers et savoir-faire, ouvrir à d’autres cultures, donner de la visibilité aux territoires, connecter des personnes autour d’une passion.</p>
+    </div>
+    <div>
+      <div class="label">DÉMARCHE EN STRUCTURATION</div>
+      <p class="small" style="margin-top:14px">Indicateurs à définir : diversité des activités, créateurs pilotes, taux de retour. Pas encore de certification ni de mesure formelle.</p>
+    </div>
+  </div>
+  <div class="footer-page">09</div>
+</section>
+
+<!-- 10 -->
+<section class="slide" style="background:#040b12">
+  <div class="final-bg"></div>
+  <div class="placeholder final-placeholder">IMAGE DE FOND À AJOUTER
+    <small>Paris de nuit / quai de Seine / ambiance urbaine</small>
+  </div>
+
+  <div class="final-content">
+    <div class="kicker" style="color:#fff">10 — PARIS&CO</div>
+    <h1>Pourquoi Paris&Co : Paris comme premier terrain, une ambition internationale</h1>
+    <div class="accent-line"></div>
+
+    <div class="final-list">
+      <div class="final-item"><b>Tester :</b> créateurs, spectateurs et partenaires pilotes.</div>
+      <div class="final-item"><b>Valider :</b> catégories, engagement, envie de suivre et de revenir, monétisations acceptables.</div>
+      <div class="final-item"><b>Connecter :</b> acteurs culturels et touristiques, artisans, lieux, événements, associations, marques.</div>
+      <div class="final-item"><b>Structurer :</b> business model, go-to-market, financement, candidature FPI, mesure d’impact.</div>
+    </div>
+
+    <div style="margin-top:26px;font-size:24px;letter-spacing:.13em">DES PASSIONS, DES MÉTIERS, DES EXPÉRIENCES — EN DIRECT.</div>
+    <div style="margin-top:18px;font-size:18px;color:#d4dce5">VUVIO</div>
+  </div>
+</section>
+
+</div>
+</body>
+</html>

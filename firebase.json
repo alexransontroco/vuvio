@@ -1,7 +1,7 @@
 {
   "functions": {
     "source": "functions",
-    "runtime": "nodejs20"
+    "runtime": "nodejs22"
   },
   "firestore": {
     "rules": "firestore.rules"
@@ -19,8 +19,13 @@
       "**/*.mov",
       "**/*.webm",
       "**/*.wav",
-      "**/*.mp3",
       "**/*.m4a"
+    ],
+    "headers": [
+      {
+        "source": "/sw.js",
+        "headers": [{ "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" }]
+      }
     ],
     "rewrites": [
       {

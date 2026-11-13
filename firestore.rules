@@ -44,6 +44,17 @@ service cloud.firestore {
       allow delete: if false;
     }
 
+    // ── Stream destinations — multistream config (NO stream keys stored) ──
+    match /users/{uid}/streamDestinations/{destId} {
+      allow read:   if request.auth != null && request.auth.uid == uid;
+      allow create: if request.auth != null && request.auth.uid == uid
+        && !('streamKey' in request.resource.data)
+        && request.resource.data.keys().hasOnly(['id', 'provider', 'name', 'streamUrl', 'enabled', 'createdAt', 'updatedAt', 'lastUsedAt']);
+      allow update: if request.auth != null && request.auth.uid == uid
+        && !('streamKey' in request.resource.data);
+      allow delete: if request.auth != null && request.auth.uid == uid;
+    }
+
     // ── Username reservations ──────────────────────
     match /usernames/{username} {
       allow read:   if true;
@@ -115,6 +126,42 @@ service cloud.firestore {
           ]);
         allow delete: if request.auth != null
           && resource.data.userId == request.auth.uid;
+      }
+
+      match /questions/{questionId} {
+        allow read: if true;
+
+        // Viewer creates their own question — authorId must match auth UID, type forced to "question"
+        allow create: if request.auth != null
+          && request.resource.data.authorId == request.auth.uid
+          && request.resource.data.keys().hasOnly([
+            'text',
+            'type',
+            'authorId',
+            'authorName',
+            'authorAvatar',
+            'streamCreatorId',
+            'createdAt',
+            'answered'
+          ])
+          && request.resource.data.text is string
+          && request.resource.data.text.size() > 0
+          && request.resource.data.text.size() <= 500
+          && request.resource.data.type == 'question'
+          && request.resource.data.authorName is string
+          && request.resource.data.authorName.size() <= 100
+          && request.resource.data.answered == false;
+
+        // Only the live creator can answer — answer.authorId must match their uid
+        allow update: if request.auth != null
+          && request.auth.uid == get(/databases/$(database)/documents/activeLives/$(liveId)).data.creatorUid
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['answered', 'answer'])
+          && request.resource.data.answered == true
+          && request.resource.data.answer.authorId == request.auth.uid;
+
+        // Only the question author can delete their own question
+        allow delete: if request.auth != null
+          && resource.data.authorId == request.auth.uid;
       }
     }
 
@@ -211,6 +258,16 @@ service cloud.firestore {
     }
 
     match /analyticsEvents/{docId} {
+      allow read: if isAdmin();
+      allow write: if false;
+    }
+
+    match /websiteStats/{docId} {
+      allow read: if isAdmin();
+      allow write: if false;
+    }
+
+    match /visitorActivity/{docId} {
       allow read: if isAdmin();
       allow write: if false;
     }

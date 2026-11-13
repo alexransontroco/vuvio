@@ -1,13 +1,25 @@
 const BASE_URL = '/api';
 
-export async function searchProducts(query, { signal, limit = 10 } = {}) {
+function normalizeProductResult(product) {
+  const provider = product.provider ?? 'local';
+  const externalId = product.externalId ?? product.id;
+  return {
+    ...product,
+    id: product.id ?? `${provider}:${externalId}`,
+    externalId,
+    provider,
+  };
+}
+
+export async function searchProducts(query, { signal, limit = 10, category } = {}) {
   if (!query?.trim()) return [];
   try {
     const params = new URLSearchParams({ q: query.trim(), limit: String(limit) });
+    if (category) params.set('category', category);
     const res = await fetch(`${BASE_URL}/products/search?${params}`, { signal });
     if (!res.ok) return [];
     const data = await res.json();
-    return data.results ?? [];
+    return (data.results ?? []).map(normalizeProductResult);
   } catch (err) {
     if (err?.name === 'AbortError') return [];
     console.warn('[productSearchService] search failed:', err);

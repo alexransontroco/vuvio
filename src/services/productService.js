@@ -29,6 +29,42 @@ const PRODUCTS_COLLECTION = 'products';
 const CACHE_KEY = 'vuvio_products_cache';
 const CACHE_TTL = 1000 * 60 * 60; // 1 hour
 
+function normalizeSearchText(value) {
+  return String(value ?? '')
+    .normalize('NFKD')
+    .replace(/[Øø]/g, 'o')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function compactSearchText(value) {
+  return normalizeSearchText(value).replace(/\s+/g, '');
+}
+
+function productMatchesSearch(product, searchQuery) {
+  const normalizedQuery = normalizeSearchText(searchQuery);
+  const compactQuery = compactSearchText(searchQuery);
+  if (!normalizedQuery || normalizedQuery.length < 2) return false;
+
+  const fields = [
+    product.name,
+    product.brand,
+    `${product.brand ?? ''} ${product.name ?? ''}`,
+    ...(product.aliases || []),
+    ...(product.tags || []),
+    ...(product.searchTerms || []),
+  ];
+
+  return fields.some((field) => {
+    const normalizedField = normalizeSearchText(field);
+    const compactField = compactSearchText(field);
+    return normalizedField.includes(normalizedQuery) || compactField.includes(compactQuery);
+  });
+}
+
 function isDevFallbackAllowed() {
   return Boolean(import.meta.env?.DEV);
 }
@@ -204,8 +240,6 @@ export async function searchProducts(searchQuery, categoryId = null) {
     return [];
   }
 
-  const normalizedQuery = searchQuery.toLowerCase();
-
   try {
     // Get products from Firestore (limited search)
     // Firestore doesn't support full-text search, so we fetch a larger set
@@ -224,16 +258,10 @@ export async function searchProducts(searchQuery, categoryId = null) {
       .filter((product) => product && !firestoreIds.has(product.id));
     const allProducts = [...firestoreProducts, ...newDemoProducts];
 
-    // Filter by name, brand, or searchTerms
+    // Filter by name, brand, aliases, tags, or search terms
     return allProducts.filter(product => {
       if (categoryId && product.category !== categoryId) return false;
-      const name = (product.name || '').toLowerCase();
-      const brand = (product.brand || '').toLowerCase();
-      const searchTerms = (product.searchTerms || []).map(t => t.toLowerCase());
-
-      return name.includes(normalizedQuery) ||
-             brand.includes(normalizedQuery) ||
-             searchTerms.some(term => term.includes(normalizedQuery));
+      return productMatchesSearch(product, searchQuery);
     });
   } catch (error) {
     // Log the actual error for debugging
@@ -254,13 +282,7 @@ export async function searchProducts(searchQuery, categoryId = null) {
 
     return demoProducts.map((product) => normalizeProduct(product, product.id)).filter(product => {
       if (categoryId && product.category !== categoryId) return false;
-      const name = (product.name || '').toLowerCase();
-      const brand = (product.brand || '').toLowerCase();
-      const searchTerms = (product.searchTerms || []).map(t => t.toLowerCase());
-
-      return name.includes(normalizedQuery) ||
-             brand.includes(normalizedQuery) ||
-             searchTerms.some(term => term.includes(normalizedQuery));
+      return productMatchesSearch(product, searchQuery);
     });
   }
 }

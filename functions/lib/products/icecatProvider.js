@@ -8,7 +8,7 @@ export class IcecatProductProvider {
         this.config = config;
     }
     canHandle(query) {
-        return !!(query.gtin || query.ean || query.upc || (query.brand && query.mpn) || query.text);
+        return !!(query.gtin || query.ean || query.upc || (query.brand && query.mpn));
     }
     async search(query) {
         try {

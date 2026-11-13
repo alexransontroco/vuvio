@@ -1,5 +1,5 @@
-import { ChevronLeft, Plus, CheckCircle } from 'lucide-react';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { ChevronLeft, Plus } from 'lucide-react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   EquipmentItemRow,
@@ -21,11 +21,14 @@ import {
 const emptyForm = {
   category: 'recording',
   productId: null,
+  externalId: null,
+  provider: null,
   brand: '',
   model: '',
   equipmentType: '',
   productUrl: '',
   affiliateUrl: '',
+  thumbnailUrl: null,
   imageUrl: '',
   notes: '',
   ownership: 'owned',
@@ -34,19 +37,37 @@ const emptyForm = {
 };
 
 function EquipmentForm({ value, onChange, onSave, onCancel, submitLabel = 'Save equipment' }) {
-  const [showManualEntry, setShowManualEntry] = useState(!!value.productId === false);
+  const [showManualEntry, setShowManualEntry] = useState(!value.productId && !!(value.brand || value.model));
+  const [errors, setErrors] = useState({});
+  const brandRef = useRef(null);
+  const modelRef = useRef(null);
+
+  const handleSave = () => {
+    const next = {};
+    if (!value.brand?.trim()) next.brand = 'Brand is required';
+    if (!value.model?.trim()) next.model = 'Model is required';
+    setErrors(next);
+    if (Object.keys(next).length > 0) {
+      const firstRef = next.brand ? brandRef : modelRef;
+      firstRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      return;
+    }
+    onSave();
+  };
 
   const handleProductSelect = (product) => {
-    // Auto-fill form from selected product
     const thumbnailUrl = getProductThumbnailUrl(product, 'medium');
     onChange({
       ...value,
       productId: product.id,
+      externalId: product.externalId || null,
+      provider: product.provider || null,
       brand: product.brand,
       model: product.name,
       equipmentType: product.category,
+      thumbnailUrl: thumbnailUrl || null,
       imageUrl: thumbnailUrl || '',
-      productUrl: product.productUrl || '',
+      productUrl: product.sourceProductUrl || product.productUrl || '',
       affiliateUrl: product.affiliateUrl || '',
       imageSource: 'product-catalog',
     });
@@ -69,14 +90,16 @@ function EquipmentForm({ value, onChange, onSave, onCancel, submitLabel = 'Save 
       </label>
 
       {/* Product Search - Primary method */}
-      <div className="equipment-form-section">
-        <label>Find your product</label>
-        <ProductSearch
-          categoryId={value.category}
-          onSelectProduct={handleProductSelect}
-          disabled={false}
-        />
-      </div>
+      {!value.productId && (
+        <div className="equipment-form-section">
+          <label>Find your product</label>
+          <ProductSearch
+            categoryId={value.category}
+            onSelectProduct={handleProductSelect}
+            disabled={false}
+          />
+        </div>
+      )}
 
       {/* Selected Product Display */}
       {value.productId && (
@@ -88,7 +111,7 @@ function EquipmentForm({ value, onChange, onSave, onCancel, submitLabel = 'Save 
                 name: value.model,
                 brand: value.brand,
                 category: value.category,
-                thumbnailUrl: value.imageUrl || null,
+                thumbnailUrl: value.thumbnailUrl || value.imageUrl || null,
                 imageSource: value.imageSource || 'placeholder',
               }}
               size="md"
@@ -132,13 +155,15 @@ function EquipmentForm({ value, onChange, onSave, onCancel, submitLabel = 'Save 
             </button>
           ) : (
             <div className="equipment-manual-entry">
-              <label>
+              <label ref={brandRef}>
                 Brand
-                <input value={value.brand} onChange={(event) => onChange({ ...value, brand: event.target.value })} placeholder="Example: GoPro" />
+                <input value={value.brand} onChange={(event) => { onChange({ ...value, brand: event.target.value }); setErrors((e) => ({ ...e, brand: '' })); }} placeholder="Example: GoPro" />
+                {errors.brand ? <span className="equipment-field-error">{errors.brand}</span> : null}
               </label>
-              <label>
+              <label ref={modelRef}>
                 Model
-                <input value={value.model} onChange={(event) => onChange({ ...value, model: event.target.value })} placeholder="Example: HERO13 Black" />
+                <input value={value.model} onChange={(event) => { onChange({ ...value, model: event.target.value }); setErrors((e) => ({ ...e, model: '' })); }} placeholder="Example: HERO13 Black" />
+                {errors.model ? <span className="equipment-field-error">{errors.model}</span> : null}
               </label>
               <label>
                 Equipment type
@@ -187,7 +212,7 @@ function EquipmentForm({ value, onChange, onSave, onCancel, submitLabel = 'Save 
       </div>
       <div className="equipment-form-actions">
         <button type="button" onClick={onCancel}>Cancel</button>
-        <button type="button" className="is-primary" disabled={!value.brand.trim() || !value.model.trim()} onClick={onSave}>
+        <button type="button" className="is-primary" onClick={handleSave}>
           {submitLabel}
         </button>
       </div>
@@ -203,9 +228,11 @@ export default function EquipmentManagePage() {
   const [toast, setToast] = useState('');
   const groups = useMemo(() => groupEquipmentByCategory(items), [items]);
 
+  const toastTimer = useRef(null);
   const showToast = (message) => {
     setToast(message);
-    window.setTimeout(() => setToast(''), 1600);
+    window.clearTimeout(toastTimer.current);
+    toastTimer.current = window.setTimeout(() => setToast(''), 2500);
   };
 
   const refreshItems = useCallback(async () => {
@@ -229,21 +256,21 @@ export default function EquipmentManagePage() {
   }, []);
 
   const saveForm = async () => {
-    if (!form?.brand.trim() || !form?.model.trim()) return;
     try {
-      if (editingId) {
-        updateEquipmentItem(editingId, form);
-        console.log('[EquipmentManagePage] Equipment updated:', editingId);
-        showToast('Equipment updated');
-      } else {
-        const saved = addEquipmentItem(form);
-        console.log('[EquipmentManagePage] Equipment added:', saved);
-        showToast('Equipment added');
+      if (!form?.brand?.trim() || !form?.model?.trim()) {
+        showToast('Please enter brand and model');
+        return;
       }
-      const updated = await refreshItems();
-      console.log('[EquipmentManagePage] Current library:', updated.length, 'items');
+      const isEdit = Boolean(editingId);
+      if (isEdit) {
+        updateEquipmentItem(editingId, form);
+      } else {
+        addEquipmentItem(form);
+      }
+      await refreshItems();
       setForm(null);
       setEditingId(null);
+      showToast(isEdit ? 'Equipment updated' : 'Equipment added');
     } catch (err) {
       console.error('[EquipmentManagePage] Save failed:', err);
       showToast('Failed to save equipment');
@@ -253,17 +280,19 @@ export default function EquipmentManagePage() {
   return (
     <section className="screen-scroll equipment-manage-screen" aria-label="My Equipment">
       <header className="equipment-manage-header">
-        <button type="button" onClick={() => navigate('/profile')} aria-label="Back to profile">
+        <button type="button" onClick={() => form ? (setForm(null), setEditingId(null)) : navigate('/profile')} aria-label="Back">
           <ChevronLeft size={19} strokeWidth={1.9} />
         </button>
         <div>
           <h1>My Equipment</h1>
           <p>Manage the gear available for your lives.</p>
         </div>
-        <button type="button" onClick={() => { setForm(emptyForm); setEditingId(null); }}>
-          <Plus size={16} strokeWidth={2} />
-          Add equipment
-        </button>
+        {!form ? (
+          <button type="button" onClick={() => { setForm(emptyForm); setEditingId(null); }}>
+            <Plus size={16} strokeWidth={2} />
+            Add equipment
+          </button>
+        ) : <span />}
       </header>
 
       {form ? (
@@ -279,7 +308,6 @@ export default function EquipmentManagePage() {
         <div className="profile-empty-state">
           <p>No equipment added yet</p>
           <small>Add the gear you use to create your POV experiences.</small>
-          <button type="button" onClick={() => setForm(emptyForm)}>Add equipment</button>
         </div>
       ) : null}
 
@@ -315,13 +343,6 @@ export default function EquipmentManagePage() {
           </section>
         ))}
       </div>
-
-      <section className="equipment-after-live-card">
-        <h2>Equipment used</h2>
-        <p>Confirm the gear used during this live.</p>
-        <button type="button">Confirm</button>
-        <button type="button" onClick={() => setForm(emptyForm)}>Edit equipment</button>
-      </section>
 
       {toast ? <div className="profile-toast" role="status">{toast}</div> : null}
     </section>

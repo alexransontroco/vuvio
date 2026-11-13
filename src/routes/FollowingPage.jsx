@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from '../firebase.js';
 import { useAuth } from '../context/AuthContext.jsx';
@@ -20,6 +21,7 @@ const mockStreamById = newPovStreams.reduce((acc, s) => {
 
 export default function FollowingPage() {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const { user } = useAuth();
   const [followingIds, setFollowingIds] = useState(() => {
     try { return JSON.parse(localStorage.getItem('vuvio:following-creators') ?? '[]'); } catch { return []; }
@@ -71,7 +73,7 @@ export default function FollowingPage() {
     return (
       <div className="following-page">
         <div className="following-empty">
-          <p>Please log in to see your following list.</p>
+          <p>{t('following.loginRequired')}</p>
         </div>
       </div>
     );
@@ -80,14 +82,21 @@ export default function FollowingPage() {
   return (
     <div className="following-page">
       <div className="following-container">
-        <h1>Following ({followingUsers.length})</h1>
+        <button
+          type="button"
+          onClick={() => navigate('/profile')}
+          style={{ display: 'inline-flex', alignItems: 'center', gap: 6, marginBottom: 16, background: 'none', border: 'none', color: 'rgba(255,255,255,0.5)', fontSize: 14, cursor: 'pointer', padding: 0 }}
+        >
+          ← {t('common.back', 'Back')}
+        </button>
+        <h1>{t('following.title', { count: followingUsers.length })}</h1>
 
         {loading ? (
-          <div className="following-loading">Loading...</div>
+          <div className="following-loading">{t('following.loading')}</div>
         ) : followingUsers.length === 0 ? (
           <div className="following-empty">
-            <p>You're not following anyone yet.</p>
-            <small>Find and follow creators in Explore!</small>
+            <p>{t('following.empty')}</p>
+            <small>{t('following.emptyHint')}</small>
           </div>
         ) : (
           <ul className="following-list">

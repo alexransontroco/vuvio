@@ -1,0 +1,87 @@
+{
+  "url": "https://127.0.0.1:5177/intro-preview",
+  "viewport": {
+    "width": 1440,
+    "height": 900
+  },
+  "errors": [
+    "screenshot globe-earth: CDP screenshot timeout",
+    "request: https://127.0.0.1:5177/intro/povs-intro-story.mp4 net::ERR_ABORTED"
+  ],
+  "observations": [
+    {
+      "label": "globe-earth",
+      "at": 9009,
+      "state": {
+        "phase": "globe",
+        "video": {
+          "readyState": 4,
+          "currentTime": 0,
+          "width": 720,
+          "height": 1280
+        },
+        "globe": {
+          "opacity": "1",
+          "canvas": true,
+          "snapshot": false,
+          "canvasWidth": 390,
+          "canvasHeight": 845
+        },
+        "livePoint": true,
+        "selectedLive": true,
+        "stage": {
+          "width": 390,
+          "height": 845
+        }
+      }
+    },
+    {
+      "label": "globe-live-card",
+      "at": 17560,
+      "state": {
+        "phase": "globe",
+        "video": {
+          "readyState": 4,
+          "currentTime": 0,
+          "width": 720,
+          "height": 1280
+        },
+        "globe": {
+          "opacity": "1",
+          "canvas": false,
+          "snapshot": true
+        },
+        "livePoint": true,
+        "selectedLive": true,
+        "stage": {
+          "width": 390,
+          "height": 845
+        }
+      }
+    },
+    {
+      "label": "globe-3d",
+      "at": 19579,
+      "state": {
+        "phase": "globe",
+        "video": {
+          "readyState": 4,
+          "currentTime": 0,
+          "width": 720,
+          "height": 1280
+        },
+        "globe": {
+          "opacity": "1",
+          "canvas": false,
+          "snapshot": true
+        },
+        "livePoint": true,
+        "selectedLive": true,
+        "stage": {
+          "width": 390,
+          "height": 845
+        }
+      }
+    }
+  ]
+}

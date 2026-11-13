@@ -1,6 +1,8 @@
 import { LocalProductProvider } from './localProvider.js';
 import { IcecatProductProvider } from './icecatProvider.js';
 import { ManualProductProvider } from './manualProvider.js';
+import { UpcItemDbProvider } from './upcItemDbProvider.js';
+import { EbayCatalogProvider } from './ebayCatalogProvider.js';
 export class ProductRegistry {
     providers = [];
     register(provider) {
@@ -60,7 +62,27 @@ export class ProductRegistry {
             if (result.length >= limit)
                 break;
         }
-        return result;
+        // Back-fill thumbnailUrl from other providers for results that have none
+        try {
+            const thumbnailByName = new Map();
+            for (const p of products) {
+                if (p.thumbnailUrl && p.brand && p.normalizedName) {
+                    const key = `${p.brand.toLowerCase()}:${p.normalizedName}`;
+                    if (!thumbnailByName.has(key))
+                        thumbnailByName.set(key, p.thumbnailUrl);
+                }
+            }
+            return result.map((p) => {
+                if (p.thumbnailUrl || !p.brand || !p.normalizedName)
+                    return p;
+                const key = `${p.brand.toLowerCase()}:${p.normalizedName}`;
+                const url = thumbnailByName.get(key);
+                return url ? { ...p, thumbnailUrl: url } : p;
+            });
+        }
+        catch {
+            return result;
+        }
     }
 }
 export function createProductRegistry(config) {
@@ -69,6 +91,10 @@ export function createProductRegistry(config) {
     if (config.icecat?.username && config.icecat?.password) {
         registry.register(new IcecatProductProvider(config.icecat));
     }
+    if (config.ebay?.clientId && config.ebay?.clientSecret) {
+        registry.register(new EbayCatalogProvider(config.ebay));
+    }
+    registry.register(new UpcItemDbProvider());
     registry.register(new ManualProductProvider());
     return registry;
 }

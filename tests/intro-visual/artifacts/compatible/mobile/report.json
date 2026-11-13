@@ -1,0 +1,84 @@
+{
+  "url": "https://127.0.0.1:5177/intro-preview",
+  "viewport": {
+    "width": 390,
+    "height": 844
+  },
+  "errors": [
+    "screenshot welcome-start: page.screenshot: Timeout 8000ms exceeded.\nCall log:\n  \u001b[2m- taking page screenshot\u001b[22m\n\u001b[2m  - waiting for fonts to load...\u001b[22m\n\u001b[2m  - fonts loaded\u001b[22m\n",
+    "screenshot welcome-pov: page.screenshot: Timeout 8000ms exceeded.\nCall log:\n  \u001b[2m- taking page screenshot\u001b[22m\n\u001b[2m  - waiting for fonts to load...\u001b[22m\n\u001b[2m  - fonts loaded\u001b[22m\n"
+  ],
+  "observations": [
+    {
+      "label": "welcome-start",
+      "at": 8845,
+      "state": {
+        "video": {
+          "readyState": 4,
+          "currentTime": 5.056653,
+          "width": 721,
+          "height": 1280
+        },
+        "globe": null,
+        "stage": {
+          "width": 390,
+          "height": 844
+        }
+      }
+    },
+    {
+      "label": "welcome-pov",
+      "at": 16856,
+      "state": {
+        "video": {
+          "readyState": 4,
+          "currentTime": 10.895116,
+          "width": 721,
+          "height": 1280
+        },
+        "globe": null,
+        "stage": {
+          "width": 390,
+          "height": 844
+        }
+      }
+    },
+    {
+      "label": "welcome-watch",
+      "at": 22495,
+      "state": {
+        "video": {
+          "readyState": 4,
+          "currentTime": 15.404959,
+          "width": 721,
+          "height": 1280
+        },
+        "globe": null,
+        "stage": {
+          "width": 390,
+          "height": 844
+        }
+      }
+    },
+    {
+      "label": "watch",
+      "at": 25190,
+      "state": {
+        "video": {
+          "readyState": 4,
+          "currentTime": 16.863707,
+          "width": 721,
+          "height": 1280
+        },
+        "globe": {
+          "opacity": "0",
+          "canvas": false
+        },
+        "stage": {
+          "width": 390,
+          "height": 844
+        }
+      }
+    }
+  ]
+}

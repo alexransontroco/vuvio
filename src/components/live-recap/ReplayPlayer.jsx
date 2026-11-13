@@ -37,12 +37,15 @@ function HlsVideo({ src, poster }) {
   );
 }
 
-function ProcessingState() {
+function ProcessingState({ live }) {
+  const thumb = live?.coverImageUrl ?? live?.thumbnailUrl ?? live?.image ?? null;
   return (
-    <section className="replay-player" aria-label="Replay player" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 12, background: '#0a0a0f' }}>
-      <Loader size={32} style={{ opacity: 0.5, animation: 'spin 1s linear infinite' }} />
-      <p style={{ margin: 0, opacity: 0.6, fontSize: 14 }}>Replay being processed…</p>
-      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+    <section className="replay-player" aria-label="Replay player" style={{ position: 'relative', background: '#000', overflow: 'hidden' }}>
+      {thumb ? (
+        <img src={thumb} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block', opacity: 0.55 }} />
+      ) : (
+        <div style={{ width: '100%', height: '100%', background: '#0a0a0f' }} />
+      )}
     </section>
   );
 }
@@ -59,7 +62,7 @@ export default function ReplayPlayer({ live, activeHighlight, playing, speed, on
 
   // Live data exists but replay not ready yet
   if (src === '') {
-    return <ProcessingState />;
+    return <ProcessingState live={live} />;
   }
 
   // No live context — show mock UI

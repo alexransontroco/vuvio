@@ -24,7 +24,7 @@ import { useMessaging } from '../context/MessagingContext.jsx';
 import { getUpcomingReminders, saveUpcomingReminder } from '../services/upcomingReminderService.js';
 import { demoLiveEquipmentIds } from '../data/equipmentModel.js';
 import { getEquipmentLibrary, getEquipmentLibraryWithProducts, getEquipmentSelection } from '../services/equipmentService.js';
-import { formatLocalSchedule, getCountdownState, toValidDate } from '../utils/countdown.js';
+import { formatLocalSchedule, getCountdownState, makeCountdownLabels, toValidDate } from '../utils/countdown.js';
 
 const SWIPE_THRESHOLD = 58;
 const WHEEL_THRESHOLD = 36;
@@ -531,7 +531,8 @@ function CompactLiveCard({ live, onOpen }) {
 
 function UpcomingHomeCard({ item, now, reminderSet, reminderSaving, reminderError, onNotify, onOpen, onWatch }) {
   const { t, i18n } = useTranslation();
-  const countdown = getCountdownState(item.startsAt, now);
+  const cLabels = makeCountdownLabels(t);
+  const countdown = getCountdownState(item.startsAt, now, cLabels);
   const status = upcomingStatus(item, now);
   const isLiveNow = status === 'live';
   const creatorName = item.creatorName ?? 'Vuvio creator';
@@ -573,7 +574,7 @@ function UpcomingHomeCard({ item, now, reminderSet, reminderSaving, reminderErro
         </p>
         <p className="home-upcoming-card__date">
           <CalendarClock size={13} strokeWidth={1.9} />
-          {formatLocalSchedule(item.startsAt, i18n.language)}
+          {formatLocalSchedule(item.startsAt, i18n.language, cLabels)}
         </p>
         <div className="home-countdown" aria-label={countdown.ariaLabel}>
           <span>{countdown.label}</span>
@@ -612,7 +613,8 @@ function UpcomingHomeCard({ item, now, reminderSet, reminderSaving, reminderErro
 
 function UpcomingDetailSheet({ item, now, reminderSet, reminderSaving, onNotify, onClose, onWatch }) {
   const { t, i18n } = useTranslation();
-  const countdown = getCountdownState(item.startsAt, now);
+  const cLabels = makeCountdownLabels(t);
+  const countdown = getCountdownState(item.startsAt, now, cLabels);
   const status = upcomingStatus(item, now);
   const creatorName = item.creatorName ?? 'Vuvio creator';
   const place = item.locationLabel ?? 'Location to be confirmed';
@@ -639,7 +641,7 @@ function UpcomingDetailSheet({ item, now, reminderSet, reminderSaving, onNotify,
         <img src={item.image ?? fallbackCover} alt={`Preview for ${item.title}`} loading="lazy" decoding="async" />
         <div className="home-upcoming-sheet__meta">
           <p><MapPin size={15} strokeWidth={1.9} /> {place}</p>
-          <p><CalendarClock size={15} strokeWidth={1.9} /> {formatLocalSchedule(item.startsAt, i18n.language)}</p>
+          <p><CalendarClock size={15} strokeWidth={1.9} /> {formatLocalSchedule(item.startsAt, i18n.language, cLabels)}</p>
           <p><Clock size={15} strokeWidth={1.9} /> {upcomingPovLabel(item, t)}</p>
           {interested ? <p><UsersRound size={15} strokeWidth={1.9} /> {interested} interested</p> : null}
         </div>
@@ -902,7 +904,7 @@ function HomePage() {
     ].slice(0, 8);
   }, [scheduledStreams, tab]);
 
-  const openLive = (id) => navigate(`/discover?live=${encodeURIComponent(id)}`);
+  const openLive = (id) => navigate(`/watch?live=${encodeURIComponent(id)}`);
 
   return (
     <section className="screen-scroll home-screen" aria-label={t('home.aria')}>
@@ -910,11 +912,11 @@ function HomePage() {
       <HomeTabs value={tab} onChange={setTab} />
 
       {tab === 'following' && !followedLives.length ? (
-        <HomeEmptyState actionLabel={t('home.empty.discoverLives')} onAction={() => navigate('/discover')}>
+        <HomeEmptyState actionLabel={t('home.empty.discoverLives')} onAction={() => navigate('/watch')}>
           {t('home.empty.following')}
         </HomeEmptyState>
       ) : !featuredLive ? (
-        <HomeEmptyState actionLabel={t('home.empty.discoverLives')} onAction={() => navigate('/discover')}>
+        <HomeEmptyState actionLabel={t('home.empty.discoverLives')} onAction={() => navigate('/watch')}>
           {t('home.empty.noLives')}
         </HomeEmptyState>
       ) : (
@@ -933,7 +935,7 @@ function HomePage() {
               onSeeAll={() => navigate('/explore')}
             />
           ) : null}
-          {tab === 'for-you' ? <UpcomingLiveSection items={upcomingItems} onWatch={openLive} onExplore={() => navigate('/discover')} /> : null}
+          {tab === 'for-you' ? <UpcomingLiveSection items={upcomingItems} onWatch={openLive} onExplore={() => navigate('/watch')} /> : null}
         </div>
       )}
       {searchOpen ? <SearchSheet onClose={() => setSearchOpen(false)} /> : null}
@@ -941,15 +943,115 @@ function HomePage() {
   );
 }
 
+// Simplified continent outlines — [lng, lat] pairs, equirectangular
+const GLOBE_LAND = [
+  // Greenland
+  [[-53,83],[-22,83],[-16,77],[-18,70],[-22,65],[-44,60],[-51,62],[-57,67],[-67,73]],
+  // North America
+  [[-168,72],[-140,60],[-125,49],[-124,37],[-117,32],[-105,20],[-83,10],[-77,8],
+   [-80,25],[-75,35],[-70,42],[-53,47],[-57,52],[-62,63],[-82,66],[-100,72],[-168,72]],
+  // South America
+  [[-78,8],[-62,11],[-35,-9],[-40,-22],[-50,-33],[-56,-39],[-65,-55],[-68,-54],
+   [-72,-50],[-75,-38],[-76,-14],[-77,5],[-78,8]],
+  // Western Europe (mainland)
+  [[-9,37],[3,36],[8,44],[12,44],[15,38],[22,38],[28,42],[30,40],[36,37],
+   [28,56],[5,58],[0,51],[-5,50],[-9,44],[-9,37]],
+  // Scandinavia
+  [[5,58],[28,56],[28,70],[15,68],[5,62],[5,58]],
+  // Africa
+  [[-17,15],[10,37],[32,30],[38,22],[43,12],[51,12],[44,-10],[35,-17],[20,-35],[12,-5],[-2,5],[-17,15]],
+  // Arabia
+  [[36,30],[57,26],[56,12],[45,12],[38,22],[36,30]],
+  // Eurasia (Turkey → Siberia → Pacific)
+  [[28,42],[36,37],[54,24],[60,22],[78,8],[100,5],[108,4],[120,22],[130,33],[140,35],
+   [141,46],[130,52],[142,55],[141,62],[130,70],[100,72],[68,68],[38,64],[28,56],[28,42]],
+  // SE Asia & Indochina
+  [[100,5],[108,4],[110,15],[100,5]],
+  // Maritime SE Asia (Sumatra/Java/Borneo simplified)
+  [[95,6],[104,1],[108,-7],[116,-8],[119,1],[122,5],[118,18],[108,20],[100,14],[95,6]],
+  // Australia
+  [[114,-22],[132,-11],[136,-12],[141,-17],[148,-20],[153,-27],[151,-35],[130,-33],[114,-29],[114,-22]],
+  // Iceland
+  [[-24,63],[-13,63],[-13,66],[-20,66],[-24,63]],
+  // Japan (Honshu rough)
+  [[130,31],[132,34],[141,38],[141,42],[135,36],[130,33],[130,31]],
+];
+
+function GlobeMini({ lng = 0, lat = 0 }) {
+  const canvasRef = useRef(null);
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const SIZE = 60;
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    canvas.width = SIZE * dpr;
+    canvas.height = SIZE * dpr;
+    canvas.style.width = `${SIZE}px`;
+    canvas.style.height = `${SIZE}px`;
+    const ctx = canvas.getContext('2d');
+    ctx.scale(dpr, dpr);
+    const r = SIZE / 2;
+    ctx.beginPath();
+    ctx.arc(r, r, r, 0, Math.PI * 2);
+    ctx.clip();
+    const ocean = ctx.createRadialGradient(r * 0.6, r * 0.35, 0, r, r, r * 1.05);
+    ocean.addColorStop(0, '#1d4f88');
+    ocean.addColorStop(0.65, '#0e2a4e');
+    ocean.addColorStop(1, '#040d1c');
+    ctx.fillStyle = ocean;
+    ctx.fillRect(0, 0, SIZE, SIZE);
+    function project(pLng, pLat) {
+      const dLng = ((pLng - lng + 540) % 360) - 180;
+      return [r + (dLng / 180) * r, r - (pLat / 90) * r];
+    }
+    ctx.fillStyle = 'rgba(32,96,78,0.88)';
+    ctx.strokeStyle = 'rgba(43,217,200,0.52)';
+    ctx.lineWidth = 0.4;
+    for (const poly of GLOBE_LAND) {
+      ctx.beginPath();
+      const [sx, sy] = project(poly[0][0], poly[0][1]);
+      ctx.moveTo(sx, sy);
+      for (let i = 1; i < poly.length; i++) {
+        const gap = ((poly[i][0] - poly[i - 1][0] + 540) % 360) - 180;
+        const [x, y] = project(poly[i][0], poly[i][1]);
+        if (Math.abs(gap) > 150) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+      }
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+    }
+    const atmo = ctx.createRadialGradient(r, r, r * 0.72, r, r, r);
+    atmo.addColorStop(0, 'transparent');
+    atmo.addColorStop(1, 'rgba(43,217,200,0.18)');
+    ctx.fillStyle = atmo;
+    ctx.beginPath();
+    ctx.arc(r, r, r, 0, Math.PI * 2);
+    ctx.fill();
+    // Marker at exact stream location (lng is always x=r center; lat drives y)
+    const markerY = r - (lat / 90) * r;
+    ctx.beginPath();
+    ctx.arc(r, markerY, 2.5, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(43,217,200,0.95)';
+    ctx.fill();
+    ctx.beginPath();
+    ctx.arc(r, markerY, 4.5, 0, Math.PI * 2);
+    ctx.strokeStyle = 'rgba(43,217,200,0.5)';
+    ctx.lineWidth = 0.8;
+    ctx.stroke();
+    const spec = ctx.createRadialGradient(r * 0.58, r * 0.3, 0, r * 0.65, r * 0.4, r * 0.35);
+    spec.addColorStop(0, 'rgba(255,255,255,0.13)');
+    spec.addColorStop(1, 'transparent');
+    ctx.fillStyle = spec;
+    ctx.beginPath();
+    ctx.arc(r, r, r, 0, Math.PI * 2);
+    ctx.fill();
+  }, [lng, lat]);
+  return <canvas ref={canvasRef} aria-hidden="true" />;
+}
+
 function LiveLocationGlobe({ live, onOpen }) {
   const { t } = useTranslation();
-  const location = streamLocations.get(live.id) ?? fallbackLocations[live.id] ?? { top: '50%', left: '50%' };
-  const x = toNumber(location.left);
-  const y = toNumber(location.top);
-  const surfaceSize = 118;
-  const globeCenter = 31;
-  const surfaceX = globeCenter - (x / 100) * surfaceSize;
-  const surfaceY = globeCenter - (y / 100) * surfaceSize;
+  const [lng = 0, lat = 0] = live.coordinates ?? mapStreamById.get(live.id)?.coordinates ?? [0, 0];
 
   return (
     <button
@@ -962,13 +1064,7 @@ function LiveLocationGlobe({ live, onOpen }) {
       <span className="live-location-globe__compass live-location-globe__compass--e" aria-hidden="true">E</span>
       <span className="live-location-globe__compass live-location-globe__compass--s" aria-hidden="true">S</span>
       <span className="live-location-globe__compass live-location-globe__compass--w" aria-hidden="true">W</span>
-      <div className="live-location-globe__world" aria-hidden="true">
-        <span
-          className="live-location-globe__surface"
-          style={{ transform: `translate3d(${surfaceX}px, ${surfaceY}px, 0)` }}
-        />
-        <span className="live-location-globe__marker" />
-      </div>
+      <GlobeMini lng={lng} lat={lat} />
     </button>
   );
 }

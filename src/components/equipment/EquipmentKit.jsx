@@ -19,6 +19,7 @@ import {
 } from 'lucide-react';
 import { createPortal } from 'react-dom';
 import { useEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { searchProducts, resolveAffiliateOffers } from '../../services/productSearchService.js';
 import { GearThumbnail, GearItemRow } from '../gear/index.js';
 import { AlertCircle } from 'lucide-react';
@@ -65,11 +66,15 @@ export function ownershipLabel(value) {
 }
 
 export function EquipmentBadge({ item }) {
+  const { t } = useTranslation();
   if (!item?.ownership || item.ownership === 'owned') return null;
-  return <span className="equipment-status-badge">{ownershipLabel(item.ownership)}</span>;
+  const key = item.ownership === 'brand_provided' ? 'brandProvided' : item.ownership;
+  const label = t(`equipment.ownership.${key}`, { defaultValue: ownershipLabel(item.ownership) });
+  return <span className="equipment-status-badge">{label}</span>;
 }
 
 export function EquipmentCategoryCard({ category, count, onClick }) {
+  const { t } = useTranslation();
   return (
     <button type="button" className="equipment-category-card" onClick={onClick} aria-label={`Open ${category.label}`}>
       <span className="equipment-category-card__icon">
@@ -81,7 +86,7 @@ export function EquipmentCategoryCard({ category, count, onClick }) {
       </span>
       <span className="equipment-category-card__count">
         <strong>{count}</strong>
-        <small>{count === 1 ? 'item' : 'items'}</small>
+        <small>{t('equipment.item', { count })}</small>
       </span>
       <ChevronRight size={18} strokeWidth={1.8} />
     </button>
@@ -89,6 +94,7 @@ export function EquipmentCategoryCard({ category, count, onClick }) {
 }
 
 export function EquipmentItemRow({ item, selectable = false, selected = false, onToggle, onOpen, actions, compact = false }) {
+  const { t } = useTranslation();
   const thumbnailUrl = item.thumbnailUrl || item.product?.thumbnailUrl || item.imageUrl || null;
   const content = (
     <>
@@ -99,10 +105,10 @@ export function EquipmentItemRow({ item, selectable = false, selected = false, o
       />
       <span className="equipment-item-row__copy">
         <strong>{equipmentLabel(item)}</strong>
-        <small>{item.equipmentType || 'Equipment'}</small>
+        <small>{item.equipmentType || t('equipment.defaultType')}</small>
         <EquipmentBadge item={item} />
       </span>
-      {item.offers?.length > 0 ? <span className="equipment-affiliate-pill">Affiliate link</span> : null}
+      {item.offers?.length > 0 ? <span className="equipment-affiliate-pill">{t('equipment.affiliateLink')}</span> : null}
       {actions ? actions : selectable ? <span className={selected ? 'equipment-check is-selected' : 'equipment-check'} aria-hidden="true" /> : <ChevronRight size={17} strokeWidth={1.8} />}
     </>
   );
@@ -132,20 +138,22 @@ export function EquipmentItemRow({ item, selectable = false, selected = false, o
 }
 
 export function EquipmentDisclosure({ items }) {
+  const { t } = useTranslation();
   if (!items.some((item) => item.offers?.length > 0)) return null;
   return (
     <section className="equipment-disclosure">
       <Info size={18} strokeWidth={1.8} />
       <div>
-        <strong>Some links may be affiliate links.</strong>
-        <p>Using them may support the creator at no extra cost to you.</p>
+        <strong>{t('equipment.disclosure.title')}</strong>
+        <p>{t('equipment.disclosure.body')}</p>
       </div>
-      <button type="button">Learn more</button>
+      <button type="button">{t('equipment.disclosure.learnMore')}</button>
     </section>
   );
 }
 
 export function GearInLive({ items, onViewLive, compact = false }) {
+  const { t } = useTranslation();
   if (!items.length) return null;
   const captureItems = items.filter((item) => item.category !== 'activity');
   const activityItems = items.filter((item) => item.category === 'activity');
@@ -165,28 +173,28 @@ export function GearInLive({ items, onViewLive, compact = false }) {
   }
 
   return (
-    <section className={compact ? 'gear-in-live is-compact' : 'gear-in-live'} aria-label="Gear in this live">
+    <section className={compact ? 'gear-in-live is-compact' : 'gear-in-live'} aria-label={t('equipment.gearInLive.title')}>
       <header>
         <div>
-          <h2>Gear in this live</h2>
-          <p>The equipment currently used for this live.</p>
+          <h2>{t('equipment.gearInLive.title')}</h2>
+          <p>{t('equipment.gearInLive.subtitle')}</p>
         </div>
         {onViewLive ? (
           <button type="button" onClick={onViewLive}>
-            View live
+            {t('equipment.gearInLive.viewLive')}
             <ChevronRight size={15} strokeWidth={1.9} />
           </button>
         ) : null}
       </header>
       {captureItems.length > 0 && (
         <div className="gear-in-live__group">
-          <span className="gear-in-live__group-label">Captured with</span>
+          <span className="gear-in-live__group-label">{t('equipment.gearInLive.capturedWith')}</span>
           <div className="gear-in-live__items">{renderItems(captureItems)}</div>
         </div>
       )}
       {activityItems.length > 0 && (
         <div className="gear-in-live__group">
-          <span className="gear-in-live__group-label">Activity equipment</span>
+          <span className="gear-in-live__group-label">{t('equipment.gearInLive.activityGroup')}</span>
           <div className="gear-in-live__items">{renderItems(activityItems)}</div>
         </div>
       )}
@@ -200,6 +208,7 @@ export function EquipmentSelector({
   onAdd, onAddActivity, onSkip,
   subcategory, hasPreviousSetup,
 }) {
+  const { t } = useTranslation();
   const [showAll, setShowAll] = useState(false);
 
   const compatibleTypes = subcategory ? (SUBCATEGORY_EQUIPMENT_TYPES[subcategory] ?? null) : null;
@@ -223,37 +232,37 @@ export function EquipmentSelector({
 
   const hintText = subcategory
     ? hasPreviousSetup
-      ? `Used in your previous ${subcategory.toLowerCase()} live`
-      : `Suggested from your ${subcategory.toLowerCase()} activity`
-    : 'Suggested from your activity';
+      ? t('equipment.selector.usedInPrevious', { subcategory: subcategory.toLowerCase() })
+      : t('equipment.selector.suggestedFromActivity', { subcategory: subcategory.toLowerCase() })
+    : t('equipment.selector.suggestedGeneral');
 
   return (
-    <section className="equipment-selector" aria-label="Gear for this live">
+    <section className="equipment-selector" aria-label={t('equipment.selector.title')}>
       <header>
-        <h2>Gear for this live</h2>
-        <p>Review the equipment you'll use before going live.</p>
+        <h2>{t('equipment.selector.title')}</h2>
+        <p>{t('equipment.selector.subtitle')}</p>
       </header>
 
       <div className="equipment-selector__actions">
         <button type="button" className="equipment-selector__action--primary" onClick={onUseSuggested}>
           <Sparkles size={11} strokeWidth={2} aria-hidden="true" />
-          Use suggested gear
+          {t('equipment.selector.useSuggested')}
         </button>
         {hasPreviousSetup ? (
-          <button type="button" onClick={onUsePrevious}>Previous setup</button>
+          <button type="button" onClick={onUsePrevious}>{t('equipment.selector.previousSetup')}</button>
         ) : null}
         <button type="button" onClick={() => setShowAll((v) => !v)}>
           {showAll ? <ChevronUp size={11} strokeWidth={2} aria-hidden="true" /> : <ChevronDown size={11} strokeWidth={2} aria-hidden="true" />}
-          {showAll ? 'Hide all' : 'View all'}
+          {showAll ? t('equipment.selector.hideAll') : t('equipment.selector.viewAll')}
         </button>
-        <button type="button" onClick={onSkip}>Skip</button>
+        <button type="button" onClick={onSkip}>{t('equipment.selector.skip')}</button>
       </div>
 
       {showAll ? (
         <div className="equipment-selector__section">
           <div className="equipment-selector__section-header">
-            <h3>All equipment</h3>
-            <p>Your full equipment library.</p>
+            <h3>{t('equipment.selector.allEquipment')}</h3>
+            <p>{t('equipment.selector.allEquipmentDesc')}</p>
           </div>
           {allGroups.map((group) => (
             <div key={group.id} className="equipment-selector__group">
@@ -268,8 +277,8 @@ export function EquipmentSelector({
         <>
           <div className="equipment-selector__section">
             <div className="equipment-selector__section-header">
-              <h3>Capture setup</h3>
-              <p>Equipment used to capture and stream your live.</p>
+              <h3>{t('equipment.selector.captureSetup')}</h3>
+              <p>{t('equipment.selector.captureSetupDesc')}</p>
             </div>
             {captureGroups.map((group) => (
               <div key={group.id} className="equipment-selector__group">
@@ -281,15 +290,15 @@ export function EquipmentSelector({
             ))}
             <button type="button" className="equipment-selector__add-btn" onClick={onAdd}>
               <Plus size={13} strokeWidth={2} />
-              Add capture equipment
+              {t('equipment.selector.addCapture')}
             </button>
           </div>
 
           {showActivity ? (
             <div className="equipment-selector__section">
               <div className="equipment-selector__section-header">
-                <h3>Activity equipment</h3>
-                <p>Equipment related to your {subcategory.toLowerCase()} activity.</p>
+                <h3>{t('equipment.selector.activityEquipment')}</h3>
+                <p>{t('equipment.selector.activityEquipmentDesc', { subcategory: subcategory.toLowerCase() })}</p>
               </div>
               {activityItems.length > 0 ? (
                 <>
@@ -300,15 +309,15 @@ export function EquipmentSelector({
                 </>
               ) : (
                 <p className="equipment-selector__empty">
-                  No {subcategory.toLowerCase()} equipment in your library yet.
+                  {t('equipment.selector.noActivity', { subcategory: subcategory.toLowerCase() })}
                   {compatibleTypes?.length ? (
-                    <> Suggested types: {compatibleTypes.slice(0, 3).join(', ')}…</>
+                    <> {t('equipment.selector.suggestedTypes')} {compatibleTypes.slice(0, 3).join(', ')}…</>
                   ) : null}
                 </p>
               )}
               <button type="button" className="equipment-selector__add-btn" onClick={onAddActivity}>
                 <Plus size={13} strokeWidth={2} />
-                Add {subcategory.toLowerCase()} equipment
+                {t('equipment.selector.addActivity', { subcategory: subcategory.toLowerCase() })}
               </button>
             </div>
           ) : null}
@@ -316,14 +325,15 @@ export function EquipmentSelector({
       )}
 
       <footer>
-        <strong>{selectedItems.length} {selectedItems.length === 1 ? 'item' : 'items'} selected</strong>
-        <small>{selectedItems.slice(0, 4).map(equipmentLabel).join(' · ') || 'You can continue without adding equipment.'}</small>
+        <strong>{t('equipment.selector.selected', { count: selectedItems.length })}</strong>
+        <small>{selectedItems.slice(0, 4).map(equipmentLabel).join(' · ') || t('equipment.selector.noneSelected')}</small>
       </footer>
     </section>
   );
 }
 
 export function QuickAddEquipmentForm({ value, onChange, onCancel, onSave, suggestedTypes = [] }) {
+  const { t } = useTranslation();
   const isActivity = value.category === 'activity';
   const listId = 'equipment-type-list';
   const [searchQuery, setSearchQuery] = useState('');
@@ -373,14 +383,14 @@ export function QuickAddEquipmentForm({ value, onChange, onCancel, onSave, sugge
   const showSearch = !manualMode;
 
   return (
-    <section className="equipment-quick-add" aria-label="Add equipment">
+    <section className="equipment-quick-add" aria-label={t('equipment.quickAdd.title')}>
       <header>
-        <h2>{isActivity ? 'Add activity equipment' : 'Add equipment'}</h2>
-        <p>You can complete the details later from My Equipment.</p>
+        <h2>{isActivity ? t('equipment.quickAdd.titleActivity') : t('equipment.quickAdd.title')}</h2>
+        <p>{t('equipment.quickAdd.subtitle')}</p>
       </header>
 
       <label>
-        Category
+        {t('equipment.quickAdd.category')}
         <select value={value.category} onChange={(event) => onChange({ ...value, category: event.target.value, equipmentType: '' })}>
           {EQUIPMENT_CATEGORIES.map((category) => (
             <option key={category.id} value={category.id}>{category.label}</option>
@@ -396,7 +406,7 @@ export function QuickAddEquipmentForm({ value, onChange, onCancel, onSave, sugge
               className="equipment-search-input"
               value={searchQuery}
               onChange={(e) => { setSearchQuery(e.target.value); setSelectedProduct(null); }}
-              placeholder="Search by brand or model…"
+              placeholder={t('equipment.quickAdd.searchPlaceholder')}
               autoComplete="off"
             />
             {searching && <span className="equipment-search-spinner" />}
@@ -434,7 +444,7 @@ export function QuickAddEquipmentForm({ value, onChange, onCancel, onSave, sugge
           )}
 
           <button type="button" className="equipment-manual-link" onClick={() => setManualMode(true)}>
-            Add manually
+            {t('equipment.quickAdd.addManually')}
           </button>
         </div>
       )}
@@ -443,7 +453,7 @@ export function QuickAddEquipmentForm({ value, onChange, onCancel, onSave, sugge
         <>
           {isActivity ? (
             <label>
-              Equipment type
+              {t('equipment.quickAdd.equipmentType')}
               <input
                 list={suggestedTypes.length ? listId : undefined}
                 value={value.equipmentType ?? ''}
@@ -458,25 +468,26 @@ export function QuickAddEquipmentForm({ value, onChange, onCancel, onSave, sugge
             </label>
           ) : null}
           <label>
-            Brand
+            {t('equipment.quickAdd.brand')}
             <input value={value.brand} onChange={(event) => onChange({ ...value, brand: event.target.value })} placeholder="Example: Canyon" />
           </label>
           <label>
-            Model
+            {t('equipment.quickAdd.model')}
             <input value={value.model} onChange={(event) => onChange({ ...value, model: event.target.value })} placeholder="Example: Spectral CF 8" />
           </label>
         </>
       )}
 
       <div className="equipment-form-actions">
-        <button type="button" onClick={onCancel}>Cancel</button>
-        <button type="button" className="is-primary" onClick={onSave} disabled={!value.brand.trim() || !value.model.trim()}>Add and select</button>
+        <button type="button" onClick={onCancel}>{t('common.cancel')}</button>
+        <button type="button" className="is-primary" onClick={onSave} disabled={!value.brand.trim() || !value.model.trim()}>{t('equipment.quickAdd.addAndSelect')}</button>
       </div>
     </section>
   );
 }
 
 export function EquipmentViewerSheet({ items, onClose, onViewProfile, context = {} }) {
+  const { t } = useTranslation();
   const activityItems = items.filter((item) => item.category === 'activity');
   const recordingItems = items.filter((item) => item.category !== 'activity');
   const hasAffiliateLinks = items.some((item) => item.offers?.length > 0);
@@ -494,7 +505,7 @@ export function EquipmentViewerSheet({ items, onClose, onViewProfile, context = 
           className="equipment-offer-btn"
           onClick={(e) => { e.stopPropagation(); openOffer(offers[0], itemContext); }}
         >
-          View product
+          {t('equipment.viewer.viewProduct')}
           <ExternalLink size={13} strokeWidth={2} />
         </button>
       );
@@ -520,7 +531,7 @@ export function EquipmentViewerSheet({ items, onClose, onViewProfile, context = 
   function renderItem(item, isMain) {
     return (
       <div key={item.id ?? item.equipmentId} className={isMain ? 'equipment-item-wrapper is-main' : 'equipment-item-wrapper'}>
-        {isMain && <span className="equipment-main-badge">Main</span>}
+        {isMain && <span className="equipment-main-badge">{t('equipment.viewer.mainBadge')}</span>}
         <EquipmentItemRow
           item={item}
           compact
@@ -532,16 +543,16 @@ export function EquipmentViewerSheet({ items, onClose, onViewProfile, context = 
 
   const stopProp = (e) => e.stopPropagation();
   return createPortal(
-    <div className="equipment-viewer-sheet" role="dialog" aria-modal="true" aria-label="Equipment used in this live" onPointerDown={stopProp} onPointerMove={stopProp} onPointerUp={stopProp} onPointerCancel={stopProp}>
-      <button type="button" className="equipment-viewer-sheet__backdrop" onClick={onClose} aria-label="Close" />
+    <div className="equipment-viewer-sheet" role="dialog" aria-modal="true" aria-label={`${t('equipment.viewer.titlePart1')} ${t('equipment.viewer.titleKeyword')} ${t('equipment.viewer.titlePart2')}`} onPointerDown={stopProp} onPointerMove={stopProp} onPointerUp={stopProp} onPointerCancel={stopProp}>
+      <button type="button" className="equipment-viewer-sheet__backdrop" onClick={onClose} aria-label={t('common.close')} />
       <div className="equipment-viewer-sheet__panel">
         <span className="equipment-viewer-sheet__handle" aria-hidden="true" />
         <header>
           <div>
-            <h2>Equipment <span className="equipment-used-highlight">used</span> in this live</h2>
-            <p>Everything the creator is using right now.</p>
+            <h2>{t('equipment.viewer.titlePart1')} <span className="equipment-used-highlight">{t('equipment.viewer.titleKeyword')}</span> {t('equipment.viewer.titlePart2')}</h2>
+            <p>{t('equipment.viewer.subtitle')}</p>
           </div>
-          <button type="button" onClick={onClose} aria-label="Close">
+          <button type="button" onClick={onClose} aria-label={t('common.close')}>
             <X size={18} strokeWidth={2} />
           </button>
         </header>
@@ -550,7 +561,7 @@ export function EquipmentViewerSheet({ items, onClose, onViewProfile, context = 
             <div className="equipment-viewer-sheet__group">
               <div className="equipment-viewer-sheet__group-header">
                 <Bike size={14} strokeWidth={1.8} />
-                <span className="equipment-viewer-sheet__group-label">Activity equipment</span>
+                <span className="equipment-viewer-sheet__group-label">{t('equipment.viewer.activityGroup')}</span>
               </div>
               {activityItems.map((item) => renderItem(item, item.id === mainActivityId))}
             </div>
@@ -559,7 +570,7 @@ export function EquipmentViewerSheet({ items, onClose, onViewProfile, context = 
             <div className="equipment-viewer-sheet__group">
               <div className="equipment-viewer-sheet__group-header">
                 <Camera size={14} strokeWidth={1.8} />
-                <span className="equipment-viewer-sheet__group-label">Recording equipment</span>
+                <span className="equipment-viewer-sheet__group-label">{t('equipment.viewer.recordingGroup')}</span>
               </div>
               {recordingItems.map((item) => renderItem(item, item.id === mainRecordingId))}
             </div>
@@ -568,7 +579,7 @@ export function EquipmentViewerSheet({ items, onClose, onViewProfile, context = 
         {hasAffiliateLinks && (
           <div className="equipment-viewer-sheet__disclosure">
             <Sparkles size={12} strokeWidth={2} />
-            <small>Some links may be affiliate links.</small>
+            <small>{t('equipment.viewer.affiliateDisclosure')}</small>
           </div>
         )}
       </div>
@@ -578,10 +589,11 @@ export function EquipmentViewerSheet({ items, onClose, onViewProfile, context = 
 }
 
 export function EquipmentManageActions({ item, onEdit, onTogglePublic, onToggleDefault, onRemove }) {
+  const { t } = useTranslation();
   return (
     <span className="equipment-manage-actions">
-      <button type="button" onClick={onTogglePublic}>{item.isPublic ? 'Hide from profile' : 'Show on profile'}</button>
-      <button type="button" onClick={onToggleDefault}>{item.isDefault ? 'Unset default' : 'Set as default'}</button>
+      <button type="button" onClick={onTogglePublic}>{item.isPublic ? t('equipment.manage.hide') : t('equipment.manage.show')}</button>
+      <button type="button" onClick={onToggleDefault}>{item.isDefault ? t('equipment.manage.unsetDefault') : t('equipment.manage.setDefault')}</button>
       <button type="button" onClick={onEdit}>
         <MoreHorizontal size={16} strokeWidth={1.8} />
       </button>

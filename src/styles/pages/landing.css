@@ -1,0 +1,407 @@
+.vuvio-landing {
+  position: fixed;
+  inset: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  background: radial-gradient(circle at 82% 12%, rgba(0, 185, 214, 0.1), transparent 24%),
+    linear-gradient(180deg, #0a1c2f, #06111e);
+  color: #f7fbff;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Helvetica Neue', sans-serif;
+  z-index: 100;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* ---------- Topbar ---------- */
+.vuvio-landing__topbar {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px clamp(20px, 4vw, 48px);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  background: linear-gradient(180deg, rgba(6, 17, 30, 0.72), rgba(6, 17, 30, 0.1));
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.vuvio-landing__wordmark {
+  font-size: 16px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: #1ed6e5;
+}
+
+.vuvio-landing__lang {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: #8aabb8;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+}
+
+.vuvio-landing__lang-btn {
+  background: transparent;
+  border: 0;
+  color: inherit;
+  cursor: pointer;
+  font: inherit;
+  padding: 4px 6px;
+  border-radius: 6px;
+  transition: color 160ms ease;
+}
+
+.vuvio-landing__lang-btn:hover {
+  color: #c7e3eb;
+}
+
+.vuvio-landing__lang-btn.is-active {
+  color: #1ed6e5;
+}
+
+.vuvio-landing__lang-sep {
+  opacity: 0.4;
+}
+
+/* ---------- Hero ---------- */
+.vuvio-landing__hero {
+  display: grid;
+  grid-template-columns: 1.1fr 0.9fr;
+  min-height: min(76vh, 700px);
+}
+
+.vuvio-landing__copy {
+  padding: 40px clamp(24px, 5vw, 60px);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.vuvio-landing__eyebrow {
+  font-size: 11px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: #8aabb8;
+  margin-bottom: 10px;
+  font-weight: 600;
+}
+
+.vuvio-landing__title {
+  margin: 0;
+  font-size: clamp(38px, 4.6vw, 58px);
+  line-height: 1.08;
+  letter-spacing: -0.05em;
+  font-weight: 800;
+  max-width: 700px;
+  color: #f7fbff;
+}
+
+.vuvio-landing__accent-text {
+  color: #1ed6e5;
+}
+
+.vuvio-landing__accent {
+  height: 3px;
+  width: 160px;
+  background: #1ed6e5;
+  margin: 20px 0;
+  opacity: 0.9;
+}
+
+.vuvio-landing__subtitle {
+  margin: 0 0 26px;
+  color: #b5c7d6;
+  font-size: clamp(14px, 1.25vw, 16px);
+  line-height: 1.5;
+  max-width: 540px;
+}
+
+.vuvio-landing__cta-row {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  flex-wrap: wrap;
+}
+
+.vuvio-landing__cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 25px;
+  border: 0;
+  border-radius: 999px;
+  background: #1ed6e5;
+  color: #04121e;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  letter-spacing: 0.01em;
+  transition: transform 180ms ease, box-shadow 180ms ease, background 180ms ease;
+  box-shadow: 0 10px 30px rgba(30, 214, 229, 0.3);
+}
+
+.vuvio-landing__cta:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 14px 38px rgba(30, 214, 229, 0.42);
+  background: #3ee3f0;
+}
+
+.vuvio-landing__cta:active {
+  transform: translateY(0);
+}
+
+.vuvio-landing__cta span {
+  font-size: 16px;
+  transition: transform 180ms ease;
+}
+
+.vuvio-landing__cta:hover span {
+  transform: translateX(3px);
+}
+
+.vuvio-landing__cta--large {
+  padding: 15px 30px;
+  font-size: 15px;
+}
+
+.vuvio-landing__scroll {
+  color: #8aabb8;
+  text-decoration: none;
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  transition: color 160ms ease;
+}
+
+.vuvio-landing__scroll:hover {
+  color: #c7e3eb;
+}
+
+.vuvio-landing__visual {
+  position: relative;
+  overflow: hidden;
+}
+
+.vuvio-landing__visual img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  object-position: center;
+}
+
+/* ---------- Info Sections ---------- */
+.vuvio-landing__sections {
+  padding: clamp(56px, 8vw, 96px) clamp(24px, 5vw, 60px);
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: clamp(22px, 3vw, 40px);
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.vuvio-landing__section {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.vuvio-landing__section-eyebrow {
+  font-size: 11px;
+  letter-spacing: 0.22em;
+  color: #1ed6e5;
+  font-weight: 700;
+}
+
+.vuvio-landing__section-title {
+  margin: 0;
+  font-size: clamp(20px, 1.7vw, 24px);
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+  font-weight: 700;
+  color: #f7fbff;
+}
+
+.vuvio-landing__section-body {
+  margin: 0;
+  color: #b5c7d6;
+  font-size: 14px;
+  line-height: 1.55;
+}
+
+/* ---------- Features Grid ---------- */
+.vuvio-landing__features {
+  padding: clamp(52px, 7vw, 88px) clamp(24px, 5vw, 60px);
+  max-width: 1400px;
+  margin: 0 auto;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.vuvio-landing__features-title {
+  margin: 0 0 clamp(24px, 3vw, 38px);
+  font-size: clamp(25px, 2.5vw, 34px);
+  line-height: 1.1;
+  letter-spacing: -0.03em;
+  font-weight: 800;
+  color: #f7fbff;
+}
+
+.vuvio-landing__features-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+}
+
+.vuvio-landing__feature {
+  padding: 19px 18px;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  transition: background 200ms ease, border-color 200ms ease, transform 200ms ease;
+}
+
+.vuvio-landing__feature:hover {
+  background: rgba(30, 214, 229, 0.05);
+  border-color: rgba(30, 214, 229, 0.25);
+  transform: translateY(-2px);
+}
+
+.vuvio-landing__feature-num {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  color: #1ed6e5;
+  margin-bottom: 10px;
+}
+
+.vuvio-landing__feature-title {
+  margin: 0 0 10px;
+  font-size: 15px;
+  font-weight: 700;
+  color: #f7fbff;
+  letter-spacing: -0.01em;
+}
+
+.vuvio-landing__feature-body {
+  margin: 0;
+  color: #9fb5c3;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+/* ---------- Final CTA ---------- */
+.vuvio-landing__final {
+  padding: clamp(56px, 8vw, 96px) clamp(24px, 5vw, 60px);
+  text-align: center;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  background: radial-gradient(circle at 50% 100%, rgba(30, 214, 229, 0.08), transparent 60%);
+}
+
+.vuvio-landing__final-inner {
+  max-width: 720px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 24px;
+}
+
+.vuvio-landing__final-title {
+  margin: 0;
+  font-size: clamp(28px, 4vw, 46px);
+  line-height: 1.05;
+  letter-spacing: -0.04em;
+  font-weight: 800;
+  color: #1ed6e5;
+}
+
+.vuvio-landing__contact {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.vuvio-landing__contact-label {
+  color: #8aabb8;
+  font-size: 13px;
+  letter-spacing: 0.02em;
+}
+
+.vuvio-landing__contact-email {
+  color: #1ed6e5;
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  text-decoration: none;
+  border-bottom: 1px solid rgba(30, 214, 229, 0.4);
+  padding-bottom: 2px;
+  transition: color 160ms ease, border-color 160ms ease;
+}
+
+.vuvio-landing__contact-email:hover {
+  color: #3ee3f0;
+  border-color: rgba(62, 227, 240, 0.8);
+}
+
+/* ---------- Footer ---------- */
+.vuvio-landing__footer {
+  padding: 20px clamp(24px, 5vw, 60px);
+  color: #3a7a88;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-align: center;
+  border-top: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+/* ---------- Responsive ---------- */
+@media (max-width: 960px) {
+  .vuvio-landing__sections {
+    grid-template-columns: 1fr;
+    gap: 28px;
+  }
+  .vuvio-landing__features-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 780px) {
+  .vuvio-landing__hero {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto auto;
+    min-height: auto;
+  }
+  .vuvio-landing__copy {
+    padding: clamp(26px, 6vw, 42px) clamp(20px, 5vw, 34px);
+  }
+  .vuvio-landing__title {
+    font-size: clamp(31px, 8.5vw, 44px);
+  }
+  .vuvio-landing__accent {
+    margin: 16px 0;
+  }
+  .vuvio-landing__subtitle {
+    margin-bottom: 20px;
+  }
+  .vuvio-landing__visual {
+    aspect-ratio: 662 / 730;
+  }
+  .vuvio-landing__visual img {
+    object-fit: cover;
+  }
+  .vuvio-landing__cta-row {
+    gap: 16px;
+  }
+}
+
+@media (max-width: 540px) {
+  .vuvio-landing__features-grid {
+    grid-template-columns: 1fr;
+  }
+}

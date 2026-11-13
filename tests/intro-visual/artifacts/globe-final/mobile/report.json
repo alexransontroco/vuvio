@@ -1,0 +1,79 @@
+{
+  "url": "https://127.0.0.1:5177/intro-preview",
+  "viewport": {
+    "width": 390,
+    "height": 844
+  },
+  "errors": [],
+  "observations": [
+    {
+      "label": "globe-early",
+      "at": 8790,
+      "state": {
+        "phase": "globe",
+        "video": {
+          "readyState": 4,
+          "currentTime": 11.107228,
+          "width": 721,
+          "height": 1280
+        },
+        "globe": {
+          "opacity": "1",
+          "canvas": true,
+          "canvasWidth": 390,
+          "canvasHeight": 844
+        },
+        "stage": {
+          "width": 390,
+          "height": 844
+        }
+      }
+    },
+    {
+      "label": "globe-middle",
+      "at": 13464,
+      "state": {
+        "phase": "globe",
+        "video": {
+          "readyState": 2,
+          "currentTime": 14.586078,
+          "width": 721,
+          "height": 1280
+        },
+        "globe": {
+          "opacity": "1",
+          "canvas": true,
+          "canvasWidth": 390,
+          "canvasHeight": 844
+        },
+        "stage": {
+          "width": 390,
+          "height": 844
+        }
+      }
+    },
+    {
+      "label": "globe-late",
+      "at": 18910,
+      "state": {
+        "phase": "globe",
+        "video": {
+          "readyState": 2,
+          "currentTime": 16.070084,
+          "width": 721,
+          "height": 1280
+        },
+        "globe": {
+          "opacity": "1",
+          "canvas": true,
+          "canvasWidth": 390,
+          "canvasHeight": 844
+        },
+        "stage": {
+          "width": 390,
+          "height": 844
+        }
+      }
+    }
+  ]
+}

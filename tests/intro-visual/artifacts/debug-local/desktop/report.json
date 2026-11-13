@@ -1,0 +1,74 @@
+{
+  "url": "https://127.0.0.1:5177/intro-preview",
+  "viewport": {
+    "width": 1440,
+    "height": 900
+  },
+  "errors": [
+    "screenshot welcome-start: page.screenshot: Timeout 8000ms exceeded.\nCall log:\n\u001b[2m  - taking page screenshot\u001b[22m\n\u001b[2m  - waiting for fonts to load...\u001b[22m\n\u001b[2m  - fonts loaded\u001b[22m\n",
+    "screenshot watch: page.screenshot: Timeout 8000ms exceeded.\nCall log:\n\u001b[2m  - taking page screenshot\u001b[22m\n\u001b[2m  - waiting for fonts to load...\u001b[22m\n\u001b[2m  - fonts loaded\u001b[22m\n"
+  ],
+  "observations": [
+    {
+      "label": "welcome-start",
+      "at": 8712,
+      "state": {
+        "video": {
+          "readyState": 4,
+          "currentTime": 5.032009,
+          "width": 721,
+          "height": 1280
+        },
+        "globe": null,
+        "stage": {
+          "width": 390,
+          "height": 845
+        }
+      }
+    },
+    {
+      "label": "welcome-pov",
+      "at": 14351,
+      "state": {
+        "video": {
+          "readyState": 4,
+          "currentTime": 9.291211,
+          "width": 721,
+          "height": 1280
+        },
+        "globe": null,
+        "stage": {
+          "width": 390,
+          "height": 845
+        }
+      }
+    },
+    {
+      "label": "welcome-watch",
+      "at": 21314,
+      "state": {
+        "video": {
+          "readyState": 4,
+          "currentTime": 13.104647,
+          "width": 721,
+          "height": 1280
+        },
+        "globe": {
+          "opacity": "0",
+          "canvas": false
+        },
+        "stage": {
+          "width": 390,
+          "height": 845
+        }
+      }
+    },
+    {
+      "label": "watch",
+      "at": 29320,
+      "state": {
+        "timeout": true
+      }
+    }
+  ]
+}

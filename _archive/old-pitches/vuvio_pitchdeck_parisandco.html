@@ -1,0 +1,733 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Vuvio — Pitch Deck Paris&Co</title>
+<style>
+  :root{
+    --bg:#07111f;
+    --bg2:#0a1728;
+    --panel:#0c1b2d;
+    --panel2:#10253a;
+    --text:#f5f7fb;
+    --muted:#9fb0c4;
+    --line:#17324a;
+    --cyan:#33d3d0;
+    --blue:#4ca7ff;
+    --green:#38d39f;
+    --white:#ffffff;
+  }
+
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0;background:#020711;color:var(--text);font-family:Inter,Arial,Helvetica,sans-serif}
+  body{overflow-x:hidden}
+
+  .deck{width:100%}
+
+  .slide{
+    width:1600px;
+    height:900px;
+    margin:0 auto 24px;
+    padding:68px 76px 62px;
+    position:relative;
+    overflow:hidden;
+    background:
+      radial-gradient(circle at 82% 12%, rgba(51,211,208,.09), transparent 28%),
+      radial-gradient(circle at 14% 88%, rgba(76,167,255,.06), transparent 30%),
+      linear-gradient(180deg,var(--bg2),var(--bg));
+    border:1px solid #0f2237;
+  }
+
+  .slide::after{
+    content:"";
+    position:absolute; inset:auto 0 0 0; height:2px;
+    background:linear-gradient(90deg,transparent,var(--cyan),transparent);
+    opacity:.18;
+  }
+
+  .page{
+    position:absolute; top:28px; right:46px;
+    font-size:13px; letter-spacing:.2em; color:#65809b;
+  }
+
+  .eyebrow{
+    font-size:14px;
+    letter-spacing:.22em;
+    text-transform:uppercase;
+    color:var(--cyan);
+    margin-bottom:12px;
+    font-weight:700;
+  }
+
+  h1{
+    margin:0 0 18px;
+    font-size:58px;
+    line-height:1.02;
+    letter-spacing:-.035em;
+    max-width:1100px;
+  }
+
+  h2{
+    margin:0 0 10px;
+    font-size:28px;
+    line-height:1.14;
+    letter-spacing:-.02em;
+  }
+
+  h3{
+    margin:0 0 8px;
+    font-size:21px;
+  }
+
+  p{
+    margin:0;
+    color:var(--muted);
+    font-size:20px;
+    line-height:1.45;
+  }
+
+  .lead{
+    max-width:1200px;
+    font-size:22px;
+    line-height:1.5;
+    color:#c8d5e4;
+  }
+
+  .small{font-size:16px}
+  .micro{font-size:14px}
+  .muted{color:var(--muted)}
+  .strong{color:var(--white);font-weight:700}
+  .accent{color:var(--cyan)}
+
+  .grid-2{display:grid;grid-template-columns:1fr 1fr;gap:24px}
+  .grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:22px}
+  .grid-4{display:grid;grid-template-columns:repeat(4,1fr);gap:18px}
+
+  .card{
+    background:linear-gradient(180deg,rgba(16,37,58,.95),rgba(10,24,40,.96));
+    border:1px solid var(--line);
+    border-radius:20px;
+    padding:24px;
+    min-height:160px;
+  }
+
+  .card .num{
+    color:var(--cyan);
+    font-size:13px;
+    letter-spacing:.2em;
+    font-weight:700;
+    margin-bottom:12px;
+  }
+
+  .card p{font-size:17px}
+  .card ul{margin:12px 0 0 18px;padding:0}
+  .card li{margin:7px 0;color:#b8c7d8;font-size:16px;line-height:1.35}
+
+  .pill{
+    display:inline-block;
+    padding:8px 12px;
+    border:1px solid #22415f;
+    border-radius:999px;
+    margin:4px 7px 0 0;
+    font-size:14px;
+    color:#cfe0ef;
+    background:#0a1d31;
+  }
+
+  .big-quote{
+    font-size:36px;
+    font-weight:800;
+    line-height:1.18;
+    max-width:1100px;
+    margin-top:24px;
+  }
+
+  .divider{height:1px;background:#183149;margin:24px 0}
+
+  .kicker-row{
+    display:flex;gap:12px;flex-wrap:wrap;margin-top:18px
+  }
+
+  .three-principles{margin-top:32px}
+  .three-principles .card{min-height:210px}
+
+  .hero-cover{
+    display:flex;height:100%;align-items:center
+  }
+  .hero-cover .copy{width:58%;z-index:2}
+  .hero-cover .visual{
+    position:absolute;right:-80px;top:-30px;width:760px;height:760px;
+    border-radius:50%;
+    background:
+      radial-gradient(circle at 35% 35%,rgba(51,211,208,.28),transparent 20%),
+      radial-gradient(circle at 55% 45%,rgba(76,167,255,.18),transparent 28%),
+      radial-gradient(circle at 50% 50%,#10233b 0,#0b1726 42%,#040914 72%);
+    box-shadow:0 0 100px rgba(51,211,208,.06);
+  }
+  .hero-cover .visual::before{
+    content:"";
+    position:absolute;inset:10%;
+    border:1px solid rgba(93,187,255,.15);
+    border-radius:50%;
+    box-shadow:
+      0 0 0 80px rgba(255,255,255,.012),
+      0 0 0 160px rgba(255,255,255,.008);
+  }
+
+  .tagline{
+    font-size:24px;
+    color:#b8c8d8;
+    margin-top:18px;
+    max-width:700px;
+  }
+
+  .footer-note{
+    position:absolute;left:76px;bottom:36px;
+    font-size:12px;letter-spacing:.18em;color:#506b84;text-transform:uppercase;
+  }
+
+  .logo{
+    position:absolute;left:76px;top:32px;
+    display:flex;align-items:center;gap:11px;
+    font-weight:800;font-size:21px;
+  }
+  .logo-mark{
+    width:28px;height:22px;position:relative;
+  }
+  .logo-mark:before,.logo-mark:after{
+    content:"";position:absolute;top:0;width:12px;height:20px;border-radius:4px;
+    transform:skewX(-28deg)
+  }
+  .logo-mark:before{left:2px;background:var(--cyan)}
+  .logo-mark:after{right:2px;background:var(--blue)}
+
+  .process{
+    display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-top:30px
+  }
+  .process .step{
+    border-top:3px solid #1f4765;
+    padding:18px 18px 20px;background:#0a1829;border-radius:0 0 16px 16px;
+    min-height:180px
+  }
+  .process .step b{display:block;color:var(--cyan);font-size:14px;letter-spacing:.18em;margin-bottom:10px}
+  .process .step h3{font-size:24px}
+  .process .step p{font-size:16px}
+
+  .compare{
+    width:100%;border-collapse:collapse;margin-top:22px;font-size:15px
+  }
+  .compare th,.compare td{
+    border-bottom:1px solid #183149;
+    padding:11px 10px;text-align:left
+  }
+  .compare th{color:#d8e4ef;font-size:14px}
+  .compare td{color:#a9bbcd}
+  .compare td:first-child{color:#dbe8f5;font-weight:600}
+  .compare .vuvio{color:var(--cyan);font-weight:700}
+
+  .roadmap{
+    display:grid;grid-template-columns:repeat(5,1fr);gap:14px;margin-top:24px
+  }
+  .roadmap .phase{
+    min-height:240px;
+    background:#0a1829;border:1px solid #16314a;border-radius:16px;padding:18px
+  }
+  .roadmap .phase .n{font-size:12px;letter-spacing:.2em;color:var(--cyan);font-weight:700}
+  .roadmap .phase h3{font-size:22px;margin-top:12px}
+  .roadmap .phase p{font-size:15px}
+
+  .status-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-top:28px}
+  .status-card{padding:22px;border:1px solid #17324a;border-radius:18px;background:#0a1829}
+  .status-card h3{font-size:24px}
+  .check{color:var(--green);font-weight:800;margin-right:6px}
+
+  .team-impact{
+    display:grid;grid-template-columns:1fr 1fr;gap:26px;margin-top:24px
+  }
+
+  .team-person{padding:18px 0;border-bottom:1px solid #17324a}
+  .team-person:last-child{border-bottom:0}
+  .team-role{font-size:13px;color:var(--cyan);letter-spacing:.15em;text-transform:uppercase;font-weight:700;margin-bottom:8px}
+
+  .impact-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:16px}
+  .impact-grid .card{min-height:145px;padding:18px}
+  .impact-grid .card h3{font-size:18px}
+  .impact-grid .card p{font-size:15px}
+
+  .final-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:18px;margin-top:30px}
+  .final-grid .card{min-height:190px}
+
+  .note-box{
+    margin-top:20px;
+    padding:16px 18px;
+    border:1px dashed #2b5874;
+    background:rgba(18,44,67,.45);
+    border-radius:14px;
+    color:#a8c1d5;
+    font-size:15px;
+  }
+
+  .visual-band{
+    display:grid;grid-template-columns:1.25fr .75fr;gap:22px;margin-top:28px
+  }
+  .visual-panel{
+    min-height:250px;border:1px solid #17324a;border-radius:18px;
+    background:
+      linear-gradient(180deg,rgba(15,34,54,.8),rgba(8,18,30,.95));
+    padding:24px;
+  }
+  .mock-placeholder{
+    height:100%;min-height:250px;
+    border:1px dashed #2c5870;border-radius:14px;
+    display:flex;align-items:center;justify-content:center;text-align:center;
+    color:#6f90a8;font-size:15px;padding:20px
+  }
+
+  @media print{
+    @page{size:16in 9in;margin:0}
+    body{background:#fff}
+    .slide{
+      margin:0;
+      break-after:page;
+      page-break-after:always;
+      border:none;
+    }
+  }
+</style>
+</head>
+<body>
+<div class="deck">
+
+  <!-- 01 -->
+  <section class="slide">
+    <div class="logo"><span class="logo-mark"></span>Vuvio</div>
+    <div class="hero-cover">
+      <div class="copy">
+        <div class="eyebrow">Candidature Paris&Co</div>
+        <h1>Des passions,<br>des métiers,<br>des expériences<br><span class="accent">— en direct.</span></h1>
+        <div class="tagline">Découvrez des activités et des passions à travers ceux qui les vivent.</div>
+      </div>
+      <div class="visual"></div>
+    </div>
+    <div class="footer-note">Vuvio — Pitch deck 2026</div>
+    <div class="page">01</div>
+  </section>
+
+  <!-- 02 -->
+  <section class="slide">
+    <div class="eyebrow">02 — Problème + solution</div>
+    <h1>Le monde est déjà en train de se passer.</h1>
+    <p class="lead">
+      Le Live existe déjà, mais il est rarement pensé comme un véritable outil de découverte.
+      Sur les grandes plateformes, il reste souvent une fonctionnalité parmi d’autres, organisée autour de créateurs déjà connus,
+      du divertissement ou de la diffusion face caméra.
+    </p>
+
+    <div class="visual-band">
+      <div class="visual-panel">
+        <h2>Vuvio propose une autre porte d’entrée : partir de ce que les personnes font réellement.</h2>
+        <p>
+          Un artisan travaille dans son atelier. Un cycliste traverse les Alpes. Un guide parcourt les rues de Tokyo.
+          Un chef est en plein service. Un musicien répète avant un concert.
+        </p>
+      </div>
+      <div class="visual-panel">
+        <div class="mock-placeholder">
+          IMAGE D’AMBIANCE / COLLAGE À AJOUTER<br><br>
+          Atelier · Cuisine · Sport · Musique
+        </div>
+      </div>
+    </div>
+
+    <div class="grid-3 three-principles">
+      <article class="card">
+        <div class="num">01</div>
+        <h3>En direct</h3>
+        <p>Découvrir une activité pendant qu’elle se déroule, avec sa spontanéité, ses contraintes et ses imprévus.</p>
+      </article>
+      <article class="card">
+        <div class="num">02</div>
+        <h3>Dans le monde réel</h3>
+        <p>Explorer des métiers, des passions, des lieux, des pratiques et des expériences concrètes.</p>
+      </article>
+      <article class="card">
+        <div class="num">03</div>
+        <h3>Depuis un point de vue</h3>
+        <p>Voir l’activité depuis la perspective de la personne qui la pratique.</p>
+      </article>
+    </div>
+    <div class="page">02</div>
+  </section>
+
+  <!-- 03 -->
+  <section class="slide">
+    <div class="eyebrow">03 — Positionnement & innovation</div>
+    <h1>Découvrir des personnes par ce qu’elles font.</h1>
+    <p class="lead">
+      Vuvio ne cherche pas à réinventer le direct, mais à organiser sa découverte autrement.
+      La découverte peut commencer par une activité, un métier, une passion, un lieu ou une expérience qui nous intéresse.
+    </p>
+
+    <div class="grid-3" style="margin-top:30px">
+      <article class="card">
+        <div class="num">01</div>
+        <h3>L’activité comme point d’entrée</h3>
+        <p>Découvrir un créateur parce qu’on s’intéresse à ce qu’il fait, sans avoir besoin de le connaître à l’avance.</p>
+      </article>
+      <article class="card">
+        <div class="num">02</div>
+        <h3>Le direct et le point de vue</h3>
+        <p>Voir les gestes, l’environnement, les conditions réelles et les moments imprévus depuis la perspective de la personne qui pratique.</p>
+      </article>
+      <article class="card">
+        <div class="num">03</div>
+        <h3>Une découverte géographique</h3>
+        <p>Explorer les Lives selon leur localisation et découvrir des activités dans d’autres villes, régions ou pays.</p>
+      </article>
+    </div>
+
+    <div class="big-quote"><span class="accent">ACTIVITÉ</span> + POV + GÉOGRAPHIE</div>
+    <p style="margin-top:10px">La manière dont Vuvio associe ces trois dimensions constitue son positionnement.</p>
+
+    <div class="kicker-row">
+      <span class="pill">Découvrir sans connaître le créateur</span>
+      <span class="pill">Explorer par centre d’intérêt</span>
+      <span class="pill">Découvrir ailleurs</span>
+      <span class="pill">Suivre ensuite les personnes</span>
+    </div>
+    <div class="page">03</div>
+  </section>
+
+  <!-- 04 -->
+  <section class="slide">
+    <div class="eyebrow">04 — Utilisateurs & écosystème</div>
+    <h1>Découvrir, partager et faire vivre des activités réelles.</h1>
+
+    <div class="grid-3" style="margin-top:26px">
+      <article class="card">
+        <div class="num">01</div>
+        <h3>Ceux qui regardent</h3>
+        <p>Découvrir des métiers, passions, pratiques et lieux à travers ceux qui les vivent.</p>
+        <ul>
+          <li>atelier d’un artisan</li>
+          <li>service en cuisine</li>
+          <li>guide dans une ville</li>
+          <li>répétition musicale</li>
+          <li>pratique sportive</li>
+        </ul>
+        <div class="kicker-row">
+          <span class="pill">Découvrir</span><span class="pill">Approfondir</span><span class="pill">Suivre</span><span class="pill">Revenir</span>
+        </div>
+      </article>
+
+      <article class="card">
+        <div class="num">02</div>
+        <h3>Ceux qui partagent</h3>
+        <p>Sportif, guide, artisan, musicien, cuisinier, voyageur ou professionnel de terrain.</p>
+        <ul>
+          <li>être découvert par son activité</li>
+          <li>transmettre un savoir-faire</li>
+          <li>partager sans vidéo montée</li>
+          <li>développer progressivement une communauté</li>
+        </ul>
+      </article>
+
+      <article class="card">
+        <div class="num">03</div>
+        <h3>Marques & partenaires</h3>
+        <p>Créer un lien entre les usages réels et les acteurs qui les accompagnent.</p>
+        <ul>
+          <li>équipement & matériel</li>
+          <li>culture & événements</li>
+          <li>tourisme & territoires</li>
+          <li>partenaires locaux</li>
+          <li>marques spécialisées</li>
+        </ul>
+        <p class="small" style="margin-top:14px"><span class="strong">Principe :</span> une présence utile, cohérente et clairement identifiable.</p>
+      </article>
+    </div>
+    <div class="page">04</div>
+  </section>
+
+  <!-- 05 -->
+  <section class="slide">
+    <div class="eyebrow">05 — Expérience produit</div>
+    <h1>Six fonctionnalités pour découvrir, explorer et partager.</h1>
+
+    <div class="grid-3" style="margin-top:28px">
+      <article class="card">
+        <h3>WATCH</h3>
+        <p>Entrer immédiatement dans un Live et passer simplement d’une expérience à une autre.</p>
+      </article>
+      <article class="card">
+        <h3>GLOBE</h3>
+        <p>Explorer les activités en direct à travers le monde selon leur localisation.</p>
+      </article>
+      <article class="card">
+        <h3>EXPLORE</h3>
+        <p>Découvrir catégories, métiers, passions, créateurs, lieux et activités à proximité.</p>
+      </article>
+      <article class="card">
+        <h3>PROFIL</h3>
+        <p>Retrouver activités, centres d’intérêt, équipement et prochains Lives d’un créateur.</p>
+      </article>
+      <article class="card">
+        <h3>REPLAY & RECAP</h3>
+        <p>Prolonger certaines expériences après diffusion sans faire du replay le cœur du produit.</p>
+      </article>
+      <article class="card">
+        <h3>START LIVE</h3>
+        <p>Partager une activité avec un parcours de démarrage volontairement simple.</p>
+      </article>
+    </div>
+
+    <div class="note-box">
+      <strong>À garder très visuel :</strong> ajouter ici seulement 2 à 3 captures réelles du produit au maximum, par exemple Watch, Globe et Profil.
+    </div>
+    <div class="page">05</div>
+  </section>
+
+  <!-- 06 -->
+  <section class="slide">
+    <div class="eyebrow">06 — De la découverte à la connexion</div>
+    <h1>Le Live comme point de départ.</h1>
+    <p class="lead">Vuvio ne cherche pas uniquement à faire regarder un Live. L’objectif est de partir d’une activité et de découvrir progressivement les personnes qui la pratiquent.</p>
+
+    <div class="process">
+      <div class="step"><b>01</b><h3>Découvrir</h3><p>Un utilisateur trouve une activité depuis Watch, Explore ou le Globe.</p></div>
+      <div class="step"><b>02</b><h3>Explorer</h3><p>Il en apprend davantage sur l’activité, la personne, son profil et des expériences similaires.</p></div>
+      <div class="step"><b>03</b><h3>Suivre</h3><p>Il suit un créateur ou découvre d’autres personnes autour du même centre d’intérêt.</p></div>
+      <div class="step"><b>04</b><h3>Revenir</h3><p>Vuvio devient un endroit où retrouver les activités et les personnes que l’on souhaite suivre.</p></div>
+    </div>
+
+    <div class="big-quote" style="margin-top:34px">
+      Le Live crée l’entrée.<br>
+      L’activité crée l’intérêt.<br>
+      <span class="accent">La personne crée la connexion.</span>
+    </div>
+    <div class="page">06</div>
+  </section>
+
+  <!-- 07 -->
+  <section class="slide">
+    <div class="eyebrow">07 — Marché & positionnement concurrentiel</div>
+    <h1>Un usage à la croisée de plusieurs marchés.</h1>
+
+    <div class="grid-4" style="margin-top:24px">
+      <article class="card"><h3>Live streaming</h3><p>Direct, interaction en temps réel et spontanéité.</p></article>
+      <article class="card"><h3>Creator economy</h3><p>Créateurs, communautés et outils de monétisation.</p></article>
+      <article class="card"><h3>Social discovery</h3><p>Découverte de personnes et de centres d’intérêt.</p></article>
+      <article class="card"><h3>Découverte locale & expérientielle</h3><p>Lieux, territoires, métiers, pratiques culturelles et expériences réelles.</p></article>
+    </div>
+
+    <table class="compare">
+      <thead>
+        <tr>
+          <th>Critère</th>
+          <th class="vuvio">Vuvio</th>
+          <th>TikTok / Instagram</th>
+          <th>Twitch</th>
+          <th>YouTube Live</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td>Live au cœur du produit</td><td class="vuvio">Oui</td><td>Partiel</td><td>Oui</td><td>Oui</td></tr>
+        <tr><td>Activité / métier comme point d’entrée</td><td class="vuvio">Central</td><td>Non structurant</td><td>Par catégories</td><td>Possible</td></tr>
+        <tr><td>POV terrain</td><td class="vuvio">Central</td><td>Possible</td><td>Possible</td><td>Possible</td></tr>
+        <tr><td>Découverte géographique</td><td class="vuvio">Globe dédié</td><td>Limitée</td><td>Non centrale</td><td>Non centrale</td></tr>
+        <tr><td>Équipement lié à l’activité</td><td class="vuvio">Intégré</td><td>Possible</td><td>Possible</td><td>Possible</td></tr>
+      </tbody>
+    </table>
+
+    <div class="note-box">
+      Vuvio ne cherche pas à remplacer les plateformes sociales existantes, mais à créer un usage spécifique :
+      <strong>découvrir le monde réel en direct à travers les personnes qui le vivent.</strong>
+    </div>
+    <div class="page">07</div>
+  </section>
+
+  <!-- 08 -->
+  <section class="slide">
+    <div class="eyebrow">08 — Modèle économique</div>
+    <h1>Construire les revenus autour des usages réels.</h1>
+    <p class="lead">La monétisation vient après la création de valeur pour les spectateurs et les créateurs.</p>
+
+    <div class="grid-3" style="margin-top:30px">
+      <article class="card">
+        <div class="num">01</div>
+        <h3>Équipement & affiliation</h3>
+        <p>Les créateurs indiquent le matériel réellement utilisé pendant leurs activités.</p>
+        <ul>
+          <li>caméras</li><li>vélos</li><li>micros</li><li>outils</li><li>accessoires</li>
+        </ul>
+        <p class="small" style="margin-top:12px"><span class="strong">Le produit est montré parce qu’il est utilisé.</span></p>
+      </article>
+
+      <article class="card">
+        <div class="num">02</div>
+        <h3>Marques & partenariats</h3>
+        <p>Des marques peuvent accompagner un créateur, une activité, une série, un événement ou une expérience.</p>
+        <p class="small" style="margin-top:14px">Présence claire, identifiable et cohérente avec l’usage.</p>
+      </article>
+
+      <article class="card">
+        <div class="num">03</div>
+        <h3>Outils pour les créateurs</h3>
+        <p>À terme : programmation, statistiques, profil professionnel, séries, recap et fonctions avancées.</p>
+      </article>
+    </div>
+
+    <div class="process" style="margin-top:28px">
+      <div class="step"><b>D’ABORD</b><h3>Usage</h3><p>Développer les Lives, la découverte et la récurrence.</p></div>
+      <div class="step"><b>ENSUITE</b><h3>Monétisation légère</h3><p>Valider affiliation et premiers partenariats.</p></div>
+      <div class="step"><b>PLUS TARD</b><h3>Premium</h3><p>Développer des outils payants répondant aux besoins observés.</p></div>
+      <div class="step"><b>MODÈLE</b><h3>B2C + B2B2C + B2B</h3><p>Usage principal accessible ; revenus autour de l’écosystème.</p></div>
+    </div>
+    <div class="page">08</div>
+  </section>
+
+  <!-- 09 -->
+  <section class="slide">
+    <div class="eyebrow">09 — Réalisations à date</div>
+    <h1>Vuvio n’est plus seulement un concept.</h1>
+    <p class="lead">Le MVP et l’infrastructure Live sont fonctionnels. L’enjeu passe maintenant du développement produit à la validation des usages.</p>
+
+    <div class="status-grid">
+      <div class="status-card">
+        <h3>Produit</h3>
+        <p><span class="check">✓</span>MVP fonctionnel</p>
+        <p><span class="check">✓</span>Watch, Explore, Globe</p>
+        <p><span class="check">✓</span>Profils & équipement</p>
+        <p><span class="check">✓</span>Live Recap</p>
+        <p><span class="check">✓</span>Interface mobile</p>
+      </div>
+      <div class="status-card">
+        <h3>Live & streaming</h3>
+        <p><span class="check">✓</span>Diffusion Live opérationnelle</p>
+        <p><span class="check">✓</span>Streaming mobile</p>
+        <p><span class="check">✓</span>Replay</p>
+        <p><span class="check">✓</span>Gestion du direct</p>
+      </div>
+      <div class="status-card">
+        <h3>Infrastructure</h3>
+        <p><span class="check">✓</span>Backend Firebase</p>
+        <p><span class="check">✓</span>Authentification</p>
+        <p><span class="check">✓</span>Infrastructure streaming</p>
+        <p><span class="check">✓</span>Gestion contenus</p>
+        <p><span class="check">✓</span>Équipement & affiliation</p>
+      </div>
+    </div>
+
+    <div class="note-box">
+      <strong>Prochaine étape :</strong> recruter des créateurs pilotes, tester avec de vrais spectateurs, identifier les catégories les plus fortes,
+      mesurer le retour et tester les premiers partenariats.
+    </div>
+    <div class="page">09</div>
+  </section>
+
+  <!-- 10 -->
+  <section class="slide">
+    <div class="eyebrow">10 — Roadmap & financement</div>
+    <h1>Du MVP aux premiers usages réels.</h1>
+
+    <div class="roadmap">
+      <div class="phase"><div class="n">01</div><h3>Pilotes</h3><p>Recruter les premiers créateurs, tester avec des spectateurs, observer Watch, Explore et Globe.</p></div>
+      <div class="phase"><div class="n">02</div><h3>Lancement</h3><p>Créer une offre régulière de Lives : métiers, musique, cuisine, sport, voyage local.</p></div>
+      <div class="phase"><div class="n">03</div><h3>Communauté</h3><p>Centres d’intérêt, suivi créateurs, séries de Lives et retour utilisateur.</p></div>
+      <div class="phase"><div class="n">04</div><h3>Premiers revenus</h3><p>Affiliation équipement, premiers partenaires et tests B2B / B2B2C.</p></div>
+      <div class="phase"><div class="n">05</div><h3>Développement</h3><p>Nouvelles catégories, nouveaux territoires, outils créateurs et internationalisation progressive.</p></div>
+    </div>
+
+    <div class="grid-2" style="margin-top:20px">
+      <div class="card">
+        <h3>Ce que le financement doit permettre</h3>
+        <div class="kicker-row">
+          <span class="pill">Infrastructure technique</span>
+          <span class="pill">Coûts streaming</span>
+          <span class="pill">Tests pilotes</span>
+          <span class="pill">Acquisition</span>
+          <span class="pill">Créateurs</span>
+          <span class="pill">Partenariats</span>
+        </div>
+      </div>
+      <div class="card">
+        <h3>Sources envisagées</h3>
+        <div class="kicker-row">
+          <span class="pill">Apports fondateurs</span>
+          <span class="pill">Aides & subventions</span>
+          <span class="pill">FPI</span>
+          <span class="pill">Paris&Co</span>
+          <span class="pill">Partenaires</span>
+          <span class="pill">Financement externe</span>
+        </div>
+      </div>
+    </div>
+    <div class="page">10</div>
+  </section>
+
+  <!-- 11 -->
+  <section class="slide">
+    <div class="eyebrow">11 — Équipe & impact</div>
+    <h1>Deux profils complémentaires, un impact à structurer.</h1>
+
+    <div class="team-impact">
+      <div class="card">
+        <h2>L’équipe</h2>
+
+        <div class="team-person">
+          <div class="team-role">Produit & technologie</div>
+          <h3>Alexandre Ranson</h3>
+          <p>Conception produit, développement du MVP, infrastructure Live, formation informatique, expérience musique / création / enseignement, parcours franco-américain et international.</p>
+        </div>
+
+        <div class="team-person">
+          <div class="team-role">Marketing, finance & partenariats</div>
+          <h3>Cécilia Ranson</h3>
+          <p>Positionnement, stratégie, business model, structuration financière, partenariats et expérience senior en marketing, notamment chez Leboncoin.</p>
+        </div>
+
+        <div class="note-box">Produit & technologie d’un côté ; stratégie, marketing, finance et partenariats de l’autre.</div>
+      </div>
+
+      <div class="card">
+        <h2>Impact social</h2>
+        <div class="impact-grid">
+          <article class="card"><h3>Métiers & savoir-faire</h3><p>Voir concrètement comment une activité est pratiquée.</p></article>
+          <article class="card"><h3>Ouverture culturelle</h3><p>Découvrir des pratiques, personnes et environnements ailleurs.</p></article>
+          <article class="card"><h3>Territoires</h3><p>Rendre visibles lieux, initiatives et acteurs locaux.</p></article>
+          <article class="card"><h3>Connexion sociale</h3><p>Faire se découvrir des personnes autour d’un intérêt commun.</p></article>
+        </div>
+        <div class="note-box">
+          <strong>Démarche encore en structuration :</strong> diversité des activités, territoires représentés, engagement, créateurs suivis et taux de retour pourront servir de premiers indicateurs.
+        </div>
+      </div>
+    </div>
+    <div class="page">11</div>
+  </section>
+
+  <!-- 12 -->
+  <section class="slide">
+    <div class="eyebrow">12 — Pourquoi Paris&Co</div>
+    <h1>De la technologie aux premiers usages réels.</h1>
+    <p class="lead">Vuvio entre dans une phase où l’enjeu principal n’est plus seulement de construire le produit, mais de valider ses usages, son marché et son modèle.</p>
+
+    <div class="final-grid">
+      <article class="card"><div class="num">01</div><h3>Tester</h3><p>Constituer un premier groupe de créateurs et spectateurs pilotes et confronter le produit aux usages réels.</p></article>
+      <article class="card"><div class="num">02</div><h3>Valider</h3><p>Identifier les catégories pertinentes et comprendre ce qui génère découverte, suivi et retour.</p></article>
+      <article class="card"><div class="num">03</div><h3>Connecter</h3><p>Créer des collaborations avec culture, tourisme, artisans, lieux, événements, associations, marques et initiatives parisiennes.</p></article>
+      <article class="card"><div class="num">04</div><h3>Structurer</h3><p>Être accompagné sur le modèle économique, le go-to-market, le financement, le FPI, l’impact et les partenariats.</p></article>
+    </div>
+
+    <div class="big-quote" style="margin-top:42px">
+      PARIS COMME PREMIER TERRAIN D’EXPÉRIMENTATION.<br>
+      <span class="accent">UNE AMBITION INTERNATIONALE.</span>
+    </div>
+
+    <div class="footer-note">Des passions, des métiers, des expériences — en direct.</div>
+    <div class="page">12</div>
+  </section>
+
+</div>
+</body>
+</html>

@@ -502,15 +502,18 @@ export async function searchUsers(searchQuery) {
   const normalized = searchQuery.trim().toLowerCase();
   if (!normalized) return [];
 
-  if (!currentUid) {
-    return Object.values(Object.fromEntries(profileMap))
-      .filter((p) => p && p.id !== 'current-user' && (
-        p.name?.toLowerCase().includes(normalized) ||
-        p.username?.toLowerCase().includes(normalized)
-      ))
-      .slice(0, 8);
-  }
+  // Local mock profiles only — profileMap contains real users already returned by Firestore
+  const localAll = Object.values(messageProfiles);
+  const localSeen = new Set();
+  const localMatches = localAll.filter((p) => {
+    if (!p || p.id === 'current-user' || p.id === currentUid || localSeen.has(p.id)) return false;
+    localSeen.add(p.id);
+    return p.name?.toLowerCase().includes(normalized) || p.username?.toLowerCase().includes(normalized);
+  });
 
+  if (!currentUid) return localMatches.slice(0, 8);
+
+  let firestoreResults = [];
   try {
     const [byUsername, byDisplay] = await Promise.all([
       getDocs(query(
@@ -528,12 +531,11 @@ export async function searchUsers(searchQuery) {
     ]);
 
     const seen = new Set();
-    const results = [];
     [...byUsername.docs, ...byDisplay.docs].forEach((d) => {
       if (d.id === currentUid || seen.has(d.id)) return;
       seen.add(d.id);
       const data = d.data();
-      results.push({
+      firestoreResults.push({
         id: d.id,
         name: data.displayName || 'Unknown',
         username: data.username || d.id.slice(0, 8),
@@ -541,11 +543,19 @@ export async function searchUsers(searchQuery) {
         profession: data.profession || null,
       });
     });
-    return results.slice(0, 8);
   } catch (err) {
-    console.warn('[messaging] searchUsers failed:', err.message);
-    return [];
+    console.warn('[messaging] searchUsers Firestore failed:', err.message);
   }
+
+  // Merge: Firestore first, then mock profiles not already in results
+  const merged = [...firestoreResults];
+  const mergedIds = new Set(merged.map((u) => u.id));
+  localMatches.forEach((p) => { if (!mergedIds.has(p.id)) merged.push(p); });
+  return merged.slice(0, 8);
+}
+
+export function cacheProfile(profile) {
+  if (profile?.id) profileMap.set(profile.id, profile);
 }
 
 // ── Preferences ───────────────────────────────────────────────────

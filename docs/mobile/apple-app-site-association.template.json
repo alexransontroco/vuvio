@@ -1,0 +1,26 @@
+{
+  "applinks": {
+    "apps": [],
+    "details": [
+      {
+        "appIDs": [
+          "APPLE_TEAM_ID.app.vuvio.mobile"
+        ],
+        "components": [
+          {
+            "/": "/live/*",
+            "comment": "Open public live links in Vuvio"
+          },
+          {
+            "/": "/share/live/*",
+            "comment": "Open shared live links in Vuvio"
+          },
+          {
+            "/": "/@*",
+            "comment": "Open public profile links in Vuvio"
+          }
+        ]
+      }
+    ]
+  }
+}

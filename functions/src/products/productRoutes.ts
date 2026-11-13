@@ -4,7 +4,7 @@ import { FieldValue } from 'firebase-admin/firestore';
 import { db } from '../shared/firestore.js';
 import { ApiError, sendError } from '../shared/errors.js';
 import { authenticateUser } from '../middleware/authenticateUser.js';
-import { icecatUsername, icecatLanguage, icecatMarket } from '../config/env.js';
+import { icecatUsername, icecatLanguage, icecatMarket, getEbayEnv } from '../config/env.js';
 import { createProductRegistry } from './productRegistry.js';
 import { checkProductExists, mergeProductData } from './deduplicateProduct.js';
 import { normalizeProductName, ExternalProduct } from './productProvider.js';
@@ -27,10 +27,15 @@ function buildSearchTerms(product: ExternalProduct): string[] {
 function buildRegistryConfig() {
   const username = icecatUsername.value();
   const password = getIcecatPassword();
+  const ebay = getEbayEnv();
   return {
     icecat:
       username && password
         ? { username, password, language: icecatLanguage, market: icecatMarket }
+        : undefined,
+    ebay:
+      ebay.clientId && ebay.clientSecret
+        ? ebay
         : undefined,
   };
 }
@@ -41,12 +46,13 @@ export async function searchProductsHandler(req: Request, res: Response): Promis
     const brand = typeof req.query.brand === 'string' ? req.query.brand : undefined;
     const gtin = typeof req.query.gtin === 'string' ? req.query.gtin : undefined;
     const ean = typeof req.query.ean === 'string' ? req.query.ean : undefined;
+    const upc = typeof req.query.upc === 'string' ? req.query.upc : undefined;
     const category = typeof req.query.category === 'string' ? req.query.category : undefined;
     const rawLimit = parseInt(String(req.query.limit ?? '20'), 10);
     const limit = Math.min(isNaN(rawLimit) ? 20 : rawLimit, 50);
 
-    if (!q && !brand && !gtin && !ean) {
-      throw new ApiError('bad_request', 'Provide at least one of: q, brand, gtin, ean');
+    if (!q && !brand && !gtin && !ean && !upc) {
+      throw new ApiError('bad_request', 'Provide at least one of: q, brand, gtin, ean, upc');
     }
 
     const query = {
@@ -54,6 +60,7 @@ export async function searchProductsHandler(req: Request, res: Response): Promis
       brand,
       gtin,
       ean,
+      upc,
       category,
       limit,
     };

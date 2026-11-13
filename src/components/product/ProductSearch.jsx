@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { Search, X, ChevronRight } from 'lucide-react';
-import { searchProducts, getProductName } from '../../services/productService.js';
+import { searchProducts } from '../../services/productSearchService.js';
+import { getProductName } from '../../services/productService.js';
 import { ProductThumbnail } from './ProductThumbnail.jsx';
 import './product-search.css';
 
@@ -28,7 +29,7 @@ export function ProductSearch({ categoryId, onSelectProduct, disabled = false })
     setSearchError(null);
     debounceTimer.current = setTimeout(async () => {
       try {
-        const products = await searchProducts(query, categoryId);
+        const products = await searchProducts(query, { category: categoryId });
         setResults(products);
         setIsOpen(true);
       } catch (err) {

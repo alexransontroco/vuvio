@@ -2,6 +2,25 @@ import { ANALYTICS_CONFIG } from './analyticsConfig';
 import { analyticsClient } from './analyticsClient';
 import { analyticsSessionManager } from './analyticsSession';
 import type { AnalyticsEventInput } from './analyticsTypes';
+import { getAnalyticsPlatform } from '../../platform/platform.js';
+
+function getEnvironment(): string {
+  try {
+    if (import.meta.env?.DEV) return 'development';
+    const h = window.location.hostname;
+    if (h === 'localhost' || h === '127.0.0.1' || h === '0.0.0.0') return 'development';
+  } catch { /* ignore */ }
+  return 'production';
+}
+
+function getDeviceType(): string {
+  try {
+    const ua = navigator.userAgent;
+    if (/tablet|ipad|playbook|silk/i.test(ua)) return 'tablet';
+    if (/mobile|iphone|ipod|android|blackberry|opera mini|iemobile/i.test(ua)) return 'mobile';
+  } catch { /* ignore */ }
+  return 'desktop';
+}
 
 export interface QueuedEvent {
   id: string;
@@ -92,6 +111,12 @@ class AnalyticsQueue {
         sessionId: analyticsSessionManager.getSessionId(),
         userId: analyticsSessionManager.getUserId(),
         anonymousId: analyticsSessionManager.getAnonymousId(),
+        environment: event.environment ?? getEnvironment(),
+        deviceType: event.deviceType ?? getDeviceType(),
+        metadata: {
+          ...event.metadata,
+          platform: getAnalyticsPlatform(),
+        },
       },
       timestamp: Date.now(),
       attempts: 0,

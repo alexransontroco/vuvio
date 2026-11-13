@@ -19,6 +19,33 @@ export function GearImageUploader({
   const [error, setError] = useState(null);
   const fileInputRef = useRef(null);
 
+  const compressImage = (file) =>
+    new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const img = new Image();
+        img.onload = () => {
+          const MAX = 640;
+          let w = img.width;
+          let h = img.height;
+          if (w > h) {
+            if (w > MAX) { h = Math.round(h * MAX / w); w = MAX; }
+          } else {
+            if (h > MAX) { w = Math.round(w * MAX / h); h = MAX; }
+          }
+          const canvas = document.createElement('canvas');
+          canvas.width = w;
+          canvas.height = h;
+          canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+          resolve(canvas.toDataURL('image/jpeg', 0.75));
+        };
+        img.onerror = reject;
+        img.src = e.target.result;
+      };
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+
   const handleFileSelect = async (event) => {
     const file = event.target.files?.[0];
     if (!file) return;
@@ -28,8 +55,8 @@ export function GearImageUploader({
       return;
     }
 
-    if (file.size > 5 * 1024 * 1024) {
-      setError('Image must be less than 5MB');
+    if (file.size > 20 * 1024 * 1024) {
+      setError('Image must be less than 20MB');
       return;
     }
 
@@ -37,31 +64,17 @@ export function GearImageUploader({
     setError(null);
 
     try {
-      // Convert image to base64 for now (localStorage)
-      // Later: upload to Firebase Storage
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        const imageData = e.target?.result;
-        onImageChange({
-          imageUrl: imageData,
-          imageSource: 'user_upload',
-          imageStatus: 'confirmed',
-        });
-        setUploading(false);
-      };
-      reader.onerror = () => {
-        setError('Failed to read image');
-        setUploading(false);
-      };
-      reader.readAsDataURL(file);
-    } catch (err) {
+      const compressed = await compressImage(file);
+      onImageChange({
+        imageUrl: compressed,
+        imageSource: 'user_upload',
+        imageStatus: 'confirmed',
+      });
+    } catch {
       setError('Failed to process image');
+    } finally {
       setUploading(false);
-    }
-
-    // Reset input
-    if (fileInputRef.current) {
-      fileInputRef.current.value = '';
+      if (fileInputRef.current) fileInputRef.current.value = '';
     }
   };
 

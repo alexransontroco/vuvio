@@ -1,7 +1,7 @@
 import { onRequest } from 'firebase-functions/v2/https';
 import { onSchedule } from 'firebase-functions/v2/scheduler';
 import { sendError, ApiError } from './shared/errors.js';
-import { cloudflareAccountId, cloudflareApiToken, cloudflareCustomerCode, cloudflareWebhookSecret, openaiApiKey, meteredApiKey, meteredAppName, icecatUsername, icecatPassword, amazonPaAccessKey, amazonPaSecretKey, amazonAssociateTagFr, awinApiKey, awinPublisherId } from './config/env.js';
+import { cloudflareAccountId, cloudflareApiToken, cloudflareCustomerCode, cloudflareWebhookSecret, openaiApiKey, meteredApiKey, meteredAppName, icecatUsername, icecatPassword, amazonPaAccessKey, amazonPaSecretKey, amazonAssociateTagFr, awinApiKey, awinPublisherId, ebayClientId, ebayClientSecret } from './config/env.js';
 import { createStream } from './streams/createStream.js';
 import { createScheduledStream } from './streams/createScheduledStream.js';
 import { startStream } from './streams/startStream.js';
@@ -18,6 +18,7 @@ import { aggregateStreamStats, aggregateCreatorStats, aggregateCategoryStats, ag
 import { cloudflareWebhook } from './cloudflare/cloudflareWebhook.js';
 import { getCloudflareConfig, getCloudflareInputs, postCreateTestInput, getRawLiveInput, getRawVideos } from './cloudflare/testRouteHandlers.js';
 import { createLiveInputHandler } from './cloudflare/createLiveInputHandler.js';
+import { createLiveOutputHandler, deleteLiveOutputHandler, listLiveOutputsHandler } from './cloudflare/liveOutputHandlers.js';
 import { turnCredentialsHandler } from './cloudflare/turnCredentialsHandler.js';
 import { monitorStreamHeartbeats } from './streams/monitorStreamHeartbeats.js';
 import { cleanupStaleLives } from './streams/cleanupStaleLives.js';
@@ -48,14 +49,14 @@ function pathParts(path = '') {
 function sendCors(res: { set: (key: string, value: string) => void }) {
   res.set('Access-Control-Allow-Origin', '*');
   res.set('Access-Control-Allow-Headers', 'Content-Type, Authorization, cf-webhook-signature, webhook-signature, x-cloudflare-signature');
-  res.set('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  res.set('Access-Control-Allow-Methods', 'GET, POST, DELETE, OPTIONS');
 }
 
 export const api = onRequest({
   region: 'europe-west1',
   timeoutSeconds: 540,
   memory: '2GiB',
-  secrets: [cloudflareAccountId, cloudflareApiToken, cloudflareWebhookSecret, cloudflareCustomerCode, openaiApiKey, meteredApiKey, meteredAppName, icecatUsername, icecatPassword, amazonPaAccessKey, amazonPaSecretKey, amazonAssociateTagFr, awinApiKey, awinPublisherId],
+  secrets: [cloudflareAccountId, cloudflareApiToken, cloudflareWebhookSecret, cloudflareCustomerCode, openaiApiKey, meteredApiKey, meteredAppName, icecatUsername, icecatPassword, amazonPaAccessKey, amazonPaSecretKey, amazonAssociateTagFr, awinApiKey, awinPublisherId, ebayClientId, ebayClientSecret],
 }, async (req, res) => {
   sendCors(res);
   if (req.method === 'OPTIONS') {
@@ -65,6 +66,9 @@ export const api = onRequest({
 
   try {
     const parts = pathParts(req.path);
+    if (req.path.includes('output') || req.path.includes('live-input')) {
+      console.log(`[router] method=${req.method} path=${req.path} parts=${JSON.stringify(parts)}`);
+    }
 
     // Open Graph share preview routes
     if (req.method === 'GET' && parts[0] === 'share' && parts[1] === 'live' && parts[3] === 'recap' && parts[4] === 'image') return await ogImageHandler(req, res, parts[2], true);
@@ -107,6 +111,10 @@ export const api = onRequest({
     // Cloudflare routes
     if (req.method === 'GET' && parts[0] === 'turn-credentials') return await turnCredentialsHandler(req, res);
     if (req.method === 'POST' && parts[0] === 'cloudflare' && parts[1] === 'live-input' && parts[2] === 'create') return await createLiveInputHandler(req, res);
+    // Live Outputs (simulcasting)
+    if (req.method === 'POST' && parts[0] === 'cloudflare' && parts[1] === 'live-input' && parts[3] === 'outputs' && parts.length === 4) return await createLiveOutputHandler(req, res, parts[2]);
+    if (req.method === 'DELETE' && parts[0] === 'cloudflare' && parts[1] === 'live-input' && parts[3] === 'outputs' && parts[4]) return await deleteLiveOutputHandler(req, res, parts[2], parts[4]);
+    if (req.method === 'GET' && parts[0] === 'cloudflare' && parts[1] === 'live-input' && parts[3] === 'outputs') return await listLiveOutputsHandler(req, res, parts[2]);
     if (req.method === 'GET' && parts[0] === 'cloudflare' && parts[1] === 'config') return await getCloudflareConfig(req, res);
     if (req.method === 'GET' && parts[0] === 'cloudflare' && parts[1] === 'raw-input') return await getRawLiveInput(req, res);
     if (req.method === 'GET' && parts[0] === 'cloudflare' && parts[1] === 'raw-videos') return await getRawVideos(req, res);

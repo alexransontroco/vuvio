@@ -21,6 +21,12 @@ export interface CloudflareLiveInput {
   connected?: boolean;
 }
 
+export interface CloudflareLiveOutput {
+  outputId: string;
+  url: string;
+  enabled: boolean;
+}
+
 export interface CloudflareClient {
   createLiveInput(input: { streamId: string; title: string }): Promise<CloudflareLiveInput>;
   getLiveInput(liveInputId: string): Promise<CloudflareLiveInput>;
@@ -28,6 +34,10 @@ export interface CloudflareClient {
   listLiveInputs(): Promise<CloudflareLiveInput[]>;
   listVideosByLiveInput(liveInputId: string): Promise<CloudflareVideo[]>;
   ensureRecordingEnabled(liveInputId: string): Promise<boolean>;
+  // Live Outputs (simulcasting to external RTMP destinations)
+  createLiveOutput(liveInputId: string, url: string, streamKey: string): Promise<CloudflareLiveOutput>;
+  deleteLiveOutput(liveInputId: string, outputId: string): Promise<void>;
+  listLiveOutputs(liveInputId: string): Promise<CloudflareLiveOutput[]>;
 }
 
 export interface CloudflareVideo {
@@ -106,7 +116,7 @@ export function createCloudflareClient(): CloudflareClient {
       return null;
     }
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 8000);
+    const timeout = setTimeout(() => controller.abort(), 20000);
     try {
       const response = await fetch(`https://api.cloudflare.com/client/v4/accounts/${env.accountId}/stream${path}`, {
         ...init,
@@ -151,7 +161,7 @@ export function createCloudflareClient(): CloudflareClient {
 
       // Raw fetch so we can log success/errors/messages before the wrapper strips them
       const ctrl = new AbortController();
-      const t = setTimeout(() => ctrl.abort(), 8000);
+      const t = setTimeout(() => ctrl.abort(), 20000);
       let httpStatus = 0;
       let rawBody: CloudflareApiResponse = {};
       try {
@@ -223,6 +233,59 @@ export function createCloudflareClient(): CloudflareClient {
         thumbnail: typeof item.thumbnail === 'string' ? item.thumbnail : null,
         status: item.status && typeof item.status === 'object' ? item.status as CloudflareVideo['status'] : undefined,
         liveInput: typeof item.liveInput === 'string' ? item.liveInput : null,
+      }));
+    },
+
+    async createLiveOutput(liveInputId, url, streamKey) {
+      const outputPath = `/live_inputs/${encodeURIComponent(liveInputId)}/outputs`;
+      console.log(`[cloudflare] createLiveOutput liveInputId=${liveInputId} url=${url.slice(0, 60)} path=${outputPath}`);
+
+      // Raw fetch so we can log the full Cloudflare response on failure
+      const ctrl = new AbortController();
+      const t = setTimeout(() => ctrl.abort(), 20000);
+      let httpStatus = 0;
+      let rawBody: CloudflareApiResponse = {};
+      try {
+        const response = await fetch(`https://api.cloudflare.com/client/v4/accounts/${env.accountId}/stream${outputPath}`, {
+          method: 'POST',
+          signal: ctrl.signal,
+          headers: { Authorization: `Bearer ${env.apiToken}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ url, streamKey, enabled: true }),
+        });
+        httpStatus = response.status;
+        rawBody = await response.json().catch(() => ({})) as CloudflareApiResponse;
+      } finally {
+        clearTimeout(t);
+      }
+
+      console.log(`[cloudflare] createLiveOutput HTTP ${httpStatus} success=${rawBody.success}`);
+      console.log(`[cloudflare] createLiveOutput errors:`, JSON.stringify(rawBody.errors ?? []));
+      console.log(`[cloudflare] createLiveOutput messages:`, JSON.stringify(rawBody.messages ?? []));
+
+      if (!rawBody.success || httpStatus < 200 || httpStatus >= 300 || !rawBody.result) {
+        const cfErrors = JSON.stringify(rawBody.errors ?? []);
+        throw new ApiError('server_error', `Cloudflare createLiveOutput failed (HTTP ${httpStatus}): ${cfErrors}`);
+      }
+
+      const result = rawBody.result as Record<string, unknown>;
+      return {
+        outputId: typeof result.uid === 'string' ? result.uid : String(result.uid ?? ''),
+        url: typeof result.url === 'string' ? result.url : url,
+        enabled: result.enabled !== false,
+      };
+    },
+
+    async deleteLiveOutput(liveInputId, outputId) {
+      await request(`/live_inputs/${encodeURIComponent(liveInputId)}/outputs/${encodeURIComponent(outputId)}`, { method: 'DELETE' });
+    },
+
+    async listLiveOutputs(liveInputId) {
+      const result = await request(`/live_inputs/${encodeURIComponent(liveInputId)}/outputs`, { method: 'GET' });
+      if (!result || !Array.isArray(result)) return [];
+      return result.map((item: Record<string, unknown>) => ({
+        outputId: typeof item.uid === 'string' ? item.uid : String(item.uid ?? ''),
+        url: typeof item.url === 'string' ? item.url : '',
+        enabled: item.enabled !== false,
       }));
     },
 

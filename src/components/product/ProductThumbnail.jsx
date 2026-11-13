@@ -6,7 +6,7 @@
  */
 
 import { useState, useEffect } from 'react';
-import { AlertCircle, Loader } from 'lucide-react';
+import { Loader } from 'lucide-react';
 import { getCategoryIcon } from '../../data/equipmentModel.js';
 import '../gear/gear-thumbnail.css';
 
@@ -91,7 +91,7 @@ export function ProductThumbnail({
 
   const sizeClass = `gear-thumbnail--${size}`;
   const isPlaceholder = imageSource === 'placeholder';
-  const containerClass = `gear-thumbnail ${sizeClass} ${selected ? 'is-selected' : ''} ${isFailed || imageError ? 'has-error' : ''} ${isPlaceholder ? 'is-placeholder' : ''} is-rounded`;
+  const containerClass = `gear-thumbnail ${sizeClass} ${selected ? 'is-selected' : ''} ${isPlaceholder ? 'is-placeholder' : ''} is-rounded`;
 
   return (
     <div className={`product-thumbnail`}>
@@ -118,13 +118,9 @@ export function ProductThumbnail({
             </>
           ) : (
             <div className="gear-thumbnail__fallback">
-              {isFailed || imageError ? (
-                <AlertCircle size={size === 'sm' ? 12 : size === 'md' ? 16 : 20} />
-              ) : (
-                <span style={{ fontSize: size === 'sm' ? '14px' : size === 'md' ? '18px' : '24px' }}>
-                  {getCategoryIcon(category)}
-                </span>
-              )}
+              <span style={{ fontSize: size === 'sm' ? '14px' : size === 'md' ? '18px' : '24px' }}>
+                {getCategoryIcon(category)}
+              </span>
             </div>
           )}
 

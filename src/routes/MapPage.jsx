@@ -253,9 +253,7 @@ export default function MapPage() {
           }}
           onWatch={(id) => {
             const live = allStreams.find((stream) => stream.id === id);
-            const path = live?.creatorUid || live?.createdLocally ? '/watch' : '/discover';
-            const mode = path === '/watch' ? '&mode=view' : '';
-            navigate(`${path}?live=${encodeURIComponent(id)}${mode}`);
+            navigate(`/watch?live=${encodeURIComponent(id)}&mode=view`);
           }}
           notifications={notifications}
           onToggleNotification={(id) => setNotifications((state) => ({ ...state, [id]: !state[id] }))}

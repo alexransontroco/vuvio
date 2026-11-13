@@ -1,0 +1,78 @@
+{
+  "url": "https://127.0.0.1:5177/intro-preview",
+  "viewport": {
+    "width": 1440,
+    "height": 900
+  },
+  "errors": [
+    "screenshot globe-early: page.screenshot: Timeout 8000ms exceeded.\nCall log:\n  \u001b[2m- taking page screenshot\u001b[22m\n\u001b[2m  - waiting for fonts to load...\u001b[22m\n\u001b[2m  - fonts loaded\u001b[22m\n",
+    "screenshot globe-middle: page.screenshot: Timeout 8000ms exceeded.\nCall log:\n  \u001b[2m- taking page screenshot\u001b[22m\n\u001b[2m  - waiting for fonts to load...\u001b[22m\n\u001b[2m  - fonts loaded\u001b[22m\n"
+  ],
+  "observations": [
+    {
+      "label": "globe-early",
+      "at": 9019,
+      "state": {
+        "phase": "startlive",
+        "video": {
+          "readyState": 4,
+          "currentTime": 8.799197,
+          "width": 721,
+          "height": 1280
+        },
+        "globe": {
+          "opacity": "0.35",
+          "canvas": true,
+          "canvasWidth": 390,
+          "canvasHeight": 845
+        },
+        "stage": {
+          "width": 390,
+          "height": 845
+        }
+      }
+    },
+    {
+      "label": "globe-middle",
+      "at": 17028,
+      "state": {
+        "phase": "enter",
+        "video": {
+          "readyState": 4,
+          "currentTime": 15.302369,
+          "width": 721,
+          "height": 1280
+        },
+        "globe": {
+          "opacity": "0",
+          "canvas": false
+        },
+        "stage": {
+          "width": 390,
+          "height": 845
+        }
+      }
+    },
+    {
+      "label": "globe-late",
+      "at": 17977,
+      "state": {
+        "phase": "enter",
+        "video": {
+          "readyState": 4,
+          "currentTime": 15.964806,
+          "width": 721,
+          "height": 1280
+        },
+        "globe": {
+          "opacity": "0",
+          "canvas": false
+        },
+        "stage": {
+          "width": 390,
+          "height": 845
+        }
+      }
+    }
+  ]
+}

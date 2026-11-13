@@ -1,4 +1,4 @@
-const CACHE_NAME = 'vuvio-static-v22';
+const CACHE_NAME = 'vuvio-static-v31';
 const APP_SHELL = [
   '/',
   '/index.html',

@@ -3,6 +3,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import {
+  cacheProfile,
   getConversations,
   getMessageLive,
   getOrCreateConversation,
@@ -151,6 +152,7 @@ function NewConversationSheet({ onClose }) {
   }, [query]);
 
   const handleSelect = async (user) => {
+    cacheProfile(user);
     const conv = await getOrCreateConversation(user.id);
     onClose();
     navigate(`/messages/${conv.id}`);
@@ -179,23 +181,25 @@ function NewConversationSheet({ onClose }) {
             </button>
           ) : null}
         </div>
-        {loading ? (
-          <span className="conv-skeleton" style={{ margin: '4px 0' }} />
-        ) : results.length > 0 ? (
-          results.map((user) => (
-            <button key={user.id} type="button" className="new-conv-user-row" onClick={() => handleSelect(user)}>
-              <img src={user.avatar} alt="" className="new-conv-user-row__avatar" />
-              <span className="new-conv-user-row__info">
-                <strong>{user.name}</strong>
-                {user.profession ? <small>{user.profession}</small> : <small>@{user.username}</small>}
-              </span>
-            </button>
-          ))
-        ) : query.trim() ? (
-          <p className="new-conv-empty">{t('messages.noUsersFound')}</p>
-        ) : (
-          <p className="new-conv-empty">{t('messages.startTypingHint')}</p>
-        )}
+        <div className="new-conv-results">
+          {loading ? (
+            <span className="conv-skeleton" style={{ margin: '4px 0' }} />
+          ) : results.length > 0 ? (
+            results.map((user) => (
+              <button key={user.id} type="button" className="new-conv-user-row" onClick={() => handleSelect(user)}>
+                <img src={user.avatar} alt="" className="new-conv-user-row__avatar" />
+                <span className="new-conv-user-row__info">
+                  <strong>{user.name}</strong>
+                  {user.profession ? <small>{user.profession}</small> : <small>@{user.username}</small>}
+                </span>
+              </button>
+            ))
+          ) : query.trim() ? (
+            <p className="new-conv-empty">{t('messages.noUsersFound')}</p>
+          ) : (
+            <p className="new-conv-empty">{t('messages.startTypingHint')}</p>
+          )}
+        </div>
       </div>
     </div>
   );
@@ -335,7 +339,7 @@ export default function MessagesPage() {
           allConversations.length ? (
             allConversations.map((c) => <MessageRequestCard key={c.id} conversation={c} />)
           ) : (
-            <EmptyState filter={filter} hasQuery={query.trim().length > 0} onExplore={() => navigate('/discover')} />
+            <EmptyState filter={filter} hasQuery={query.trim().length > 0} onExplore={() => navigate('/watch')} />
           )
         ) : activeConversations.length || requestConversations.length ? (
           <>
@@ -353,7 +357,7 @@ export default function MessagesPage() {
             )}
           </>
         ) : (
-          <EmptyState filter={filter} hasQuery={query.trim().length > 0} onExplore={() => navigate('/discover')} />
+          <EmptyState filter={filter} hasQuery={query.trim().length > 0} onExplore={() => navigate('/watch')} />
         )}
       </div>
 

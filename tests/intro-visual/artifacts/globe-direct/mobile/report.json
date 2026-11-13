@@ -1,0 +1,77 @@
+{
+  "url": "https://127.0.0.1:5177/intro-preview",
+  "viewport": {
+    "width": 390,
+    "height": 844
+  },
+  "errors": [
+    "screenshot globe-middle: page.screenshot: Timeout 8000ms exceeded.\nCall log:\n  \u001b[2m- taking page screenshot\u001b[22m\n\u001b[2m  - waiting for fonts to load...\u001b[22m\n\u001b[2m  - fonts loaded\u001b[22m\n"
+  ],
+  "observations": [
+    {
+      "label": "globe-early",
+      "at": 6228,
+      "state": {
+        "phase": "startlive",
+        "video": {
+          "readyState": 2,
+          "currentTime": 4.284065,
+          "width": 721,
+          "height": 1280
+        },
+        "globe": {
+          "opacity": "0.450533",
+          "canvas": true,
+          "canvasWidth": 390,
+          "canvasHeight": 844
+        },
+        "stage": {
+          "width": 390,
+          "height": 844
+        }
+      }
+    },
+    {
+      "label": "globe-middle",
+      "at": 14250,
+      "state": {
+        "phase": "enter",
+        "video": {
+          "readyState": 4,
+          "currentTime": 9.856913,
+          "width": 721,
+          "height": 1280
+        },
+        "globe": {
+          "opacity": "0",
+          "canvas": false
+        },
+        "stage": {
+          "width": 390,
+          "height": 844
+        }
+      }
+    },
+    {
+      "label": "globe-late",
+      "at": 16693,
+      "state": {
+        "phase": "enter",
+        "video": {
+          "readyState": 4,
+          "currentTime": 11.753536,
+          "width": 721,
+          "height": 1280
+        },
+        "globe": {
+          "opacity": "0",
+          "canvas": false
+        },
+        "stage": {
+          "width": 390,
+          "height": 844
+        }
+      }
+    }
+  ]
+}

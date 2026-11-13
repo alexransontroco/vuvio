@@ -1,0 +1,961 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Vuvio — Investor Pitch 2026</title>
+<style>
+:root{
+  --bg:#06111e;--bg2:#0a1c2f;--card:#0b2135;--line:#0c6f8b;
+  --cyan:#1ed6e5;--text:#f7fbff;--muted:#b5c7d6;--green:#5ce1b9;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:#020811;color:var(--text);font-family:Arial,"Helvetica Neue",Helvetica,sans-serif}
+body{overflow-x:hidden}.deck{width:100%}
+.slide{
+  width:1600px;height:900px;margin:0 auto 24px;padding:48px 60px 48px;position:relative;overflow:hidden;
+  background:radial-gradient(circle at 82% 12%,rgba(0,185,214,.10),transparent 24%),linear-gradient(180deg,var(--bg2),var(--bg));
+  border:1px solid #0c2d46;
+}
+.eyebrow{font-size:15px;letter-spacing:.16em;text-transform:uppercase;color:#d7e5ef;margin-bottom:36px}
+h1{margin:0;font-size:52px;line-height:1.02;letter-spacing:-.03em}
+h2{margin:0;font-size:28px;line-height:1.08}
+h3{margin:0;font-size:19px;line-height:1.12}
+p{margin:0;color:var(--muted);font-size:16px;line-height:1.55}
+.lead{font-size:17px;margin-top:14px;max-width:1350px}.small{font-size:14px}
+.slide-brand{position:absolute;right:24px;bottom:14px;color:#59e2eb;font-size:14px;font-weight:700}
+.card{background:linear-gradient(180deg,rgba(11,33,53,.98),rgba(8,25,41,.98));border:1px solid #0b5874;border-radius:12px;padding:22px}
+.card.compact{min-height:148px}
+.card-title{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+.icon{width:32px;height:32px;border-radius:7px;border:1px solid var(--cyan);display:inline-flex;align-items:center;justify-content:center;color:var(--cyan);font-weight:700;font-size:13px;flex:0 0 auto}
+.step-num{font-size:13px;color:var(--cyan);font-weight:700;letter-spacing:.14em}
+.section-label{font-size:13px;letter-spacing:.12em;text-transform:uppercase;color:#e7f0f7}
+.accent-line{height:4px;width:240px;background:var(--cyan);margin:28px 0 34px}
+.mini-rule{height:1px;background:#0d5672;margin:16px 0}
+figure{margin:0}img{display:block;width:100%;height:100%;object-fit:cover}
+
+/* ── Cover ── */
+.slide-cover{padding:0;background:#020913;position:relative}
+.cover-bg{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center 70%}
+.cover-overlay{position:absolute;inset:0;background:linear-gradient(110deg,rgba(2,9,19,.96) 28%,rgba(2,9,19,.58) 54%,rgba(2,9,19,.13) 100%)}
+.cover-copy{position:absolute;top:0;left:0;bottom:0;width:55%;padding:215px 74px 58px;display:flex;flex-direction:column;justify-content:flex-start}
+.slide-cover h1{font-size:70px;line-height:1.025;max-width:745px;letter-spacing:-.03em;font-weight:900;margin:0;text-shadow:0 8px 34px rgba(0,0,0,.38)}.slide-cover h1 span{color:var(--cyan)}
+.cover-subtitle{font-size:26px;color:rgba(245,250,255,.76);max-width:460px;line-height:1.36;margin-top:15px;text-shadow:0 6px 24px rgba(0,0,0,.34)}
+.cover-logo{position:absolute;right:240px;top:23%;z-index:2}
+.cover-logo::before{content:'';position:absolute;inset:-58px -76px -54px -72px;background:radial-gradient(ellipse at center,rgba(1,10,22,.78) 0%,rgba(1,10,22,.46) 42%,rgba(1,10,22,0) 72%);filter:blur(10px);z-index:-1}
+.cover-logo img{height:232px;width:auto;filter:drop-shadow(0 0 10px rgba(255,255,255,.16)) drop-shadow(0 0 22px rgba(30,214,229,.32)) drop-shadow(0 22px 46px rgba(0,0,0,.72))}
+.cover-pin{display:none}
+.cover-pin svg{color:rgba(30,214,229,.85);filter:drop-shadow(0 0 4px rgba(30,214,229,.5))}
+.pin-line{width:1px;height:22px;background:linear-gradient(to bottom,rgba(30,214,229,.7),transparent);margin-top:2px}
+.pin-dot{width:5px;height:5px;border-radius:50%;background:var(--cyan);opacity:.8}
+.footer-note{position:absolute;left:64px;bottom:28px;color:#66859b;font-size:12px;letter-spacing:.16em}
+
+/* ── 02 Vision ── */
+.slide-vision{padding:48px 50px 42px}
+.slide-vision .eyebrow{margin-bottom:42px}
+.vision-layout{display:grid;grid-template-columns:minmax(0,1.04fr) minmax(0,.96fr);gap:24px;align-items:stretch;height:690px}
+.vision-left{display:flex;flex-direction:column;min-width:0}
+.vision-title{font-size:76px;line-height:.96;letter-spacing:-.045em;font-weight:900;max-width:760px;text-shadow:0 10px 34px rgba(0,0,0,.28)}
+.vision-lead{font-size:25px;line-height:1.42;color:rgba(240,247,252,.82);max-width:760px;margin-top:32px}
+.principles{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:48px}
+.principle-card{min-height:318px;padding:26px 24px 24px;border:1px solid rgba(30,214,229,.85);border-radius:10px;background:linear-gradient(180deg,rgba(5,25,43,.88),rgba(4,17,31,.94));display:flex;flex-direction:column}
+.principle-num{width:58px;height:58px;border:2px solid var(--cyan);border-radius:50%;display:flex;align-items:center;justify-content:center;color:var(--cyan);font-size:24px;font-weight:800;letter-spacing:.01em;box-shadow:0 0 16px rgba(30,214,229,.20)}
+.principle-rule{width:58px;height:4px;border-radius:999px;background:var(--cyan);margin:18px 0 18px}
+.principle-card h3{font-size:27px;line-height:1.1;font-weight:800;color:#fff;margin:0 0 17px;letter-spacing:-.025em}
+.principle-card p{font-size:19px;line-height:1.34;color:rgba(224,237,245,.86);margin:0}
+.vision-images{display:flex;flex-direction:column;height:100%;padding-top:0;gap:12px}
+.vision-images figure{position:relative;overflow:hidden;border:1px solid rgba(30,214,229,.8);border-radius:10px;background:#03101c;aspect-ratio:1/1;width:100%;margin-top:auto}
+.vision-images img{width:100%;height:100%;object-fit:contain;display:block}
+.vision-images figcaption{position:absolute;left:22px;right:16px;bottom:27px;z-index:1;font-size:16px;letter-spacing:.22em;color:#fff;font-weight:800}
+.vision-images figcaption::before{content:'';display:block;width:38px;height:4px;border-radius:999px;background:var(--cyan);margin-bottom:18px}
+.vision-caption{font-size:14px;color:#a8c4d4;letter-spacing:.04em;margin-top:12px;font-style:italic}
+
+/* ── 03 Positionnement ── */
+.position-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-top:20px}
+.media-card img{height:360px;border-radius:9px;margin-bottom:10px}.media-card{padding-bottom:14px}
+.position-summary{display:grid;grid-template-columns:1.25fr .75fr;gap:16px;margin-top:18px}
+.position-summary>div{padding:22px 24px;border:1px solid #0b5874;border-radius:10px;background:#091b2d}
+.formula{font-size:20px;font-weight:800;display:flex;align-items:center;justify-content:center}.formula span{color:var(--cyan)}
+
+/* ── 04 Écosystème ── */
+.ecosystem-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-top:32px}.ecosystem-grid .card{min-height:210px}
+.journey{display:grid;grid-template-columns:repeat(7,auto);align-items:center;justify-content:space-between;gap:8px;margin-top:44px}
+.journey-step{width:300px}.journey-step img{width:140px;height:140px;border-radius:50%;border:2px solid #0b5874;margin-bottom:12px}
+.journey-step h3{font-size:21px;margin:5px 0}.journey-step p{font-size:14px}
+.journey-arrow{font-size:24px;color:var(--cyan);font-weight:800}
+.journey-quote{margin-top:36px;color:#fff;font-size:24px;font-weight:700}.journey-quote span{color:var(--cyan)}
+
+/* ── 05 Produit (legacy, kept for safety) ── */
+.product-layout{display:grid;grid-template-columns:1.15fr .85fr;gap:16px;margin-top:30px}
+.product-feature-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.product-feature{display:grid;grid-template-columns:145px 1fr;gap:14px}.product-feature img{height:272px;border-radius:8px}
+.product-mini-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:14px}
+.mini-product img{height:100px;border-radius:8px;margin-bottom:12px}.mini-product p{font-size:14px}
+.product-side{display:grid;grid-template-columns:1fr 1fr;gap:14px}.product-side .tall img{height:148px}
+.product-principle{grid-column:1/span 2;min-height:156px}
+
+/* ── 05 Expérience produit v3 ── */
+.slide-05{padding:20px 60px 18px}
+.slide-05 h1{font-size:48px;margin:0 0 4px;line-height:1.02;letter-spacing:-.03em}
+.slide-05 h1 .s05-cyan{color:var(--cyan)}
+.s05-main-grid{display:grid;grid-template-columns:repeat(3,360px);justify-content:center;gap:110px;margin-top:32px;align-items:start}
+.s05-col{display:flex;flex-direction:column;gap:16px}
+.s05-card{background:rgba(10,22,38,.96);border:1px solid rgba(30,214,229,.18);border-radius:14px;overflow:hidden}
+.s05-card-img{width:100%;height:580px}
+.s05-card-img img{width:100%;height:100%;object-fit:cover;object-position:center bottom;display:block}
+.s05-card-label{display:flex;flex-direction:column;gap:7px;padding:0 4px}
+.s05-card-header{display:flex;align-items:center;gap:12px}
+.s05-card-icon{width:34px;height:34px;flex:0 0 34px;display:flex;align-items:center;justify-content:center}
+.s05-card-icon img,.s05-card-icon svg{width:34px;height:34px;object-fit:contain;display:block;filter:drop-shadow(0 0 6px rgba(92,225,185,.5))}
+.s05-card-header h2{font-size:27px;margin:0;letter-spacing:-.02em;font-weight:700;color:#fff}
+.s05-card-label>p{color:var(--muted);font-size:15px;line-height:1.5;margin:0}
+.icon-sm{width:22px;height:22px;border-radius:5px;font-size:10px}
+
+/* ── 04 Parcours & complémentaires ── */
+.eco-top{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:28px}
+.eco-card{background:linear-gradient(180deg,rgba(10,26,44,.98),rgba(7,19,34,.98));border:1px solid #0b5874;border-radius:12px;padding:18px 22px}
+.eco-card-header{display:flex;align-items:center;gap:14px;margin-bottom:12px}
+.eco-card-icon{width:52px;height:52px;border-radius:9px;overflow:hidden;background:#030c18;flex:0 0 52px;display:flex;align-items:center;justify-content:center}
+.eco-card-icon img{width:100%;height:100%;object-fit:contain;mix-blend-mode:screen;display:block}
+.eco-card h3{font-size:20px;color:#fff;margin:0;font-weight:700}
+.eco-card .mini-rule{margin:10px 0}
+.eco-card>p{font-size:14px;color:var(--muted);line-height:1.55;margin:0}
+.eco-card .small{font-size:12px;color:var(--muted);margin-top:8px;line-height:1.45}
+.journey-row{margin-top:36px;background:linear-gradient(180deg,rgba(8,22,40,.96),rgba(5,15,28,.96));border:1px solid #0b5874;border-radius:12px;padding:18px 24px;display:grid;grid-template-columns:1fr 36px 1fr 36px 1fr 36px 1fr;align-items:center}
+.journey-v2{display:grid;grid-template-columns:60px 1fr;gap:14px;align-items:start}
+.journey-v2-icon{width:56px;height:56px;border-radius:9px;border:1.5px solid var(--cyan);background:rgba(0,185,214,.07);display:flex;align-items:center;justify-content:center;color:var(--cyan);font-size:24px;flex:0 0 56px}
+.journey-v2 .step-num{font-size:11px;letter-spacing:.14em;color:var(--cyan);font-weight:700;display:block;margin-bottom:2px}
+.journey-v2 h3{font-size:20px;margin:0 0 5px;color:#fff;font-weight:800;letter-spacing:-.01em}
+.journey-v2 p{font-size:12px;color:var(--muted);line-height:1.45;margin:0}
+.journey-arr{display:flex;align-items:center;justify-content:center;color:var(--cyan);font-size:22px;font-weight:300}
+.compl-section-label{font-size:10px;letter-spacing:.20em;text-transform:uppercase;color:var(--cyan);font-weight:700;display:flex;align-items:center;gap:14px;margin-top:38px;margin-bottom:14px}
+.compl-section-label::after{content:'';flex:1;height:1px;background:rgba(11,88,116,.6)}
+.compl-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.compl-card{background:linear-gradient(180deg,rgba(8,21,37,.90),rgba(5,14,25,.90));border:1px solid #0a3d58;border-radius:10px;padding:14px 18px;display:grid;grid-template-columns:48px 1fr;gap:13px;align-items:start}
+.compl-icon{width:44px;height:44px;border-radius:8px;border:1px solid var(--cyan);background:rgba(0,185,214,.06);display:flex;align-items:center;justify-content:center;overflow:hidden}
+.compl-icon img{width:100%;height:100%;object-fit:cover;display:block}
+.compl-card h3{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:#fff;font-weight:700;margin:0 0 4px}
+.compl-card p{font-size:12px;color:var(--muted);line-height:1.45;margin:0}
+.slide-quote-big{font-size:26px;font-weight:700;color:#fff;margin-top:70px;line-height:1.2}
+.slide-quote-big span{color:var(--cyan)}
+
+/* ── 07 Équipement feature card ── */
+.equip-feature{padding:0!important;overflow:hidden}
+.equip-feature-inner{display:grid;grid-template-columns:1fr 145px;height:100%;min-height:268px}
+.equip-feature-text{padding:22px;display:flex;flex-direction:column;gap:8px}
+.equip-feature-screenshot{background:url('/pitch-assets/equipementvuvio.png') no-repeat 2% 10%;background-size:390%;border-left:1px solid #0b5874}
+
+/* ── 08 MVP proof row ── */
+.mvp-proof-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:14px}
+.mvp-proof-card{display:flex;align-items:center;gap:14px;padding:13px 16px;background:rgba(8,25,41,.7);border:1px solid #0c3d58;border-radius:10px}
+.mvp-proof-img{flex:0 0 54px;height:54px;border-radius:7px;overflow:hidden;background:#030c18;display:flex;align-items:center;justify-content:center}
+.mvp-proof-img img{height:100%;width:auto;object-fit:contain;display:block}
+.mvp-proof-ph{font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:#2a4a62;text-align:center;line-height:1.3;padding:4px}
+.mvp-proof-info h3{font-size:14px;margin:0 0 3px;font-weight:700}
+.mvp-proof-info p{font-size:12px;color:var(--muted);margin:0;line-height:1.4}
+
+/* ── 06 Marché ── */
+.slide-06{padding:42px 58px 34px;background:radial-gradient(circle at 78% 8%,rgba(30,214,229,.10),transparent 25%),linear-gradient(180deg,#071b2e 0%,#04101d 100%)}
+.slide-06 .eyebrow{margin-bottom:12px}
+.slide-06 h1{font-size:58px;line-height:1;letter-spacing:-.035em;max-width:1260px}
+.market-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:0;margin-top:34px;border-top:1px solid rgba(30,214,229,.18);border-bottom:1px solid rgba(30,214,229,.18)}
+.market-signal{display:grid;grid-template-columns:36px 1fr;gap:12px;padding:20px 22px 20px 0;position:relative}
+.market-signal+.market-signal{padding-left:22px;border-left:1px solid rgba(30,214,229,.16)}
+.market-mark{width:30px;height:30px;border-radius:8px;display:flex;align-items:center;justify-content:center;color:var(--cyan);font-size:15px;font-weight:900;background:rgba(30,214,229,.08)}
+.market-signal h3{font-size:18px;font-weight:900;color:#fff;margin:0 0 5px;letter-spacing:-.01em}
+.market-signal p{font-size:13px;line-height:1.35;color:#bfcfdb;margin:0}
+.comparison{width:100%;border-collapse:separate;border-spacing:0;font-size:16px;margin-top:30px;background:rgba(4,15,29,.42);border-radius:14px;overflow:hidden;border:1px solid rgba(126,180,204,.30)}
+.comparison th,.comparison td{padding:13px 20px;border-bottom:1px solid rgba(126,180,204,.26);border-right:1px solid rgba(126,180,204,.16);text-align:left}
+.comparison th:last-child,.comparison td:last-child{border-right:0}
+.comparison th{color:#f2f8fc;font-size:13px;letter-spacing:.08em;text-transform:uppercase;font-weight:900;background:rgba(255,255,255,.058)}
+.comparison td{color:#cbd9e4;line-height:1.32}
+.comparison tbody tr:last-child td{border-bottom:0}
+.comparison tbody tr:nth-child(even) td{background:rgba(255,255,255,.022)}
+.comparison td:first-child{font-weight:900;color:#f3f8fc;width:18%}
+.comparison .focus{background:rgba(9,78,116,.55);color:#f6fdff;font-weight:800}
+.comparison th.focus{color:#fff;background:rgba(12,96,138,.68);width:20.5%}
+.vuvio-position-label{display:block;color:var(--cyan);font-size:10px;letter-spacing:.14em;margin-bottom:5px}
+.market-bottom{display:grid;grid-template-columns:1.12fr .88fr;gap:34px;margin-top:48px;align-items:start}
+.market-editorial,.market-verticals{padding-top:4px}
+.market-editorial{position:relative;padding-left:22px}
+.market-editorial::before{content:'';position:absolute;left:0;top:8px;width:4px;height:72px;border-radius:999px;background:var(--cyan);box-shadow:0 0 14px rgba(30,214,229,.28)}
+.market-section-title{display:block;font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:var(--cyan);font-weight:900;margin-bottom:14px}
+.market-main-line{font-size:24px;line-height:1.18;font-weight:900;color:#fff;margin:0 0 11px;max-width:720px}
+.market-support{font-size:16px;line-height:1.45;color:#c7d5e0;margin:0;max-width:760px}
+.market-verticals{padding-left:8px}
+.slide-06 .pills{display:flex;flex-wrap:wrap;gap:12px;margin-top:18px}
+.slide-06 .pills span{padding:10px 15px;border-radius:999px;background:rgba(8,34,53,.58);border:1px solid rgba(30,214,229,.18);font-size:14px;font-weight:800;color:#dffaff}
+.slide-06 .pills span.is-primary{background:rgba(30,214,229,.12);border-color:rgba(30,214,229,.46);color:#f3feff}
+.market-note{margin-top:18px;color:#8fb0c4;font-size:13px;line-height:1.35}
+.market-note strong{color:#d9faff}
+
+/* ── 07 Modèle économique ── */
+.slide-07{padding:32px 32px 28px;background:radial-gradient(circle at 78% 4%,rgba(30,214,229,.13),transparent 26%),linear-gradient(180deg,#071b2e 0%,#04101d 100%)}
+.slide-07 .eyebrow{margin:0 0 5px 14px;font-size:14px;letter-spacing:.14em;color:#d7e5ef}
+.s07-cyan{color:var(--cyan)}
+.slide-07 h1{font-size:48px;line-height:.98;letter-spacing:-.028em;margin:0 0 6px 14px;font-weight:900;text-transform:none}
+.s07-subtitle{font-size:17px;color:#f1f7fb;margin:0 0 0 14px;line-height:1.25}
+.s07-main{display:grid;grid-template-columns:1.73fr 34px 1fr 34px .92fr;gap:10px;align-items:stretch;margin-top:32px;height:554px}
+.s07-panel{border:1px solid rgba(30,214,229,.45);border-radius:11px;background:linear-gradient(155deg,rgba(7,28,47,.96),rgba(3,13,27,.98));box-shadow:0 16px 42px rgba(0,0,0,.24);position:relative;overflow:hidden}
+.s07-panel-num{position:absolute;top:18px;left:22px;color:var(--cyan);font-size:18px;font-weight:900;letter-spacing:.04em;z-index:4}
+.s07-arrow{display:flex;align-items:center;justify-content:center;color:var(--cyan);font-size:42px;font-weight:900;text-shadow:0 0 18px rgba(30,214,229,.52)}
+.s07-live{display:grid;grid-template-columns:38% 62%;min-width:0}
+.s07-live-copy{position:relative;z-index:3;padding:20px 18px 22px 22px;display:flex;flex-direction:column;gap:16px}
+.s07-live-copy h2,.s07-equip-copy h2,.s07-monet-copy h2{margin:0;color:#fff;font-size:31px;line-height:1.02;letter-spacing:-.02em;font-weight:900}
+.s07-live-copy p,.s07-equip-copy p,.s07-monet-intro{font-size:17px;line-height:1.45;color:#e4eff7;margin:0}
+.s07-phone-wrap{position:relative;display:flex;align-items:flex-end;justify-content:center;padding:0 12px 0 0;min-width:0}
+.s07-phone{height:510px;width:auto;max-width:100%;object-fit:contain;filter:drop-shadow(0 16px 28px rgba(0,0,0,.55))}
+.s07-backpack-ring{position:absolute;right:82px;bottom:82px;width:48px;height:48px;border:3px solid var(--cyan);border-radius:50%;box-shadow:0 0 0 6px rgba(30,214,229,.13),0 0 24px rgba(30,214,229,.82);pointer-events:none}
+.s07-click-callout{position:absolute;right:10px;bottom:178px;z-index:5;width:132px;height:118px;color:var(--cyan);font-weight:900;font-size:16px;line-height:1.18}
+.s07-click-label{padding:12px 16px;border:2px solid var(--cyan);border-radius:10px;background:rgba(4,22,36,.96);box-shadow:0 0 20px rgba(30,214,229,.22);white-space:normal;width:128px;text-align:center}
+.s07-callout-stroke{position:absolute;left:-48px;bottom:4px;width:66px;height:66px;border-left:5px solid var(--cyan);border-bottom:5px solid var(--cyan);border-radius:0 0 0 58px;transform:rotate(-14deg);filter:drop-shadow(0 0 8px rgba(30,214,229,.5))}
+.s07-callout-stroke::after{content:'';position:absolute;left:-11px;bottom:-8px;border-top:9px solid transparent;border-bottom:9px solid transparent;border-right:15px solid var(--cyan);transform:rotate(22deg)}
+.s07-equip{display:flex;flex-direction:column;padding:48px 18px 0}
+.s07-equip-copy{position:relative;z-index:2;display:flex;flex-direction:column;gap:10px;min-height:138px}
+.s07-equip-shot{position:relative;z-index:2;margin-top:8px;flex:1;border-radius:23px 23px 0 0;border:1px solid rgba(30,214,229,.28);border-bottom:0;overflow:hidden;background:#081523;box-shadow:0 18px 40px rgba(0,0,0,.32);padding:0;display:flex;align-items:flex-end;justify-content:center}
+.s07-equip-shot::before{content:'';position:absolute;top:10px;left:50%;transform:translateX(-50%);width:54px;height:5px;border-radius:999px;background:rgba(143,166,185,.35);z-index:2}
+.s07-equip-shot img{width:106%;height:106%;object-fit:contain;object-position:center 82%;display:block;background:#081523}
+.s07-monet{align-self:center;height:455px;padding:38px 24px 20px;display:flex;flex-direction:column}
+.s07-monet-copy{position:relative;z-index:2;display:flex;flex-direction:column;gap:13px}
+.s07-monet-flow{margin-top:18px;display:grid;grid-template-columns:78px 1fr;column-gap:16px;row-gap:9px;align-items:center;position:relative;z-index:2}
+.s07-flow-icon{width:68px;height:62px;border-radius:12px;border:1.5px solid var(--cyan);background:linear-gradient(160deg,rgba(12,58,80,.9),rgba(8,31,51,.95));display:flex;align-items:center;justify-content:center;color:var(--cyan);box-shadow:inset 0 0 20px rgba(30,214,229,.08),0 0 18px rgba(30,214,229,.12)}
+.s07-flow-icon img{width:48px;height:37px;object-fit:cover;border-radius:6px}
+.s07-flow-copy strong{display:block;color:#fff;font-size:17px;line-height:1.05;margin-bottom:4px;font-weight:900}
+.s07-flow-copy span{display:block;color:#d9e8f1;font-size:14px;line-height:1.25}
+.s07-flow-down{grid-column:1;width:68px;text-align:center;color:var(--cyan);font-size:25px;font-weight:800;line-height:.72}
+.s07-bottom{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-top:16px}
+.s07-bc{display:grid;grid-template-columns:78px 1fr;align-items:center;gap:20px;padding:16px 20px;border:1px solid rgba(30,214,229,.38);border-radius:10px;background:linear-gradient(155deg,rgba(8,29,48,.92),rgba(4,15,29,.96))}
+.s07-bc-icon{width:72px;height:72px;border:1.5px solid var(--cyan);border-radius:13px;display:flex;align-items:center;justify-content:center;color:var(--cyan);box-shadow:inset 0 0 18px rgba(30,214,229,.08)}
+.s07-bc h3{font-size:18px;font-weight:900;color:#fff;margin:0 0 7px;line-height:1.08}
+.s07-bc p{font-size:16px;color:#d7e5ef;margin:0;line-height:1.28}
+.s07-quote{margin-top:15px;height:64px;padding:0 22px;background:linear-gradient(180deg,rgba(8,25,43,.96),rgba(4,15,29,.98));border:1px solid rgba(30,214,229,.55);border-radius:10px;display:flex;align-items:center;justify-content:center;gap:18px;box-shadow:0 0 18px rgba(30,214,229,.09)}
+.s07-quote-bolt{width:35px;height:35px;border-radius:8px;border:1px solid rgba(30,214,229,.38);background:rgba(30,214,229,.08);display:flex;align-items:center;justify-content:center;color:var(--cyan);flex:0 0 35px}
+.s07-quote-text{font-size:23px;font-weight:900;color:#fff;line-height:1;letter-spacing:.01em;text-transform:uppercase;margin:0}
+.slide-07 .slide-brand{display:none}
+
+
+/* ── 08 MVP v2 ── */
+.slide-08 h1 .s08-cyan{color:var(--cyan)}
+.s08-top{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:56px;align-items:stretch}
+.s08-mvp-card{display:grid;grid-template-columns:195px 1fr;border:1px solid rgba(30,214,229,.28);border-radius:12px;overflow:hidden;background:linear-gradient(180deg,rgba(11,33,53,.98),rgba(8,25,41,.98));height:310px}
+.s08-mvp-img{overflow:hidden}
+.s08-mvp-img img{width:100%;height:100%;object-fit:cover;object-position:top center;display:block}
+.s08-mvp-text{padding:18px 20px;display:flex;flex-direction:column;gap:10px}
+.s08-badge{display:inline-flex;align-items:center;gap:7px;padding:5px 11px;border-radius:999px;background:rgba(92,225,185,.12);border:1px solid var(--green);color:var(--green);font-size:11px;font-weight:800;letter-spacing:.1em;width:fit-content}
+.s08-mvp-text h2{font-size:23px;font-weight:800;letter-spacing:-.02em;margin:0;line-height:1.1}
+.s08-mvp-text p{font-size:14px;line-height:1.58;color:var(--muted);margin:0}
+.s08-act-panel{border:1px solid #0b5874;border-radius:12px;background:linear-gradient(180deg,rgba(11,33,53,.98),rgba(8,25,41,.98));padding:16px 16px 14px;height:310px;display:flex;flex-direction:column}
+.s08-act-header{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:12px;flex-shrink:0}
+.s08-act-header h3{font-size:19px;font-weight:700;margin:0}
+.s08-act-hint{font-size:11px;color:#3a6a82;letter-spacing:.04em}
+.s08-act-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;flex:1;min-height:0}
+.s08-act-item{display:flex;flex-direction:column;min-height:0}
+.s08-act-item img{flex:1;width:100%;min-height:0;object-fit:cover;object-position:center;display:block;border-radius:8px}
+.s08-act-label{display:flex;align-items:center;gap:5px;margin-top:7px;flex-shrink:0}
+.s08-act-icon{width:28px;height:28px;border-radius:6px;overflow:hidden;flex:0 0 28px;display:flex;align-items:center;justify-content:center}
+.s08-act-icon img{width:28px;height:28px;object-fit:cover;display:block;border-radius:6px}
+.s08-act-label span{font-size:11px;color:#b5c9d8;line-height:1.3}
+.s08-val{display:grid;grid-template-columns:1fr 32px 1fr 32px 1fr 32px 1fr;align-items:center;margin-top:28px;background:rgba(7,18,34,.8);border:1px solid #0b5874;border-radius:12px;padding:14px 20px}
+.s08-val-step{display:flex;align-items:center;gap:12px}
+.s08-val-icon{width:50px;height:50px;flex:0 0 50px;border:1.5px solid rgba(30,214,229,.28);border-radius:11px;display:flex;align-items:center;justify-content:center;color:var(--cyan);background:rgba(10,28,52,.9)}
+.s08-val-text .step-num{display:block;margin-bottom:3px;font-size:12px}
+.s08-val-text h3{font-size:13px;font-weight:700;margin:0 0 3px;color:#eef7fb}
+.s08-val-text p{font-size:12px;color:var(--muted);margin:0;line-height:1.4}
+.s08-val-arrow{color:var(--cyan);font-size:18px;font-weight:700;text-align:center}
+.s08-footer{display:grid;grid-template-columns:.72fr 1.38fr .9fr;gap:14px;margin-top:28px}
+.s08-fc{border:1px solid #0b5874;border-radius:11px;background:linear-gradient(180deg,rgba(9,24,42,.97),rgba(6,17,30,.97));padding:13px 16px}
+.s08-fc-head{display:flex;align-items:center;gap:10px;margin-bottom:9px}
+.s08-fc-icon{width:34px;height:34px;flex:0 0 34px;border:1px solid rgba(30,214,229,.3);border-radius:9px;display:flex;align-items:center;justify-content:center;color:var(--cyan)}
+.s08-fc-head h3{font-size:14px;font-weight:700;color:var(--cyan);margin:0;letter-spacing:.03em}
+.s08-fc ul{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:3px}
+.s08-fc ul li{font-size:12px;color:var(--muted);line-height:1.5;padding-left:12px;position:relative}
+.s08-fc ul li::before{content:'·';position:absolute;left:0;color:var(--cyan)}
+.s08-rm{display:flex;align-items:flex-start;margin-top:10px;position:relative}
+.s08-rm::before{content:'';position:absolute;left:6px;right:6px;top:6px;height:1.5px;background:linear-gradient(90deg,var(--cyan) 60%,rgba(30,214,229,.2));z-index:0}
+.s08-rm-step{flex:1;display:flex;flex-direction:column;align-items:flex-start;position:relative;z-index:1}
+.s08-rm-dot{width:13px;height:13px;border-radius:50%;background:#050e1c;border:2px solid var(--cyan);box-shadow:0 0 5px rgba(30,214,229,.5);margin-bottom:7px;flex-shrink:0}
+.s08-rm-step strong{font-size:11px;font-weight:700;color:#daeaf5;display:block;letter-spacing:.03em}
+.s08-rm-step em{font-size:10px;color:var(--muted);font-style:normal;line-height:1.4;display:block}
+
+/* ── 09 Équipe v3 ── */
+.slide-09{padding:44px 50px 38px;background:radial-gradient(circle at 78% 6%,rgba(30,214,229,.10),transparent 25%),linear-gradient(180deg,#071b2e 0%,#04101d 100%)}
+.slide-09 .eyebrow{margin-bottom:18px}
+.s09-title{font-size:58px;font-weight:900;letter-spacing:-.035em;margin:0;line-height:.98;max-width:1080px}
+.s09-cyan{color:var(--cyan)}
+.s09-subtitle{font-size:19px;line-height:1.45;color:rgba(224,237,245,.82);max-width:900px;margin:14px 0 0}
+.s09-team{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:24px}
+.s09-person{display:grid;grid-template-columns:164px 1fr;gap:20px;padding:18px;background:linear-gradient(150deg,rgba(10,30,50,.98),rgba(5,16,31,.98));border:1px solid rgba(30,214,229,.32);border-radius:12px;align-items:stretch;min-height:232px;box-shadow:0 14px 42px rgba(0,0,0,.18)}
+.s09-photo{position:relative;border-radius:10px;overflow:hidden;background:#051526;border:1px solid rgba(30,214,229,.22)}
+.s09-photo::after{content:'';position:absolute;inset:0;background:linear-gradient(to top,rgba(2,8,18,.46),transparent 54%);pointer-events:none}
+.s09-person img{width:100%;height:100%;object-fit:cover;object-position:top center;display:block;filter:saturate(.92) contrast(1.04)}
+.s09-person-content{display:flex;flex-direction:column;min-width:0}
+.s09-person-name{font-size:26px;font-weight:900;color:#fff;letter-spacing:-.025em;margin:0 0 4px;line-height:1.02}
+.s09-person-role{font-size:11px;font-weight:800;letter-spacing:.13em;text-transform:uppercase;color:var(--cyan);margin:0 0 14px;display:block}
+.s09-person-bio{font-size:14px;color:rgba(224,237,245,.82);line-height:1.52;margin:0}
+.s09-pills{display:flex;flex-wrap:wrap;gap:7px;margin-top:auto;padding-top:14px}
+.s09-pill{padding:5px 11px;border-radius:999px;border:1px solid rgba(30,214,229,.32);background:rgba(30,214,229,.06);font-size:11px;color:#cfe3ee;font-weight:700}
+.s09-proof{display:grid;grid-template-columns:1.05fr .95fr;gap:18px;margin-top:18px}
+.s09-build{border:1px solid rgba(30,214,229,.32);border-radius:12px;background:linear-gradient(180deg,rgba(8,25,43,.96),rgba(4,15,29,.98));padding:20px 24px}
+.s09-build-label,.s09-impact-label{font-size:11px;font-weight:800;letter-spacing:.18em;text-transform:uppercase;color:var(--cyan);margin-bottom:12px}
+.s09-build-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:18px}
+.s09-build-item{padding:14px 16px;border:1px solid rgba(30,214,229,.18);border-radius:10px;background:rgba(4,17,31,.72)}
+.s09-build-item strong{display:block;color:#fff;font-size:24px;line-height:1.05;margin-bottom:6px}
+.s09-build-item span{display:block;color:rgba(224,237,245,.72);font-size:12px;line-height:1.35}
+.s09-impact{border:1px solid rgba(30,214,229,.32);border-radius:12px;background:linear-gradient(180deg,rgba(8,25,43,.96),rgba(4,15,29,.98));padding:20px 24px}
+.s09-impact-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.s09-ic{padding:13px 14px;background:rgba(4,17,31,.72);border:1px solid rgba(30,214,229,.18);border-radius:10px}
+.s09-ic-title{font-size:15px;font-weight:900;color:#fff;margin:0 0 5px;line-height:1.12}
+.s09-ic p{font-size:12px;color:rgba(224,237,245,.76);line-height:1.42;margin:0}
+.s09-demarche{display:flex;align-items:center;gap:16px;margin-top:18px;padding:15px 20px;background:linear-gradient(180deg,rgba(9,24,42,.97),rgba(6,17,30,.97));border:1px solid rgba(30,214,229,.34);border-radius:12px}
+.s09-demarche-icon{width:44px;height:44px;border-radius:50%;border:2px solid var(--cyan);display:flex;align-items:center;justify-content:center;color:var(--cyan);flex:0 0 44px}
+.s09-demarche h3{font-size:12px;font-weight:800;letter-spacing:.13em;text-transform:uppercase;color:#e7f0f7;margin:0 0 5px}
+.s09-demarche p{font-size:13px;color:rgba(224,237,245,.72);line-height:1.45;margin:0}
+
+/* ── 10 Demande v3 ── */
+.slide-10{padding:44px 50px 38px;background:radial-gradient(circle at 22% 7%,rgba(30,214,229,.10),transparent 25%),linear-gradient(180deg,#071b2e 0%,#04101d 100%)}
+.slide-10 .eyebrow{margin-bottom:14px}
+.s10-title{font-size:58px;line-height:.98;letter-spacing:-.035em;font-weight:900;max-width:1180px;margin:0}
+.s10-title span{color:var(--cyan)}
+.s10-subtitle{font-size:19px;line-height:1.45;color:rgba(224,237,245,.78);max-width:940px;margin:14px 0 0}
+.s10-layout{display:grid;grid-template-columns:.9fr 1.1fr;gap:20px;margin-top:24px;height:610px}
+.s10-left{display:flex;flex-direction:column;gap:14px;min-width:0}
+.s10-ask{border:1.5px solid rgba(30,214,229,.48);border-radius:14px;background:linear-gradient(160deg,rgba(10,30,50,.98),rgba(5,16,31,.98));padding:28px 30px;text-align:center;flex:0 0 auto;box-shadow:0 16px 44px rgba(0,0,0,.22)}
+.s10-ask-label{font-size:11px;letter-spacing:.22em;color:#8abdd2;margin-bottom:10px;text-transform:uppercase}
+.s10-ask-val{font-size:86px;font-weight:900;color:#fff;line-height:.94;letter-spacing:-.03em}
+.s10-ask-type{font-size:20px;color:var(--cyan);margin-top:10px;font-weight:800;letter-spacing:.06em}
+.s10-ask-sub{font-size:15px;color:rgba(224,237,245,.74);margin-top:12px;line-height:1.45;max-width:480px;margin-left:auto;margin-right:auto}
+.s10-funds{border:1px solid rgba(30,214,229,.32);border-radius:12px;background:linear-gradient(180deg,rgba(9,24,42,.97),rgba(6,17,30,.97));padding:18px 22px;flex:1}
+.s10-funds-title{font-size:12px;font-weight:800;color:#e0edf5;margin:0 0 14px;letter-spacing:.14em;text-transform:uppercase}
+.s10-fund-rows{display:flex;flex-direction:column;gap:12px}
+.s10-fund-row{display:grid;grid-template-columns:152px 1fr 44px;align-items:center;gap:12px}
+.s10-fund-label{font-size:12px;color:#8abdd2;letter-spacing:.07em;line-height:1.25}
+.s10-fund-bar-wrap{height:9px;border-radius:5px;background:rgba(11,33,53,.9);overflow:hidden}
+.s10-fund-bar{height:100%;border-radius:5px;background:var(--cyan)}
+.s10-fund-pct{font-size:13px;font-weight:700;color:#e0edf5;text-align:right}
+.s10-right{display:grid;grid-template-rows:auto 1fr auto;gap:14px;min-width:0}
+.s10-ms-label{font-size:11px;letter-spacing:.18em;color:#8abdd2;text-transform:uppercase;margin:0}
+.s10-proof-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.s10-proof-card{padding:17px 18px;border:1px solid rgba(30,214,229,.32);border-radius:12px;background:linear-gradient(180deg,rgba(9,24,42,.97),rgba(6,17,30,.97))}
+.s10-proof-card strong{display:block;color:#fff;font-size:19px;line-height:1.12;margin-bottom:8px}
+.s10-proof-card span{display:block;color:rgba(224,237,245,.72);font-size:13px;line-height:1.42}
+.s10-ms-list{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.s10-ms{display:grid;grid-template-columns:36px 1fr;gap:13px;align-items:start;padding:15px 16px;border:1px solid rgba(30,214,229,.28);border-radius:12px;background:linear-gradient(180deg,rgba(10,26,44,.97),rgba(7,18,32,.97))}
+.s10-ms-num{width:32px;height:32px;border-radius:50%;border:1.5px solid var(--cyan);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;color:var(--cyan);flex:0 0 32px;margin-top:1px}
+.s10-ms h4{font-size:15px;font-weight:800;color:#eef7fb;margin:0 0 5px;line-height:1.22}
+.s10-ms p{font-size:13px;color:rgba(224,237,245,.72);margin:0;line-height:1.42}
+.s10-runway{padding:15px 18px;border:1px solid rgba(30,214,229,.38);border-radius:12px;background:linear-gradient(160deg,rgba(10,28,50,.95),rgba(6,16,30,.95));display:grid;grid-template-columns:160px 1fr;gap:18px;align-items:center}
+.s10-runway-label{font-size:11px;letter-spacing:.18em;color:#8abdd2;text-transform:uppercase;margin-bottom:4px}
+.s10-runway-val{font-size:28px;font-weight:800;color:#fff;line-height:1.1}
+.s10-runway-sub{font-size:13px;color:#5a8ca8;margin-top:4px}
+.final-tagline{position:absolute;left:60px;bottom:28px;font-size:20px;letter-spacing:.08em}
+
+@media print{
+  @page{size:16in 9in;margin:0}
+  html,body{background:white}
+  .slide{margin:0;border:none;page-break-after:always;break-after:page;transform:none!important}
+  .deck{width:auto!important}
+}
+</style>
+</head>
+<body>
+<div class="deck" id="deck">
+
+<section class="slide slide-cover">
+  <img class="cover-bg" src="/pitch-assets/globe-branded.png" alt="">
+  <div class="cover-overlay"></div>
+
+  <!-- Logo -->
+  <div class="cover-logo"><img src="/pitch-assets/vuvio-logo.png" alt="Vuvio" /></div>
+
+  <!-- Titre -->
+  <div class="cover-copy">
+    <h1>Passions,<br>professions,<br>experiences<br><span>— live.</span></h1>
+    <p class="cover-subtitle">Discover the world through<br>those who live it.</p>
+  </div>
+
+  <!-- Pictogrammes globe -->
+  <div class="cover-pin" style="left:110px;top:635px">
+    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="7"/><circle cx="12" cy="5" r="1" fill="currentColor"/><path d="M5 19a7 7 0 0 1 14 0"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+    <div class="pin-line"></div><div class="pin-dot"></div>
+  </div>
+  <div class="cover-pin" style="left:500px;top:670px">
+    <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="20" height="14" rx="2"/><circle cx="12" cy="13" r="3"/><path d="M8 6l2-3h4l2 3"/></svg>
+    <div class="pin-line"></div><div class="pin-dot"></div>
+  </div>
+  <div class="cover-pin" style="left:650px;top:370px">
+    <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.5a10 10 0 0 1-20 0"/><path d="M2 16.5L12 2l10 14.5"/><line x1="12" y1="2" x2="12" y2="16.5"/></svg>
+    <div class="pin-line"></div><div class="pin-dot"></div>
+  </div>
+  <div class="cover-pin" style="left:770px;top:295px">
+    <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21a8 8 0 1 0-16 0"/><circle cx="12" cy="8" r="4"/></svg>
+    <div class="pin-line"></div><div class="pin-dot"></div>
+  </div>
+  <div class="cover-pin" style="left:840px;top:470px">
+    <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 20l4-8 4 6 4-10 4 12"/></svg>
+    <div class="pin-line"></div><div class="pin-dot"></div>
+  </div>
+  <div class="cover-pin" style="left:1385px;top:412px">
+    <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 20h20L12 2z"/><line x1="12" y1="8" x2="12" y2="14"/><path d="M2 20h20"/></svg>
+    <div class="pin-line"></div><div class="pin-dot"></div>
+  </div>
+  <div class="cover-pin" style="left:1160px;top:560px">
+    <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12c1.5-3 3.5-3 5 0s3.5 3 5 0 3.5-3 5 0"/><path d="M2 18c1.5-3 3.5-3 5 0s3.5 3 5 0 3.5-3 5 0"/></svg>
+    <div class="pin-line"></div><div class="pin-dot"></div>
+  </div>
+</section>
+
+<section class="slide slide-vision">
+  <div class="eyebrow">02 — THE VISION</div>
+  <div class="vision-layout">
+    <div class="vision-left">
+      <h1 class="vision-title">The world is already<br>happening.</h1>
+      <p class="vision-lead">Vuvio lets you discover activities, professions, passions and real experiences, as they unfold, through the point of view of the people living them.</p>
+      <div class="principles">
+        <article class="principle-card"><span class="principle-num">01</span><span class="principle-rule"></span><h3>Live</h3><p>Discovering an activity as it happens, with all its spontaneity and surprises.</p></article>
+        <article class="principle-card"><span class="principle-num">02</span><span class="principle-rule"></span><h3>In the real world</h3><p>Exploring professions, passions, places and concrete experiences.</p></article>
+        <article class="principle-card"><span class="principle-num">03</span><span class="principle-rule"></span><h3>From a point of view</h3><p>Seeing the activity from the perspective of the person doing it.</p></article>
+      </div>
+    </div>
+    <div class="vision-images">
+      <figure><img src="/pitch-assets/live-guide-montagne.png"></figure>
+      <p class="vision-caption">Mike P. · Mont Blanc Ascent · Live on Vuvio</p>
+    </div>
+  </div>
+  <div class="slide-brand">Vuvio 02</div>
+</section>
+
+<section class="slide">
+  <div class="eyebrow">03 — POSITIONNEMENT & INNOVATION</div>
+  <h1>Discovering people through what they do.</h1>
+  <p class="lead">Live already exists. Vuvio does not aim to reinvent live streaming, but to organise its discovery differently. Discovery starts with an activity, a profession, a passion or an experience that interests us.</p>
+  <div class="position-grid">
+    <article class="card media-card"><img src="/pitch-assets/creator-field.jpg"><div class="card-title"><span class="icon">01</span><h3>Activity as entry point</h3></div><p>Discovering a creator because you are interested in what they do, without needing to know them beforehand.</p></article>
+    <article class="card media-card"><img src="/pitch-assets/spectator-phone.jpg" style="object-position:left top"><div class="card-title"><span class="icon">02</span><h3>The live stream and the POV</h3></div><p>Seeing the gestures, the environment, the real conditions and unexpected moments from the perspective of the person doing it.</p></article>
+    <article class="card media-card"><img src="/pitch-assets/globevuvio.png" style="object-position:center 65%"><div class="card-title"><span class="icon">03</span><h3>A geographical discovery</h3></div><p>Exploring Lives by location and discovering activities in other cities, regions or countries.</p></article>
+  </div>
+  <div class="position-summary">
+    <div><h3>Live streaming is not new.</h3><p>The way Vuvio combines activity, point of view and geographical discovery defines its positioning.</p></div>
+    <div class="formula"><span>ACTIVITY</span>&nbsp;+ POV + GEOGRAPHY</div>
+  </div>
+  <div class="slide-brand">Vuvio 03</div>
+</section>
+
+<section class="slide">
+  <div class="eyebrow">04 — USERS & ECOSYSTEM</div>
+  <h1>Discover, share and bring real activities to life.</h1>
+
+  <div class="eco-top">
+    <div class="eco-card">
+      <div class="eco-card-header">
+        <div class="eco-card-icon"><img src="/pitch-assets/icon-spectateur.png" alt="" /></div>
+        <h3>Those who watch</h3>
+      </div>
+      <p>Discovering professions, passions, practices and places through the people who live them.</p>
+      <div class="mini-rule"></div>
+      <p class="small">Travel, sport, crafts, cooking, music, trades, unusual places…</p>
+    </div>
+    <div class="eco-card">
+      <div class="eco-card-header">
+        <div class="eco-card-icon"><img src="/pitch-assets/icon-createur.png" alt="" /></div>
+        <h3>Those who share</h3>
+      </div>
+      <p>Athlete, guide, craftsperson, musician, cook, traveller or field professional: anyone can share a passion or a trade live.</p>
+      <div class="mini-rule"></div>
+      <p class="small">Sharing expertise, inspiring, streaming unedited, growing a community.</p>
+    </div>
+    <div class="eco-card">
+      <div class="eco-card-header">
+        <div class="eco-card-icon"><img src="/pitch-assets/icon-marques.png" alt="" /></div>
+        <h3>Marques & partenaires</h3>
+      </div>
+      <p>Equipment, venues, events, tourism, culture: a useful presence, coherent with the activity and clearly identifiable.</p>
+      <div class="mini-rule"></div>
+      <p class="small">Partnerships tied to real usage, not imposed on the experience.</p>
+    </div>
+  </div>
+
+  <div class="journey-row">
+    <div class="journey-v2">
+      <div class="journey-v2-icon">▶</div>
+      <div><span class="step-num">01</span><h3>DISCOVER</h3><p>From Watch, Explore or the Globe.</p></div>
+    </div>
+    <div class="journey-arr">→</div>
+    <div class="journey-v2">
+      <div class="journey-v2-icon">⊕</div>
+      <div><span class="step-num">02</span><h3>EXPLORE</h3><p>The activity and the person.</p></div>
+    </div>
+    <div class="journey-arr">→</div>
+    <div class="journey-v2">
+      <div class="journey-v2-icon">⊹</div>
+      <div><span class="step-num">03</span><h3>FOLLOW</h3><p>A creator or an interest.</p></div>
+    </div>
+    <div class="journey-arr">→</div>
+    <div class="journey-v2">
+      <div class="journey-v2-icon">↺</div>
+      <div><span class="step-num">04</span><h3>RETURN</h3><p>Come back to followed activities and people.</p></div>
+    </div>
+  </div>
+
+  <div class="compl-section-label">Features that extend the experience</div>
+  <div class="compl-grid">
+    <div class="compl-card">
+      <div class="compl-icon"><img src="/pitch-assets/icon-profil.png" alt="" /></div>
+      <div><h3>Profile</h3><p>Discovering the person behind the activity, browsing their interests, past and upcoming Lives, then following them.</p></div>
+    </div>
+    <div class="compl-card">
+      <div class="compl-icon"><img src="/pitch-assets/icon-startlive.png" alt="" /></div>
+      <div><h3>Start Live</h3><p>Prepare, frame and start a Live easily. Creators can already launch an experience.</p></div>
+    </div>
+    <div class="compl-card">
+      <div class="compl-icon"><img src="/pitch-assets/icon-watch.png" alt="" /></div>
+      <div><h3>Replay & Recap</h3><p>Extending some experiences after the stream and revisiting key moments.</p></div>
+    </div>
+  </div>
+
+  <p class="slide-quote-big">Live creates the entry. The activity creates the interest. <span>The person creates the connection.</span></p>
+  <div class="slide-brand">Vuvio 04</div>
+</section>
+
+<section class="slide slide-05">
+  <div class="eyebrow">05 — PRODUCT EXPERIENCE</div>
+  <h1>Three ways to discover the world <span class="s05-cyan">live.</span></h1>
+  <div class="s05-main-grid">
+
+    <div class="s05-col">
+      <article class="s05-card">
+        <div class="s05-card-img"><img src="/pitch-assets/watchvuvio.jpg" alt="Watch"></div>
+      </article>
+      <div class="s05-card-label">
+        <div class="s05-card-header">
+          <span class="s05-card-icon"><img src="/pitch-assets/icon-watch.png" alt="Watch icon"></span>
+          <h2>Watch</h2>
+        </div>
+        <p>Jump straight into a Live and easily move from one experience to the next.</p>
+      </div>
+    </div>
+
+    <div class="s05-col">
+      <article class="s05-card">
+        <div class="s05-card-img"><img src="/pitch-assets/globe-pins.png" alt="Globe"></div>
+      </article>
+      <div class="s05-card-label">
+        <div class="s05-card-header">
+          <span class="s05-card-icon">
+            <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <circle cx="20" cy="20" r="15" stroke="#5ce1b9" stroke-width="1.6"/>
+              <path d="M20 5c-5 5.5-7.5 10-7.5 15s2.5 9.5 7.5 15M20 5c5 5.5 7.5 10 7.5 15s-2.5 9.5-7.5 15" stroke="#5ce1b9" stroke-width="1.6"/>
+              <line x1="5" y1="20" x2="35" y2="20" stroke="#5ce1b9" stroke-width="1.6"/>
+            </svg>
+          </span>
+          <h2>Globe</h2>
+        </div>
+        <p>Explore live activities across the world and discover Lives by location.</p>
+      </div>
+    </div>
+
+    <div class="s05-col">
+      <article class="s05-card">
+        <div class="s05-card-img"><img src="/pitch-assets/explorevuvio.jpg" alt="Explore"></div>
+      </article>
+      <div class="s05-card-label">
+        <div class="s05-card-header">
+          <span class="s05-card-icon">
+            <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <circle cx="20" cy="20" r="15" stroke="#5ce1b9" stroke-width="1.6"/>
+              <path d="M25.5 14.5l-4.8 10.2-5.2-5.2 10-5z" fill="#5ce1b9"/>
+            </svg>
+          </span>
+          <h2>Explore</h2>
+        </div>
+        <p>Discover activities, trades, places and creators based on your interests.</p>
+      </div>
+    </div>
+
+  </div>
+  <div class="slide-brand">Vuvio 05</div>
+</section>
+
+<section class="slide slide-06">
+  <div class="eyebrow">06 — MARKET & COMPETITIVE POSITIONING</div>
+  <h1>A use case at the intersection of four dimensions.</h1>
+  <div class="market-grid">
+    <article class="market-signal"><span class="market-mark">V</span><div><h3>Live video</h3><p>An immediacy that recorded content cannot replicate.</p></div></article>
+    <article class="market-signal"><span class="market-mark">C</span><div><h3>Creators & communities</h3><p>Creators building a community around their passions.</p></div></article>
+    <article class="market-signal"><span class="market-mark">D</span><div><h3>Interest-based discovery</h3><p>Discovery structured by accounts, algorithms and trends.</p></div></article>
+    <article class="market-signal"><span class="market-mark">A</span><div><h3>Activities & territories</h3><p>Places, territories, trades, practices and real experiences.</p></div></article>
+  </div>
+  <table class="comparison">
+    <thead><tr><th style="width:18%">Criteria</th><th class="focus"><span class="vuvio-position-label">VUVIO POSITIONING</span>VUVIO</th><th style="width:20.5%">TIKTOK / INSTAGRAM</th><th style="width:20.5%">TWITCH</th><th style="width:20.5%">YOUTUBE LIVE</th></tr></thead>
+    <tbody>
+      <tr><td>Live</td><td class="focus">Core of the product</td><td>One feature among many</td><td>Core of the product</td><td>Integrated into a video ecosystem</td></tr>
+      <tr><td>Activity as entry point</td><td class="focus">Central</td><td>Possible, not structural</td><td>Categories, mostly gaming</td><td>Via search and channels</td></tr>
+      <tr><td>Immersive POV</td><td class="focus">Central</td><td>Possible</td><td>Possible</td><td>Possible</td></tr>
+      <tr><td>Geography</td><td class="focus">Dedicated Globe</td><td>Limited</td><td>Not central</td><td>Not central</td></tr>
+      <tr><td>Equipment used</td><td class="focus">Creator's gear directly accessible from the Live</td><td>Product links via live shopping (market-dependent)</td><td>Via channel panels, outside the live</td><td>Via description or info cards</td></tr>
+    </tbody>
+  </table>
+  <div class="market-bottom">
+    <article class="market-editorial">
+      <span class="market-section-title">THE VUVIO LOGIC</span>
+      <p class="market-main-line">Enter through an activity, discover a person, come back to follow them.</p>
+      <p class="market-support">Vuvio lets you discover a creator through what they do and where they do it, without needing to know their account beforehand.</p>
+    </article>
+    <article class="market-verticals">
+      <span class="market-section-title">STARTING VERTICALS</span>
+      <div class="pills"><span class="is-primary">Trades & crafts</span><span class="is-primary">Music & culture</span><span>Cooking</span><span class="is-primary">Sport & outdoor</span><span>Travel & local discovery</span></div>
+    </article>
+  </div>
+  <div class="slide-brand">Vuvio 06</div>
+</section>
+
+<section class="slide slide-07">
+  <div class="eyebrow">07 — BUSINESS MODEL</div>
+  <h1>Revenue streams <span class="s07-cyan">to test with real-world usage.</span></h1>
+  <p class="s07-subtitle">Equipment is visible during the Live, at the exact moment it is being used.</p>
+
+  <div class="s07-main">
+    <article class="s07-panel s07-live">
+      <div class="s07-panel-num">01</div>
+      <div class="s07-live-copy">
+        <h2>During the Live</h2>
+        <p>The viewer watches a real activity and can tap the creator's <span class="s07-cyan"><strong>backpack</strong></span> to see the <span class="s07-cyan"><strong>gear being used</strong></span>.</p>
+      </div>
+      <div class="s07-phone-wrap">
+        <img class="s07-phone" src="/pitch-assets/live-cuisine.png" alt="Live cuisine Vuvio">
+        <div class="s07-backpack-ring"></div>
+        <div class="s07-click-callout"><div class="s07-click-label">Tap the backpack</div><div class="s07-callout-stroke"></div></div>
+      </div>
+    </article>
+
+    <div class="s07-arrow">→</div>
+
+    <article class="s07-panel s07-equip">
+      <div class="s07-panel-num">02</div>
+      <div class="s07-equip-copy">
+        <h2>Equipment used</h2>
+        <p>The panel opens and shows all the <span class="s07-cyan"><strong>gear actually used</strong></span> by the creator during this Live.</p>
+      </div>
+      <div class="s07-equip-shot"><img src="/pitch-assets/equip-panel-cuisine.png" alt="Equipment used in this live"></div>
+    </article>
+
+    <div class="s07-arrow">→</div>
+
+    <article class="s07-panel s07-monet">
+      <div class="s07-panel-num">03</div>
+      <div class="s07-monet-copy">
+        <h2>Monetisation</h2>
+        <p class="s07-monet-intro">A natural connection between usage, product and purchase, when it makes sense.</p>
+      </div>
+      <div class="s07-monet-flow">
+        <div class="s07-flow-icon"><img src="/pitch-assets/sacados.jpeg" alt="Produit visible"></div>
+        <div class="s07-flow-copy"><strong>Visible products</strong><span>Gear actually used in the Live.</span></div>
+        <div class="s07-flow-down">↓</div><div></div>
+        <div class="s07-flow-icon"><svg width="46" height="46" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l2.2-2.2a5 5 0 0 0-7.08-7.08l-1.25 1.25"/><path d="M14 11a5 5 0 0 0-7.54-.54l-2.2 2.2a5 5 0 0 0 7.08 7.08l1.25-1.25"/></svg></div>
+        <div class="s07-flow-copy"><strong>Partner links</strong><span>Access to partner offers when available.</span></div>
+        <div class="s07-flow-down">↓</div><div></div>
+        <div class="s07-flow-icon"><svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.7 13.4a2 2 0 0 0 2 1.6h8.7a2 2 0 0 0 2-1.5L23 6H6"/></svg></div>
+        <div class="s07-flow-copy"><strong>Affiliate</strong><span>Monetisation via affiliate links when relevant.</span></div>
+      </div>
+    </article>
+  </div>
+
+  <div class="s07-bottom">
+    <div class="s07-bc">
+      <div class="s07-bc-icon"><svg width="42" height="42" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M20.6 13.4l-7.2 7.2a2 2 0 0 1-2.8 0L2 12V2h10l8.6 8.6a2 2 0 0 1 0 2.8z"/><path d="M7 7h.01"/></svg></div>
+      <div><h3>Equipment &amp; affiliate</h3><p>Monetisation via affiliate links on gear actually used during Lives.</p></div>
+    </div>
+    <div class="s07-bc">
+      <div class="s07-bc-icon"><svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M11 17l-1.5 1.5a3.5 3.5 0 0 1-5-5L6 12"/><path d="M13 7l1.5-1.5a3.5 3.5 0 0 1 5 5L18 12"/><path d="M8 12h8"/><path d="M7 8l2 2"/><path d="M17 16l-2-2"/></svg></div>
+      <div><h3>Brands &amp; partnerships</h3><p>Collaborations aligned with activities, creators and gear actually used.</p></div>
+    </div>
+    <div class="s07-bc">
+      <div class="s07-bc-icon"><svg width="42" height="42" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M5 20V10"/><path d="M12 20V4"/><path d="M19 20v-7"/><rect x="3" y="10" width="4" height="10" rx="1"/><rect x="10" y="4" width="4" height="16" rx="1"/><rect x="17" y="13" width="4" height="7" rx="1"/></svg></div>
+      <div><h3>Creator tools</h3><p>Equipment management, product visibility, and eventually simple tools to manage this monetisation.</p></div>
+    </div>
+  </div>
+
+</section>
+
+<section class="slide slide-08">
+  <div class="eyebrow">08 — MVP, VALIDATION & FEUILLE DE ROUTE</div>
+  <h1>From a working MVP to first <span class="s08-cyan">real-world usage.</span></h1>
+
+  <div class="s08-top">
+
+    <!-- MVP fonctionnel -->
+    <div class="s08-mvp-card">
+      <div class="s08-mvp-img"><img src="/pitch-assets/watchvuvio.jpg" alt="Watch Live"></div>
+      <div class="s08-mvp-text">
+        <div class="s08-badge">
+          <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><polyline points="1.5,6 5,9.5 10.5,2.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          FUNCTIONAL
+        </div>
+        <h2>Working MVP</h2>
+        <p>Live is operational: a creator can launch a Live and a viewer can watch. Watch, Explore, Globe and profiles already structure the experience.</p>
+      </div>
+    </div>
+
+    <!-- First activities -->
+    <div class="s08-act-panel">
+      <div class="s08-act-header">
+        <h3>First activities</h3>
+        <span class="s08-act-hint">Examples of Lives on Vuvio ›</span>
+      </div>
+      <div class="s08-act-grid">
+        <div class="s08-act-item">
+          <img src="/pitch-assets/Cycliste.jpg" alt="Outdoor">
+          <div class="s08-act-label">
+            <span class="s08-act-icon"><img src="/pitch-assets/icon-createur.png" alt=""></span>
+            <span>Outdoor &amp; sport</span>
+          </div>
+        </div>
+        <div class="s08-act-item">
+          <img src="/pitch-assets/cabinetmaker.jpg" alt="Métiers">
+          <div class="s08-act-label">
+            <span class="s08-act-icon"><img src="/pitch-assets/icon-marques.png" alt="" style="filter:hue-rotate(40deg) saturate(1.3)"></span>
+            <span>Trades &amp; crafts</span>
+          </div>
+        </div>
+        <div class="s08-act-item">
+          <img src="/pitch-assets/chef.jpg" alt="Cuisine">
+          <div class="s08-act-label">
+            <span class="s08-act-icon"><img src="/pitch-assets/icon-profil.png" alt="" style="filter:hue-rotate(-130deg) saturate(1.6) brightness(1.1)"></span>
+            <span>Cooking</span>
+          </div>
+        </div>
+        <div class="s08-act-item">
+          <img src="/pitch-assets/Artisan.jpg" alt="Musique">
+          <div class="s08-act-label">
+            <span class="s08-act-icon"><img src="/pitch-assets/icon-spectateur.png" alt="" style="filter:hue-rotate(110deg) saturate(1.4)"></span>
+            <span>Music &amp; culture</span>
+          </div>
+        </div>
+        <div class="s08-act-item">
+          <img src="/pitch-assets/Guide.jpg" alt="Voyage">
+          <div class="s08-act-label">
+            <span class="s08-act-icon"><img src="/pitch-assets/icon-watch.png" alt="" style="filter:hue-rotate(-95deg) saturate(1.8) brightness(1.1)"></span>
+            <span>Travel &amp; discovery</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Validation timeline -->
+  <div class="s08-val">
+    <div class="s08-val-step">
+      <div class="s08-val-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="8" r="4"/><path d="M20 21a8 8 0 1 0-16 0"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="16" y1="11" x2="22" y2="11"/></svg></div>
+      <div class="s08-val-text"><span class="step-num">01</span><h3>Recruit pilot creators</h3><p>Identify and support the first creators.</p></div>
+    </div>
+    <div class="s08-val-arrow">→</div>
+    <div class="s08-val-step">
+      <div class="s08-val-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div>
+      <div class="s08-val-text"><span class="step-num">02</span><h3>Test with real viewers</h3><p>Observe the first real-world usage.</p></div>
+    </div>
+    <div class="s08-val-arrow">→</div>
+    <div class="s08-val-step">
+      <div class="s08-val-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg></div>
+      <div class="s08-val-text"><span class="step-num">03</span><h3>Identify what works</h3><p>Spot the usage patterns that generate the most interest and engagement.</p></div>
+    </div>
+    <div class="s08-val-arrow">→</div>
+    <div class="s08-val-step">
+      <div class="s08-val-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-.18-4.73"/></svg></div>
+      <div class="s08-val-text"><span class="step-num">04</span><h3>Measure retention</h3><p>Evaluate engagement and recurrence.</p></div>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <div class="s08-footer">
+    <div class="s08-fc">
+      <div class="s08-fc-head">
+        <div class="s08-fc-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></div>
+        <h3>Key risks</h3>
+      </div>
+      <ul>
+        <li>Slower-than-expected adoption</li>
+        <li>Overly costly acquisition</li>
+        <li>Dependency on certain creators</li>
+      </ul>
+    </div>
+    <div class="s08-fc">
+      <div class="s08-fc-head">
+        <div class="s08-fc-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/></svg></div>
+        <h3>Roadmap</h3>
+      </div>
+      <div class="s08-rm">
+        <div class="s08-rm-step"><div class="s08-rm-dot"></div><strong>Pilots</strong><em>Launch</em></div>
+        <div class="s08-rm-step"><div class="s08-rm-dot"></div><strong>Scaling Lives</strong><em>Number of creators</em></div>
+        <div class="s08-rm-step"><div class="s08-rm-dot"></div><strong>Validation</strong><em>Of retention</em></div>
+        <div class="s08-rm-step"><div class="s08-rm-dot"></div><strong>Business model</strong><em>Progressive development</em></div>
+      </div>
+    </div>
+    <div class="s08-fc">
+      <div class="s08-fc-head">
+        <div class="s08-fc-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg></div>
+        <h3>Funding</h3>
+      </div>
+      <ul>
+        <li>Infrastructure &amp; streaming</li>
+        <li>Pilot tests &amp; acquisition</li>
+        <li>Partnerships</li>
+        <li>Structuring</li>
+      </ul>
+    </div>
+  </div>
+  <div class="slide-brand">Vuvio 08</div>
+</section>
+
+<section class="slide slide-09">
+  <div class="eyebrow">09 — THE TEAM &amp; THE IMPACT</div>
+  <h2 class="s09-title">Two complementary paths bringing <span class="s09-cyan">Vuvio to life.</span></h2>
+  <p class="s09-subtitle">Alexandre drives the product and its technical development. Cécilia brings her expertise in marketing, strategy and partnerships. Together, they are building Vuvio and preparing its first real-world deployments.</p>
+  <div class="s09-team">
+    <article class="s09-person">
+      <div class="s09-photo"><img src="/pitch-assets/alexvuv.png" alt="Alexandre Ranson"></div>
+      <div class="s09-person-content">
+        <p class="s09-person-name">Alexandre Ranson</p>
+        <span class="s09-person-role">Product &amp; Technology</span>
+        <p class="s09-person-bio">Background in computer science and software engineering, complemented by a path in music, production and new technologies. At Vuvio, Alexandre leads the product, technical architecture, live streaming and user experience.</p>
+        <div class="s09-pills">
+          <span class="s09-pill">Product</span><span class="s09-pill">Tech</span><span class="s09-pill">UX</span><span class="s09-pill">Live Video</span><span class="s09-pill">Music</span>
+        </div>
+      </div>
+    </article>
+    <article class="s09-person">
+      <div class="s09-photo"><img src="/pitch-assets/ceciliaimagevuv.jpeg" alt="Cécilia Ranson"></div>
+      <div class="s09-person-content">
+        <p class="s09-person-name">Cécilia Ranson</p>
+        <span class="s09-person-role">Marketing, Strategy &amp; Partnerships</span>
+        <p class="s09-person-bio">Experience in marketing, strategy and market development, gained notably at leboncoin. At Vuvio, Cécilia shapes the positioning, early partnerships, community and project development.</p>
+        <div class="s09-pills">
+          <span class="s09-pill">Marketing</span><span class="s09-pill">Strategy</span><span class="s09-pill">Partnerships</span><span class="s09-pill">Business</span><span class="s09-pill">Community</span>
+        </div>
+      </div>
+    </article>
+  </div>
+  <div class="s09-proof">
+    <div class="s09-build">
+      <div class="s09-build-label">What's already built</div>
+      <div class="s09-build-grid">
+        <div class="s09-build-item"><strong>Live MVP</strong><span>Streaming, discovery, profiles and viewer journey.</span></div>
+        <div class="s09-build-item"><strong>First version built</strong><span>Watch, Explore, Globe, equipment and replay in progress.</span></div>
+        <div class="s09-build-item"><strong>Go-to-test</strong><span>First creators, pilot verticals and revenue hypotheses.</span></div>
+      </div>
+    </div>
+    <div class="s09-impact">
+      <div class="s09-impact-label">Impact to measure</div>
+      <div class="s09-impact-grid">
+        <article class="s09-ic"><h3 class="s09-ic-title">Know-how</h3><p>Making gestures, trades and real practices observable.</p></article>
+        <article class="s09-ic"><h3 class="s09-ic-title">Discovery</h3><p>Connecting people through what they live and practise.</p></article>
+        <article class="s09-ic"><h3 class="s09-ic-title">Territories</h3><p>Giving visibility to local places, initiatives and actors.</p></article>
+        <article class="s09-ic"><h3 class="s09-ic-title">Connection</h3><p>Creating a bond around a shared passion or activity.</p></article>
+      </div>
+    </div>
+  </div>
+  <div class="s09-demarche">
+    <div class="s09-demarche-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg></div>
+    <div>
+      <h3>Approach in progress</h3>
+      <p>The next milestone is measuring the diversity of activities, active creators, return rate, watch time, creator follows and first monetisation signals.</p>
+    </div>
+  </div>
+  <div class="slide-brand">Vuvio 09</div>
+</section>
+
+<style>
+/* ── 10 Le prochain cap (pitch4) ── */
+.slide-10p{padding:52px 60px 44px;background:radial-gradient(circle at 22% 7%,rgba(30,214,229,.10),transparent 25%),linear-gradient(180deg,#071b2e 0%,#04101d 100%)}
+.slide-10p .eyebrow{margin-bottom:14px}
+.s10p-title{font-size:62px;line-height:.98;letter-spacing:-.038em;font-weight:900;max-width:1100px;margin:0}
+.s10p-title span{color:var(--cyan)}
+.s10p-intro{font-size:19px;line-height:1.52;color:rgba(224,237,245,.80);max-width:900px;margin:14px 0 0}
+.s10p-body{display:grid;grid-template-columns:1.08fr .92fr;gap:36px;margin-top:42px;align-items:stretch}
+.s10p-col{display:flex;flex-direction:column}
+.s10p-priorities-label{font-size:11px;font-weight:800;letter-spacing:.20em;text-transform:uppercase;color:var(--cyan);margin-bottom:20px}
+.s10p-priority{display:grid;grid-template-columns:52px 1fr;gap:20px;align-items:start;padding:26px 28px;background:linear-gradient(160deg,rgba(10,30,50,.98),rgba(5,16,31,.98));border:1px solid rgba(30,214,229,.32);border-radius:12px;flex:1}
+.s10p-priorities{display:flex;flex-direction:column;gap:14px;flex:1}
+.s10p-pnum{width:42px;height:42px;border-radius:50%;border:2px solid var(--cyan);display:flex;align-items:center;justify-content:center;color:var(--cyan);font-size:16px;font-weight:800;flex:0 0 42px;box-shadow:0 0 14px rgba(30,214,229,.18);margin-top:2px}
+.s10p-priority h3{font-size:18px;font-weight:800;color:#fff;margin:0 0 8px;letter-spacing:-.01em}
+.s10p-priority p{font-size:16px;color:rgba(224,237,245,.76);line-height:1.52;margin:0}
+.s10p-support-label{font-size:11px;font-weight:800;letter-spacing:.20em;text-transform:uppercase;color:var(--cyan);margin-bottom:20px}
+.s10p-support-card{padding:32px 34px;background:linear-gradient(160deg,rgba(10,30,50,.98),rgba(5,16,31,.98));border:1.5px solid rgba(30,214,229,.42);border-radius:14px;box-shadow:0 16px 40px rgba(0,0,0,.20);flex:1}
+.s10p-support-card h3{font-size:22px;font-weight:800;color:#fff;margin:0 0 16px;letter-spacing:-.02em}
+.s10p-support-card>p{font-size:17px;color:rgba(224,237,245,.82);line-height:1.58;margin:0 0 26px}
+.s10p-lines{display:flex;flex-direction:column;gap:18px}
+.s10p-line{display:flex;align-items:center;gap:14px}
+.s10p-line-dot{width:7px;height:7px;border-radius:50%;background:var(--cyan);flex:0 0 7px;box-shadow:0 0 8px rgba(30,214,229,.6)}
+.s10p-line span{font-size:17px;color:#ddeaf3;line-height:1.4}
+.s10p-conclusion{margin-top:36px;text-align:center}
+.s10p-conclusion p{font-size:28px;font-weight:700;color:#fff;line-height:1.3;margin:0}
+.s10p-conclusion span{color:var(--cyan)}
+</style>
+
+<section class="slide slide-10p">
+  <div class="eyebrow">10 — THE NEXT MILESTONE</div>
+  <h1 class="s10p-title">Validate real-world usage and <span>build what's next.</span></h1>
+  <p class="s10p-intro">Vuvio has a working first version. The next step is supporting pilot creators, observing real usage and identifying what keeps viewers coming back.</p>
+
+  <div class="s10p-body">
+
+    <div class="s10p-col">
+      <div class="s10p-priorities-label">Our priorities</div>
+      <div class="s10p-priorities">
+        <div class="s10p-priority">
+          <div class="s10p-pnum">1</div>
+          <div><h3>Launch the first Lives</h3><p>Supporting the first creators in preparing and delivering their Lives.</p></div>
+        </div>
+        <div class="s10p-priority">
+          <div class="s10p-pnum">2</div>
+          <div><h3>Strengthen the experience</h3><p>Improving streaming and discovery from field feedback.</p></div>
+        </div>
+        <div class="s10p-priority">
+          <div class="s10p-pnum">3</div>
+          <div><h3>Test revenue streams</h3><p>Testing the first revenue streams around equipment and relevant partnerships.</p></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="s10p-col">
+      <div class="s10p-support-label">What we're looking for</div>
+      <div class="s10p-support-card">
+        <h3>A framework to define and build</h3>
+        <p>An incubator, connections and support to define the business model, quantify our needs and identify the right funding.</p>
+        <div class="s10p-lines">
+          <div class="s10p-line"><span class="s10p-line-dot"></span><span>Creator &amp; partner network</span></div>
+          <div class="s10p-line"><span class="s10p-line-dot"></span><span>Business model structuring</span></div>
+          <div class="s10p-line"><span class="s10p-line-dot"></span><span>Needs assessment &amp; funding identification</span></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="s10p-conclusion">
+    <p>The goal: understand what makes people want to <span>watch, stream and come back.</span></p>
+  </div>
+
+  <div class="slide-brand">Vuvio 10</div>
+</section>
+
+</div>
+<script>
+(function(){
+  const W=1600,H=900,GAP=24;
+  function fit(){
+    if(window.matchMedia('print').matches) return;
+    const scale=Math.min((window.innerWidth-20)/W,1);
+    document.querySelectorAll('.slide').forEach(slide=>{
+      slide.style.transformOrigin='top left';
+      slide.style.transform='scale('+scale+')';
+      slide.style.marginBottom=(GAP-H*(1-scale))+'px';
+    });
+    const deck=document.getElementById('deck');
+    if(deck) deck.style.width=(W*scale)+'px';
+  }
+  window.addEventListener('load',fit);
+  window.addEventListener('resize',fit);
+})();
+</script>
+</body>
+</html>

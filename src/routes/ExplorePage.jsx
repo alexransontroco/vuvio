@@ -39,7 +39,7 @@ import { useMessaging } from '../context/MessagingContext.jsx';
 import { searchCreators, followCreator, unfollowCreator } from '../services/creatorService.js';
 import { useAuth } from '../context/AuthContext.jsx';
 import { subscribeToCreatedLives } from '../services/createdLiveService.js';
-import { getCountdownState } from '../utils/countdown.js';
+import { getCountdownState, makeCountdownLabels } from '../utils/countdown.js';
 import { analyticsService } from '../services/analytics/analyticsService.ts';
 import { useNotifications } from '../hooks/useNotifications.js';
 import { createNotification, getRemindedStreamIds } from '../services/notificationService.js';
@@ -203,6 +203,7 @@ function NearbyCard({ stream, onOpen }) {
 
 function UpcomingCard({ item, onOpen, onRemind, isReminded = false }) {
   const { t } = useTranslation();
+  const cLabels = makeCountdownLabels(t);
   const [hasReminder, setHasReminder] = useState(isReminded);
   useEffect(() => { setHasReminder(isReminded); }, [isReminded]);
   const [now, setNow] = useState(() => new Date());
@@ -215,7 +216,7 @@ function UpcomingCard({ item, onOpen, onRemind, isReminded = false }) {
     return () => clearInterval(timer);
   }, []);
 
-  const countdown = item.startsAt ? getCountdownState(item.startsAt, now) : null;
+  const countdown = item.startsAt ? getCountdownState(item.startsAt, now, cLabels) : null;
 
   return (
     <article
@@ -276,6 +277,7 @@ function UpcomingCard({ item, onOpen, onRemind, isReminded = false }) {
 
 function UpcomingDetailSheet({ item, onClose, onWatch, onRemind, isReminded = false }) {
   const { t } = useTranslation();
+  const cLabels = makeCountdownLabels(t);
   const [hasReminder, setHasReminder] = useState(isReminded);
   const [now, setNow] = useState(() => new Date());
 
@@ -284,7 +286,7 @@ function UpcomingDetailSheet({ item, onClose, onWatch, onRemind, isReminded = fa
     return () => clearInterval(timer);
   }, []);
 
-  const countdown = item.startsAt ? getCountdownState(item.startsAt, now) : null;
+  const countdown = item.startsAt ? getCountdownState(item.startsAt, now, cLabels) : null;
   const startsAt = item.startsAt ? new Date(item.startsAt) : null;
   const isLive = startsAt ? startsAt <= now : false;
   const dateLabel = startsAt

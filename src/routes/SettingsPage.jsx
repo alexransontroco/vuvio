@@ -1,5 +1,6 @@
 import {
   Bell,
+  BookOpen,
   ChevronLeft,
   ChevronRight,
   Database,
@@ -51,7 +52,7 @@ const buildGroups = (t, userEmail, languageLabel) => [
     title: t('settings.groups.preferences'),
     items: [
       { label: t('settings.items.notifications'), value: t('settings.items.notificationsValue'), icon: Bell },
-      { label: t('settings.items.privacy'), value: t('settings.items.privacyValue'), icon: Shield },
+      { label: t('settings.items.privacy'), value: t('settings.items.privacyValue'), icon: Shield, to: '/settings/privacy' },
       { label: t('settings.items.privateMessages'), value: t('settings.items.privateMessagesValue'), icon: MessageCircle, action: 'message-privacy' },
       { label: t('settings.items.streamingQuality'), value: t('settings.items.streamingQualityValue'), icon: MonitorUp },
       { label: t('settings.items.dataStorage'), value: t('settings.items.dataStorageValue'), icon: Database },
@@ -64,6 +65,7 @@ const buildGroups = (t, userEmail, languageLabel) => [
     items: [
       { label: t('settings.items.helpCenter'), icon: HelpCircle, to: '/help' },
       { label: t('settings.items.reportProblem'), icon: Siren, to: '/report-problem' },
+      { label: t('settings.items.communityGuidelines'), icon: BookOpen, to: '/guidelines' },
       { label: t('settings.items.terms'), icon: FileText, to: '/terms' },
       { label: t('settings.items.privacyPolicy'), icon: Globe2, to: '/privacy' },
     ],

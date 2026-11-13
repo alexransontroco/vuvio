@@ -1,7 +1,7 @@
 import express from 'express';
 import { spawn } from 'node:child_process';
 import { randomUUID } from 'node:crypto';
-import { createWriteStream, existsSync, readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import http from 'node:http';
 import https from 'node:https';
 import wrtc from '@roamhq/wrtc';
@@ -27,6 +27,7 @@ const port = Number(process.env.PORT || process.env.RTMPS_RELAY_PORT || 8787);
 const certPath = process.env.RTMPS_RELAY_CERT || '../certs/cert.pem';
 const keyPath = process.env.RTMPS_RELAY_KEY || '../certs/key.pem';
 const INACTIVITY_MS = Number(process.env.RTMPS_RELAY_INACTIVITY_MS || 30000);
+const diagnosticsEnabled = process.env.RTMPS_RELAY_DIAGNOSTICS === '1';
 const INPUT_FPS = 15;
 const OUTPUT_FPS = 30; // RTMPS output fps — FFmpeg duplicates frames to fill
 const TARGET_WIDTH = 854;
@@ -62,7 +63,7 @@ function scaleI420(srcBuf, srcW, srcH, dstW, dstH) {
 
 function buildRtmpTarget(ingestUrl, streamKey) {
   if (!ingestUrl || !streamKey) return '';
-  return `${ingestUrl}${streamKey}`;
+  return `${ingestUrl.replace(/\/$/, '')}/${streamKey.replace(/^\//, '')}`;
 }
 
 function createFfmpegProcess(session) {
@@ -72,6 +73,7 @@ function createFfmpegProcess(session) {
     '-hide_banner',
     '-nostdin',
     '-loglevel', 'warning',
+    ...(diagnosticsEnabled ? ['-progress', 'pipe:5', '-stats_period', '1'] : []),
     '-thread_queue_size', '512',
     '-f', 'rawvideo',
     '-pix_fmt', 'yuv420p',
@@ -119,10 +121,42 @@ function createFfmpegProcess(session) {
     session.rtmpTarget,
   );
 
-  const stdio = session.hasAudio
-    ? ['ignore', 'inherit', 'inherit', 'pipe', 'pipe']
-    : ['ignore', 'inherit', 'inherit', 'pipe'];
+  const stdio = ['ignore', 'ignore', 'pipe', 'pipe', session.hasAudio ? 'pipe' : 'ignore', diagnosticsEnabled ? 'pipe' : 'ignore'];
   const child = spawn(ffmpegPath, args, { stdio });
+  let stderrPending = '';
+  const logStderr = (line) => console.warn('[relay] ffmpeg session=%s %s', session.id,
+    line.replaceAll(session.rtmpTarget, '[RTMP target]').replaceAll(session.streamKey, '[stream key]'));
+  child.stderr.setEncoding('utf8');
+  child.stderr.on('data', (data) => {
+    stderrPending += data;
+    const lines = stderrPending.split(/[\r\n]/);
+    stderrPending = lines.pop();
+    for (const line of lines) if (line) logStderr(line);
+  });
+  child.stderr.on('end', () => { if (stderrPending) logStderr(stderrPending); });
+  child.on('error', (err) => {
+    session.ffmpegError = err.code || 'spawn_failed';
+    console.error('[relay] ffmpeg spawn error session=%s code=%s', session.id, session.ffmpegError);
+  });
+  if (diagnosticsEnabled) {
+    let pending = '';
+    let progress = {};
+    child.stdio[5].setEncoding('utf8');
+    child.stdio[5].on('data', (chunk) => {
+      pending += chunk;
+      const lines = pending.split('\n');
+      pending = lines.pop();
+      for (const line of lines) {
+        const separator = line.indexOf('=');
+        if (separator < 0) continue;
+        progress[line.slice(0, separator)] = line.slice(separator + 1).trim();
+        if (line.startsWith('progress=')) {
+          session.ffmpegProgress = { ...progress, observedAt: Date.now() };
+          progress = {};
+        }
+      }
+    });
+  }
 
   session.ffmpegStartedAt = Date.now();
   console.log('[relay] ffmpeg started pid=%d session=%s %dx%d audio=%s fps=%d',
@@ -130,6 +164,7 @@ function createFfmpegProcess(session) {
     session.hasAudio ? 'webrtc' : 'silence', INPUT_FPS);
 
   child.on('exit', (code, signal) => {
+    session.ffmpegExit = { code, signal };
     console.log('[relay] ffmpeg exit code=%s signal=%s session=%s frames=%d written=%d',
       code, signal, session.id, session.frameCount, session.framesWritten);
   });
@@ -213,13 +248,15 @@ function forceVp8(sdp) {
   }, []).join('\r\n');
 }
 
-function startSession({ liveInputId, ingestUrl, streamKey, sdpOffer, title }) {
+function startSession({ liveInputId, ingestUrl, streamKey, sdpOffer, title, iceServers }) {
+  const resolvedIceServers = Array.isArray(iceServers)
+    ? iceServers
+    : [{ urls: 'stun:stun.l.google.com:19302' }, { urls: 'stun:stun.cloudflare.com:3478' }];
+  const hasTurn = resolvedIceServers.some((s) => String(s.urls).startsWith('turn') || (Array.isArray(s.urls) && s.urls.some((u) => u.startsWith('turn'))));
+  console.log('[relay] iceServers count=%d hasTurn=%s', resolvedIceServers.length, hasTurn);
   const pc = new RTCPeerConnection({
     bundlePolicy: 'max-bundle',
-    iceServers: [
-      { urls: 'stun:stun.l.google.com:19302' },
-      { urls: 'stun:stun.cloudflare.com:3478' },
-    ],
+    iceServers: resolvedIceServers,
   });
 
   const session = {
@@ -253,22 +290,42 @@ function startSession({ liveInputId, ingestUrl, streamKey, sdpOffer, title }) {
     stopping: false,
     frameCount: 0,
     framesWritten: 0,
-    audioDumpFile: createWriteStream('/tmp/audio_raw.pcm'),
+    audioPackets: 0,
+    audioSamples: 0,
+    audioNonSilentPackets: 0,
+    audioObservedSampleRate: null,
+    audioObservedChannels: null,
+    ffmpegProgress: null,
+    ffmpegExit: null,
+    ffmpegError: null,
     iceLogged: false,
   };
 
   sessions.set(session.id, session);
-  console.log('[relay] session created=%s liveInputId=%s rtmpTarget=%s', session.id, liveInputId, session.rtmpTarget);
+  console.log('[relay] session created=%s liveInputId=%s', session.id, liveInputId);
 
   pc.onconnectionstatechange = () => {
     if (pc.connectionState === 'failed') stopSession(session.id);
   };
   pc.oniceconnectionstatechange = () => {
     const s = pc.iceConnectionState;
+    console.log('[relay] ICE state=%s session=%s', s, session.id);
     if ((s === 'connected' || s === 'completed') && !session.iceLogged) {
       session.iceLogged = true;
-      console.log('[relay] ICE connected session=%s', session.id);
     }
+  };
+  pc.onicegatheringstatechange = () => {
+    console.log('[relay] ICE gathering=%s session=%s', pc.iceGatheringState, session.id);
+  };
+  pc.onicecandidate = (e) => {
+    if (e.candidate) {
+      console.log('[relay] local candidate type=%s protocol=%s session=%s', e.candidate.type, e.candidate.protocol, session.id);
+    } else {
+      console.log('[relay] ICE gathering complete session=%s', session.id);
+    }
+  };
+  pc.onicecandidateerror = (event) => {
+    console.warn('[relay] ICE candidate error code=%s session=%s', event.errorCode, session.id);
   };
 
   pc.ontrack = (event) => {
@@ -323,7 +380,7 @@ function startSession({ liveInputId, ingestUrl, streamKey, sdpOffer, title }) {
           if (fw > 0 && fh > 0) {
             const src = Buffer.from(frame.data.buffer, frame.data.byteOffset ?? 0, byteLen);
             pipeData = scaleI420(src, fw, fh, TARGET_WIDTH, TARGET_HEIGHT);
-            if (_frameLogCount <= 3) console.log('[relay] scaled frame %dx%d → %dx%d session=%s', fw, fh, TARGET_WIDTH, TARGET_HEIGHT, session.id);
+            if (session.frameCount <= 3) console.log('[relay] scaled frame %dx%d → %dx%d session=%s', fw, fh, TARGET_WIDTH, TARGET_HEIGHT, session.id);
           } else {
             return;
           }
@@ -379,6 +436,13 @@ function startSession({ liveInputId, ingestUrl, streamKey, sdpOffer, title }) {
       let audioParamsLogged = false;
       session.audioSink.ondata = (data) => {
         if (!data?.samples) return;
+        if (diagnosticsEnabled) {
+          session.audioPackets++;
+          session.audioSamples += data.numberOfFrames || 0;
+          session.audioObservedSampleRate = data.sampleRate;
+          session.audioObservedChannels = data.channelCount;
+          if (data.samples.some((sample) => Math.abs(sample) > 100)) session.audioNonSilentPackets++;
+        }
         // Capture real audio params from first packet and update session before FFmpeg starts
         if (!audioParamsLogged) {
           audioParamsLogged = true;
@@ -394,8 +458,6 @@ function startSession({ liveInputId, ingestUrl, streamKey, sdpOffer, title }) {
         // Explicit byte count: data.samples is Int16Array, 2 bytes per sample.
         const sampleBytes = data.samples.length * 2;
         const buf = Buffer.from(data.samples.buffer, data.samples.byteOffset ?? 0, sampleBytes);
-        // Write raw PCM to local file for diagnosis (play with: ffplay -f s16le -ar 16000 -ac 1 /tmp/audio_raw.pcm)
-        if (session.audioDumpFile) session.audioDumpFile.write(buf);
         if (!session.audioPipe) return;
         session.audioPipe.write(buf);
       };
@@ -412,10 +474,14 @@ function startSession({ liveInputId, ingestUrl, streamKey, sdpOffer, title }) {
     .then(async () => {
       await new Promise((resolve) => {
         if (pc.iceGatheringState === 'complete') return resolve();
-        pc.onicegatheringstatechange = () => {
-          if (pc.iceGatheringState === 'complete') resolve();
+        const done = () => {
+          clearTimeout(timer);
+          pc.removeEventListener('icegatheringstatechange', check);
+          resolve();
         };
-        setTimeout(resolve, 8000);
+        const check = () => { if (pc.iceGatheringState === 'complete') done(); };
+        const timer = setTimeout(done, 8000);
+        pc.addEventListener('icegatheringstatechange', check);
       });
       return { sessionId: session.id, sdpAnswer: pc.localDescription?.sdp || '' };
     });
@@ -440,7 +506,6 @@ function stopSession(sessionId) {
   try { session.audioSink?.stop?.(); } catch {}
   try { session.videoSink?.stop?.(); } catch {}
   try { session.pc?.close?.(); } catch {}
-  try { session.audioDumpFile?.end?.(); } catch {}
 
   const ffmpeg = session.ffmpeg;
   const videoPipe = session.videoPipe;
@@ -470,15 +535,52 @@ function stopSession(sessionId) {
 app.get('/', (_req, res) => res.json({ ok: true }));
 app.get('/healthz', (_req, res) => res.json({ ok: true, sessions: sessions.size }));
 
+if (diagnosticsEnabled) {
+  app.get('/sessions/:sessionId', async (req, res) => {
+    const session = sessions.get(req.params.sessionId);
+    if (!session) { res.status(404).json({ error: 'Unknown session' }); return; }
+    try {
+      const stats = await session.pc.getStats();
+      const reports = [...stats.values()];
+      const pair = reports.find((report) => report.type === 'candidate-pair' && report.nominated && report.state === 'succeeded');
+      const local = pair && stats.get(pair.localCandidateId);
+      const remote = pair && stats.get(pair.remoteCandidateId);
+      res.json({
+        connectionState: session.pc.connectionState,
+        iceConnectionState: session.pc.iceConnectionState,
+        selectedPair: pair ? {
+          localType: local?.candidateType, remoteType: remote?.candidateType,
+          protocol: local?.protocol, currentRoundTripTime: pair.currentRoundTripTime,
+          bytesReceived: pair.bytesReceived, bytesSent: pair.bytesSent,
+        } : null,
+        inbound: reports.filter((report) => report.type === 'inbound-rtp').map((report) => ({
+          kind: report.kind, bytesReceived: report.bytesReceived, packetsReceived: report.packetsReceived,
+          packetsLost: report.packetsLost, jitter: report.jitter, framesDecoded: report.framesDecoded,
+        })),
+        frameCount: session.frameCount, framesWritten: session.framesWritten,
+        audioPackets: session.audioPackets, audioSamples: session.audioSamples,
+        audioNonSilentPackets: session.audioNonSilentPackets,
+        audioSampleRate: session.audioObservedSampleRate, audioChannels: session.audioObservedChannels,
+        ffmpegPid: session.ffmpeg?.pid, ffmpegProgress: session.ffmpegProgress,
+        ffmpegExit: session.ffmpegExit, ffmpegError: session.ffmpegError,
+        videoBufferedBytes: session.videoPipe?.writableLength || 0,
+        audioBufferedBytes: session.audioPipe?.writableLength || 0,
+        processRss: process.memoryUsage().rss,
+        processCpuMicros: process.cpuUsage(),
+      });
+    } catch { res.status(500).json({ error: 'Stats unavailable' }); }
+  });
+}
+
 app.post('/sessions', async (req, res) => {
   try {
-    const { liveInputId, ingestUrl, streamKey, sdpOffer, title } = req.body || {};
+    const { liveInputId, ingestUrl, streamKey, sdpOffer, title, iceServers } = req.body || {};
     if (!liveInputId || !ingestUrl || !streamKey || !sdpOffer) {
       res.status(400).json({ error: 'Missing liveInputId, ingestUrl, streamKey, or sdpOffer' });
       return;
     }
-    const result = await startSession({ liveInputId, ingestUrl, streamKey, sdpOffer, title });
-    res.json({ ...result, rtmpTarget: buildRtmpTarget(ingestUrl, streamKey) });
+    const result = await startSession({ liveInputId, ingestUrl, streamKey, sdpOffer, title, iceServers });
+    res.json(result);
   } catch (err) {
     console.error('[relay] session create failed:', err instanceof Error ? err.message : err);
     res.status(500).json({ error: err instanceof Error ? err.message : 'failed to start session' });

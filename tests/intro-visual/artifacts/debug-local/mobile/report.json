@@ -1,0 +1,78 @@
+{
+  "url": "https://127.0.0.1:5177/intro-preview",
+  "viewport": {
+    "width": 390,
+    "height": 844
+  },
+  "errors": [],
+  "observations": [
+    {
+      "label": "welcome-start",
+      "at": 6043,
+      "state": {
+        "video": {
+          "readyState": 4,
+          "currentTime": 4.762811,
+          "width": 721,
+          "height": 1280
+        },
+        "globe": null,
+        "stage": {
+          "width": 390,
+          "height": 844
+        }
+      }
+    },
+    {
+      "label": "welcome-pov",
+      "at": 7468,
+      "state": {
+        "video": {
+          "readyState": 4,
+          "currentTime": 5.891929,
+          "width": 721,
+          "height": 1280
+        },
+        "globe": null,
+        "stage": {
+          "width": 390,
+          "height": 844
+        }
+      }
+    },
+    {
+      "label": "welcome-watch",
+      "at": 12016,
+      "state": {
+        "video": {
+          "readyState": 4,
+          "currentTime": 9.530116,
+          "width": 721,
+          "height": 1280
+        },
+        "globe": null,
+        "stage": {
+          "width": 390,
+          "height": 844
+        }
+      }
+    },
+    {
+      "label": "watch",
+      "at": 15440,
+      "state": {
+        "video": {
+          "readyState": 4,
+          "currentTime": 12.2657,
+          "width": 721,
+          "height": 1280
+        },
+        "globe": null,
+        "stage": {
+          "width": 390,
+          "height": 844
+        }
+      }
+    }
+  ]
+}

@@ -8,7 +8,7 @@ export class IcecatProductProvider implements ProductProvider {
   constructor(private config: IcecatConfig) {}
 
   canHandle(query: ProductSearchQuery): boolean {
-    return !!(query.gtin || query.ean || query.upc || (query.brand && query.mpn) || query.text);
+    return !!(query.gtin || query.ean || query.upc || (query.brand && query.mpn));
   }
 
   async search(query: ProductSearchQuery): Promise<ExternalProduct[]> {

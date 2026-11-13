@@ -3,6 +3,14 @@ import { MOCK_THUMBNAILS } from './mockVideoUrls.js';
 export const CURRENT_MESSAGE_USER_ID = 'current-user';
 
 export const messageProfiles = {
+  'vuvio-team': {
+    id: 'vuvio-team',
+    name: 'Vuvio',
+    username: 'vuvio',
+    avatar: '/assets/icons/icon-192.png',
+    online: true,
+    profession: 'Vuvio Team',
+  },
   'current-user': {
     id: 'current-user',
     name: 'Alex Ranson',

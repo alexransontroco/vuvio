@@ -1,0 +1,398 @@
+.globe5-screen {
+  position: relative;
+  height: 100dvh;
+  background: #060d16;
+  overflow: hidden;
+  color: #e9f5ff;
+  font-family: inherit;
+}
+
+.globe5 {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  background: #060d16;
+}
+
+.globe5__stars {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  transition: opacity 500ms ease;
+}
+
+/* Layers — stacked, cross-fade */
+.globe5__layer {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  transition: opacity 180ms ease;
+}
+
+.globe5__layer.is-visible {
+  opacity: 1;
+}
+
+.globe5__layer--globe {
+  z-index: 2;
+}
+
+.globe5__layer--map {
+  z-index: 3;
+  background: #060d16;
+}
+
+.globe5__layer--map .maplibregl-canvas {
+  outline: none;
+}
+
+/* Keep react-globe.gl host centered */
+.globe5__layer--globe > div {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+}
+
+/* Globe HTML markers --------------------------------------------- */
+.globe5-marker {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 9px 3px 4px;
+  background: rgba(8, 15, 26, 0.72);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+  font-size: 11px;
+  font-weight: 500;
+  white-space: nowrap;
+  cursor: pointer;
+  transform: translate(-50%, -50%);
+  pointer-events: auto;
+  transition: transform 160ms ease, background 160ms ease, box-shadow 200ms ease;
+}
+
+.globe5-marker::before {
+  content: "";
+  position: absolute;
+  inset: -4px;
+  border-radius: 999px;
+  background: var(--c, #28D8DF);
+  opacity: 0.25;
+  filter: blur(10px);
+  z-index: -1;
+}
+
+.globe5-marker i {
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+  background: var(--c, #28D8DF);
+  box-shadow: 0 0 10px var(--c, #28D8DF), inset 0 0 0 1.5px rgba(255, 255, 255, 0.4);
+  flex-shrink: 0;
+}
+
+.globe5-marker:hover {
+  background: rgba(14, 24, 40, 0.88);
+  transform: translate(-50%, -50%) scale(1.06);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+}
+
+/* Phase pill selector --------------------------------------------- */
+.globe5__phases {
+  position: absolute;
+  top: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 10;
+  display: flex;
+  gap: 6px;
+  padding: 6px;
+  border-radius: 999px;
+  background: rgba(10, 18, 30, 0.72);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(100, 160, 220, 0.18);
+  max-width: calc(100vw - 32px);
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.globe5__phases::-webkit-scrollbar { display: none; }
+
+.globe5__phase {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: transparent;
+  border: 0;
+  color: rgba(220, 235, 255, 0.72);
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 180ms ease, color 180ms ease, transform 180ms ease;
+}
+
+.globe5__phase:hover {
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.globe5__phase.is-active {
+  background: linear-gradient(135deg, rgba(40, 216, 223, 0.22), rgba(180, 123, 255, 0.22));
+  color: #ffffff;
+  box-shadow: 0 0 0 1px rgba(40, 216, 223, 0.35), 0 8px 24px rgba(40, 216, 223, 0.15);
+}
+
+.globe5__phase-key {
+  display: inline-grid;
+  place-items: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 999px;
+  background: rgba(100, 160, 220, 0.18);
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.globe5__phase.is-active .globe5__phase-key {
+  background: rgba(255, 255, 255, 0.25);
+}
+
+/* Right controls (zoom / recenter) -------------------------------- */
+.globe5__controls {
+  position: absolute;
+  right: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.globe5__controls button {
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  background: rgba(10, 18, 30, 0.72);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(100, 160, 220, 0.18);
+  color: rgba(230, 240, 255, 0.86);
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  transition: background 150ms ease, color 150ms ease, transform 120ms ease;
+}
+
+.globe5__controls button:hover {
+  background: rgba(20, 30, 46, 0.85);
+  color: #ffffff;
+  transform: scale(1.04);
+}
+
+.globe5__controls button:active { transform: scale(0.96); }
+
+/* Hint ------------------------------------------------------------ */
+.globe5__hint {
+  position: absolute;
+  left: 16px;
+  bottom: 16px;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 10px 14px;
+  border-radius: 12px;
+  background: rgba(10, 18, 30, 0.7);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(100, 160, 220, 0.18);
+  max-width: calc(100vw - 32px);
+}
+
+.globe5__hint strong {
+  font-size: 13px;
+  color: #ffffff;
+  letter-spacing: 0.02em;
+}
+
+.globe5__hint span {
+  font-size: 11px;
+  color: rgba(220, 235, 255, 0.6);
+}
+
+/* Diagnostics HUD -------------------------------------------------- */
+.globe5__diag {
+  position: absolute;
+  right: 16px;
+  top: 72px;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: rgba(8, 14, 24, 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(100, 220, 160, 0.25);
+  font-family: ui-monospace, Menlo, monospace;
+  font-size: 11px;
+  color: rgba(200, 255, 220, 0.85);
+  min-width: 118px;
+  pointer-events: none;
+}
+
+.globe5__diag b {
+  color: #ffffff;
+  font-weight: 600;
+  margin-left: 4px;
+}
+
+/* Selected-live card --------------------------------------------- */
+.globe5__card {
+  position: absolute;
+  left: 50%;
+  bottom: 24px;
+  transform: translateX(-50%);
+  z-index: 11;
+  width: min(360px, calc(100vw - 32px));
+  display: flex;
+  background: rgba(10, 18, 30, 0.86);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(100, 160, 220, 0.2);
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.45);
+  animation: globe5CardIn 280ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@keyframes globe5CardIn {
+  from { opacity: 0; transform: translate(-50%, 12px); }
+  to   { opacity: 1; transform: translate(-50%, 0); }
+}
+
+.globe5__card img {
+  width: 108px;
+  height: auto;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.globe5__card-body {
+  flex: 1;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.globe5__card-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--c, #28D8DF);
+  margin-bottom: 2px;
+}
+
+.globe5__card-tag i {
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: var(--c, #28D8DF);
+  box-shadow: 0 0 10px var(--c, #28D8DF);
+}
+
+.globe5__card h3 {
+  margin: 0;
+  font-size: 15px;
+  color: #ffffff;
+  font-weight: 600;
+  line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.globe5__card p {
+  margin: 0;
+  font-size: 11px;
+  color: rgba(220, 235, 255, 0.65);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.globe5__card strong {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.78);
+  font-weight: 500;
+}
+
+.globe5__card-actions {
+  display: flex;
+  gap: 6px;
+  margin-top: 6px;
+}
+
+.globe5__card-watch {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 7px 12px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #28D8DF, #5AB0FF);
+  color: #061218;
+  font-size: 12px;
+  font-weight: 600;
+  border: 0;
+  cursor: pointer;
+  transition: transform 120ms ease, filter 150ms ease;
+}
+
+.globe5__card-watch:hover { filter: brightness(1.08); }
+.globe5__card-watch:active { transform: scale(0.97); }
+
+.globe5__card-close {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 24px;
+  height: 24px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.45);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.85);
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  z-index: 2;
+}
+
+.globe5__card-close:hover { background: rgba(0, 0, 0, 0.65); }
+
+@media (max-width: 480px) {
+  .globe5__phases { top: 12px; padding: 4px; }
+  .globe5__phase { padding: 5px 10px; font-size: 11px; }
+  .globe5__phase-label { display: none; }
+  .globe5__controls { right: 12px; }
+  .globe5__diag { right: 12px; top: 60px; font-size: 10px; }
+  .globe5__card { bottom: 16px; }
+  .globe5__card img { width: 88px; }
+}

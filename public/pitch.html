@@ -1,0 +1,997 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <title>Vuvio — Candidature Paris&Co</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --navy:  #0B1525;
+      --navy2: #0E1C30;
+      --panel: #152439;
+      --ink:   #FFFFFF;
+      --muted: rgba(255,255,255,0.70);
+      --soft:  rgba(255,255,255,0.40);
+      --cyan:  #00CCFF;
+      --line:  rgba(0, 200, 255, 0.22);
+    }
+
+    html, body {
+      background: #060E1A;
+      color: var(--ink);
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
+
+    .deck { width: 1920px; margin: 0 auto; }
+
+    .slide {
+      position: relative;
+      width: 1920px;
+      height: 1080px;
+      overflow: hidden;
+      background: var(--navy);
+      page-break-after: always;
+    }
+
+    .eyebrow {
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--cyan);
+      margin-bottom: 14px;
+    }
+
+    .slide-title {
+      font-size: 80px;
+      font-weight: 900;
+      line-height: 1.0;
+      letter-spacing: -0.025em;
+      color: #fff;
+    }
+
+    .u-line {
+      display: block;
+      width: 220px;
+      height: 4px;
+      background: var(--cyan);
+      border-radius: 2px;
+      margin: 20px 0 32px;
+    }
+
+    /* ── 01 COVER ── */
+    .s-cover { background: #060E1A; }
+
+    .cover-bg {
+      position: absolute; inset: 0;
+      width: 100%; height: 100%;
+      object-fit: cover; object-position: center right;
+      opacity: 0.55;
+    }
+
+    .cover-shade {
+      position: absolute; inset: 0;
+      background: linear-gradient(90deg, rgba(6,14,26,0.92) 0%, rgba(6,14,26,0.55) 55%, rgba(6,14,26,0.05) 100%);
+    }
+
+    .cover-body {
+      position: absolute;
+      left: 120px; top: 0; bottom: 0;
+      display: flex; flex-direction: column; justify-content: center;
+      max-width: 920px;
+    }
+
+    .cover-label {
+      font-size: 13px; font-weight: 600;
+      letter-spacing: 0.16em; text-transform: uppercase;
+      color: var(--muted); margin-bottom: 44px;
+    }
+
+    .cover-title {
+      font-size: 116px; font-weight: 900;
+      line-height: 0.94; letter-spacing: -0.03em;
+      color: #fff; margin-bottom: 32px;
+    }
+
+    .cover-title em {
+      display: block; color: var(--cyan);
+      font-style: normal; font-size: 108px;
+    }
+
+    .cover-sub {
+      font-size: 22px; color: var(--muted);
+      line-height: 1.45; max-width: 620px;
+    }
+
+    /* ── 02 VISION ── */
+    .s-vision-inner {
+      display: flex; height: 100%;
+      padding: 80px 120px; gap: 72px;
+    }
+
+    .vision-left { flex: 0 0 700px; display: flex; flex-direction: column; }
+
+    .vision-text {
+      font-size: 18px; line-height: 1.6;
+      color: var(--muted); margin-bottom: 32px;
+    }
+
+    .vision-bullets { display: flex; flex-direction: column; gap: 14px; }
+
+    .vision-bullet { font-size: 17px; color: var(--muted); line-height: 1.4; }
+    .vision-bullet strong { color: #fff; }
+
+    .vision-footer {
+      margin-top: auto; padding-top: 18px;
+      border-top: 1px solid var(--line);
+      font-size: 13px; color: var(--soft);
+    }
+
+    .vision-right {
+      flex: 1;
+      display: grid; grid-template-columns: 1fr 1fr;
+      grid-template-rows: 1fr 1fr; gap: 10px;
+    }
+
+    .vision-photo {
+      position: relative; overflow: hidden; border-radius: 3px;
+    }
+
+    .vision-photo img { width: 100%; height: 100%; object-fit: cover; }
+
+    .vision-photo figcaption {
+      position: absolute; bottom: 0; left: 0; right: 0;
+      padding: 10px 14px;
+      font-size: 11px; font-weight: 700;
+      letter-spacing: 0.14em; text-transform: uppercase;
+      color: rgba(255,255,255,0.85);
+      background: linear-gradient(transparent, rgba(0,0,0,0.55));
+    }
+
+    /* ── 03 USAGE ── */
+    .s-usage-inner {
+      padding: 68px 120px; height: 100%;
+      display: flex; flex-direction: column;
+    }
+
+    .usage-cols {
+      display: grid; grid-template-columns: repeat(3, 1fr);
+      gap: 44px; margin-bottom: 36px;
+    }
+
+    .usage-col-photo {
+      height: 190px; overflow: hidden;
+      border-radius: 3px; margin-bottom: 14px;
+    }
+
+    .usage-col-photo img { width: 100%; height: 100%; object-fit: cover; }
+
+    .usage-col-label {
+      font-size: 11px; font-weight: 700;
+      letter-spacing: 0.14em; text-transform: uppercase;
+      color: var(--muted); margin-bottom: 8px;
+    }
+
+    .usage-col-text { font-size: 16px; color: var(--muted); line-height: 1.5; }
+
+    .usage-flow {
+      display: grid; grid-template-columns: repeat(4, 1fr);
+      gap: 0; border-top: 1px solid var(--line); padding-top: 26px;
+    }
+
+    .usage-step {
+      padding-right: 28px;
+      border-right: 1px solid var(--line);
+    }
+
+    .usage-step:last-child { border-right: none; padding-right: 0; }
+    .usage-step + .usage-step { padding-left: 28px; }
+
+    .step-num {
+      font-size: 34px; font-weight: 900;
+      color: var(--cyan); display: block; line-height: 1; margin-bottom: 8px;
+    }
+
+    .step-name {
+      display: block;
+      font-size: 11px; font-weight: 700;
+      letter-spacing: 0.14em; text-transform: uppercase;
+      color: var(--muted); padding-bottom: 8px;
+      border-bottom: 2px solid var(--cyan); margin-bottom: 8px;
+    }
+
+    .step-desc { font-size: 15px; color: var(--muted); }
+
+    .usage-footer {
+      margin-top: auto; padding-top: 14px;
+      border-top: 1px solid var(--line);
+      font-size: 13px; color: var(--soft);
+    }
+
+    /* ── 04 PRODUIT ── */
+    .s-produit-inner { display: flex; height: 100%; }
+
+    .produit-left {
+      flex: 0 0 900px; padding: 80px 120px;
+      display: flex; flex-direction: column;
+    }
+
+    .produit-grid {
+      display: grid; grid-template-columns: 1fr 1fr;
+      gap: 26px 44px; flex: 1;
+    }
+
+    .produit-feat { display: flex; gap: 14px; align-items: flex-start; }
+
+    .feat-icon {
+      width: 40px; height: 40px; flex-shrink: 0;
+      border: 2px solid var(--cyan); border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      color: var(--cyan);
+    }
+
+    .feat-icon svg {
+      width: 18px; height: 18px;
+      stroke: var(--cyan); stroke-width: 1.8;
+      fill: none;
+    }
+
+    .feat-name {
+      font-size: 11px; font-weight: 700;
+      letter-spacing: 0.12em; text-transform: uppercase;
+      color: var(--muted); margin-bottom: 4px;
+    }
+
+    .feat-desc { font-size: 15px; color: var(--muted); line-height: 1.45; }
+
+    .produit-right { flex: 1; position: relative; overflow: hidden; }
+
+    .produit-right img { width: 100%; height: 100%; object-fit: cover; }
+
+    .produit-right::before {
+      content: ''; position: absolute;
+      inset: 0; right: auto; width: 140px;
+      background: linear-gradient(90deg, var(--navy), transparent);
+      z-index: 1;
+    }
+
+    /* ── 05 POSITIONNEMENT ── */
+    .s-pos-inner {
+      padding: 62px 120px; height: 100%;
+      display: flex; flex-direction: column;
+    }
+
+    .pos-header { margin-bottom: 28px; }
+
+    .pos-markets {
+      display: grid; grid-template-columns: repeat(4, 1fr);
+      gap: 0; margin-bottom: 24px;
+      padding-bottom: 22px; border-bottom: 1px solid var(--line);
+    }
+
+    .table-wrap { flex: 1; display: flex; flex-direction: column; justify-content: flex-start; }
+
+    .market-col {
+      padding-right: 28px; border-right: 1px solid var(--line);
+    }
+
+    .market-col:last-child { border-right: none; padding-right: 0; }
+    .market-col + .market-col { padding-left: 28px; }
+
+    .mkt-label {
+      font-size: 11px; font-weight: 700;
+      letter-spacing: 0.12em; text-transform: uppercase;
+      color: var(--muted); margin-bottom: 7px;
+    }
+
+    .mkt-desc { font-size: 14px; color: var(--muted); line-height: 1.45; }
+
+    .comp-table {
+      width: 100%; border-collapse: collapse;
+      font-size: 15px;
+    }
+
+    .comp-table th {
+      font-size: 11px; font-weight: 700;
+      letter-spacing: 0.12em; text-transform: uppercase;
+      color: var(--soft); padding: 10px 16px;
+      text-align: left; border-bottom: 1px solid var(--line);
+    }
+
+    .comp-table th:first-child { padding-left: 0; }
+
+    .comp-table tbody tr { height: 100px; }
+
+    .comp-table td {
+      padding: 10px 16px;
+      border-bottom: 1px solid rgba(114,185,255,0.07);
+      color: var(--muted); vertical-align: middle;
+    }
+
+    .comp-table td:first-child {
+      padding-left: 0; font-weight: 700; color: #fff;
+    }
+
+    .comp-table tr:last-child td { border-bottom: none; }
+    .vuvio-col { background: rgba(0,180,255,0.09); color: #fff !important; font-weight: 600 !important; }
+
+    .pos-footer {
+      padding-top: 14px;
+      border-top: 1px solid var(--line);
+      font-size: 12px; color: var(--soft);
+    }
+
+    /* ── 06 MODÈLE ── */
+    .s-modele-inner {
+      padding: 80px 120px; height: 100%;
+      display: flex; flex-direction: column;
+    }
+
+    .modele-streams {
+      display: grid; grid-template-columns: repeat(3, 1fr);
+      gap: 52px; flex: 1; margin-bottom: 40px;
+    }
+
+    .modele-stream { border-top: 3px solid var(--cyan); padding-top: 20px; }
+
+    .stream-num {
+      font-size: 38px; font-weight: 900;
+      color: var(--cyan); display: block; margin-bottom: 14px;
+    }
+
+    .stream-name {
+      display: block; font-size: 11px; font-weight: 700;
+      letter-spacing: 0.12em; text-transform: uppercase;
+      color: var(--muted); margin-bottom: 10px;
+    }
+
+    .stream-desc { font-size: 18px; color: var(--muted); line-height: 1.5; }
+
+    .modele-prog {
+      display: grid; grid-template-columns: repeat(3, 1fr); gap: 2px;
+    }
+
+    .prog-step {
+      padding: 22px 30px; background: #0E1C30;
+    }
+
+    .prog-step:nth-child(2) { background: #0D2240; }
+    .prog-step:first-child { border-radius: 4px 0 0 4px; }
+    .prog-step:last-child  { border-radius: 0 4px 4px 0; }
+
+    .prog-when {
+      display: block; font-size: 11px; font-weight: 600;
+      letter-spacing: 0.12em; text-transform: uppercase;
+      color: var(--soft); margin-bottom: 8px;
+    }
+
+    .prog-label {
+      font-size: 20px; font-weight: 700;
+      color: var(--muted); text-transform: uppercase; letter-spacing: 0.04em;
+    }
+
+    .modele-note { margin-top: 18px; font-size: 13px; color: var(--soft); }
+
+    /* ── 07 MVP ── */
+    .s-mvp-inner { display: flex; height: 100%; }
+
+    .mvp-left {
+      flex: 0 0 940px;
+      padding: 72px 120px;
+      display: flex; flex-direction: column;
+    }
+
+    .mvp-sub {
+      font-size: 19px; color: var(--muted);
+      margin-bottom: 32px; max-width: 700px;
+      line-height: 1.55;
+    }
+
+    .mvp-cards {
+      display: flex; flex-direction: column;
+      gap: 16px; flex: 1;
+    }
+
+    .mvp-card {
+      border-radius: 5px; padding: 20px 26px;
+      display: flex; gap: 20px; align-items: flex-start;
+      background: var(--panel);
+      border-left: 3px solid var(--cyan);
+    }
+
+    .mvp-card.teal { border-left-color: rgba(0,200,255,0.4); }
+
+    .card-label {
+      display: block; font-size: 11px; font-weight: 700;
+      letter-spacing: 0.12em; text-transform: uppercase;
+      color: var(--cyan); margin-bottom: 6px;
+    }
+
+    .mvp-card.teal .card-label { color: var(--muted); }
+
+    .card-desc { font-size: 16px; color: var(--muted); line-height: 1.5; }
+
+    .mvp-right {
+      flex: 1; position: relative; overflow: hidden;
+    }
+
+    .mvp-right img { width: 100%; height: 100%; object-fit: cover; }
+
+    .mvp-right::before {
+      content: ''; position: absolute;
+      inset: 0; right: auto; width: 160px;
+      background: linear-gradient(90deg, var(--navy), transparent);
+      z-index: 1;
+    }
+
+    .mvp-footer { margin-top: auto; padding-top: 20px; font-size: 14px; color: var(--soft); border-top: 1px solid var(--line); }
+    .mvp-footer strong { color: var(--ink); }
+
+    /* ── 08 TRAJECTOIRE ── */
+    .s-traj-inner {
+      display: flex; height: 100%;
+      gap: 80px; padding: 80px 120px;
+    }
+
+    .traj-left { flex: 1; display: flex; flex-direction: column; }
+
+    .traj-steps {
+      list-style: none; display: flex;
+      flex-direction: column; gap: 22px; margin-top: 8px;
+    }
+
+    .traj-step { font-size: 19px; color: var(--muted); }
+    .traj-step strong { color: #fff; }
+    .traj-step::before {
+      content: attr(data-n) '. ';
+      color: var(--cyan); font-weight: 700;
+    }
+
+    .traj-right {
+      flex: 0 0 540px; display: flex; align-items: center;
+    }
+
+    .fin-box {
+      background: var(--panel); border-radius: 7px;
+      padding: 38px 42px; width: 100%;
+    }
+
+    .fin-item { margin-bottom: 22px; }
+    .fin-item:last-child { margin-bottom: 0; }
+    .fin-item strong { font-size: 16px; color: #fff; }
+    .fin-item p { font-size: 15px; color: var(--muted); margin-top: 4px; line-height: 1.45; }
+
+    /* ── 09 ÉQUIPE ── */
+    .s-equipe-inner {
+      padding: 56px 120px 40px; height: 100%;
+      display: flex; flex-direction: column;
+    }
+
+    .equipe-founders {
+      display: grid; grid-template-columns: 1fr 1fr;
+      gap: 20px; margin-bottom: 24px;
+    }
+
+    .founder-card { overflow: hidden; }
+
+    .founder-card {
+      background: var(--panel); border-radius: 5px;
+      overflow: hidden;
+    }
+
+    .founder-photo {
+      height: 300px; background: var(--navy2);
+      display: flex; align-items: center; justify-content: center;
+      overflow: hidden;
+    }
+
+    .founder-photo img { width: 100%; height: 100%; object-fit: cover; }
+
+    .founder-initials {
+      font-size: 80px; font-weight: 900;
+      color: rgba(255,255,255,0.10); letter-spacing: -0.04em;
+    }
+
+    .founder-body { padding: 18px 22px; }
+
+    .founder-name {
+      font-size: 11px; font-weight: 700;
+      letter-spacing: 0.12em; text-transform: uppercase;
+      color: var(--muted); margin-bottom: 8px;
+    }
+
+    .founder-desc { font-size: 15px; color: var(--muted); line-height: 1.5; }
+
+    .equipe-impact {
+      display: grid; grid-template-columns: 1fr 1fr;
+      gap: 48px; padding-top: 24px;
+      border-top: 1px solid var(--line);
+    }
+
+    .impact-label {
+      font-size: 11px; font-weight: 700;
+      letter-spacing: 0.12em; text-transform: uppercase;
+      color: var(--muted); margin-bottom: 10px;
+    }
+
+    .impact-text { font-size: 16px; color: var(--muted); line-height: 1.55; }
+
+    /* ── 10 PARIS&CO ── */
+    .s-parisco { background: #060E1A; }
+
+    .parisco-bg {
+      position: absolute; inset: 0;
+      width: 100%; height: 100%;
+      object-fit: cover; opacity: 0.28;
+    }
+
+    .parisco-shade {
+      position: absolute; inset: 0;
+      background: linear-gradient(90deg, rgba(6,14,26,0.88) 0%, rgba(6,14,26,0.45) 100%);
+    }
+
+    .s-parisco-inner {
+      position: relative; z-index: 2;
+      padding: 80px 120px; height: 100%;
+      display: flex; flex-direction: column;
+    }
+
+    .parisco-actions {
+      flex: 1; display: flex; flex-direction: column; justify-content: center;
+      gap: 0; margin-top: 8px;
+    }
+
+    .parisco-action {
+      padding: 22px 0;
+      border-bottom: 1px solid rgba(0,200,255,0.16);
+      font-size: 21px; color: var(--muted);
+    }
+
+    .parisco-action:first-child { border-top: 1px solid rgba(0,200,255,0.16); }
+    .parisco-action strong { color: #fff; }
+
+    .parisco-close { padding-top: 28px; }
+
+    .parisco-tagline {
+      font-size: 22px; font-weight: 700;
+      letter-spacing: 0.06em; text-transform: uppercase;
+      color: var(--muted); margin-bottom: 8px;
+    }
+
+    .parisco-brand {
+      font-size: 15px; font-weight: 700;
+      letter-spacing: 0.18em; text-transform: uppercase;
+      color: var(--soft);
+    }
+
+    @media print { .slide { page-break-after: always; } }
+
+    @media screen {
+      html, body { overflow-x: hidden; }
+      .deck { transform-origin: top left; }
+    }
+  </style>
+</head>
+<body>
+<main class="deck">
+
+  <!-- 01 COVER -->
+  <section class="slide s-cover">
+    <img class="cover-bg" src="/pitch-assets/globe-branded.png" alt="" />
+    <div class="cover-shade"></div>
+    <div class="cover-body">
+      <p class="cover-label">VUVIO · CANDIDATURE PARIS&amp;CO</p>
+      <h1 class="cover-title">
+        Des passions,<br>des métiers,<br>des expériences
+        <em>— en direct.</em>
+      </h1>
+      <p class="cover-sub">Découvrez des activités et des passions à travers ceux qui les vivent.</p>
+    </div>
+  </section>
+
+  <!-- 02 LA VISION -->
+  <section class="slide">
+    <div class="s-vision-inner">
+      <div class="vision-left">
+        <p class="eyebrow">02 — La vision</p>
+        <h2 class="slide-title">Découvrir des personnes par ce qu'elles font</h2>
+        <span class="u-line"></span>
+        <p class="vision-text">Le Live existe déjà, mais il reste une fonctionnalité parmi d'autres, organisée autour de créateurs déjà connus. Vuvio part de ce que les gens font réellement : un artisan dans son atelier, un cycliste dans les Alpes, un guide à Tokyo, un chef en plein service.</p>
+        <div class="vision-bullets">
+          <p class="vision-bullet"><strong>Activité :</strong> le point d'entrée, pour découvrir un créateur sans le connaître à l'avance.</p>
+          <p class="vision-bullet"><strong>Point de vue (POV) :</strong> les gestes, l'environnement et les imprévus, au moment où l'activité a lieu.</p>
+          <p class="vision-bullet"><strong>Géographie :</strong> le Globe pour explorer des activités dans d'autres villes, régions ou pays.</p>
+        </div>
+        <p class="vision-footer">Le Live n'est pas nouveau. La manière dont Vuvio associe ces trois dimensions constitue son positionnement.</p>
+      </div>
+      <div class="vision-right">
+        <figure class="vision-photo"><img src="/pitch-assets/Artisan.jpg" alt="" /><figcaption>MUSICIEN</figcaption></figure>
+        <figure class="vision-photo"><img src="/pitch-assets/Guide.jpg" alt="" /><figcaption>ALPINISME</figcaption></figure>
+        <figure class="vision-photo"><img src="/pitch-assets/Cycliste.jpg" alt="" /><figcaption>CYCLISTE</figcaption></figure>
+        <figure class="vision-photo"><img src="/pitch-assets/Chef.jpg" alt="" /><figcaption>CHEF</figcaption></figure>
+      </div>
+    </div>
+  </section>
+
+  <!-- 03 L'USAGE -->
+  <section class="slide">
+    <div class="s-usage-inner">
+      <p class="eyebrow">03 — L'usage</p>
+      <h2 class="slide-title">Découvrir, partager, suivre, revenir</h2>
+      <span class="u-line"></span>
+      <div class="usage-cols">
+        <div>
+          <div class="usage-col-photo"><img src="/pitch-assets/Guide.jpg" alt="" /></div>
+          <p class="usage-col-label">REGARDER</p>
+          <p class="usage-col-text">Entrer dans l'atelier d'un artisan, suivre un service en cuisine, accompagner un guide, explorer une activité dans un autre pays.</p>
+        </div>
+        <div>
+          <div class="usage-col-photo"><img src="/pitch-assets/Cycliste.jpg" alt="" /></div>
+          <p class="usage-col-label">PARTAGER</p>
+          <p class="usage-col-text">Sportif, guide, artisan, musicien, cuisinier ou voyageur partage en direct, sans vidéo montée, et bâtit une communauté.</p>
+        </div>
+        <div>
+          <div class="usage-col-photo"><img src="/pitch-assets/Artisan.jpg" alt="" /></div>
+          <p class="usage-col-label">PARTENAIRES</p>
+          <p class="usage-col-text">Équipement, lieux, événements, tourisme, culture : une présence utile, cohérente avec l'activité et clairement identifiable.</p>
+        </div>
+      </div>
+      <div class="usage-flow">
+        <div class="usage-step">
+          <span class="step-num">01</span>
+          <span class="step-name">Découvrir</span>
+          <p class="step-desc">Depuis Watch, Explore ou le Globe.</p>
+        </div>
+        <div class="usage-step">
+          <span class="step-num">02</span>
+          <span class="step-name">Explorer</span>
+          <p class="step-desc">L'activité et la personne.</p>
+        </div>
+        <div class="usage-step">
+          <span class="step-num">03</span>
+          <span class="step-name">Suivre</span>
+          <p class="step-desc">Un créateur.</p>
+        </div>
+        <div class="usage-step">
+          <span class="step-num">04</span>
+          <span class="step-name">Revenir</span>
+          <p class="step-desc"></p>
+        </div>
+      </div>
+      <p class="usage-footer">Le Live crée l'entrée. L'activité crée l'intérêt. La personne crée la connexion.</p>
+    </div>
+  </section>
+
+  <!-- 04 LE PRODUIT -->
+  <section class="slide">
+    <div class="s-produit-inner">
+      <div class="produit-left">
+        <p class="eyebrow">04 — Le produit</p>
+        <h2 class="slide-title" style="font-size:66px;">Six fonctionnalités pour découvrir,<br>explorer et partager</h2>
+        <span class="u-line"></span>
+        <div class="produit-grid">
+          <div class="produit-feat">
+            <div class="feat-icon"><i data-lucide="tv-2"></i></div>
+            <div>
+              <p class="feat-name">Watch</p>
+              <p class="feat-desc">Entrer dans un Live en cours.</p>
+            </div>
+          </div>
+          <div class="produit-feat">
+            <div class="feat-icon"><i data-lucide="globe-2"></i></div>
+            <div>
+              <p class="feat-name">Globe</p>
+              <p class="feat-desc">Zoomer sur une région et trouver des Lives que la recherche n'aurait pas montrés.</p>
+            </div>
+          </div>
+          <div class="produit-feat">
+            <div class="feat-icon"><i data-lucide="compass"></i></div>
+            <div>
+              <p class="feat-name">Explore</p>
+              <p class="feat-desc">Catégories, métiers, passions, créateurs, lieux, activités à proximité.</p>
+            </div>
+          </div>
+          <div class="produit-feat">
+            <div class="feat-icon"><i data-lucide="user-round"></i></div>
+            <div>
+              <p class="feat-name">Profil</p>
+              <p class="feat-desc">Activités, équipement, Lives passés et à venir.</p>
+            </div>
+          </div>
+          <div class="produit-feat">
+            <div class="feat-icon"><i data-lucide="rotate-ccw"></i></div>
+            <div>
+              <p class="feat-name">Replay &amp; Recap</p>
+              <p class="feat-desc">Prolonger certaines expériences.</p>
+            </div>
+          </div>
+          <div class="produit-feat">
+            <div class="feat-icon"><i data-lucide="video"></i></div>
+            <div>
+              <p class="feat-name">Start Live</p>
+              <p class="feat-desc">Préparer, cadrer, démarrer.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="produit-right">
+        <img src="/pitch-assets/watchvuvio.jpg" alt="" />
+      </div>
+    </div>
+  </section>
+
+  <!-- 05 POSITIONNEMENT -->
+  <section class="slide">
+    <div class="s-pos-inner">
+      <div class="pos-header">
+        <p class="eyebrow">05 — Positionnement</p>
+        <h2 class="slide-title" style="font-size:70px;">Un usage à la croisée de plusieurs marchés</h2>
+        <span class="u-line" style="margin-bottom:0;"></span>
+      </div>
+      <div class="pos-markets">
+        <div class="market-col">
+          <p class="mkt-label">Live Streaming</p>
+          <p class="mkt-desc">Une immédiateté que les contenus enregistrés ne reproduisent pas.</p>
+        </div>
+        <div class="market-col">
+          <p class="mkt-label">Creator Economy</p>
+          <p class="mkt-desc">Des créateurs qui bâtissent une communauté autour de leurs passions.</p>
+        </div>
+        <div class="market-col">
+          <p class="mkt-label">Social Discovery</p>
+          <p class="mkt-desc">Découverte structurée par comptes, algorithmes et tendances.</p>
+        </div>
+        <div class="market-col">
+          <p class="mkt-label">Locale &amp; Expérientielle</p>
+          <p class="mkt-desc">Lieux, territoires, métiers, pratiques.</p>
+        </div>
+      </div>
+      <div class="table-wrap">
+      <table class="comp-table">
+        <thead>
+          <tr>
+            <th></th>
+            <th>VUVIO</th>
+            <th>TIKTOK / INSTAGRAM</th>
+            <th>TWITCH</th>
+            <th>YOUTUBE LIVE</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Live</td>
+            <td class="vuvio-col">Au cœur du produit</td>
+            <td>Fonctionnalité parmi d'autres</td>
+            <td>Au cœur du produit</td>
+            <td>Intégré à un écosystème vidéo</td>
+          </tr>
+          <tr>
+            <td>Activité comme entrée</td>
+            <td class="vuvio-col">Central</td>
+            <td>Possible, non structurante</td>
+            <td>Catégories, surtout gaming</td>
+            <td>Via recherche et chaînes</td>
+          </tr>
+          <tr>
+            <td>POV terrain</td>
+            <td class="vuvio-col">Central</td>
+            <td>Possible</td>
+            <td>Possible</td>
+            <td>Possible</td>
+          </tr>
+          <tr>
+            <td>Géographie</td>
+            <td class="vuvio-col">Globe dédié</td>
+            <td>Limitée</td>
+            <td>Non centrale</td>
+            <td>Non centrale</td>
+          </tr>
+        </tbody>
+      </table>
+      </div>
+      <p class="pos-footer">Vuvio ne remplace pas les plateformes sociales : il crée un usage spécifique, découvrir le monde réel en direct à travers ceux qui le vivent. Aucun chiffre de marché n'est affiché tant qu'il n'est pas vérifié et sourcé.</p>
+    </div>
+  </section>
+
+  <!-- 06 LE MODÈLE -->
+  <section class="slide">
+    <div class="s-modele-inner">
+      <p class="eyebrow">06 — Le modèle</p>
+      <h2 class="slide-title">Construire les revenus autour des usages réels</h2>
+      <span class="u-line"></span>
+      <div class="modele-streams">
+        <div class="modele-stream">
+          <span class="stream-num">01</span>
+          <span class="stream-name">Équipement &amp; Affiliation</span>
+          <p class="stream-desc">Le matériel réellement utilisé par le créateur, montré parce qu'il sert, pas pour être vendu.</p>
+        </div>
+        <div class="modele-stream">
+          <span class="stream-num">02</span>
+          <span class="stream-name">Marques &amp; Partenariats</span>
+          <p class="stream-desc">Accompagner un créateur, une activité, une série de Lives ou un événement, de façon claire.</p>
+        </div>
+        <div class="modele-stream">
+          <span class="stream-num">03</span>
+          <span class="stream-name">Outils Créateurs</span>
+          <p class="stream-desc">Programmation, statistiques, profil pro, séries, recap.</p>
+        </div>
+      </div>
+      <div class="modele-prog">
+        <div class="prog-step">
+          <span class="prog-when">D'abord</span>
+          <span class="prog-label">L'usage</span>
+        </div>
+        <div class="prog-step">
+          <span class="prog-when">Ensuite</span>
+          <span class="prog-label">Affiliation &amp; Partenariats</span>
+        </div>
+        <div class="prog-step">
+          <span class="prog-when">Plus tard</span>
+          <span class="prog-label">Outils Premium</span>
+        </div>
+      </div>
+      <p class="modele-note">Modèle : B2C + B2B2C + B2B.</p>
+    </div>
+  </section>
+
+  <!-- 07 LE MVP -->
+  <section class="slide">
+    <div class="s-mvp-inner">
+      <div class="mvp-left">
+        <p class="eyebrow">07 — Le MVP</p>
+        <h2 class="slide-title">Vuvio n'est plus seulement un concept</h2>
+        <span class="u-line"></span>
+        <p class="mvp-sub">Le MVP et l'infrastructure Live sont fonctionnels. L'enjeu : valider les usages avec de vrais utilisateurs.</p>
+        <div class="mvp-cards">
+          <div class="mvp-card">
+            <div>
+              <span class="card-label">Produit</span>
+              <p class="card-desc">Watch, Explore, Globe, profils, équipement, Live Recap, interface mobile.</p>
+            </div>
+          </div>
+          <div class="mvp-card teal">
+            <div>
+              <span class="card-label">Live</span>
+              <p class="card-desc">Diffusion depuis mobile, replay, expérience spectateur, testés.</p>
+            </div>
+          </div>
+          <div class="mvp-card">
+            <div>
+              <span class="card-label">Infrastructure</span>
+              <p class="card-desc">Backend Firebase, authentification, streaming, premiers systèmes d'équipement et d'affiliation.</p>
+            </div>
+          </div>
+        </div>
+        <p class="mvp-footer"><strong>Prochaine étape :</strong> recruter des créateurs pilotes, tester avec de vrais spectateurs, mesurer ce qui donne envie de revenir, tester les premiers partenariats.</p>
+      </div>
+      <div class="mvp-right">
+        <img src="/pitch-assets/globe-pins.png" alt="Globe Vuvio" />
+      </div>
+    </div>
+  </section>
+
+  <!-- 08 LA TRAJECTOIRE -->
+  <section class="slide">
+    <div class="s-traj-inner">
+      <div class="traj-left">
+        <p class="eyebrow">08 — La trajectoire</p>
+        <h2 class="slide-title" style="font-size:70px;">Du MVP aux premiers usages,<br>financés par étapes</h2>
+        <span class="u-line"></span>
+        <ul class="traj-steps">
+          <li class="traj-step" data-n="1"><strong>Pilotes :</strong> tester l'usage avec des créateurs motivés.</li>
+          <li class="traj-step" data-n="2"><strong>Lancement :</strong> métiers &amp; artisanat, musique &amp; culture, cuisine, sport &amp; outdoor, voyage.</li>
+          <li class="traj-step" data-n="3"><strong>Communauté :</strong> comprendre ce qui crée du retour.</li>
+          <li class="traj-step" data-n="4"><strong>Premiers revenus :</strong> affiliation, premiers partenaires, tests B2B / B2B2C.</li>
+          <li class="traj-step" data-n="5"><strong>Développement :</strong> plus de catégories, nouveaux territoires, international progressif.</li>
+        </ul>
+      </div>
+      <div class="traj-right">
+        <div class="fin-box">
+          <div class="fin-item">
+            <strong>Financement :</strong>
+            <p>Infrastructure, streaming, tests pilotes, acquisition, partenariats, structuration.</p>
+          </div>
+          <div class="fin-item">
+            <strong>Sources envisagées :</strong>
+            <p>Apports des fondateurs, aides à l'innovation, FPI, Paris&amp;Co, partenaires.</p>
+          </div>
+          <div class="fin-item">
+            <strong>Principe :</strong>
+            <p>Financer ce qui a été validé, sans surdimensionner.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 09 L'ÉQUIPE & L'IMPACT -->
+  <section class="slide">
+    <div class="s-equipe-inner">
+      <p class="eyebrow">09 — L'équipe &amp; L'impact</p>
+      <h2 class="slide-title" style="font-size:64px;">Une équipe complémentaire, un impact à mesurer</h2>
+      <span class="u-line"></span>
+      <div class="equipe-founders">
+        <div class="founder-card">
+          <div class="founder-photo">
+            <img src="/pitch-assets/alexvuv.png" alt="Alexandre Ranson" />
+          </div>
+          <div class="founder-body">
+            <p class="founder-name">Alexandre Ranson — Produit &amp; Technologie</p>
+            <p class="founder-desc">Conception, MVP, infrastructure Live ; formation en informatique, expérience dans la musique et l'enseignement.</p>
+          </div>
+        </div>
+        <div class="founder-card">
+          <div class="founder-photo">
+            <img src="/pitch-assets/ceciliaimagevuv.jpeg" alt="Cécilia Ranson" />
+          </div>
+          <div class="founder-body">
+            <p class="founder-name">Cécilia Ranson — Marketing, Finance &amp; Partenariats</p>
+            <p class="founder-desc">Positionnement, modèle économique, partenariats ; expérience senior en marketing, notamment chez Leboncoin.</p>
+          </div>
+        </div>
+      </div>
+      <div class="equipe-impact">
+        <div>
+          <p class="impact-label">Impact social</p>
+          <p class="impact-text">Rendre observables les métiers et savoir-faire, ouvrir à d'autres cultures, donner de la visibilité aux territoires, connecter des personnes autour d'une passion.</p>
+        </div>
+        <div>
+          <p class="impact-label">Démarche en structuration</p>
+          <p class="impact-text">Indicateurs à définir : diversité des activités, créateurs pilotes, taux de retour. Pas encore de certification ni de mesure formelle.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 10 PARIS&CO -->
+  <section class="slide s-parisco">
+    <img class="parisco-bg" src="/pitch-assets/globe-branded.png" alt="" />
+    <div class="parisco-shade"></div>
+    <div class="s-parisco-inner">
+      <p class="eyebrow">10 — Paris&amp;Co</p>
+      <h2 class="slide-title" style="font-size:72px; max-width:960px;">Pourquoi Paris&amp;Co : Paris comme premier terrain, une ambition internationale</h2>
+      <span class="u-line"></span>
+      <div class="parisco-actions">
+        <div class="parisco-action"><strong>Tester :</strong> créateurs, spectateurs et partenaires pilotes.</div>
+        <div class="parisco-action"><strong>Valider :</strong> catégories, engagement, envie de suivre et de revenir, monétisations acceptables.</div>
+        <div class="parisco-action"><strong>Connecter :</strong> acteurs culturels et touristiques, artisans, lieux, événements, associations, marques.</div>
+        <div class="parisco-action"><strong>Structurer :</strong> business model, go-to-market, financement, candidature FPI, mesure d'impact.</div>
+      </div>
+      <div class="parisco-close">
+        <p class="parisco-tagline">Des passions, des métiers, des expériences — en direct.</p>
+        <p class="parisco-brand">VUVIO</p>
+      </div>
+    </div>
+  </section>
+
+</main>
+<script>
+  lucide.createIcons();
+
+  (function scaleDeck() {
+    var deck = document.querySelector('.deck');
+    if (!deck) return;
+    var s = window.innerWidth / 1920;
+    deck.style.transform = 'scale(' + s + ')';
+    var slides = deck.querySelectorAll('.slide').length;
+    document.body.style.height = (1080 * slides * s) + 'px';
+  })();
+
+  window.addEventListener('resize', function () {
+    var deck = document.querySelector('.deck');
+    if (!deck) return;
+    var s = window.innerWidth / 1920;
+    deck.style.transform = 'scale(' + s + ')';
+    var slides = deck.querySelectorAll('.slide').length;
+    document.body.style.height = (1080 * slides * s) + 'px';
+  });
+</script>
+</body>
+</html>

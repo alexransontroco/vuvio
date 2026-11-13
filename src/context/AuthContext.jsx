@@ -16,6 +16,8 @@ import {
   isDemoAccount,
 } from '../services/authService.js';
 import { seedProductsCollection } from '../services/seedProducts.js';
+import { analyticsService } from '../services/analytics/analyticsService.ts';
+import { setCurrentAuthUid } from '../services/profileService.js';
 
 const AuthContext = createContext(null);
 
@@ -25,10 +27,10 @@ export function AuthProvider({ children }) {
   const [authLoading,     setAuthLoading]     = useState(true);
   const [profileLoading,  setProfileLoading]  = useState(false);
   const [currentUid,      setCurrentUid]      = useState(null);
-  const [showSplash,      setShowSplash]      = useState(true);
 
   const loadProfile = useCallback(async (firebaseUser) => {
     if (!firebaseUser) {
+      setCurrentAuthUid(null);
       setUserProfile(null);
       setCurrentUid(null);
       setProfileLoading(false);
@@ -36,6 +38,7 @@ export function AuthProvider({ children }) {
     }
 
     const uid = firebaseUser.uid;
+    setCurrentAuthUid(uid);
     console.count('[Auth] loadProfile called');
     console.time('[Auth] profile Firestore read');
     setProfileLoading(true);
@@ -63,6 +66,7 @@ export function AuthProvider({ children }) {
         console.log('[Auth] profile missing, creating via AuthContext');
         await createUserProfileIfMissing(firebaseUser);
         profile = await getUserProfile(uid);
+        analyticsService.trackSignUp();
       }
 
       // Merge locally-saved edits on top of Firestore data so changes survive page refresh
@@ -140,6 +144,7 @@ export function AuthProvider({ children }) {
           console.log('[Auth] auth state changed:', firebaseUser ? `${firebaseUser.uid.slice(0, 8)} (email: ${firebaseUser.email})` : 'null');
           if (mounted) {
             setUser(firebaseUser);
+            analyticsService.setUserId(firebaseUser?.uid ?? null);
             await loadProfile(firebaseUser);
 
             // Seed products collection on first auth (background, non-blocking)
@@ -179,13 +184,6 @@ export function AuthProvider({ children }) {
       unsubscribe();
     };
   }, [loadProfile]);
-
-  useEffect(() => {
-    const splashTimer = setTimeout(() => {
-      setShowSplash(false);
-    }, 5500);
-    return () => clearTimeout(splashTimer);
-  }, []);
 
   const refreshUserProfile = useCallback(async () => {
     if (user) await loadProfile(user);
@@ -252,7 +250,6 @@ export function AuthProvider({ children }) {
     userProfile,
     authLoading,
     profileLoading,
-    showSplash,
     isAuthenticated: Boolean(user),
     signUp,
     signIn,

@@ -8,7 +8,10 @@ import { EquipmentSelector, QuickAddEquipmentForm } from './equipment/EquipmentK
 import { EXPERIENCE_FAMILIES } from '../data/experienceTaxonomy.js';
 import { SUBCATEGORY_EQUIPMENT_TYPES } from '../data/equipmentModel.js';
 import { createLocalLive, registerCreatedLiveStream } from '../services/createdLiveService.js';
+import { getStreamDestinations, registerLiveDestinations, saveStreamDestination, deleteStreamDestination } from '../services/streamDestinationsService.js';
+import StreamDestinationSheet from './StreamDestinationSheet.jsx';
 import { activateScheduledStream, getMyScheduledStreams, scheduleStream, startStream } from '../services/streamApi.ts';
+import { requestVuvioMediaStream } from '../platform/media.js';
 import {
   addEquipmentItem,
   buildEquipmentSnapshots,
@@ -105,6 +108,7 @@ function StartLiveFlow({
   onToggleEquipment, onUseSuggestedGear, onApplyPreviousSetup, onSkipEquipment,
   onOpenQuickAdd, quickAddOpen, quickAddDraft, onQuickAddChange, onSaveQuickEquipment, onCancelQuickAdd,
   hasPreviousSetup,
+  savedDestinations, onSaveDestination, onRemoveDestination,
 }) {
   const videoRef = useRef(null);
   const streamRef = useRef(null);
@@ -113,6 +117,9 @@ function StartLiveFlow({
   const [privacyOpen, setPrivacyOpen] = useState(false);
   const [moreOptionsOpen, setMoreOptionsOpen] = useState(false);
   const [showFullCategories, setShowFullCategories] = useState(false);
+  // Multistream destinations — stream keys are session-only (never persisted)
+  const [destSheet, setDestSheet] = useState(null); // null | 'instagram' | 'youtube' | 'custom'
+  const [sessionDests, setSessionDests] = useState({}); // { [provider]: { url, streamKey, id?, enabled } }
 
   useEffect(() => {
     let active = true;
@@ -128,7 +135,7 @@ function StartLiveFlow({
       ];
       for (const constraints of attempts) {
         try {
-          const stream = await navigator.mediaDevices.getUserMedia(constraints);
+          const stream = await requestVuvioMediaStream(constraints);
           if (!active) { stream.getTracks().forEach((t) => t.stop()); return; }
           streamRef.current = stream;
           if (videoRef.current) videoRef.current.srcObject = stream;
@@ -149,9 +156,36 @@ function StartLiveFlow({
   }, []);
 
   const handleGoLive = () => {
+    if (cameraState !== 'active' || !streamRef.current) return;
     launchedRef.current = true;
-    onLaunch(streamRef.current);
+    const activeDests = Object.values(sessionDests).filter((d) => d.enabled && d.streamKey);
+    onLaunch(streamRef.current, activeDests);
   };
+
+  const handleDestSaved = (provider, dest) => {
+    setSessionDests((prev) => ({ ...prev, [provider]: { ...dest, enabled: true } }));
+    onSaveDestination?.(dest);
+    setDestSheet(null);
+  };
+
+  const handleDestRemoved = (provider) => {
+    setSessionDests((prev) => {
+      const next = { ...prev };
+      delete next[provider];
+      return next;
+    });
+    const saved = savedDestinations?.find((d) => d.provider === provider);
+    if (saved) onRemoveDestination?.(saved.id);
+    setDestSheet(null);
+  };
+
+  const enabledDests = Object.values(sessionDests).filter((d) => d.enabled && d.streamKey);
+  const youtubeSaved = savedDestinations?.find((d) => d.provider === 'youtube');
+  const youtubeSession = sessionDests.youtube;
+  const youtubeReady = Boolean(youtubeSession?.streamKey);
+  const instagramSaved = savedDestinations?.find((d) => d.provider === 'instagram');
+  const instagramSession = sessionDests.instagram;
+  const instagramReady = Boolean(instagramSession?.streamKey);
 
   const cameraStatusText = {
     denied: 'Camera access denied',
@@ -260,11 +294,99 @@ function StartLiveFlow({
         )}
       </div>
 
+      {/* Broadcast to */}
+      <div className="start-live-broadcast">
+        <label className="start-live-label">Broadcast to</label>
+        <div className="start-live-broadcast__list">
+          {/* Vuvio — always on */}
+          <div className="start-live-dest start-live-dest--vuvio">
+            <span className="start-live-dest__dot start-live-dest__dot--on" />
+            <span className="start-live-dest__name">Vuvio</span>
+            <span className="start-live-dest__badge">Always on</span>
+          </div>
+
+          {/* YouTube */}
+          <button
+            type="button"
+            className={`start-live-dest start-live-dest--btn${youtubeReady ? ' start-live-dest--ready' : ''}`}
+            onClick={() => setDestSheet('youtube')}
+          >
+            <span className={`start-live-dest__dot${youtubeReady ? ' start-live-dest__dot--on' : ''}`} />
+            <span className="start-live-dest__name">YouTube</span>
+            {youtubeReady
+              ? <span className="start-live-dest__badge start-live-dest__badge--ready">✓ Ready</span>
+              : <span className="start-live-dest__action">{youtubeSaved ? 'Edit' : 'Add'}</span>}
+          </button>
+
+          {/* Instagram */}
+          <button
+            type="button"
+            className={`start-live-dest start-live-dest--btn${instagramReady ? ' start-live-dest--ready' : ''}`}
+            onClick={() => setDestSheet('instagram')}
+          >
+            <span className={`start-live-dest__dot${instagramReady ? ' start-live-dest__dot--on' : ''}`} />
+            <span className="start-live-dest__name">Instagram</span>
+            {instagramReady
+              ? <span className="start-live-dest__badge start-live-dest__badge--ready">✓ Ready</span>
+              : <span className="start-live-dest__action">{instagramSaved ? 'Edit' : 'Add'}</span>}
+          </button>
+
+          {/* Custom RTMP */}
+          {sessionDests.custom?.streamKey ? (
+            <button
+              type="button"
+              className="start-live-dest start-live-dest--btn start-live-dest--ready"
+              onClick={() => setDestSheet('custom')}
+            >
+              <span className="start-live-dest__dot start-live-dest__dot--on" />
+              <span className="start-live-dest__name">Custom RTMP</span>
+              <span className="start-live-dest__badge start-live-dest__badge--ready">✓ Ready</span>
+            </button>
+          ) : (
+            <button
+              type="button"
+              className="start-live-dest start-live-dest--btn"
+              onClick={() => setDestSheet('custom')}
+            >
+              <span className="start-live-dest__dot" />
+              <span className="start-live-dest__name">Custom RTMP</span>
+              <span className="start-live-dest__action">Add</span>
+            </button>
+          )}
+        </div>
+      </div>
+
       {/* Go Live */}
-      <button type="button" className="start-live-go" onClick={handleGoLive}>
+      <button
+        type="button"
+        className="start-live-go"
+        onClick={handleGoLive}
+        disabled={cameraState !== 'active'}
+        aria-disabled={cameraState !== 'active'}
+      >
         <Radio size={18} strokeWidth={2} />
-        Go Live
+        {cameraState === 'active' ? 'Go Live' : (cameraStatusText || 'Starting camera…')}
+        {cameraState === 'active' && enabledDests.length > 0 && (
+          <span className="start-live-go__sub">
+            Vuvio + {enabledDests.map((d) => d.name ?? d.provider).join(' + ')}
+          </span>
+        )}
       </button>
+      <p className="start-live-guidelines">
+        By going live you agree to our{' '}
+        <a href="/guidelines" onClick={(e) => { e.preventDefault(); navigate('/guidelines'); }}>Community Guidelines</a>
+      </p>
+
+      {/* Destination config sheet */}
+      {destSheet && (
+        <StreamDestinationSheet
+          provider={destSheet}
+          savedDest={savedDestinations?.find((d) => d.provider === destSheet)}
+          onSave={(dest) => handleDestSaved(destSheet, dest)}
+          onRemove={() => handleDestRemoved(destSheet)}
+          onClose={() => setDestSheet(null)}
+        />
+      )}
 
       {/* Quick settings */}
       <div className="start-live-quick">
@@ -558,6 +680,8 @@ export default function BottomNav({ collapsible = false, collapsed = false, onEx
   const [locationStatus, setLocationStatus] = useState('loading');
   const [userCoordinates, setUserCoordinates] = useState(null);
   const [userPlace, setUserPlace] = useState(null);
+  // Saved stream destinations (URL only — no stream keys)
+  const [savedDestinations, setSavedDestinations] = useState([]);
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -614,6 +738,12 @@ export default function BottomNav({ collapsible = false, collapsed = false, onEx
     refreshScheduledLives();
   }, [createOpen, createMode, user?.uid]);
 
+  // Load saved destinations when the create sheet opens
+  useEffect(() => {
+    if (!createOpen || !user?.uid) return;
+    getStreamDestinations(user.uid).then(setSavedDestinations).catch(() => {});
+  }, [createOpen, user?.uid]);
+
   useEffect(() => {
     setCreateOpen(false);
     setCreateMode('actions');
@@ -634,7 +764,7 @@ export default function BottomNav({ collapsible = false, collapsed = false, onEx
     setDraft((current) => ({ ...current, [key]: value }));
   };
 
-  const launchLive = async (cameraStream = null) => {
+  const launchLive = async (cameraStream = null, destinations = []) => {
     const fallbackPlace = {
       city: userProfile?.city || '',
       country: userProfile?.country || userProfile?.countryCode || '',
@@ -667,6 +797,7 @@ export default function BottomNav({ collapsible = false, collapsed = false, onEx
       equipmentSnapshots: buildEquipmentSnapshots(equipmentLibrary, selectedIds),
     }, user?.uid, userCoordinates);
     registerCreatedLiveStream(live.id, cameraStream);
+    if (destinations.length > 0) registerLiveDestinations(live.id, destinations);
     rememberLiveEquipmentSetup(effectiveDraft.family, selectedIds);
     rememberLiveEquipmentSetupBySubcategory(effectiveDraft.subcategory, selectedIds);
     closeCreate();
@@ -831,6 +962,12 @@ export default function BottomNav({ collapsible = false, collapsed = false, onEx
                 onSaveQuickEquipment={saveQuickEquipment}
                 onCancelQuickAdd={() => setQuickAddOpen(false)}
                 hasPreviousSetup={getLastLiveEquipmentIdsBySubcategory(draft.subcategory).length > 0}
+                savedDestinations={savedDestinations}
+                onSaveDestination={(dest) => setSavedDestinations((prev) => {
+                  const next = prev.filter((d) => d.provider !== dest.provider);
+                  return [...next, dest];
+                })}
+                onRemoveDestination={(destId) => setSavedDestinations((prev) => prev.filter((d) => d.id !== destId))}
               />
             ) : createMode === 'schedule' ? (
               <ScheduleLiveFlow

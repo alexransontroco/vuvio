@@ -325,7 +325,7 @@ export default function ConversationPage() {
 
   useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
-  }, [conversation?.messages.length]);
+  }, [conversation?.messages?.length]);
 
   if (!conversation || !participant) {
     return (

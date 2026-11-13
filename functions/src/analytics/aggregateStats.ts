@@ -136,7 +136,7 @@ export async function aggregateCreatorStats() {
       let totalSkips = 0;
 
       for (const streamDoc of streamsSnap.docs) {
-        const stats = streamDoc.data().stats || {};
+        const stats = streamDoc.data();
         const viewStarts = stats.viewStarts ?? 0;
 
         totalViews += viewStarts;
@@ -152,7 +152,7 @@ export async function aggregateCreatorStats() {
       const eventsSnap = await db
         .collection('analyticsEvents')
         .where('creatorId', '==', creatorId)
-        .where('eventName', '==', 'viewer_joined')
+        .where('eventName', '==', 'stream_view_started')
         .get();
 
       eventsSnap.forEach((doc) => {
@@ -232,7 +232,7 @@ export async function aggregateCategoryStats() {
       }
 
       const stats = categoryMap.get(category);
-      const streamStats = stream.stats || {};
+      const streamStats = stream;
 
       stats.totalViews += streamStats.viewStarts ?? 0;
       stats.totalStreams += 1;
@@ -246,7 +246,7 @@ export async function aggregateCategoryStats() {
       const eventsSnap = await db
         .collection('analyticsEvents')
         .where('category', '==', category)
-        .where('eventName', '==', 'viewer_joined')
+        .where('eventName', '==', 'stream_view_started')
         .get();
 
       const uniqueViewers = new Set<string>();
@@ -317,13 +317,14 @@ export async function aggregateUserAnalytics() {
 
       const affinityWeights: Record<string, number> = {
         stream_impression: 0.1,
-        viewer_joined: 0.5,
-        view_10_seconds: 1,
-        view_30_seconds: 2,
-        follow_creator: 5,
-        share: 3,
-        gear_opened: 0.5,
-        skip: -1,
+        stream_view_started: 0.5,
+        stream_view_3_seconds: 0.2,
+        stream_view_10_seconds: 1,
+        stream_view_30_seconds: 2,
+        creator_followed: 5,
+        stream_shared: 3,
+        gear_panel_opened: 0.5,
+        stream_skipped: -1,
       };
 
       for (const eventDoc of eventsSnap.docs) {

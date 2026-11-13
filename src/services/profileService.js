@@ -5,6 +5,12 @@ import { streams, upcomingStreams } from '../data/mockStreams.js';
 
 const STORAGE_KEY = 'vuvio:ownCreatorProfile';
 const PROFILE_UPDATED_EVENT = 'vuvio:profile-updated';
+
+// Module-level cache of the current authenticated user's Firebase UID.
+// Set by AuthContext on login so resolveCreatorProfile can match live.creatorUid
+// even before the user has saved their own profile via EditProfilePage.
+let _currentAuthUid = null;
+export function setCurrentAuthUid(uid) { _currentAuthUid = uid || null; }
 const ACCEPTED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
 const MAX_IMAGE_SIZE = 5 * 1024 * 1024;
 
@@ -243,26 +249,44 @@ export function getOwnCreatorProfile() {
 export function getCreatorProfile(creatorId) {
   if (!creatorId) return getOwnCreatorProfile();
   if (creatorId === CURRENT_USER_ID) return getOwnCreatorProfile();
+  // Match by real Firebase UID stored in saved own profile
+  const own = getOwnCreatorProfile();
+  if (own.uid === creatorId || (own.id && own.id !== CURRENT_USER_ID && own.id === creatorId)) return own;
 
   const normalizedId = creatorSlug(creatorId);
   const publicProfile = creatorProfiles[creatorId]
     ?? creatorProfiles[normalizedId]
     ?? Object.values(creatorProfiles).find((profile) => creatorSlug(profile.username) === normalizedId);
 
-  if (publicProfile) return normalizeProfile(publicProfile);
+  if (publicProfile) return { ...normalizeProfile(publicProfile), isDemo: true };
 
   const source = findCreatorSource(creatorId);
-  return profileFromContent(source, normalizedId);
+  const built = profileFromContent(source, normalizedId);
+  return built ? { ...built, isDemo: true } : null;
 }
 
 export function resolveCreatorProfile(input = {}) {
   const displayName = input.name ?? input.streamer ?? input.displayName ?? '';
+  // creatorUid is the Firebase UID on real live objects — return own profile without isDemo
+  const creatorUid = input.creatorUid ?? input.creatorId ?? input.userId;
+  if (creatorUid) {
+    const own = getOwnCreatorProfile();
+    const ownUid = _currentAuthUid || own.uid || (own.id !== CURRENT_USER_ID ? own.id : null);
+    if (ownUid && ownUid === creatorUid) return own;
+  }
+
   const candidateId = input.creatorId
     ?? input.userId
     ?? aliasByDisplayName[displayName]
     ?? creatorSlug(displayName);
 
-  return getCreatorProfile(candidateId) ?? profileFromContent(input, candidateId);
+  const resolved = getCreatorProfile(candidateId);
+  if (resolved) return resolved;
+  const built = profileFromContent(input, candidateId);
+  if (!built) return null;
+  // Real Firestore lives have a creatorUid — not demo content
+  const isRealCreator = Boolean(input.creatorUid);
+  return isRealCreator ? built : { ...built, isDemo: true };
 }
 
 export async function saveOwnCreatorProfile(nextProfile) {

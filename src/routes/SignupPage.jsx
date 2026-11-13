@@ -76,12 +76,14 @@ export default function SignupPage() {
     if (googleBusy) return;
     setError('');
     setGoogleBusy(true);
+    let redirecting = false;
     try {
       const result = await signInWithGoogle();
       // For mobile redirect flow, result is null and redirect happens
       if (result === null) {
         console.log('[SignupPage] Redirect initiated, awaiting Google...');
         // Don't reset googleBusy — redirect is in progress
+        redirecting = true;
         return;
       }
       // For desktop popup flow, result is user object
@@ -100,7 +102,7 @@ export default function SignupPage() {
         setError(message);
       }
     } finally {
-      setGoogleBusy(false);
+      if (!redirecting) setGoogleBusy(false);
     }
   };
 

@@ -10,6 +10,7 @@ export default function AppShell() {
   const { userProfile } = useAuth();
   const { notifications, dismissNotification } = useFollowedCreatorNotifications(userProfile);
   const isBroadcast = location.pathname.startsWith('/live/');
+  const isStudio = location.pathname === '/studio' || location.pathname.startsWith('/studio/');
   const isLive = location.pathname === '/watch' || location.pathname.startsWith('/watch/');
   const [liveNavCollapsed, setLiveNavCollapsed] = useState(false);
 
@@ -18,12 +19,12 @@ export default function AppShell() {
   }, [location.pathname]);
 
   return (
-    <main className={isLive ? 'app-canvas app-canvas--live' : 'app-canvas'}>
-      <section className="phone-stage" aria-label="VuVio mobile application">
+    <main className={`app-canvas${isLive ? ' app-canvas--live' : ''}${isStudio ? ' app-canvas--studio' : ''}`}>
+      <section className={`phone-stage${isStudio ? ' phone-stage--studio' : ''}`} aria-label="VuVio mobile application">
         <div className="route-transition" key={location.pathname}>
           <Outlet />
         </div>
-        {!isBroadcast ? (
+        {!isBroadcast && !isStudio ? (
           <BottomNav
             collapsible={isLive}
             collapsed={isLive && liveNavCollapsed}

@@ -1,0 +1,103 @@
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+
+:root{
+  --bg:#06111e;--bg2:#0a1c2f;--card:#0b2135;--line:#0c6f8b;
+  --cyan:#1ed6e5;--text:#f7fbff;--muted:#b5c7d6;--green:#5ce1b9;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:#020811;color:var(--text);font-family:'Inter',-apple-system,BlinkMacSystemFont,'Helvetica Neue',sans-serif}
+body{overflow-x:hidden}.deck{width:100%}
+.slide{
+  width:1600px;height:900px;margin:0 auto 24px;padding:44px 54px;position:relative;overflow:hidden;
+  background:radial-gradient(circle at 82% 12%,rgba(0,185,214,.10),transparent 24%),linear-gradient(180deg,var(--bg2),var(--bg));
+  border:1px solid #0d3552;
+}
+.eyebrow{font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:#8aabb8;margin-bottom:10px;font-weight:600}
+h1{margin:0;font-size:52px;line-height:1.02;letter-spacing:-.04em;font-weight:800}
+h2{margin:0;font-size:28px;line-height:1.08;font-weight:700}
+h3{margin:0;font-size:19px;line-height:1.12;font-weight:600}
+p{margin:0;color:var(--muted);font-size:16px;line-height:1.4}
+.lead{font-size:17px;margin-top:10px;max-width:1350px}.small{font-size:14px}
+.slide-brand{position:absolute;right:24px;bottom:14px;color:#3a7a88;font-size:11px;font-weight:700;letter-spacing:.14em}
+.card{background:linear-gradient(180deg,rgba(11,33,53,.98),rgba(8,25,41,.98));border:1px solid #0b5874;border-radius:12px;padding:16px}
+.card.compact{min-height:128px}
+.card-title{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+.icon{width:30px;height:30px;border-radius:7px;border:1px solid var(--cyan);display:inline-flex;align-items:center;justify-content:center;color:var(--cyan);font-weight:700;font-size:13px;flex:0 0 auto}
+.step-num{font-size:13px;color:var(--cyan);font-weight:700;letter-spacing:.14em}
+.section-label{font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:#8aabb8;font-weight:600}
+.accent-line{height:3px;width:220px;background:var(--cyan);margin:22px 0 28px;opacity:.9}
+.mini-rule{height:1px;background:#0d5672;margin:12px 0}
+figure{margin:0}img{display:block;width:100%;height:100%;object-fit:cover}
+
+.slide-cover{display:grid;grid-template-columns:1fr 1.06fr;padding:0;background:#020913}
+.cover-copy{padding:52px 54px;display:flex;flex-direction:column;justify-content:center}
+.cover-visual{height:900px;overflow:hidden}.cover-visual img{object-fit:cover}
+.slide-cover h1{font-size:76px;line-height:1.03;max-width:700px;letter-spacing:-.05em}.slide-cover h1 span{color:var(--cyan)}
+.cover-subtitle{font-size:20px;color:#c8d8e4;max-width:600px;line-height:1.45;font-weight:400}
+.footer-note{position:absolute;left:54px;bottom:28px;color:#3a5a6b;font-size:11px;letter-spacing:.18em}
+
+.vision-grid{display:grid;grid-template-columns:1.05fr .95fr;gap:18px;margin-top:20px}
+.vision-copy>p{font-size:18px}
+.principles{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:18px}.principles h3{margin:8px 0}
+.vision-images{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.vision-images figure{display:flex;flex-direction:column;gap:7px}
+.vision-images img{height:510px;border:1px solid #0b5874;border-radius:11px}.vision-images figcaption{font-size:11px;letter-spacing:.14em;color:#8aabb8}
+
+.position-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:18px}
+.media-card img{height:220px;border-radius:9px;margin-bottom:12px}
+.position-summary{display:grid;grid-template-columns:1.25fr .75fr;gap:12px;margin-top:12px}
+.position-summary>div{padding:14px 16px;border:1px solid #0b5874;border-radius:10px;background:#091b2d}
+.formula{font-size:20px;font-weight:800;display:flex;align-items:center;justify-content:center}.formula span{color:var(--cyan)}
+
+.ecosystem-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:18px}.ecosystem-grid .card{min-height:170px}
+.journey{display:grid;grid-template-columns:repeat(7,auto);align-items:center;justify-content:space-between;gap:8px;margin-top:26px}
+.journey-step{width:300px}.journey-step img{width:122px;height:122px;border-radius:50%;border:2px solid #0b5874;margin-bottom:8px}
+.journey-step h3{font-size:21px;margin:3px 0}.journey-step p{font-size:14px}
+.journey-arrow{font-size:24px;color:var(--cyan);font-weight:800}
+.journey-quote{margin-top:22px;color:#fff;font-size:23px;font-weight:700}.journey-quote span{color:var(--cyan)}
+
+.product-layout{display:grid;grid-template-columns:1.15fr .85fr;gap:12px;margin-top:18px}
+.product-feature-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.product-feature{display:grid;grid-template-columns:145px 1fr;gap:12px}.product-feature img{height:250px;border-radius:8px}
+.product-mini-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:10px}
+.mini-product img{height:82px;border-radius:8px;margin-bottom:8px}.mini-product p{font-size:14px}
+.product-side{display:grid;grid-template-columns:1fr 1fr;gap:10px}.product-side .tall img{height:120px}
+.product-principle{grid-column:1/span 2;min-height:130px}
+
+.market-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:18px}.market-grid .card{min-height:125px}
+.comparison{width:100%;border-collapse:collapse;font-size:14px;margin-top:12px}
+.comparison th,.comparison td{padding:11px 12px;border-bottom:1px solid #0d5672;text-align:left}
+.comparison th{color:#eef7fb}.comparison td{color:#c9d8e4}.comparison td:first-child{font-weight:700;color:#eef7fb}.comparison .focus{background:#0b3b58}
+.market-bottom{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px}.market-bottom .card{min-height:125px}
+.pills{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}.pills span{padding:7px 10px;border-radius:999px;background:#0b324c;border:1px solid #0d6483;font-size:13px;color:#dffaff}
+.market-note{margin-top:10px;padding:10px 12px;border:1px solid #0d5672;border-radius:9px;background:#071b2c;color:#cbd9e4;font-size:14px}
+
+.business-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:18px}.business-grid .card{min-height:170px}.business-grid h3{margin:8px 0}
+.business-path{display:grid;grid-template-columns:1fr auto 1fr auto 1fr;gap:10px;align-items:center;margin-top:18px}.business-path h3{margin:8px 0}
+.business-footer{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px}
+.business-footer div{padding:13px 15px;border:1px solid #0b5874;border-radius:10px;background:#091b2d;color:#cddae5}
+
+.mvp-top{display:grid;grid-template-columns:1.1fr .9fr;gap:12px;margin-top:18px}
+.mvp-main{display:grid;grid-template-columns:145px 1fr;gap:12px}.mvp-main img{height:248px;border-radius:9px}.mvp-main h2{margin:10px 0}
+.status{display:inline-flex;padding:6px 10px;border-radius:999px;background:var(--green);color:#062018;font-size:12px;font-weight:800}
+.activity-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-top:10px}.activity-grid img{height:115px;border-radius:8px}.activity-grid figcaption{font-size:12px;margin-top:5px;color:#d8e5ee}
+.validation-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:12px}.validation-grid .card{min-height:118px}.validation-grid h3{margin:8px 0}
+.mvp-footer-grid{display:grid;grid-template-columns:.8fr 1.2fr 1fr;gap:12px;margin-top:12px}.mvp-footer-grid .card{min-height:120px}
+
+.team-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:18px}
+.person-card{display:grid;grid-template-columns:165px 1fr;gap:16px;align-items:start}.person-card img{width:165px;height:165px;border-radius:14px;object-fit:cover}.person-card p{margin-top:10px}
+.impact-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:12px}.impact-grid .card{min-height:120px}.impact-grid .icon{margin-bottom:8px}
+.impact-note{margin-top:12px;padding:13px 15px;border:1px solid #0b5874;border-radius:10px;background:#091b2d;color:#cbd9e4;font-size:14px}
+
+.paris-layout{display:grid;grid-template-columns:1.1fr .9fr;gap:16px;margin-top:20px}
+.paris-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}.paris-grid .card{min-height:180px}.paris-grid h2{margin:8px 0}
+.paris-image img{height:560px;border-radius:12px;border:1px solid #0b5874}
+.final-tagline{position:absolute;left:54px;bottom:28px;font-size:20px;letter-spacing:.08em}
+
+@media print{
+  @page{size:16in 9in;margin:0}
+  html,body{background:#020811}
+  .slide{margin:0;border:none;page-break-after:always;break-after:page;transform:none!important}
+  .deck{width:auto!important}
+}

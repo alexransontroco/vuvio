@@ -7,21 +7,50 @@ function pad(value) {
   return String(value).padStart(2, '0');
 }
 
+export function makeCountdownLabels(t) {
+  return {
+    dateUnavailable: t('countdown.dateUnavailable'),
+    startDateUnavailable: t('countdown.startDateUnavailable'),
+    liveNow: t('countdown.liveNow'),
+    startingSoon: t('countdown.startingSoon'),
+    startingIn: t('countdown.startingIn'),
+    startsIn: t('countdown.startsIn'),
+    day: t('countdown.day'),
+    days: t('countdown.days'),
+    today: t('countdown.today'),
+    tomorrow: t('countdown.tomorrow'),
+  };
+}
+
 export function toValidDate(value) {
   if (!value) return null;
   const date = value instanceof Date ? value : new Date(value);
   return Number.isNaN(date.getTime()) ? null : date;
 }
 
-export function getCountdownState(startsAt, now = new Date()) {
+const DEFAULT_LABELS = {
+  dateUnavailable: 'Date unavailable',
+  startDateUnavailable: 'Start date unavailable',
+  liveNow: 'Live now',
+  startingSoon: 'Starting soon',
+  startingIn: 'Starting in',
+  startsIn: 'Starts in',
+  day: 'day',
+  days: 'days',
+  today: 'Today',
+  tomorrow: 'Tomorrow',
+};
+
+export function getCountdownState(startsAt, now = new Date(), labels = {}) {
+  const L = { ...DEFAULT_LABELS, ...labels };
   const start = toValidDate(startsAt);
 
   if (!start) {
     return {
       phase: 'invalid',
-      label: 'Date unavailable',
+      label: L.dateUnavailable,
       value: '',
-      ariaLabel: 'Start date unavailable',
+      ariaLabel: L.startDateUnavailable,
       isLive: false,
       isStartingSoon: false,
     };
@@ -32,9 +61,9 @@ export function getCountdownState(startsAt, now = new Date()) {
   if (remaining <= 0) {
     return {
       phase: 'live',
-      label: 'Live now',
+      label: L.liveNow,
       value: '',
-      ariaLabel: 'Live now',
+      ariaLabel: L.liveNow,
       isLive: true,
       isStartingSoon: false,
     };
@@ -43,9 +72,9 @@ export function getCountdownState(startsAt, now = new Date()) {
   if (remaining < MINUTE) {
     return {
       phase: 'soon',
-      label: 'Starting soon',
+      label: L.startingSoon,
       value: '',
-      ariaLabel: 'Starting soon',
+      ariaLabel: L.startingSoon,
       isLive: false,
       isStartingSoon: true,
     };
@@ -61,9 +90,9 @@ export function getCountdownState(startsAt, now = new Date()) {
     const value = `${pad(totalMinutes)}:${pad(seconds)}`;
     return {
       phase: 'soon',
-      label: 'Starting in',
+      label: L.startingIn,
       value,
-      ariaLabel: `Starting in ${totalMinutes} minutes`,
+      ariaLabel: `${L.startingIn} ${totalMinutes} ${totalMinutes === 1 ? L.day : L.days}`,
       isLive: false,
       isStartingSoon: true,
     };
@@ -73,9 +102,9 @@ export function getCountdownState(startsAt, now = new Date()) {
     const value = `${pad(totalMinutes)}:${pad(seconds)}`;
     return {
       phase: 'hour',
-      label: 'Starts in',
+      label: L.startsIn,
       value,
-      ariaLabel: `Starts in ${totalMinutes} minutes`,
+      ariaLabel: `${L.startsIn} ${totalMinutes} min`,
       isLive: false,
       isStartingSoon: false,
     };
@@ -85,9 +114,9 @@ export function getCountdownState(startsAt, now = new Date()) {
     const value = `${pad(totalHours)}:${pad(minutes)}:${pad(seconds)}`;
     return {
       phase: 'today',
-      label: 'Starts in',
+      label: L.startsIn,
       value,
-      ariaLabel: `Starts in ${totalHours} hours and ${minutes} minutes`,
+      ariaLabel: `${L.startsIn} ${totalHours}h${pad(minutes)}`,
       isLive: false,
       isStartingSoon: false,
     };
@@ -96,17 +125,18 @@ export function getCountdownState(startsAt, now = new Date()) {
   const days = Math.ceil(remaining / DAY);
   return {
     phase: 'days',
-    label: 'Starts in',
-    value: `${days} ${days === 1 ? 'day' : 'days'}`,
-    ariaLabel: `Starts in ${days} ${days === 1 ? 'day' : 'days'}`,
+    label: L.startsIn,
+    value: `${days} ${days === 1 ? L.day : L.days}`,
+    ariaLabel: `${L.startsIn} ${days} ${days === 1 ? L.day : L.days}`,
     isLive: false,
     isStartingSoon: false,
   };
 }
 
-export function formatLocalSchedule(startsAt, language = 'en') {
+export function formatLocalSchedule(startsAt, language = 'en', labels = {}) {
+  const L = { ...DEFAULT_LABELS, ...labels };
   const start = toValidDate(startsAt);
-  if (!start) return 'Date unavailable';
+  if (!start) return L.dateUnavailable;
 
   const now = new Date();
   const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
@@ -118,8 +148,8 @@ export function formatLocalSchedule(startsAt, language = 'en') {
     hour12: false,
   }).format(start);
 
-  if (dayDifference === 0) return `Today · ${time}`;
-  if (dayDifference === 1) return `Tomorrow · ${time}`;
+  if (dayDifference === 0) return `${L.today} · ${time}`;
+  if (dayDifference === 1) return `${L.tomorrow} · ${time}`;
 
   const weekday = new Intl.DateTimeFormat(language, { weekday: 'short' }).format(start);
   return `${weekday} · ${time}`;

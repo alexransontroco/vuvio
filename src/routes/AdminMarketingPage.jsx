@@ -176,6 +176,7 @@ export default function AdminMarketingPage() {
 
   return (
     <div style={{ minHeight: '100vh', background: '#0a0e1a', color: '#fff', fontFamily: 'system-ui, sans-serif' }}>
+      <a href="/watch" title="Fermer" style={{ position: 'fixed', top: 16, right: 16, zIndex: 999, width: 36, height: 36, borderRadius: '50%', background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'rgba(255,255,255,0.6)', fontSize: 18, textDecoration: 'none', lineHeight: 1 }}>✕</a>
       <div style={{ maxWidth: 900, margin: '0 auto', padding: '40px 20px 80px' }}>
 
         {/* Header */}

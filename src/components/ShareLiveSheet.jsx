@@ -1,18 +1,24 @@
-import {
-  Check,
-  ChevronLeft,
-  Copy,
-  Eye,
-  MapPin,
-  MoreHorizontal,
-  Share2,
-  Sliders,
-  X,
-} from 'lucide-react';
+import { Check, ChevronLeft, Copy, Download, Eye, Link2, MapPin, Share2, Sliders, X } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
+import {
+  copyLiveLink,
+  shareNative,
+  shareToFacebook,
+  shareToWhatsApp,
+  shareToX,
+} from '../services/shareService.js';
+import { canShareFile, createWatermarkedThumbnail } from '../services/shareWatermark.js';
 import '../styles/components/share-live.css';
 
-// ─── Social platform icons (inline SVG) ──────────────────────────────────────
+// ─── Platform icons ───────────────────────────────────────────────────────────
+
+function TikTokIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="currentColor" width="21" height="21">
+      <path d="M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-2.88 2.5 2.89 2.89 0 01-2.89-2.89 2.89 2.89 0 012.89-2.89c.28 0 .54.04.79.1V9.01a6.33 6.33 0 00-.79-.05 6.34 6.34 0 00-6.34 6.34 6.34 6.34 0 006.34 6.34 6.34 6.34 0 006.33-6.34V8.69a8.18 8.18 0 004.79 1.54V6.77a4.85 4.85 0 01-1.02-.08z" />
+    </svg>
+  );
+}
 
 function WhatsAppIcon() {
   return (
@@ -26,6 +32,14 @@ function InstagramIcon() {
   return (
     <svg viewBox="0 0 24 24" fill="currentColor" width="22" height="22">
       <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z" />
+    </svg>
+  );
+}
+
+function FacebookIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="currentColor" width="22" height="22">
+      <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
     </svg>
   );
 }
@@ -46,25 +60,6 @@ function XIcon() {
   );
 }
 
-function MessengerIcon() {
-  return (
-    <svg viewBox="0 0 24 24" fill="currentColor" width="22" height="22">
-      <path d="M12 0C5.374 0 0 4.975 0 11.111c0 3.497 1.745 6.616 4.472 8.652V24l4.086-2.242c1.09.301 2.246.464 3.442.464 6.626 0 12-4.974 12-11.111C24 4.975 18.626 0 12 0zm1.193 14.963l-3.056-3.259-5.963 3.259L10.733 8.1l3.13 3.259L19.752 8.1l-6.559 6.863z" />
-    </svg>
-  );
-}
-
-// ─── VuvioLogomark ────────────────────────────────────────────────────────────
-
-function VuvioMark({ size = 16 }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 32 32" fill="none">
-      <circle cx="16" cy="16" r="16" fill="rgba(53,227,220,0.15)" />
-      <text x="50%" y="50%" dominantBaseline="central" textAnchor="middle" fontSize="14" fontWeight="700" fill="#35e3dc" fontFamily="system-ui">V</text>
-    </svg>
-  );
-}
-
 // ─── Avatar placeholder ───────────────────────────────────────────────────────
 
 function AvatarPlaceholder({ name = '', size = 32 }) {
@@ -80,14 +75,14 @@ function AvatarPlaceholder({ name = '', size = 32 }) {
   );
 }
 
-// ─── SharePreviewCard ─────────────────────────────────────────────────────────
+// ─── Live Preview Card ────────────────────────────────────────────────────────
 
 export function SharePreviewCard({ live, wide = false }) {
   const creatorName = live?.streamer ?? live?.name ?? 'Creator';
   const title = live?.title ?? live?.description ?? 'Live experience';
   const activity = live?.subcategory ?? live?.job ?? '';
   const location = live?.locationLabel ?? (live?.city ? `${live.city}${live.country ? `, ${live.country}` : ''}` : '');
-  const viewers = live?.viewers ?? live?.viewerLabel ?? '0';
+  const viewers = live?.viewers ?? live?.viewerLabel ?? null;
   const thumbnail = live?.coverImageUrl ?? live?.thumbnailUrl ?? live?.image ?? live?.video ?? null;
 
   if (wide) {
@@ -104,30 +99,34 @@ export function SharePreviewCard({ live, wide = false }) {
               <span className="sls-live-dot" aria-hidden="true" />
               LIVE
             </span>
-            <div className="sls-preview-card__viewers">
-              <Eye size={11} strokeWidth={2} />
-              <span>{viewers}</span>
-            </div>
+            {viewers != null && (
+              <div className="sls-preview-card__viewers">
+                <Eye size={11} strokeWidth={2} />
+                <span>{viewers}</span>
+              </div>
+            )}
           </div>
         </div>
         <div className="sls-preview-card__body">
           <div className="sls-preview-card__creator-row">
-            <AvatarPlaceholder name={creatorName} size={28} />
+            <AvatarPlaceholder name={creatorName} size={26} />
             <span className="sls-preview-card__creator-name">{creatorName}</span>
           </div>
           <p className="sls-preview-card__title">{title}</p>
-          <div className="sls-preview-card__meta-row">
-            {activity && <span className="sls-preview-card__activity">{activity}</span>}
-            {location && (
-              <span className="sls-preview-card__location-inline">
-                <MapPin size={10} strokeWidth={2} />
-                {location}
-              </span>
-            )}
-          </div>
+          {(activity || location) && (
+            <div className="sls-preview-card__meta-row">
+              {activity && <span className="sls-preview-card__activity">{activity}</span>}
+              {location && (
+                <span className="sls-preview-card__location-inline">
+                  <MapPin size={10} strokeWidth={2} />
+                  {location}
+                </span>
+              )}
+            </div>
+          )}
           <div className="sls-preview-card__footer">
-            <VuvioMark size={13} />
-            <span>Vuvio</span>
+            <img src="/assets/logo/vuvio-logo.png" alt="Vuvio" className="sls-preview-card__logo" />
+            <span>Watch live on Vuvio</span>
           </div>
         </div>
       </div>
@@ -143,14 +142,10 @@ export function SharePreviewCard({ live, wide = false }) {
           <div className="sls-preview-card__thumb-fallback" />
         )}
         <span className="sls-live-badge">LIVE</span>
-        <div className="sls-preview-card__viewers">
-          <Eye size={10} strokeWidth={2} />
-          <span>{viewers}</span>
-        </div>
       </div>
       <div className="sls-preview-card__info">
         <div className="sls-preview-card__creator-row">
-          <AvatarPlaceholder name={creatorName} size={26} />
+          <AvatarPlaceholder name={creatorName} size={24} />
           <span className="sls-preview-card__creator-name">{creatorName}</span>
         </div>
         <p className="sls-preview-card__title">{title}</p>
@@ -161,29 +156,12 @@ export function SharePreviewCard({ live, wide = false }) {
             {location}
           </p>
         )}
-        <div className="sls-preview-card__footer">
-          <VuvioMark size={14} />
-          <span>Watch live on Vuvio</span>
-        </div>
       </div>
     </div>
   );
 }
 
-// ─── Social option button ─────────────────────────────────────────────────────
-
-function SocialOption({ icon: Icon, label, color, onClick }) {
-  return (
-    <button type="button" className="sls-social-btn" onClick={onClick} aria-label={label}>
-      <span className="sls-social-btn__icon" style={{ background: color }}>
-        <Icon />
-      </span>
-      <span className="sls-social-btn__label">{label}</span>
-    </button>
-  );
-}
-
-// ─── Style card (named preset) ────────────────────────────────────────────────
+// ─── Style card (for Customize screen) ───────────────────────────────────────
 
 const STYLE_CONFIGS = {
   minimal: {
@@ -240,8 +218,6 @@ function StyleCard({ styleKey, active, onClick }) {
   );
 }
 
-// ─── Toggle row ───────────────────────────────────────────────────────────────
-
 function ToggleRow({ label, checked, onChange }) {
   return (
     <label className="sls-toggle-row">
@@ -259,13 +235,11 @@ function ToggleRow({ label, checked, onChange }) {
   );
 }
 
-// ─── Story card preview (9:16) ────────────────────────────────────────────────
-
 function StoryPreview({ live, styleKey = 'minimal', showViewers, showLocation, showActivity, showTitle }) {
   const creatorName = live?.streamer ?? live?.name ?? 'Creator';
   const title = live?.title ?? live?.description ?? '';
-  const activity = live?.subcategory ?? live?.job ?? 'Mountain biking';
-  const location = live?.locationLabel ?? (live?.city ? `${live.city}${live.country ? `, ${live.country}` : ''}` : 'Chamonix, France');
+  const activity = live?.subcategory ?? live?.job ?? '';
+  const location = live?.locationLabel ?? (live?.city ? `${live.city}${live.country ? `, ${live.country}` : ''}` : '');
   const thumbnail = live?.coverImageUrl ?? live?.thumbnailUrl ?? live?.image ?? live?.video ?? null;
   const config = STYLE_CONFIGS[styleKey] ?? STYLE_CONFIGS.minimal;
 
@@ -312,7 +286,7 @@ function StoryPreview({ live, styleKey = 'minimal', showViewers, showLocation, s
           </p>
         )}
         <div className="sls-story-preview__brand">
-          <VuvioMark size={18} />
+          <img src="/assets/logo/vuvio-logo.png" alt="" className="sls-story-preview__brand-logo" />
           <span style={{ color: config.accent }}>Vuvio</span>
         </div>
       </footer>
@@ -320,106 +294,9 @@ function StoryPreview({ live, styleKey = 'minimal', showViewers, showLocation, s
   );
 }
 
-// ─── Screen 1: Share sheet ────────────────────────────────────────────────────
+// ─── Customize screen ─────────────────────────────────────────────────────────
 
-const toPublicLiveId = (id) => (id ?? 'demo').replace(/^created-/, '');
-const getShareWatchUrl = (id) => {
-  const liveId = toPublicLiveId(id);
-  return `${window.location.origin}/share/live/${encodeURIComponent(liveId)}`;
-};
-
-function ShareSheet({ live, onClose, onCustomize, onShare }) {
-  const [copied, setCopied] = useState(false);
-
-  const handleCopy = useCallback(async () => {
-    const url = getShareWatchUrl(live?.id);
-    try {
-      await navigator.clipboard.writeText(url);
-    } catch {
-      // ignore
-    }
-    setCopied(true);
-    window.setTimeout(() => setCopied(false), 2000);
-  }, [live?.id]);
-
-  const handleNativeShare = useCallback(async () => {
-    const url = getShareWatchUrl(live?.id);
-    const text = `I'm live on Vuvio — ${live?.title ?? live?.description ?? 'Come join me.'}`;
-    if (navigator.share) {
-      try {
-        await navigator.share({ title: 'Watch live on Vuvio', text, url });
-        onShare?.();
-      } catch {
-        // user cancelled
-      }
-    } else {
-      handleCopy();
-      onShare?.();
-    }
-  }, [live, onShare, handleCopy]);
-
-  const socialOptions = [
-    {
-      icon: () => copied ? <Check size={20} strokeWidth={2.2} /> : <Copy size={19} strokeWidth={1.9} />,
-      label: copied ? 'Copied!' : 'Copy link',
-      color: 'rgba(53,227,220,0.12)',
-      onClick: handleCopy,
-    },
-    { icon: WhatsAppIcon, label: 'WhatsApp', color: 'rgba(37,211,102,0.13)', onClick: handleNativeShare },
-    { icon: InstagramIcon, label: 'Instagram', color: 'rgba(225,48,108,0.13)', onClick: handleNativeShare },
-    { icon: MessagesIcon, label: 'Messages', color: 'rgba(53,227,220,0.10)', onClick: handleNativeShare },
-    { icon: MessengerIcon, label: 'Messenger', color: 'rgba(0,120,255,0.13)', onClick: handleNativeShare },
-    { icon: XIcon, label: 'X', color: 'rgba(255,255,255,0.07)', onClick: handleNativeShare },
-    { icon: MoreHorizontal, label: 'More', color: 'rgba(168,190,203,0.10)', onClick: handleNativeShare },
-  ];
-
-  return (
-    <div className="sls-sheet" role="dialog" aria-modal="true" aria-label="Share your live">
-      <button type="button" className="sls-backdrop" onClick={onClose} aria-label="Close" />
-      <div className="sls-panel">
-        <span className="sls-handle" aria-hidden="true" />
-
-        <div className="sls-header">
-          <div>
-            <h2 className="sls-header__title">Share your live</h2>
-            <p className="sls-header__sub">Invite people before your best moments happen.</p>
-          </div>
-          <button type="button" className="sls-close-btn" onClick={onClose} aria-label="Close">
-            <X size={17} strokeWidth={2} />
-          </button>
-        </div>
-
-        <div className="sls-preview-wrap">
-          <SharePreviewCard live={live} wide />
-        </div>
-
-        <div className="sls-quote">
-          <p>"I'm live on Vuvio.<br />Come join me."</p>
-        </div>
-
-        <div className="sls-social-grid">
-          {socialOptions.map((opt) => (
-            <SocialOption key={opt.label} {...opt} />
-          ))}
-        </div>
-
-        <button type="button" className="sls-primary-btn" onClick={handleNativeShare}>
-          <Share2 size={16} strokeWidth={2} />
-          Share now
-        </button>
-
-        <button type="button" className="sls-customize-link" onClick={onCustomize}>
-          <Sliders size={13} strokeWidth={2} />
-          Customize
-        </button>
-      </div>
-    </div>
-  );
-}
-
-// ─── Screen 2: Customize ─────────────────────────────────────────────────────
-
-function CustomizeScreen({ live, onBack, onShare }) {
+function CustomizeScreen({ live, onBack }) {
   const [activeStyle, setActiveStyle] = useState('minimal');
   const [showViewers, setShowViewers] = useState(true);
   const [showLocation, setShowLocation] = useState(true);
@@ -428,20 +305,15 @@ function CustomizeScreen({ live, onBack, onShare }) {
   const [copied, setCopied] = useState(false);
 
   const handleCopy = useCallback(async () => {
-    const url = getShareWatchUrl(live?.id);
-    try { await navigator.clipboard.writeText(url); } catch { /* ignore */ }
+    await copyLiveLink(live?.id);
     setCopied(true);
     window.setTimeout(() => setCopied(false), 2000);
   }, [live?.id]);
 
   const handleShare = useCallback(async () => {
-    const url = getShareWatchUrl(live?.id);
-    const text = `I'm live on Vuvio — ${live?.title ?? live?.description ?? 'Come join me.'}`;
-    if (navigator.share) {
-      try { await navigator.share({ title: 'Watch live on Vuvio', text, url }); } catch { /* cancelled */ }
-    }
-    onShare?.();
-  }, [live, onShare]);
+    await shareNative(live);
+    onBack();
+  }, [live, onBack]);
 
   return (
     <div className="sls-customize" role="dialog" aria-modal="true" aria-label="Customize share">
@@ -504,64 +376,181 @@ function CustomizeScreen({ live, onBack, onShare }) {
   );
 }
 
-// ─── Screen 3: Success ────────────────────────────────────────────────────────
+// ─── Main share sheet ─────────────────────────────────────────────────────────
+//
+// Single-screen design.
+// Watermarked thumbnail is ALWAYS generated on mount (not gated on canShareFile).
+// It is shown as a visible 9:16 preview and can be downloaded directly.
+// When native file sharing is available, the image is attached automatically.
 
-function ShareSuccessScreen({ onShareAgain, onClose }) {
-  const [visible, setVisible] = useState(false);
+function MainShareSheet({ live, onClose, onCustomize }) {
+  const [copied, setCopied] = useState(false);
+  const [watermarkState, setWatermarkState] = useState('generating'); // 'generating' | 'ready' | 'failed'
+  const [watermarkDataUrl, setWatermarkDataUrl] = useState(null);
+  const watermarkBlobRef = useRef(null);
 
+  const thumbnail = live?.coverImageUrl ?? live?.thumbnailUrl ?? live?.image ?? live?.video ?? null;
+
+  // Always generate the watermarked image on mount — no canShareFile() gate
   useEffect(() => {
-    const t = window.setTimeout(() => setVisible(true), 40);
-    return () => window.clearTimeout(t);
-  }, []);
+    setWatermarkState('generating');
+    createWatermarkedThumbnail(thumbnail)
+      .then((blob) => {
+        watermarkBlobRef.current = blob;
+        // Create a data URL for display in the <img> preview
+        const reader = new FileReader();
+        reader.onload = (e) => setWatermarkDataUrl(e.target.result);
+        reader.readAsDataURL(blob);
+        setWatermarkState('ready');
+      })
+      .catch(() => setWatermarkState('failed'));
+  }, [thumbnail]);
+
+  const getWatermarkedFile = () => {
+    if (!watermarkBlobRef.current) return null;
+    return new File([watermarkBlobRef.current], 'vuvio-live.jpg', { type: 'image/jpeg' });
+  };
+
+  // Save watermarked image to device
+  const handleSaveImage = useCallback(() => {
+    if (!watermarkDataUrl) return;
+    const a = document.createElement('a');
+    a.href = watermarkDataUrl;
+    a.download = `vuvio-live-${Date.now()}.jpg`;
+    a.click();
+  }, [watermarkDataUrl]);
+
+  // TikTok & Instagram: native share with watermarked image when available
+  const handleVisualShare = useCallback(async () => {
+    const imageFile = getWatermarkedFile();
+    await shareNative(live, { imageFile: imageFile ?? undefined });
+  }, [live]);
+
+  const handleWhatsApp  = useCallback(() => shareToWhatsApp(live), [live]);
+  const handleFacebook  = useCallback(() => shareToFacebook(live), [live]);
+  const handleMessages  = useCallback(async () => shareNative(live), [live]);
+  const handleX         = useCallback(() => shareToX(live), [live]);
+
+  const handleCopy = useCallback(async () => {
+    await copyLiveLink(live?.id);
+    setCopied(true);
+    window.setTimeout(() => setCopied(false), 2200);
+  }, [live?.id]);
+
+  // 6-item grid (3×2): TikTok, Instagram, Facebook / WhatsApp, Messages, X
+  const SOCIALS = [
+    { id: 'tiktok',     Icon: TikTokIcon,    label: 'TikTok',    color: 'rgba(255,255,255,0.06)',   onClick: handleVisualShare },
+    { id: 'instagram',  Icon: InstagramIcon,  label: 'Instagram', color: 'rgba(225,48,108,0.12)',    onClick: handleVisualShare },
+    { id: 'facebook',   Icon: FacebookIcon,   label: 'Facebook',  color: 'rgba(24,119,242,0.13)',    onClick: handleFacebook },
+    { id: 'whatsapp',   Icon: WhatsAppIcon,   label: 'WhatsApp',  color: 'rgba(37,211,102,0.12)',    onClick: handleWhatsApp },
+    { id: 'messages',   Icon: MessagesIcon,   label: 'Messages',  color: 'rgba(53,227,220,0.09)',    onClick: handleMessages },
+    { id: 'x',          Icon: XIcon,          label: 'X',         color: 'rgba(255,255,255,0.05)',   onClick: handleX },
+  ];
 
   return (
-    <div className={`sls-confirm ${visible ? 'sls-confirm--visible' : ''}`} role="dialog" aria-modal="true" aria-label="Shared!">
+    <div className="sls-sheet" role="dialog" aria-modal="true" aria-label="Share Live">
       <button type="button" className="sls-backdrop" onClick={onClose} aria-label="Close" />
-      <div className="sls-confirm__panel">
-        <div className="sls-confirm__icon-wrap">
-          <div className="sls-confirm__icon">
-            <Check size={28} strokeWidth={2.5} />
+      <div className="sls-panel">
+        <span className="sls-handle" aria-hidden="true" />
+
+        {/* Header */}
+        <div className="sls-header">
+          <h2 className="sls-header__title">Share Live</h2>
+          <button type="button" className="sls-close-btn" onClick={onClose} aria-label="Close">
+            <X size={17} strokeWidth={2} />
+          </button>
+        </div>
+
+        {/* Live preview — always visible immediately, shows the thumbnail */}
+        <div className="sls-preview-wrap">
+          <SharePreviewCard live={live} wide />
+        </div>
+
+        {/* Watermark section — secondary, async */}
+        <div className="sls-wm-preview-row">
+          <div className="sls-wm-card">
+            {/* Always show the real thumbnail as base */}
+            {thumbnail && (
+              <img src={thumbnail} alt="" className="sls-wm-card__base" />
+            )}
+            {/* Overlay watermarked result on top once ready */}
+            {watermarkState === 'ready' && watermarkDataUrl && (
+              <img src={watermarkDataUrl} alt="Watermarked preview" className="sls-wm-card__img sls-wm-card__img--overlay" />
+            )}
+            {/* Shimmer overlay while generating */}
+            {watermarkState === 'generating' && (
+              <div className="sls-wm-card__skeleton" aria-hidden="true" />
+            )}
+            <span className="sls-live-badge sls-wm-card__badge">
+              <span className="sls-live-dot" aria-hidden="true" />
+              LIVE
+            </span>
           </div>
-          <div className="sls-confirm__ring" aria-hidden="true" />
-          <div className="sls-confirm__ring sls-confirm__ring--delay" aria-hidden="true" />
+          <div className="sls-wm-info">
+            <p className="sls-wm-info__title">Story card</p>
+            <p className="sls-wm-info__sub">
+              {watermarkState === 'generating' ? 'Adding Vuvio watermark…' :
+               watermarkState === 'ready'      ? 'Vuvio watermark ready' :
+               'Vuvio branding included'}
+            </p>
+            {watermarkState === 'ready' && (
+              <button type="button" className="sls-wm-save-btn" onClick={handleSaveImage}>
+                <Download size={13} strokeWidth={2} />
+                Save to photos
+              </button>
+            )}
+          </div>
         </div>
-        <h2 className="sls-confirm__title">Shared</h2>
-        <p className="sls-confirm__sub">Your live is ready to be discovered.</p>
-        <div className="sls-confirm__actions">
-          <button type="button" className="sls-primary-btn" onClick={onShareAgain}>
-            Share again
-          </button>
-          <button type="button" className="sls-confirm__back-btn" onClick={onClose}>
-            Back to live
-          </button>
+
+        {/* Social grid — 3 × 2 */}
+        <div className="sls-social-grid sls-social-grid--6">
+          {SOCIALS.map(({ id, Icon, label, color, onClick }) => (
+            <button
+              key={id}
+              type="button"
+              className="sls-social-btn"
+              onClick={onClick}
+              aria-label={label}
+            >
+              <span className="sls-social-btn__icon" style={{ background: color }}>
+                <Icon />
+              </span>
+              <span className="sls-social-btn__label">{label}</span>
+            </button>
+          ))}
         </div>
+
+        {/* Copy link — full width */}
+        <button type="button" className="sls-copy-link-btn" onClick={handleCopy}>
+          {copied
+            ? <><Check size={15} strokeWidth={2.4} /> Link copied!</>
+            : <><Link2 size={15} strokeWidth={2} /> Copy link</>}
+        </button>
+
+        {/* Customize — subtle link */}
+        <button type="button" className="sls-customize-link" onClick={onCustomize}>
+          <Sliders size={13} strokeWidth={2} />
+          Customize story card
+        </button>
       </div>
     </div>
   );
 }
 
-// ─── Root: ShareLiveSheet ─────────────────────────────────────────────────────
+// ─── Root export ──────────────────────────────────────────────────────────────
 
 export default function ShareLiveSheet({ live, onClose }) {
-  const [step, setStep] = useState('share'); // 'share' | 'customize' | 'success'
+  const [showCustomize, setShowCustomize] = useState(false);
 
-  const handleShare = useCallback(() => setStep('success'), []);
-  const handleShareAgain = useCallback(() => setStep('share'), []);
-
-  if (step === 'success') {
-    return <ShareSuccessScreen onShareAgain={handleShareAgain} onClose={onClose} />;
-  }
-
-  if (step === 'customize') {
-    return <CustomizeScreen live={live} onBack={() => setStep('share')} onShare={handleShare} />;
+  if (showCustomize) {
+    return <CustomizeScreen live={live} onBack={() => setShowCustomize(false)} />;
   }
 
   return (
-    <ShareSheet
+    <MainShareSheet
       live={live}
       onClose={onClose}
-      onCustomize={() => setStep('customize')}
-      onShare={handleShare}
+      onCustomize={() => setShowCustomize(true)}
     />
   );
 }

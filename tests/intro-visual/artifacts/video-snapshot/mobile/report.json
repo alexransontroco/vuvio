@@ -1,0 +1,20 @@
+{
+  "url": "https://127.0.0.1:5177/intro-preview",
+  "viewport": {
+    "width": 390,
+    "height": 844
+  },
+  "errors": [
+    "completion: page.waitForFunction: Timeout 90000ms exceeded."
+  ],
+  "observations": [
+    {
+      "label": "end",
+      "state": {
+        "phase": "globe",
+        "videoTime": 20,
+        "globeCanvas": true
+      }
+    }
+  ]
+}

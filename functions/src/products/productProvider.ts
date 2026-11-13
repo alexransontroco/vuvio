@@ -15,11 +15,16 @@ export interface ExternalProduct {
   name: string;
   normalizedName: string;
   category?: string;
+  subcategory?: string;
   description?: string;
+  aliases?: string[];
+  tags?: string[];
   gtin?: string;
   ean?: string;
   upc?: string;
   mpn?: string;
+  productUrl?: string;
+  officialProductUrl?: string;
   thumbnailUrl?: string;
   imageUrls?: ProductImage[];
   sourceProductUrl?: string;
@@ -46,6 +51,9 @@ export interface ProductProvider {
 
 export function normalizeProductName(name: string): string {
   return name
+    .normalize('NFKD')
+    .replace(/[Øø]/g, 'o')
+    .replace(/[\u0300-\u036f]/g, '')
     .toLowerCase()
     .replace(/[^a-z0-9\s]/g, '')
     .replace(/\s+/g, ' ')

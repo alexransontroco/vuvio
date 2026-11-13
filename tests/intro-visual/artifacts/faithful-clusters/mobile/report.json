@@ -1,0 +1,84 @@
+{
+  "url": "https://127.0.0.1:5177/intro-preview",
+  "viewport": {
+    "width": 390,
+    "height": 844
+  },
+  "errors": [],
+  "observations": [
+    {
+      "label": "globe-earth",
+      "at": 6170,
+      "state": {
+        "phase": "globe",
+        "video": {
+          "readyState": 4,
+          "currentTime": 0,
+          "width": 720,
+          "height": 1280
+        },
+        "globe": {
+          "opacity": "1",
+          "canvas": true,
+          "snapshot": false,
+          "canvasWidth": 390,
+          "canvasHeight": 844
+        },
+        "livePoint": false,
+        "selectedLive": true,
+        "stage": {
+          "width": 390,
+          "height": 844
+        }
+      }
+    },
+    {
+      "label": "globe-live-card",
+      "at": 14116,
+      "state": {
+        "phase": "globe",
+        "video": {
+          "readyState": 4,
+          "currentTime": 0,
+          "width": 720,
+          "height": 1280
+        },
+        "globe": {
+          "opacity": "1",
+          "canvas": false,
+          "snapshot": true
+        },
+        "livePoint": false,
+        "selectedLive": true,
+        "stage": {
+          "width": 390,
+          "height": 844
+        }
+      }
+    },
+    {
+      "label": "globe-3d",
+      "at": 17150,
+      "state": {
+        "phase": "globe",
+        "video": {
+          "readyState": 4,
+          "currentTime": 0,
+          "width": 720,
+          "height": 1280
+        },
+        "globe": {
+          "opacity": "1",
+          "canvas": false,
+          "snapshot": true
+        },
+        "livePoint": false,
+        "selectedLive": true,
+        "stage": {
+          "width": 390,
+          "height": 844
+        }
+      }
+    }
+  ]
+}

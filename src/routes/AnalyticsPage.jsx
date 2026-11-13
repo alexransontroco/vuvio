@@ -1,7 +1,7 @@
-import { ArrowUp, ArrowDown, Eye, Heart, Users, Radio, Activity, MapPin, Search, X } from 'lucide-react';
+import { ArrowUp, ArrowDown, Eye, Heart, Users, Radio, Activity, MapPin, Search, X, Globe, TrendingUp, Clock } from 'lucide-react';
 import { useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { collection, query, orderBy, limit, getDocs, getDoc, doc, getCountFromServer } from 'firebase/firestore';
+import { collection, query, orderBy, limit, getDocs, getDoc, doc, getCountFromServer, where } from 'firebase/firestore';
 import { db } from '../firebase.js';
 import { useAuth } from '../context/AuthContext.jsx';
 import '../styles/pages/analytics.css';
@@ -421,8 +421,11 @@ export default function AnalyticsPage() {
     dailyViews: [],
     prevDailyLives: [],
     chartLabels: [],
+    // Website stats
+    website: null,
   });
   const [timeRange, setTimeRange] = useState('7d');
+  const [envFilter, setEnvFilter] = useState('production');
   const [activeFilter, setActiveFilter] = useState(null); // { type: 'creator'|'category', value: string }
   const [liveSearch, setLiveSearch] = useState('');
 
@@ -438,7 +441,7 @@ export default function AnalyticsPage() {
       return;
     }
     loadAnalytics();
-  }, [user, authLoading, timeRange, isLocalDev]);
+  }, [user, authLoading, timeRange, envFilter, isLocalDev]);
 
   const loadAnalytics = async () => {
     try {
@@ -447,13 +450,97 @@ export default function AnalyticsPage() {
       const safe = (p) => p.catch(e => { console.warn('[Analytics]', e.message); return null; });
       const timeConfig = getTimeConfig(timeRange);
 
-      const [streamsSnap, creatorsSnap, categoriesSnap, usersCount, allLivesSnap] = await Promise.all([
+      // Build date keys for the selected period
+      const dateKeys = [];
+      const buckets = timeRange === '1d' ? 1 : timeRange === '7d' ? 7 : 30;
+      for (let i = 0; i < buckets; i++) {
+        const d = new Date(Date.now() - i * 86400000);
+        dateKeys.push(d.toISOString().slice(0, 10));
+      }
+      const periodStartDate = dateKeys[dateKeys.length - 1]; // oldest date key
+
+      const [streamsSnap, creatorsSnap, categoriesSnap, usersCount, allLivesSnap,
+             uniqueVisitorsCount, newVisitorsCount, ...websiteDocs] = await Promise.all([
         safe(getDocs(query(collection(db, 'streamStats'), orderBy('engagementScore', 'desc'), limit(10)))),
         safe(getDocs(query(collection(db, 'creatorStats'), orderBy('totalViews', 'desc'), limit(10)))),
         safe(getDocs(query(collection(db, 'categoryStats'), orderBy('totalViews', 'desc'), limit(10)))),
         safe(getCountFromServer(collection(db, 'users'))),
         safe(getDocs(query(collection(db, 'activeLives'), orderBy('createdAt', 'desc'), limit(400)))),
+        // Unique visitors = distinct anonymousIds with a session in the period
+        safe(getCountFromServer(query(collection(db, 'visitorActivity'), where('lastSeenDate', '>=', periodStartDate)))),
+        // New visitors = visitors whose first visit is in the period
+        safe(getCountFromServer(query(collection(db, 'visitorActivity'), where('firstSeenDate', '>=', periodStartDate)))),
+        ...dateKeys.map(k => safe(getDoc(doc(db, 'websiteStats', k)))),
       ]);
+
+      // Recent visitor activity list
+      const recentVisitorsSnap = await safe(getDocs(
+        query(collection(db, 'visitorActivity'), orderBy('lastSeenAt', 'desc'), limit(30))
+      ));
+      const recentVisitors = recentVisitorsSnap?.docs.map(d => d.data()) ?? [];
+
+      // Accurate unique visitor counts from visitorActivity collection
+      const uniqueVisitors = uniqueVisitorsCount?.data().count ?? 0;
+      const newVisitors = newVisitorsCount?.data().count ?? 0;
+      const returningVisitors = Math.max(0, uniqueVisitors - newVisitors);
+
+      // Aggregate websiteStats across the period
+      const envSuffix = envFilter === 'production' ? '_prod' : envFilter === 'development' ? '_dev' : '';
+      const website = {
+        pageViews: 0, sessions: 0, signups: 0, logins: 0,
+        uniqueVisitors, newVisitors, returningVisitors,
+        sources: {}, pages: {}, devices: {}, countries: {},
+        recentVisitors,
+        totalSessionDurationSeconds: 0,
+        sessionEndCount: 0,
+        avgSessionDurationSeconds: 0,
+        // Sparkline series (oldest → newest, matching dateKeys reversed)
+        sparkUniqueVisitors: [],
+        sparkNewVisitors: [],
+        sparkPageViews: [],
+        sparkSessions: [],
+      };
+      // websiteDocs are ordered newest-first (dateKeys[0] = today), reverse for sparklines
+      const websiteDocsChron = [...websiteDocs].reverse();
+      for (const snap of websiteDocsChron) {
+        const d = snap?.exists() ? snap.data() : {};
+        website.sparkUniqueVisitors.push((envSuffix ? d[`uniqueVisitors${envSuffix}`] : d.uniqueVisitors) || 0);
+        website.sparkNewVisitors.push((envSuffix ? d[`newVisitors${envSuffix}`] : d.newVisitors) || 0);
+        website.sparkPageViews.push((envSuffix ? d[`pageViews${envSuffix}`] : d.pageViews) || 0);
+        website.sparkSessions.push((envSuffix ? d[`sessions${envSuffix}`] : d.sessions) || 0);
+      }
+      for (const snap of websiteDocs) {
+        if (!snap?.exists()) continue;
+        const d = snap.data();
+        website.pageViews += (envSuffix ? d[`pageViews${envSuffix}`] : d.pageViews) || 0;
+        website.sessions += (envSuffix ? d[`sessions${envSuffix}`] : d.sessions) || 0;
+        website.signups += (envSuffix ? d[`signups${envSuffix}`] : d.signups) || 0;
+        website.logins += (envSuffix ? d[`logins${envSuffix}`] : d.logins) || 0;
+        website.totalSessionDurationSeconds += (envSuffix ? d[`totalSessionDurationSeconds${envSuffix}`] : d.totalSessionDurationSeconds) || 0;
+        website.sessionEndCount += (envSuffix ? d[`sessionEndCount${envSuffix}`] : d.sessionEndCount) || 0;
+        // Aggregate sources (always show all, not filtered by env for sources)
+        for (const [k, v] of Object.entries(d)) {
+          if (k.startsWith('source_') && typeof v === 'number') {
+            const src = k.replace('source_', '');
+            website.sources[src] = (website.sources[src] || 0) + v;
+          }
+          if (k.startsWith('pv_') && typeof v === 'number') {
+            const page = k.replace('pv_', '');
+            website.pages[page] = (website.pages[page] || 0) + v;
+          }
+          if (k.startsWith('device_') && typeof v === 'number') {
+            const device = k.replace('device_', '');
+            website.devices[device] = (website.devices[device] || 0) + v;
+          }
+          if (k.startsWith('country_') && typeof v === 'number') {
+            const code = k.replace('country_', '').toUpperCase();
+            website.countries[code] = (website.countries[code] || 0) + v;
+          }
+        }
+      }
+      if (website.sessionEndCount > 0) {
+        website.avgSessionDurationSeconds = Math.round(website.totalSessionDurationSeconds / website.sessionEndCount);
+      }
 
       const topStreams = streamsSnap?.docs.map(d => d.data()) ?? [];
       const topCreators = creatorsSnap?.docs.map(d => d.data()) ?? [];
@@ -515,6 +602,7 @@ export default function AnalyticsPage() {
         dailyViews: viewsBuckets,
         prevDailyLives: prevLivesBuckets,
         chartLabels: labels,
+        website,
       });
     } catch (error) {
       console.error('[Analytics] Load failed:', error);
@@ -543,6 +631,12 @@ export default function AnalyticsPage() {
           <p>Real-time metrics and insights</p>
         </div>
         <div className="analytics-controls">
+          <button type="button" onClick={() => navigate('/admin/docs')} className="analytics-refresh" title="Back">← Admin</button>
+          <select value={envFilter} onChange={e => setEnvFilter(e.target.value)} className="analytics-select">
+            <option value="production">Production</option>
+            <option value="development">Development</option>
+            <option value="all">All</option>
+          </select>
           <select value={timeRange} onChange={e => setTimeRange(e.target.value)} className="analytics-select">
             <option value="1d">Last 24h</option>
             <option value="7d">Last 7 days</option>
@@ -554,20 +648,213 @@ export default function AnalyticsPage() {
         </div>
       </header>
 
+      {/* ── WEBSITE ── */}
+      <section className="analytics-section-label">WEBSITE</section>
+      <section className="analytics-metrics">
+        <StatCard icon={Globe} label="Unique Visitors" value={stats.website?.uniqueVisitors ?? 0} color="var(--vuvio-cyan)" sparkData={stats.website?.sparkUniqueVisitors} />
+        <StatCard icon={TrendingUp} label="New Visitors" value={stats.website?.newVisitors ?? 0} color="var(--vuvio-blue)" sparkData={stats.website?.sparkNewVisitors} />
+        <StatCard icon={Activity} label="Returning Visitors" value={stats.website?.returningVisitors ?? 0} color="#b47bff" />
+        <StatCard icon={Eye} label="Sessions" value={stats.website?.sessions ?? 0} color="rgba(255,255,255,0.5)" sparkData={stats.website?.sparkSessions} />
+        <StatCard icon={Eye} label="Page Views" value={stats.website?.pageViews ?? 0} color="rgba(255,255,255,0.4)" sparkData={stats.website?.sparkPageViews} />
+        <StatCard icon={Users} label="Registered Users" value={stats.totalUsers} color="var(--vuvio-orange)" />
+        <StatCard icon={TrendingUp} label="Sign-ups" value={stats.website?.signups ?? 0} color="var(--vuvio-pink)" />
+        <StatCard
+          icon={Activity}
+          label="Visitor → Signup"
+          value={stats.website?.uniqueVisitors > 0 ? Math.round((stats.website.signups / stats.website.uniqueVisitors) * 100) : 0}
+          format={v => `${v}%`}
+          color="var(--vuvio-pink)"
+        />
+        <StatCard
+          icon={Clock}
+          label="Avg. Time on Site"
+          value={stats.website?.avgSessionDurationSeconds ?? 0}
+          format={v => {
+            if (v < 60) return `${v}s`;
+            const m = Math.floor(v / 60);
+            const s = v % 60;
+            return s > 0 ? `${m}m ${s}s` : `${m}m`;
+          }}
+          color="var(--vuvio-cyan)"
+        />
+      </section>
+
+      {/* ── RECENT VISITORS ── */}
+      {stats.website?.recentVisitors?.length > 0 && (
+        <section className="analytics-section">
+          <h2>Recent Visitors</h2>
+          <table className="leaderboard-table">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Location</th>
+                <th>First seen</th>
+                <th>Last seen</th>
+                <th>Sessions</th>
+                <th>Type</th>
+                <th>Account</th>
+              </tr>
+            </thead>
+            <tbody>
+              {stats.website.recentVisitors.map((v) => {
+                const firstTs = v.firstSeenAt?.toDate?.() ?? (v.firstSeenAt?._seconds ? new Date(v.firstSeenAt._seconds * 1000) : null);
+                const lastTs = v.lastSeenAt?.toDate?.() ?? (v.lastSeenAt?._seconds ? new Date(v.lastSeenAt._seconds * 1000) : null);
+                const isNew = v.firstSeenDate === v.lastSeenDate;
+                const fmt = (d) => d ? d.toLocaleString('fr-FR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) : '—';
+                const flag = v.countryCode ? String.fromCodePoint(...[...v.countryCode.toUpperCase()].map(c => 0x1F1E6 - 65 + c.charCodeAt(0))) : null;
+                return (
+                  <tr key={v.anonymousId} className="leaderboard-row">
+                    <td className="leaderboard-metric" style={{ fontFamily: 'monospace', opacity: 0.6 }}>{v.anonymousId?.slice(0, 8)}</td>
+                    <td className="leaderboard-metric">
+                      {flag
+                        ? <span title={v.country}>{flag} {v.city || v.country || '—'}</span>
+                        : <span style={{ opacity: 0.35 }}>—</span>
+                      }
+                    </td>
+                    <td className="leaderboard-metric">{fmt(firstTs)}</td>
+                    <td className="leaderboard-metric">{fmt(lastTs)}</td>
+                    <td className="leaderboard-metric">{v.totalSessions ?? 1}</td>
+                    <td className="leaderboard-metric">
+                      <span style={{ color: isNew ? 'var(--vuvio-cyan)' : '#b47bff', fontSize: '0.75rem' }}>
+                        {isNew ? 'new' : 'returning'}
+                      </span>
+                    </td>
+                    <td className="leaderboard-metric">
+                      {v.userId
+                        ? <span style={{ color: '#4ade80', fontSize: '0.75rem' }}>✓ signed up</span>
+                        : <span style={{ opacity: 0.35, fontSize: '0.75rem' }}>—</span>
+                      }
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </section>
+      )}
+
+      {/* ── TOP COUNTRIES ── */}
+      {stats.website && Object.keys(stats.website.countries).length > 0 && (
+        <section className="analytics-section">
+          <h2>Top Countries</h2>
+          <table className="leaderboard-table">
+            <thead><tr><th>Country</th><th>Visitors</th><th>%</th></tr></thead>
+            <tbody>
+              {Object.entries(stats.website.countries)
+                .sort((a, b) => b[1] - a[1])
+                .slice(0, 10)
+                .map(([code, count]) => {
+                  const total = Object.values(stats.website.countries).reduce((s, v) => s + v, 0);
+                  const flag = String.fromCodePoint(...[...code.toUpperCase()].map(c => 0x1F1E6 - 65 + c.charCodeAt(0)));
+                  return (
+                    <tr key={code} className="leaderboard-row">
+                      <td className="leaderboard-title">{flag} {code}</td>
+                      <td className="leaderboard-metric">{count}</td>
+                      <td className="leaderboard-metric">{total > 0 ? Math.round((count / total) * 100) : 0}%</td>
+                    </tr>
+                  );
+                })}
+            </tbody>
+          </table>
+        </section>
+      )}
+
+      {/* ── ACQUISITION ── */}
+      {stats.website && (Object.keys(stats.website.sources).length > 0 || Object.keys(stats.website.pages).length > 0) && (
+        <section className="analytics-section analytics-section--two-col">
+          <div>
+            <h2>Traffic Sources</h2>
+            {Object.keys(stats.website.sources).length === 0 ? (
+              <p className="no-data">No data yet</p>
+            ) : (
+              <table className="leaderboard-table">
+                <thead><tr><th>Source</th><th>Sessions</th><th>%</th></tr></thead>
+                <tbody>
+                  {Object.entries(stats.website.sources)
+                    .sort((a, b) => b[1] - a[1])
+                    .slice(0, 8)
+                    .map(([src, count]) => {
+                      const total = Object.values(stats.website.sources).reduce((s, v) => s + v, 0);
+                      return (
+                        <tr key={src} className="leaderboard-row">
+                          <td className="leaderboard-title" style={{ textTransform: 'capitalize' }}>{src}</td>
+                          <td className="leaderboard-metric">{count}</td>
+                          <td className="leaderboard-metric">{total > 0 ? Math.round((count / total) * 100) : 0}%</td>
+                        </tr>
+                      );
+                    })}
+                </tbody>
+              </table>
+            )}
+          </div>
+          <div>
+            <h2>Top Pages</h2>
+            {Object.keys(stats.website.pages).length === 0 ? (
+              <p className="no-data">No data yet</p>
+            ) : (
+              <table className="leaderboard-table">
+                <thead><tr><th>Page</th><th>Views</th></tr></thead>
+                <tbody>
+                  {Object.entries(stats.website.pages)
+                    .sort((a, b) => b[1] - a[1])
+                    .slice(0, 8)
+                    .map(([page, count]) => (
+                      <tr key={page} className="leaderboard-row">
+                        <td className="leaderboard-title">{page.replace(/_/g, ' ')}</td>
+                        <td className="leaderboard-metric">{count}</td>
+                      </tr>
+                    ))}
+                </tbody>
+              </table>
+            )}
+          </div>
+        </section>
+      )}
+
+      {/* ── CONVERSION FUNNEL ── */}
+      <section className="analytics-section">
+        <h2>Conversion</h2>
+        {stats.website?.sessions === 0 ? (
+          <p className="no-data">No data yet</p>
+        ) : (() => {
+          const visitors = stats.website?.sessions ?? 0;
+          const signups = stats.website?.signups ?? 0;
+          const watched = stats.totalViews;
+          const steps = [
+            { label: 'Visitors', value: visitors, color: 'var(--vuvio-cyan)' },
+            { label: 'Sign-ups', value: signups, color: 'var(--vuvio-blue)' },
+            { label: 'Watched Live', value: watched, color: '#b47bff' },
+          ];
+          return (
+            <div className="conversion-funnel">
+              {steps.map((step, i) => {
+                const prev = i > 0 ? steps[i - 1].value : null;
+                const rate = prev && prev > 0 ? Math.round((step.value / prev) * 100) : null;
+                return (
+                  <div key={step.label} className="funnel-step">
+                    {rate !== null && <div className="funnel-arrow">↓ {rate}%</div>}
+                    <div className="funnel-bar" style={{ borderColor: step.color }}>
+                      <span className="funnel-label">{step.label}</span>
+                      <span className="funnel-value" style={{ color: step.color }}>{step.value.toLocaleString()}</span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          );
+        })()}
+      </section>
+
+      {/* ── CONTENT ── */}
+      <section className="analytics-section-label">CONTENT</section>
       <section className="analytics-metrics">
         <StatCard
           icon={Eye}
-          label="Total Views"
+          label="Stream Views"
           value={stats.totalViews}
           trend={stats.viewsTrend}
           color="var(--vuvio-cyan)"
           sparkData={stats.dailyViews}
-        />
-        <StatCard
-          icon={Users}
-          label="Total Users"
-          value={stats.totalUsers}
-          color="var(--vuvio-blue)"
         />
         <StatCard
           icon={Radio}
@@ -597,6 +884,7 @@ export default function AnalyticsPage() {
         />
       </section>
 
+      <section className="analytics-section-label">LIVE ACTIVITY</section>
       {stats.dailyLives.some(v => v > 0) && (
         <section className="analytics-section analytics-section--chart">
           <h2>Activity</h2>

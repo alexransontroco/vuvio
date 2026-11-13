@@ -93,7 +93,7 @@
 .test-old-globe__controls {
   position: absolute;
   left: 16px;
-  bottom: calc(var(--safe-bottom) + 120px);
+  bottom: calc(var(--nav-height, 62px) + var(--safe-bottom) + 14px);
   z-index: 15;
   display: flex;
   flex-direction: column;
@@ -150,6 +150,18 @@
   left: 12px;
   right: 12px;
   bottom: calc(var(--nav-height) + var(--safe-bottom) + 16px);
+  transition: opacity 180ms ease, transform 220ms ease;
+}
+.test-globe-card.is-closing {
+  opacity: 0;
+  transform: translateY(14px);
+  pointer-events: none;
+  /* Drop the expensive blur immediately so the GPU doesn't re-composite
+     the whole card area each frame while the globe tweens behind it. */
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+.test-globe-card {
   z-index: 25;
   display: grid;
   grid-template-columns: 96px minmax(0, 1fr);
@@ -447,8 +459,11 @@
 
 /* Zoom controls */
 .test-globe-screen--actual .test-old-globe__controls {
-  bottom: calc(var(--nav-height) + var(--safe-bottom) + 88px);
-  gap: 7px;
+  left: 50%;
+  transform: translateX(-50%);
+  bottom: 4px;
+  flex-direction: row;
+  gap: 10px;
 }
 
 .test-globe-screen--actual .test-old-globe__controls button {
@@ -805,6 +820,17 @@
   display: flex;
   flex-direction: column;
   box-shadow: 0 -4px 40px rgba(0, 0, 0, 0.6), 0 -1px 0 rgba(39, 221, 235, 0.1);
+  transition: opacity 180ms ease, transform 220ms ease;
+}
+.gt2-cluster-sheet.is-closing {
+  opacity: 0;
+  transform: translateY(40px);
+  pointer-events: none;
+  /* Drop the huge blur immediately so the GPU doesn't re-composite a
+     full-width blurred panel each frame while the globe tweens behind it. */
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  box-shadow: none;
 }
 
 @keyframes gt2-sheet-rise {
@@ -854,10 +880,10 @@
 }
 
 .gt2-cluster-sheet__list {
-  flex: 1;
+  max-height: calc(3 * 54px + 2 * 8px + 16px);
   overflow-y: auto;
   overscroll-behavior: contain;
-  padding: 8px 14px 0;
+  padding: 8px 14px 12px;
   display: flex;
   flex-direction: column;
   gap: 8px;
@@ -865,12 +891,12 @@
 
 .gt2-cluster-sheet__item {
   display: grid;
-  grid-template-columns: 58px 1fr auto;
+  grid-template-columns: 40px 1fr auto;
   align-items: center;
-  gap: 10px;
-  padding: 10px 10px 10px 10px;
-  border-radius: 14px;
-  border: 0.5px solid rgba(255, 255, 255, 0.08);
+  gap: 8px;
+  padding: 7px 8px;
+  border-radius: 11px;
+  border: 0.5px solid rgba(255, 255, 255, 0.07);
   background: rgba(255, 255, 255, 0.04);
 }
 
@@ -879,15 +905,15 @@
   border: 0;
   padding: 0;
   background: transparent;
-  border-radius: 10px;
+  border-radius: 8px;
   overflow: hidden;
   display: block;
 }
 
 .gt2-cluster-sheet__item-left img {
-  width: 58px;
-  height: 58px;
-  border-radius: 10px;
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
   object-fit: cover;
   object-position: center 45%;
   display: block;
@@ -911,7 +937,7 @@
 }
 
 .gt2-cluster-sheet__item-title {
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 650;
   color: #f2f7f6;
   white-space: nowrap;
@@ -921,12 +947,13 @@
 }
 
 .gt2-cluster-sheet__item-creator {
-  font-size: 12px;
-  font-weight: 520;
-  color: rgba(39, 221, 235, 0.85);
+  font-size: 11px;
+  font-weight: 500;
+  color: rgba(39, 221, 235, 0.75);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  display: inline;
 }
 
 .gt2-cluster-sheet__item-meta {
@@ -954,4 +981,399 @@
 .gt2-cluster-sheet__item-watch:active {
   opacity: 0.82;
   transform: scale(0.95);
+}
+
+/* ── HTML Markers ────────────────────────────────────────────────────────────── */
+
+.gt2-marker {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  cursor: pointer;
+  /* CSS2DRenderer (Three.js) overrides inline transform to center the element.
+     padding-bottom aligns the dot center (52+18+3.5=73.5px) with the element
+     center (147/2=73.5px) so the dot anchors to the globe surface. */
+  padding-bottom: 70px;
+  will-change: transform;
+  pointer-events: all;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;
+  user-select: none;
+  outline: none;
+  animation: gt2-marker-in 260ms ease-out both;
+}
+@keyframes gt2-marker-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+.gt2-marker:focus,
+.gt2-marker:focus-visible,
+.gt2-marker *:focus,
+.gt2-marker *:focus-visible {
+  outline: none;
+}
+
+.gt2-marker__bubble {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  border: 2.5px solid #28d8df;
+  overflow: hidden;
+  background: rgba(4, 14, 26, 0.85);
+  box-shadow:
+    0 0 0 1px rgba(40, 216, 223, 0.12),
+    0 0 14px rgba(40, 216, 223, 0.28);
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.gt2-marker--avatar .gt2-marker__bubble {
+  width: 40px;
+  height: 40px;
+  border-width: 2px;
+}
+
+.gt2-marker__bubble img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
+  display: block;
+}
+
+.gt2-marker__initial {
+  font-size: 18px;
+  font-weight: 700;
+  color: #28d8df;
+}
+
+.gt2-marker__stem {
+  width: 1.5px;
+  height: 18px;
+  background: linear-gradient(to bottom, var(--marker-color, #28d8df), color-mix(in srgb, var(--marker-color, #28d8df) 20%, transparent));
+  flex: none;
+}
+
+.gt2-marker__dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--marker-color, #28d8df);
+  box-shadow: 0 0 8px color-mix(in srgb, var(--marker-color, #28d8df) 90%, transparent);
+  flex: none;
+  animation: gt2-dot-pulse 2s ease-in-out infinite;
+}
+
+@keyframes gt2-dot-pulse {
+  0%, 100% { box-shadow: 0 0 6px color-mix(in srgb, var(--marker-color, #28d8df) 70%, transparent); transform: scale(1); }
+  40%       { box-shadow: 0 0 20px var(--marker-color, #28d8df), 0 0 36px color-mix(in srgb, var(--marker-color, #28d8df) 55%, transparent); transform: scale(1.6); }
+  100%      { box-shadow: 0 0 6px color-mix(in srgb, var(--marker-color, #28d8df) 70%, transparent); transform: scale(1); }
+}
+
+.gt2-marker__bubble {
+  animation: gt2-bubble-pulse 2.2s ease-in-out infinite;
+  animation-delay: var(--gt2-delay, 0s);
+}
+
+.gt2-marker--cluster .gt2-marker__bubble {
+  animation: gt2-bubble-pulse 2.2s ease-in-out infinite;
+  animation-delay: var(--gt2-delay, 0.4s);
+}
+
+.gt2-marker__dot {
+  animation-delay: var(--gt2-delay, 0s);
+}
+
+@keyframes gt2-bubble-pulse {
+  0%, 100% {
+    box-shadow: 0 0 0 0px rgba(40, 216, 223, 0), 0 0 10px rgba(40, 216, 223, 0.28);
+    border-color: rgba(40, 216, 223, 0.72);
+  }
+  45% {
+    box-shadow: 0 0 0 7px rgba(40, 216, 223, 0.18), 0 0 26px rgba(40, 216, 223, 0.6), 0 0 48px rgba(40, 216, 223, 0.18);
+    border-color: rgba(40, 216, 223, 1);
+  }
+}
+
+/* Cluster variant */
+.gt2-marker--cluster .gt2-marker__bubble {
+  width: 44px;
+  height: 44px;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.gt2-marker__count {
+  display: block;
+  font-size: 16px;
+  font-weight: 800;
+  color: #ffffff;
+  line-height: 1;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+
+.gt2-marker__live-label {
+  display: block;
+  font-size: 8px;
+  font-weight: 700;
+  color: #28d8df;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  line-height: 1;
+}
+
+/* ── Top status bar ──────────────────────────────────────────────────────────── */
+
+.gt2-status-bar {
+  position: absolute;
+  top: calc(env(safe-area-inset-top, 0px) + 6px);
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 15;
+  display: flex;
+  align-items: center;
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+  gap: 2px;
+}
+
+.gt2-status-btn {
+  padding: 7px 18px;
+  border-radius: 999px;
+  border: 0;
+  outline: none;
+  box-shadow: none;
+  -webkit-tap-highlight-color: transparent;
+  background: transparent;
+  color: rgba(242, 247, 246, 0.55);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  transition: background 180ms ease, color 180ms ease;
+  white-space: nowrap;
+}
+.gt2-status-btn:focus,
+.gt2-status-btn:focus-visible,
+.gt2-status-btn:active {
+  outline: none;
+  box-shadow: none;
+}
+
+.gt2-status-btn--active {
+  background: #28d8df;
+  color: #04121e;
+}
+
+.gt2-status-btn--dim {
+  opacity: 0.32;
+  cursor: default;
+}
+
+/* ── Compact filter pill ─────────────────────────────────────────────────────── */
+
+.gt2-filter-pill {
+  position: fixed;
+  bottom: calc(var(--nav-height, 62px) + 14px);
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 10px 20px;
+  border-radius: 999px;
+  background: rgba(8, 20, 34, 0.88);
+  border: 0.5px solid rgba(255, 255, 255, 0.15);
+  color: rgba(242, 247, 246, 0.88);
+  font-size: 13px;
+  font-weight: 640;
+  cursor: pointer;
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35);
+  white-space: nowrap;
+}
+
+.gt2-filter-pill:active {
+  background: rgba(20, 42, 62, 0.92);
+}
+
+/* ── Hide +/− on mobile ──────────────────────────────────────────────────────── */
+
+@media (max-width: 768px) {
+  .gt2-zoom-btn {
+    display: none;
+  }
+}
+
+/* Upcoming state in stream card / cluster sheet */
+.gt2-card__upcoming-time {
+  color: var(--vuvio-cyan);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.gt2-card__soon-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 14px;
+  border-radius: 999px;
+  background: rgba(40, 216, 223, 0.1);
+  border: 0.5px solid rgba(40, 216, 223, 0.3);
+  color: var(--vuvio-cyan);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.gt2-cluster-sheet__item-soon {
+  flex: none;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: rgba(40, 216, 223, 0.08);
+  border: 0.5px solid rgba(40, 216, 223, 0.25);
+  color: var(--vuvio-cyan);
+  font-size: 10px;
+  font-weight: 700;
+  white-space: nowrap;
+  align-self: center;
+}
+
+/* Countdown in upcoming card */
+.gt2-card__countdown {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+.gt2-card__countdown-label {
+  font-size: 9px;
+  color: rgba(242, 247, 246, 0.5);
+  text-transform: uppercase;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+}
+.gt2-card__countdown-value {
+  font-size: 16px;
+  font-weight: 800;
+  color: var(--vuvio-cyan);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+}
+
+/* Notify me button */
+.gt2-card__remind-btn {
+  flex: 1;
+  min-height: 30px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  border: 0.5px solid rgba(40, 216, 223, 0.4);
+  border-radius: 999px;
+  background: rgba(40, 216, 223, 0.08);
+  color: var(--vuvio-cyan);
+  font-size: 11px;
+  font-weight: 700;
+  transition: background 160ms ease, border-color 160ms ease;
+}
+.gt2-card__remind-btn.is-active {
+  background: rgba(40, 216, 223, 0.18);
+  border-color: rgba(40, 216, 223, 0.6);
+}
+
+/* Selected marker: scale up slightly */
+.gt2-space-globe.has-selected .gt2-marker.is-selected {
+  filter: drop-shadow(0 0 8px rgba(40, 216, 223, 0.8));
+  z-index: 10;
+}
+
+/* Dim non-selected markers via CSS instead of removing them from the data array,
+   so the CSS2DRenderer doesn't rebuild DOM mid-animation (fixes dezoom lag).
+   Keep them visible — the user still wants to see surrounding live points. */
+/* Transition only on the dim rule — markers snap back to opacity 1
+   instantly on deselect, so 150+ CSS transitions don't stutter the
+   camera zoom-out tween. */
+.gt2-space-globe.has-selected .gt2-marker:not(.is-selected) {
+  opacity: 0.55;
+  transition: opacity 240ms ease;
+}
+
+/* Tap feedback: expanding cyan ring when a marker is clicked */
+.gt2-marker__bubble {
+  position: relative;
+}
+.gt2-marker.is-tapped .gt2-marker__bubble::after {
+  content: '';
+  position: absolute;
+  inset: -4px;
+  border-radius: 50%;
+  border: 2px solid rgba(40, 216, 223, 0.9);
+  pointer-events: none;
+  animation: gt2-tap-ring 420ms ease-out forwards;
+}
+@keyframes gt2-tap-ring {
+  0%   { transform: scale(0.85); opacity: 0.95; }
+  100% { transform: scale(1.75); opacity: 0;    }
+}
+
+/* Globe container height — fills full viewport; nav overlays on top so the
+   dark-blue phone-stage background never peeks between globe and nav. */
+.gt2-space-globe {
+  height: 100dvh;
+  touch-action: none;
+  overscroll-behavior: contain;
+}
+
+/* Remove the cyan border-top line AND the upward cyan glow above the bottom nav
+   on the globe page. Scoped via :has() walking up to body / .phone-stage. */
+body:has(.gt2-space-globe) .bottom-nav,
+body:has(.gt2-space-globe) .bottom-nav--floating,
+.phone-stage:has(.gt2-space-globe) .bottom-nav,
+.phone-stage:has(.gt2-space-globe) .bottom-nav--floating {
+  border-top: 0 !important;
+  box-shadow:
+    0 6px 24px rgba(0, 5, 12, 0.32),
+    0 1px 4px rgba(0, 5, 12, 0.18) !important;
+}
+
+/* Prevent any upward drag/scroll from the nav area pulling the page up.
+   Also pin the nav absolutely at the bottom and disable browser scroll gestures
+   on the phone-stage for this page only. */
+body:has(.gt2-space-globe),
+html:has(.gt2-space-globe) {
+  overscroll-behavior: none;
+  overflow: hidden;
+}
+.phone-stage:has(.gt2-space-globe) {
+  touch-action: none;
+  overscroll-behavior: none;
+  overflow: hidden;
+}
+.phone-stage:has(.gt2-space-globe) .bottom-nav,
+.phone-stage:has(.gt2-space-globe) .bottom-nav--floating {
+  touch-action: none;
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  transform: none !important;
+}
+
+@media (min-width: 760px) {
+  /* Inside phone-stage on desktop: fill 100% so the globe never overflows
+     the phone mockup boundary (which has overflow:hidden + border-radius) */
+  .gt2-space-globe {
+    height: 100%;
+  }
+}
+
+/* Shift globe canvas down so the sphere sits lower in the viewport */
+.gt2-globe-offset {
+  position: absolute;
+  inset: 0;
+  transform: translateY(2%);
+  pointer-events: auto;
 }

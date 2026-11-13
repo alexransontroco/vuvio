@@ -11,6 +11,7 @@ export async function createLiveInputHandler(req, res) {
         const body = asRecord(req.body);
         const streamId = stringField(body, 'streamId', { required: true, max: 64 });
         const title = stringField(body, 'title', { required: true, max: 120 }) ?? 'Untitled';
+        const rawDestinations = Array.isArray(body.destinations) ? body.destinations : [];
         console.log(`[createLiveInput] requested for Vuvio live=${streamId} user=${user.uid}`);
         const liveRef = db.collection('activeLives').doc(streamId);
         // Detect stale Cloudflare UID in Firestore and warn — we always create fresh credentials
@@ -76,6 +77,32 @@ export async function createLiveInputHandler(req, res) {
         });
         const hasRelay = Boolean(RTMPS_RELAY_URL && input.ingestUrl && input.streamKey);
         console.log(`[CLOUDFLARE] relay check — relayUrl: ${RTMPS_RELAY_URL || 'none'} | rtmpsIngestUrl: ${input.ingestUrl ?? 'none'} | rtmpsStreamKey present: ${!!input.streamKey}`);
+        // ── Create live outputs (multistream destinations) in the same request ──
+        const outputResults = [];
+        if (rawDestinations.length > 0) {
+            console.log(`[createLiveInput] creating ${rawDestinations.length} live output(s) for liveInputId=${input.uid}`);
+            await Promise.all(rawDestinations.map(async (dest) => {
+                const provider = dest.provider ?? 'custom';
+                const name = dest.name ?? provider;
+                try {
+                    const output = await client.createLiveOutput(input.uid, dest.url, dest.streamKey);
+                    outputResults.push({ outputId: output.outputId, provider, name, enabled: output.enabled, status: 'live' });
+                    console.log(`[MULTISTREAM] output created provider=${provider} outputId=${output.outputId}`);
+                }
+                catch (err) {
+                    outputResults.push({ outputId: '', provider, name, enabled: false, status: 'error' });
+                    console.warn(`[MULTISTREAM] output creation failed provider=${provider}:`, err instanceof Error ? err.message : err);
+                }
+            }));
+            // Persist output metadata to Firestore (no stream keys)
+            if (outputResults.some((o) => o.outputId)) {
+                await liveRef.update({
+                    liveOutputs: outputResults.filter((o) => o.outputId).map((o) => ({
+                        outputId: o.outputId, provider: o.provider, name: o.name, enabled: o.enabled, createdAt: new Date().toISOString(),
+                    })),
+                }).catch(() => { });
+            }
+        }
         res.json({
             liveInputId: input.uid,
             playbackUrl: input.playbackUrl,
@@ -87,6 +114,7 @@ export async function createLiveInputHandler(req, res) {
             relayUrl: hasRelay ? RTMPS_RELAY_URL : null,
             rtmpsIngestUrl: hasRelay ? input.ingestUrl : null,
             rtmpsStreamKey: hasRelay ? input.streamKey : null,
+            outputs: outputResults,
         });
     }
     catch (error) {

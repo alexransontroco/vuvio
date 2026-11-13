@@ -1,6 +1,12 @@
 import type { Timestamp } from 'firebase/firestore';
 
 export type AnalyticsEventName =
+  // Website / acquisition
+  | 'page_view'
+  | 'session_start'
+  | 'sign_up'
+  | 'login'
+  // Stream engagement
   | 'stream_impression'
   | 'stream_view_started'
   | 'stream_view_3_seconds'
@@ -21,7 +27,8 @@ export type AnalyticsEventName =
   | 'search_performed'
   | 'globe_pin_clicked'
   | 'stream_quality_degraded'
-  | 'app_backgrounded';
+  | 'app_backgrounded'
+  | 'session_end';
 
 export type AnalyticsSource =
   | 'watch'
@@ -52,6 +59,14 @@ export interface AnalyticsEventInput {
   sourcePosition?: number | null;
   category?: string | null;
   environment?: string | null;
+  // Website / acquisition fields
+  pageType?: string | null;
+  pagePath?: string | null;
+  acquisitionSource?: string | null;
+  acquisitionMedium?: string | null;
+  acquisitionCampaign?: string | null;
+  acquisitionReferrer?: string | null;
+  deviceType?: string | null;
   metadata?: Record<string, unknown>;
 }
 

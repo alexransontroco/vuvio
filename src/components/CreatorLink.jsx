@@ -37,6 +37,7 @@ export default function CreatorLink({
               <Check size={10} strokeWidth={2.4} />
             </i>
           ) : null}
+          {profile.isDemo ? <span className="creator-link__demo-badge">Demo</span> : null}
         </span>
         {showMeta ? <small>{metaLabel || profile.profession}</small> : null}
       </span>

@@ -1,5 +1,8 @@
 export function normalizeProductName(name) {
     return name
+        .normalize('NFKD')
+        .replace(/[Øø]/g, 'o')
+        .replace(/[\u0300-\u036f]/g, '')
         .toLowerCase()
         .replace(/[^a-z0-9\s]/g, '')
         .replace(/\s+/g, ' ')

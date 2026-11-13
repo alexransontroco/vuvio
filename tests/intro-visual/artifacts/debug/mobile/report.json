@@ -1,0 +1,84 @@
+{
+  "url": "https://127.0.0.1:5177/intro-preview",
+  "viewport": {
+    "width": 390,
+    "height": 844
+  },
+  "errors": [
+    "request: https://storage.googleapis.com/vuvio-bf328.firebasestorage.app/mock-videos/live-mockups/fallow-head-chef-full.mp4 net::ERR_ABORTED",
+    "screenshot welcome-start: page.screenshot: Timeout 8000ms exceeded.\nCall log:\n\u001b[2m  - taking page screenshot\u001b[22m\n\u001b[2m  - waiting for fonts to load...\u001b[22m\n\u001b[2m  - fonts loaded\u001b[22m\n",
+    "screenshot welcome-pov: page.screenshot: Timeout 8000ms exceeded.\nCall log:\n\u001b[2m  - taking page screenshot\u001b[22m\n\u001b[2m  - waiting for fonts to load...\u001b[22m\n\u001b[2m  - fonts loaded\u001b[22m\n",
+    "screenshot welcome-watch: page.screenshot: Timeout 8000ms exceeded.\nCall log:\n\u001b[2m  - taking page screenshot\u001b[22m\n\u001b[2m  - waiting for fonts to load...\u001b[22m\n\u001b[2m  - fonts loaded\u001b[22m\n",
+    "screenshot watch: page.screenshot: Timeout 8000ms exceeded.\nCall log:\n\u001b[2m  - taking page screenshot\u001b[22m\n\u001b[2m  - waiting for fonts to load...\u001b[22m\n\u001b[2m  - fonts loaded\u001b[22m\n"
+  ],
+  "observations": [
+    {
+      "label": "welcome-start",
+      "at": 14160,
+      "state": {
+        "video": {
+          "readyState": 4,
+          "currentTime": 0.755723,
+          "width": 1920,
+          "height": 1080
+        },
+        "globe": null,
+        "stage": {
+          "width": 390,
+          "height": 844
+        }
+      }
+    },
+    {
+      "label": "welcome-pov",
+      "at": 22185,
+      "state": {
+        "video": {
+          "readyState": 4,
+          "currentTime": 7.038995,
+          "width": 1920,
+          "height": 1080
+        },
+        "globe": null,
+        "stage": {
+          "width": 390,
+          "height": 844
+        }
+      }
+    },
+    {
+      "label": "welcome-watch",
+      "at": 30302,
+      "state": {
+        "video": {
+          "readyState": 4,
+          "currentTime": 13.213293,
+          "width": 1920,
+          "height": 1080
+        },
+        "globe": null,
+        "stage": {
+          "width": 390,
+          "height": 844
+        }
+      }
+    },
+    {
+      "label": "watch",
+      "at": 38325,
+      "state": {
+        "video": {
+          "readyState": 4,
+          "currentTime": 19.535601,
+          "width": 1920,
+          "height": 1080
+        },
+        "globe": null,
+        "stage": {
+          "width": 390,
+          "height": 844
+        }
+      }
+    }
+  ]
+}

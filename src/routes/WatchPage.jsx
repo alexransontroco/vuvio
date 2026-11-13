@@ -1,5 +1,5 @@
 import Hls from 'hls.js';
-import { Backpack, BatteryWarning, Bell, CalendarClock, Camera, Check, ChevronLeft, ChevronRight, ChevronUp, Clock, Eye, Flag, Flashlight, Lock, MapPin, MessageCircle, Mic, MicOff, Play, RotateCcw, Search, Send, Settings, Share2, ShieldBan, Square, Star, Trash2, UnlockKeyhole, UserPlus, UserRound, UsersRound, Volume2, VolumeX, WifiOff, X } from 'lucide-react';
+import { Backpack, BatteryWarning, Bell, CalendarClock, Camera, Check, ChevronLeft, ChevronRight, ChevronUp, Clock, Eye, Flag, Flashlight, Lock, MapPin, MessageCircle, Mic, MicOff, Monitor, Play, RotateCcw, Search, Send, Settings, Share2, ShieldBan, Square, Star, Trash2, UnlockKeyhole, UserPlus, UserRound, UsersRound, Volume2, VolumeX, WifiOff, X } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link, Navigate, useNavigate, useParams, useSearchParams } from 'react-router-dom';
@@ -19,6 +19,7 @@ import { lives } from '../data/lives.js';
 import { mapStreams } from '../data/mapStreams.js';
 import { streams, upcomingStreams } from '../data/mockStreams.js';
 import { getCreatedLives, getCreatedLiveStream, registerCreatedLiveStream, subscribeToCreatedLives, publishLivePing, updateCreatedLive } from '../services/createdLiveService.js';
+import { getLiveDestinations, clearLiveDestinations, createCloudflareOutput, deleteCloudflareOutput } from '../services/streamDestinationsService.js';
 import { startBroadcast, stopBroadcast, watchBroadcast, closePeer, getLocalStream, getRemoteStream, startRtmpRelayBroadcast, stopRtmpRelayBroadcast, stopRtmpRelayBroadcastSync, startWhipConnection, startWhepViewer, stopWhepViewer } from '../services/webrtcService.js';
 import { collection, doc, onSnapshot, query, where, getDocs, getDoc, addDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { getDownloadURL, ref as storageRef, uploadString } from 'firebase/storage';
@@ -28,10 +29,13 @@ import { useMessaging } from '../context/MessagingContext.jsx';
 import { getUpcomingReminders, saveUpcomingReminder } from '../services/upcomingReminderService.js';
 import { demoLiveEquipmentIds } from '../data/equipmentModel.js';
 import { getEquipmentLibrary, getEquipmentLibraryWithProducts, getEquipmentSelection } from '../services/equipmentService.js';
-import { formatLocalSchedule, getCountdownState, toValidDate } from '../utils/countdown.js';
+import { formatLocalSchedule, getCountdownState, makeCountdownLabels, toValidDate } from '../utils/countdown.js';
 import { finishStream } from '../services/streamApi.ts';
 import { isFollowingCreator, setFollowingCreator } from '../services/followService.js';
 import { followCreator, unfollowCreator } from '../services/creatorService.js';
+import LiveQASheet from '../components/LiveQASheet.jsx';
+import { subscribeToQuestions, sendQuestion, answerQuestion } from '../services/liveQAService.js';
+import { streamCreator, streamDescription, streamLocation, streamTitle } from '../utils/seoData.js';
 
 const SWIPE_THRESHOLD = 58;
 const WHEEL_THRESHOLD = 36;
@@ -71,6 +75,12 @@ const demoVideoLiveIds = [
   'wingsuit-taschhorn',
   'wingsuit-new-pov',
   'chef-cooking-pov',
+  'busy-friday-chef-pov',
+  'cetait-chaud-weekend-pov',
+  'goggins-mentality-pov',
+  'street-food-chengdu-pov',
+  'kitchen-service-pov',
+  'watercolor-sketch-pov',
 ];
 const CLOCK_TICK_MS = 1000;
 const COVER_CAPTURE_DELAY_MS = 2000;
@@ -619,7 +629,8 @@ function CompactLiveCard({ live, onOpen }) {
 
 function UpcomingHomeCard({ item, now, reminderSet, reminderSaving, reminderError, onNotify, onOpen, onWatch }) {
   const { t, i18n } = useTranslation();
-  const countdown = getCountdownState(item.startsAt, now);
+  const cLabels = makeCountdownLabels(t);
+  const countdown = getCountdownState(item.startsAt, now, cLabels);
   const status = upcomingStatus(item, now);
   const isLiveNow = status === 'live';
   const creatorName = item.creatorName ?? 'Vuvio creator';
@@ -661,7 +672,7 @@ function UpcomingHomeCard({ item, now, reminderSet, reminderSaving, reminderErro
         </p>
         <p className="home-upcoming-card__date">
           <CalendarClock size={13} strokeWidth={1.9} />
-          {formatLocalSchedule(item.startsAt, i18n.language)}
+          {formatLocalSchedule(item.startsAt, i18n.language, cLabels)}
         </p>
         <div className="home-countdown" aria-label={countdown.ariaLabel}>
           <span>{countdown.label}</span>
@@ -700,7 +711,8 @@ function UpcomingHomeCard({ item, now, reminderSet, reminderSaving, reminderErro
 
 function UpcomingDetailSheet({ item, now, reminderSet, reminderSaving, onNotify, onClose, onWatch }) {
   const { t, i18n } = useTranslation();
-  const countdown = getCountdownState(item.startsAt, now);
+  const cLabels = makeCountdownLabels(t);
+  const countdown = getCountdownState(item.startsAt, now, cLabels);
   const status = upcomingStatus(item, now);
   const creatorName = item.creatorName ?? 'Vuvio creator';
   const place = item.locationLabel ?? 'Location to be confirmed';
@@ -727,7 +739,7 @@ function UpcomingDetailSheet({ item, now, reminderSet, reminderSaving, onNotify,
         <img src={item.image ?? fallbackCover} alt={`Preview for ${item.title}`} loading="lazy" decoding="async" />
         <div className="home-upcoming-sheet__meta">
           <p><MapPin size={15} strokeWidth={1.9} /> {place}</p>
-          <p><CalendarClock size={15} strokeWidth={1.9} /> {formatLocalSchedule(item.startsAt, i18n.language)}</p>
+          <p><CalendarClock size={15} strokeWidth={1.9} /> {formatLocalSchedule(item.startsAt, i18n.language, cLabels)}</p>
           <p><Clock size={15} strokeWidth={1.9} /> {upcomingPovLabel(item, t)}</p>
           {interested ? <p><UsersRound size={15} strokeWidth={1.9} /> {interested} interested</p> : null}
         </div>
@@ -1002,7 +1014,7 @@ function WatchPage() {
     ].slice(0, 8);
   }, [scheduledStreams, tab]);
 
-  const openLive = (id) => navigate(`/discover?live=${encodeURIComponent(id)}`);
+  const openLive = (id) => navigate(`/watch?live=${encodeURIComponent(id)}`);
 
   return (
     <section className="screen-scroll home-screen" aria-label={t('home.aria')}>
@@ -1010,11 +1022,11 @@ function WatchPage() {
       <HomeTabs value={tab} onChange={setTab} />
 
       {tab === 'following' && !followedLives.length ? (
-        <HomeEmptyState actionLabel={t('home.empty.discoverLives')} onAction={() => navigate('/discover')}>
+        <HomeEmptyState actionLabel={t('home.empty.discoverLives')} onAction={() => navigate('/watch')}>
           {t('home.empty.following')}
         </HomeEmptyState>
       ) : !featuredLive ? (
-        <HomeEmptyState actionLabel={t('home.empty.discoverLives')} onAction={() => navigate('/discover')}>
+        <HomeEmptyState actionLabel={t('home.empty.discoverLives')} onAction={() => navigate('/watch')}>
           {t('home.empty.noLives')}
         </HomeEmptyState>
       ) : (
@@ -1033,7 +1045,7 @@ function WatchPage() {
               onSeeAll={() => navigate('/explore')}
             />
           ) : null}
-          {tab === 'for-you' ? <UpcomingLiveSection items={upcomingItems} onWatch={openLive} onExplore={() => navigate('/discover')} /> : null}
+          {tab === 'for-you' ? <UpcomingLiveSection items={upcomingItems} onWatch={openLive} onExplore={() => navigate('/watch')} /> : null}
         </div>
       )}
       {searchOpen ? <SearchSheet onClose={() => setSearchOpen(false)} /> : null}
@@ -1041,34 +1053,135 @@ function WatchPage() {
   );
 }
 
+// Simplified continent outlines — [lng, lat] pairs, equirectangular
+const GLOBE_LAND = [
+  // Greenland
+  [[-53,83],[-22,83],[-16,77],[-18,70],[-22,65],[-44,60],[-51,62],[-57,67],[-67,73]],
+  // North America
+  [[-168,72],[-140,60],[-125,49],[-124,37],[-117,32],[-105,20],[-83,10],[-77,8],
+   [-80,25],[-75,35],[-70,42],[-53,47],[-57,52],[-62,63],[-82,66],[-100,72],[-168,72]],
+  // South America
+  [[-78,8],[-62,11],[-35,-9],[-40,-22],[-50,-33],[-56,-39],[-65,-55],[-68,-54],
+   [-72,-50],[-75,-38],[-76,-14],[-77,5],[-78,8]],
+  // Western Europe (mainland)
+  [[-9,37],[3,36],[8,44],[12,44],[15,38],[22,38],[28,42],[30,40],[36,37],
+   [28,56],[5,58],[0,51],[-5,50],[-9,44],[-9,37]],
+  // Scandinavia
+  [[5,58],[28,56],[28,70],[15,68],[5,62],[5,58]],
+  // Africa
+  [[-17,15],[10,37],[32,30],[38,22],[43,12],[51,12],[44,-10],[35,-17],[20,-35],[12,-5],[-2,5],[-17,15]],
+  // Arabia
+  [[36,30],[57,26],[56,12],[45,12],[38,22],[36,30]],
+  // Eurasia (Turkey → Siberia → Pacific)
+  [[28,42],[36,37],[54,24],[60,22],[78,8],[100,5],[108,4],[120,22],[130,33],[140,35],
+   [141,46],[130,52],[142,55],[141,62],[130,70],[100,72],[68,68],[38,64],[28,56],[28,42]],
+  // SE Asia & Indochina
+  [[100,5],[108,4],[110,15],[100,5]],
+  // Maritime SE Asia (Sumatra/Java/Borneo simplified)
+  [[95,6],[104,1],[108,-7],[116,-8],[119,1],[122,5],[118,18],[108,20],[100,14],[95,6]],
+  // Australia
+  [[114,-22],[132,-11],[136,-12],[141,-17],[148,-20],[153,-27],[151,-35],[130,-33],[114,-29],[114,-22]],
+  // Iceland
+  [[-24,63],[-13,63],[-13,66],[-20,66],[-24,63]],
+  // Japan (Honshu rough)
+  [[130,31],[132,34],[141,38],[141,42],[135,36],[130,33],[130,31]],
+];
+
+function GlobeMini({ lng = 0, lat = 0 }) {
+  const canvasRef = useRef(null);
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const SIZE = 56;
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    canvas.width = SIZE * dpr;
+    canvas.height = SIZE * dpr;
+    canvas.style.width = `${SIZE}px`;
+    canvas.style.height = `${SIZE}px`;
+    const ctx = canvas.getContext('2d');
+    ctx.scale(dpr, dpr);
+    const r = SIZE / 2;
+    ctx.beginPath();
+    ctx.arc(r, r, r, 0, Math.PI * 2);
+    ctx.clip();
+    const ocean = ctx.createRadialGradient(r * 0.6, r * 0.35, 0, r, r, r * 1.05);
+    ocean.addColorStop(0, '#1d4f88');
+    ocean.addColorStop(0.65, '#0e2a4e');
+    ocean.addColorStop(1, '#040d1c');
+    ctx.fillStyle = ocean;
+    ctx.fillRect(0, 0, SIZE, SIZE);
+    function project(pLng, pLat) {
+      const dLng = ((pLng - lng + 540) % 360) - 180;
+      return [r + (dLng / 180) * r, r - (pLat / 90) * r];
+    }
+    ctx.fillStyle = 'rgba(32,96,78,0.88)';
+    ctx.strokeStyle = 'rgba(43,217,200,0.52)';
+    ctx.lineWidth = 0.4;
+    for (const poly of GLOBE_LAND) {
+      ctx.beginPath();
+      const [sx, sy] = project(poly[0][0], poly[0][1]);
+      ctx.moveTo(sx, sy);
+      for (let i = 1; i < poly.length; i++) {
+        const gap = ((poly[i][0] - poly[i - 1][0] + 540) % 360) - 180;
+        const [x, y] = project(poly[i][0], poly[i][1]);
+        if (Math.abs(gap) > 150) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+      }
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+    }
+    const atmo = ctx.createRadialGradient(r, r, r * 0.72, r, r, r);
+    atmo.addColorStop(0, 'transparent');
+    atmo.addColorStop(1, 'rgba(43,217,200,0.18)');
+    ctx.fillStyle = atmo;
+    ctx.beginPath();
+    ctx.arc(r, r, r, 0, Math.PI * 2);
+    ctx.fill();
+    // Marker at exact stream location (lng is always x=r center; lat drives y)
+    const markerY = r - (lat / 90) * r;
+    ctx.beginPath();
+    ctx.arc(r, markerY, 2.5, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(43,217,200,0.95)';
+    ctx.fill();
+    ctx.beginPath();
+    ctx.arc(r, markerY, 4.5, 0, Math.PI * 2);
+    ctx.strokeStyle = 'rgba(43,217,200,0.5)';
+    ctx.lineWidth = 0.8;
+    ctx.stroke();
+    const spec = ctx.createRadialGradient(r * 0.58, r * 0.3, 0, r * 0.65, r * 0.4, r * 0.35);
+    spec.addColorStop(0, 'rgba(255,255,255,0.13)');
+    spec.addColorStop(1, 'transparent');
+    ctx.fillStyle = spec;
+    ctx.beginPath();
+    ctx.arc(r, r, r, 0, Math.PI * 2);
+    ctx.fill();
+  }, [lng, lat]);
+  return <canvas ref={canvasRef} aria-hidden="true" />;
+}
+
 function LiveLocationGlobe({ live, onOpen }) {
   const { t } = useTranslation();
-  const location = streamLocations.get(live.id) ?? fallbackLocations[live.id] ?? { top: '50%', left: '50%' };
-  const x = toNumber(location.left);
-  const y = toNumber(location.top);
-  const surfaceSize = 118;
-  const globeCenter = 31;
-  const surfaceX = globeCenter - (x / 100) * surfaceSize;
-  const surfaceY = globeCenter - (y / 100) * surfaceSize;
+  const [lng = 0, lat = 0] = live.coordinates ?? mapStreamById.get(live.id)?.coordinates ?? [0, 0];
+  const [flashing, setFlashing] = useState(false);
+
+  const handleClick = () => {
+    setFlashing(true);
+    setTimeout(() => setFlashing(false), 420);
+    onOpen?.();
+  };
 
   return (
     <button
       type="button"
-      className="live-location-globe live-location-globe--compass"
-      onClick={onOpen}
+      className={`live-location-globe live-location-globe--compass${flashing ? ' is-flashing' : ''}`}
+      onClick={handleClick}
       aria-label={`${t('common.open')} ${live.city}, ${live.country} on the globe`}
     >
       <span className="live-location-globe__compass live-location-globe__compass--n" aria-hidden="true">N</span>
       <span className="live-location-globe__compass live-location-globe__compass--e" aria-hidden="true">E</span>
       <span className="live-location-globe__compass live-location-globe__compass--s" aria-hidden="true">S</span>
       <span className="live-location-globe__compass live-location-globe__compass--w" aria-hidden="true">W</span>
-      <div className="live-location-globe__world" aria-hidden="true">
-        <span
-          className="live-location-globe__surface"
-          style={{ transform: `translate3d(${surfaceX}px, ${surfaceY}px, 0)` }}
-        />
-        <span className="live-location-globe__marker" />
-      </div>
+      <GlobeMini lng={lng} lat={lat} />
     </button>
   );
 }
@@ -1217,6 +1330,11 @@ function CreatorLiveSession({ live, onEndingChange }) {
   const [elapsed, setElapsed] = useState(0);
   const [recordingActive, setRecordingActive] = useState(false);
   const [ingestStatus, setIngestStatus] = useState('pending'); // 'pending' | 'relay' | 'whip' | 'failed'
+  // Multistream outputs: [{ provider, name, outputId, status }]
+  // status: 'connecting' | 'live' | 'error' | 'disconnected'
+  const [outputStatuses, setOutputStatuses] = useState([]);
+  const [multistreamOpen, setMultistreamOpen] = useState(false);
+  const activeOutputIdsRef = useRef([]); // track output IDs for cleanup on endLive
   const [viewerCount, setViewerCount] = useState(1);
   const [peakViewers, setPeakViewers] = useState(1);
   const [stars, setStars] = useState(0);
@@ -1234,6 +1352,10 @@ function CreatorLiveSession({ live, onEndingChange }) {
   const [shareLiveOpen, setShareLiveOpen] = useState(false);
   const [bannerVisible, setBannerVisible] = useState(false);
   const [bannerDismissed, setBannerDismissed] = useState(false);
+  const [qaSheetOpen, setQaSheetOpen] = useState(false);
+  const [liveQuestions, setLiveQuestions] = useState([]);
+  const [newQCount, setNewQCount] = useState(0);
+  const seenQIdsRef = useRef(new Set());
   const hideTimer = useRef(null);
   const longPressTimer = useRef(null);
   const lastCenterTapRef = useRef({ time: 0, x: 0, y: 0 });
@@ -1244,6 +1366,41 @@ function CreatorLiveSession({ live, onEndingChange }) {
   const videoElementRef = useRef(null);
   const coverCaptureRef = useRef({ status: 'idle', imageData: null });
   const lastCommentKeyRef = useRef(null);
+  const wakeLockRef = useRef(null);
+
+  useEffect(() => {
+    if (typeof navigator === 'undefined' || !('wakeLock' in navigator)) return undefined;
+
+    let cancelled = false;
+    const request = async () => {
+      try {
+        const sentinel = await navigator.wakeLock.request('screen');
+        if (cancelled) { try { await sentinel.release(); } catch {} return; }
+        wakeLockRef.current = sentinel;
+        sentinel.addEventListener('release', () => {
+          if (wakeLockRef.current === sentinel) wakeLockRef.current = null;
+        });
+      } catch (err) {
+        console.warn('[CreatorLiveSession] Wake Lock request failed:', err.message);
+      }
+    };
+    request();
+
+    const onVisibility = () => {
+      if (document.visibilityState === 'visible' && !wakeLockRef.current) {
+        request();
+      }
+    };
+    document.addEventListener('visibilitychange', onVisibility);
+
+    return () => {
+      cancelled = true;
+      document.removeEventListener('visibilitychange', onVisibility);
+      const sentinel = wakeLockRef.current;
+      wakeLockRef.current = null;
+      if (sentinel) { try { sentinel.release(); } catch {} }
+    };
+  }, []);
 
   const captureAndSaveCoverImage = useCallback(async (liveId, options = {}) => {
     if (!liveId) return null;
@@ -1406,10 +1563,22 @@ function CreatorLiveSession({ live, onEndingChange }) {
         // as those credentials may point to a deleted live input.
         try {
           const token = await user.getIdToken();
+          const destinations = getLiveDestinations(live.id);
           const cfResponse = await fetch('/api/cloudflare/live-input/create', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-            body: JSON.stringify({ streamId: live.id, title: live.title || live.experienceTitle || live.name || live.id }),
+            body: JSON.stringify({
+              streamId: live.id,
+              title: live.title || live.experienceTitle || live.name || live.id,
+              ...(destinations.length > 0 && {
+                destinations: destinations.map((d) => ({
+                  url: d.streamUrl,
+                  streamKey: d.streamKey,
+                  provider: d.provider,
+                  name: d.name,
+                })),
+              }),
+            }),
           });
           if (cfResponse.ok) {
             const cfData = await cfResponse.json();
@@ -1456,6 +1625,21 @@ function CreatorLiveSession({ live, onEndingChange }) {
               }
             } catch (_) {}
 
+            // ── Handle multistream outputs returned by create ──
+            if (Array.isArray(cfData.outputs) && cfData.outputs.length > 0) {
+              setOutputStatuses(cfData.outputs.map((o) => ({
+                outputId: o.outputId || null,
+                provider: o.provider ?? 'custom',
+                name: o.name ?? o.provider ?? 'Custom RTMP',
+                status: o.status ?? (o.outputId ? 'live' : 'error'),
+              })));
+              activeOutputIdsRef.current = cfData.outputs
+                .filter((o) => o.outputId)
+                .map((o) => ({ liveInputId: cfData.liveInputId, outputId: o.outputId }));
+              clearLiveDestinations(live.id);
+              console.log(`[MULTISTREAM] ${cfData.outputs.length} output(s) created inline with live input`);
+            }
+
             if (!whipCredentials && !relayCredentials) {
               console.warn('[INGEST] No relay or WHIP credentials returned — recording will be unavailable');
             }
@@ -1501,7 +1685,9 @@ function CreatorLiveSession({ live, onEndingChange }) {
         console.log('[INGEST][ROUTE] usingRelay=%s usingWhip=%s hasVP8=%s relayUrl=%s cloudflareLiveInputUid=%s', !!relayCredentials && hasVP8, !!whipCredentials, hasVP8, relayCredentials?.relayUrl || 'none', cloudflareLiveInputId || 'MISSING');
         (async () => {
           let ingestMode = 'none';
-          if (whipCredentials) {
+          // Use relay first when multistream outputs are active (relay → RTMPS → Cloudflare triggers live output forwarding)
+          const hasMultistreamOutputs = activeOutputIdsRef.current.length > 0;
+          if (!hasMultistreamOutputs && whipCredentials) {
             try {
               await startWhipConnection(stream, whipCredentials.url, whipCredentials.key);
               ingestMode = 'whip';
@@ -1682,6 +1868,15 @@ function CreatorLiveSession({ live, onEndingChange }) {
   }, [live?.id, phase]);
 
   useEffect(() => {
+    if (!live?.id || phase !== 'live') return undefined;
+    return subscribeToQuestions(live.id, (qs) => {
+      setLiveQuestions(qs);
+      const unseen = qs.filter((q) => !seenQIdsRef.current.has(q.id) && !q.answered);
+      setNewQCount(unseen.length);
+    });
+  }, [live?.id, phase]);
+
+  useEffect(() => {
     if (phase !== 'live') return undefined;
     const timer = window.setInterval(() => {
       setFollowers((value) => value + 1);
@@ -1754,6 +1949,16 @@ function CreatorLiveSession({ live, onEndingChange }) {
     setConfirmEnd(false);
     setPhase('ending');
     onEndingChange?.(true, live.id);
+
+    // Clean up multistream outputs (best-effort — CF also stops them when the live input ends)
+    const outputs = activeOutputIdsRef.current;
+    if (outputs.length > 0 && user) {
+      setOutputStatuses((prev) => prev.map((o) => ({ ...o, status: 'disconnected' })));
+      Promise.all(outputs.map(({ liveInputId, outputId }) =>
+        deleteCloudflareOutput(user, liveInputId, outputId).catch(() => {}),
+      )).catch(() => {});
+      activeOutputIdsRef.current = [];
+    }
 
     const finalCoverImage = coverCaptureRef.current.imageData || await captureAndSaveCoverImage(live.id, { delayMs: 0, force: true });
     const coverFields = finalCoverImage ? {
@@ -1932,6 +2137,39 @@ function CreatorLiveSession({ live, onEndingChange }) {
         <div className="creator-live-hud__right">
           <button
             type="button"
+            className={`creator-hud-qa-btn${newQCount > 0 ? ' has-badge' : ''}`}
+            onClick={(e) => {
+              e.stopPropagation();
+              setQaSheetOpen(true);
+              seenQIdsRef.current = new Set(liveQuestions.map((q) => q.id));
+              setNewQCount(0);
+            }}
+            aria-label="Questions des spectateurs"
+          >
+            <MessageCircle size={15} strokeWidth={1.9} />
+            {newQCount > 0 ? <span className="creator-hud-qa-btn__badge">{newQCount}</span> : null}
+          </button>
+          <button
+            type="button"
+            className="creator-hud-share-btn"
+            onClick={async (e) => {
+              e.stopPropagation();
+              const url = `${window.location.origin}/studio`;
+              try {
+                await navigator.clipboard.writeText(url);
+                setToast('Lien Studio copié — ouvrez-le sur votre ordi');
+                setTimeout(() => setToast(null), 2600);
+              } catch {
+                setToast(url);
+                setTimeout(() => setToast(null), 3200);
+              }
+            }}
+            aria-label="Copier le lien Studio pour répondre depuis un autre appareil"
+          >
+            <Monitor size={15} strokeWidth={1.9} />
+          </button>
+          <button
+            type="button"
             className="creator-hud-share-btn"
             onClick={(e) => { e.stopPropagation(); setShareLiveOpen(true); }}
             aria-label="Share your live"
@@ -1948,7 +2186,50 @@ function CreatorLiveSession({ live, onEndingChange }) {
         {ingestStatus === 'failed' ? <span style={{color:'#f87171'}}>⚠ Stream not reaching Cloudflare — viewers limited to 1</span> : null}
         {ingestStatus === 'whip' ? <span style={{color:'#4ade80'}}>● HLS active — unlimited viewers</span> : null}
         {ingestStatus === 'relay' ? <span style={{color:'#4ade80'}}>● Relay active — unlimited viewers</span> : null}
+        {outputStatuses.length > 0 && (
+          <button
+            type="button"
+            className="creator-multistream-pill"
+            onClick={() => setMultistreamOpen((v) => !v)}
+          >
+            {outputStatuses.some((o) => o.status === 'error') ? '⚠' : '●'}
+            {' Vuvio'}
+            {outputStatuses.map((o) => ` + ${o.name ?? o.provider}`).join('')}
+          </button>
+        )}
       </div>
+
+      {multistreamOpen && outputStatuses.length > 0 && (
+        <div className="creator-multistream-sheet" onClick={() => setMultistreamOpen(false)}>
+          <div className="creator-multistream-sheet__panel" onClick={(e) => e.stopPropagation()}>
+            <div className="creator-multistream-sheet__header">
+              <span>Live destinations</span>
+              <button type="button" onClick={() => setMultistreamOpen(false)}><X size={16} strokeWidth={1.9} /></button>
+            </div>
+            <div className="creator-multistream-sheet__list">
+              <div className="creator-multistream-sheet__row creator-multistream-sheet__row--on">
+                <span className="creator-multistream-sheet__dot" />
+                <span className="creator-multistream-sheet__name">Vuvio</span>
+                <span className="creator-multistream-sheet__status">Live</span>
+              </div>
+              {outputStatuses.map((o) => (
+                <div key={o.name ?? o.provider} className={`creator-multistream-sheet__row${o.status === 'error' || o.status === 'disconnected' ? ' creator-multistream-sheet__row--error' : o.status === 'live' ? ' creator-multistream-sheet__row--on' : ''}`}>
+                  <span className="creator-multistream-sheet__dot" />
+                  <div className="creator-multistream-sheet__info">
+                    <span className="creator-multistream-sheet__name">{o.name ?? o.provider}</span>
+                    {(o.status === 'error' || o.status === 'disconnected') && (
+                      <span className="creator-multistream-sheet__note">Your Vuvio Live is still running.</span>
+                    )}
+                  </div>
+                  <span className="creator-multistream-sheet__status">
+                    {o.status === 'connecting' ? 'Connecting…' : o.status === 'live' ? 'Live' : o.status === 'error' ? '⚠ Error' : 'Stopped'}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
       {toast ? <span className="creator-live-toast">{toast === 'Weak connection' ? <WifiOff size={13} strokeWidth={1.9} /> : null}{toast}</span> : null}
       {elapsed > 45 ? <span className="creator-live-warning"><BatteryWarning size={13} strokeWidth={1.8} />Low battery</span> : null}
       {comment ? (
@@ -1995,6 +2276,22 @@ function CreatorLiveSession({ live, onEndingChange }) {
       {shareLiveOpen ? (
         <ShareLiveSheet live={live} onClose={() => setShareLiveOpen(false)} />
       ) : null}
+      {qaSheetOpen ? (
+        <LiveQASheet
+          questions={liveQuestions}
+          streamerName={user?.displayName || 'Streamer'}
+          onClose={() => setQaSheetOpen(false)}
+          onAnswer={async (questionId, text) => {
+            await answerQuestion({
+              liveId: live.id,
+              questionId,
+              text,
+              authorId: user.uid,
+              authorName: user.displayName || 'Streamer',
+            });
+          }}
+        />
+      ) : null}
     </section>
   );
 }
@@ -2039,6 +2336,19 @@ function LiveViewer({ liveId, creatorMode = false }) {
 
 
   useEffect(() => { getCreatedLives().then(setCreatedLives).catch(() => setCreatedLives([])); }, []);
+  // Fast path: fetch liveId doc directly so liveReady flips before the collection query returns
+  useEffect(() => {
+    if (!liveId) return;
+    getDoc(doc(db, 'activeLives', liveId)).then((snap) => {
+      if (!snap.exists()) return;
+      const data = snap.data();
+      if (data?.status !== 'live') return;
+      setCreatedLives((prev) => {
+        if (prev.some((l) => l.id === liveId)) return prev;
+        return [{ ...data, id: snap.id }, ...prev];
+      });
+    }).catch(() => {});
+  }, [liveId]); // eslint-disable-line react-hooks/exhaustive-deps
   // Stable shuffle — computed once per session so Firestore updates don't reshuffle the feed
   const [shuffledDemoIds] = useState(() => shuffleArray(demoVideoLiveIds));
   const liveFeed = useMemo(() => {
@@ -2121,6 +2431,18 @@ function LiveViewer({ liveId, creatorMode = false }) {
   const [shareLiveSheetOpen, setShareLiveSheetOpen] = useState(false);
   const [chatComposerOpen, setChatComposerOpen] = useState(false);
   const [chatPanelOpen, setChatPanelOpen] = useState(false);
+  const [chatPanelTab, setChatPanelTab] = useState('messages');
+  const [keyboardOffset, setKeyboardOffset] = useState(0);
+  const [qaComposerOpen, setQaComposerOpen] = useState(false);
+  const [floatingComment, setFloatingComment] = useState(null);
+  const lastFloatingCommentIdRef = useRef(null);
+  const [firestoreMessages, setFirestoreMessages] = useState([]);
+  const [qaDraft, setQaDraft] = useState('');
+  const qaInputRef = useRef(null);
+  const shownAnswerIdsRef = useRef(new Set());
+  const [answerToast, setAnswerToast] = useState(null);
+  const answerToastTimerRef = useRef(null);
+  const knownQuestionsRef = useRef(new Set());
   const [immersive, setImmersive] = useState(false);
   const [watermarkFaded, setWatermarkFaded] = useState(false);
   const watermarkTimerRef = useRef(null);
@@ -2143,27 +2465,72 @@ function LiveViewer({ liveId, creatorMode = false }) {
   const activeLiveId = live.id;
   // When a specific liveId is requested (viewer navigating to a real broadcast), hide content
   // until that live is loaded into the feed — avoids briefly showing a random mock live.
-  const liveReady = !liveId || live.id === liveId;
+  // Once the requested live is present in the feed, stop gating so swiping to the next lives
+  // still renders their UI (streamer, buttons, etc.).
+  const liveReady = !liveId || liveFeed.some((item) => item.id === liveId);
 
   // Track the real live being watched so we can detect when it ends
   const watchingLiveRef = useRef(null);
+  const prevCreatedLivesRef = useRef([]);
   useEffect(() => {
     if (broadcastEnded || creatorMode || !live.creatorUid) return;
     watchingLiveRef.current = live;
   }, [live.id, live.creatorUid, broadcastEnded, creatorMode]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Detect when the watched live disappears from createdLives (broadcaster ended stream)
+  // Detect when a real live ends: either disappears from createdLives or its status leaves 'live'.
+  // Works even when the user is on a demo live in the feed (no liveId in URL).
   useEffect(() => {
     if (broadcastEnded || creatorMode) return;
-    const watching = watchingLiveRef.current;
-    if (!watching?.creatorUid) return;
-    const isStillLive = createdLives.some((l) => l.id === watching.id && l.status === 'live');
-    if (!isStillLive) {
-      setEndedLiveSnap((p) => p ?? watching);
+    const prev = prevCreatedLivesRef.current;
+    prevCreatedLivesRef.current = createdLives;
+    if (prev.length === 0) return; // first load, no baseline yet
+
+    // Find a live that either disappeared OR whose status changed away from 'live'
+    const endedLive = prev.find((l) => {
+      if (!l.id || !l.creatorUid) return false; // only real Firestore lives
+      const current = createdLives.find((c) => c.id === l.id);
+      return !current || (current.status && current.status !== 'live');
+    });
+    if (!endedLive) return;
+
+    // Only show ended screen if user was watching this live or it's their own
+    const wasWatching = watchingLiveRef.current?.id === endedLive.id
+      || live.id === endedLive.id
+      || liveId === endedLive.id
+      || endedLive.creatorUid === user?.uid;
+    console.log('[live-ended] createdLives detection — endedLive:', endedLive?.id, 'wasWatching:', wasWatching, 'liveId:', liveId);
+    if (wasWatching) {
+      setEndedLiveSnap((p) => p ?? endedLive);
       setBroadcastEnded(true);
       watchingLiveRef.current = null;
     }
-  }, [createdLives, broadcastEnded, creatorMode]);
+  }, [createdLives, broadcastEnded, creatorMode, live.id, liveId, user?.uid]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Robust fallback: watch liveId (stable prop) directly in Firestore.
+  // Uses a ref so the callback always sees the latest broadcastEnded value.
+  const broadcastEndedRef = useRef(false);
+  useEffect(() => { broadcastEndedRef.current = broadcastEnded; }, [broadcastEnded]);
+  useEffect(() => {
+    if (!liveId || creatorMode) return;
+    let cancelled = false;
+    let everExisted = false;
+    console.log('[live-ended] direct fallback: subscribing to activeLives/', liveId);
+    const unsub = onSnapshot(doc(db, 'activeLives', liveId), (snap) => {
+      if (cancelled || broadcastEndedRef.current) return;
+      const status = snap.data()?.status;
+      console.log('[live-ended] direct fallback snapshot — exists:', snap.exists(), 'status:', status);
+      if (snap.exists()) everExisted = true;
+      // Only count as ended if the doc existed before (real Firestore live) and is now gone/ended.
+      // If the doc never existed, it's a mock live — do not show ended screen.
+      const isEnded = everExisted && (!snap.exists() || status === 'ended' || status === 'completed' || status === 'cancelled');
+      if (isEnded) {
+        console.log('[live-ended] direct fallback: triggering ended screen');
+        setEndedLiveSnap((prev) => prev ?? watchingLiveRef.current ?? live);
+        setBroadcastEnded(true);
+      }
+    }, (err) => { console.warn('[live-ended] direct fallback error:', err.message); });
+    return () => { cancelled = true; unsub(); };
+  }, [liveId, creatorMode]); // eslint-disable-line react-hooks/exhaustive-deps
   const liveEquipment = live.id ? getEquipmentSelection(equipmentLibrary, live.equipment?.map((item) => item.equipmentId) ?? demoLiveEquipmentIds) : [];
   const isLiked = !!liked[live.id];
   const liveCreatorId = live.creatorUid || live.id;
@@ -2251,6 +2618,59 @@ function LiveViewer({ liveId, creatorMode = false }) {
 
   useEffect(() => subscribeToCreatedLives(setCreatedLives), []);
 
+  // Subscribe to real comments + questions from Firestore for real broadcasts
+  useEffect(() => {
+    const targetId = activeLiveId || liveId;
+    if (!targetId || !live.creatorUid) { setFirestoreMessages([]); return; }
+
+    const toMsg = (d, kind) => ({
+      id: d.id,
+      who: d.userDisplayName || d.authorName || 'Anonymous',
+      text: d.text || '',
+      isQuestion: kind === 'question',
+      ts: d.createdAt?.toMillis?.() ?? (d.createdAt?.seconds ?? 0) * 1000,
+      time: d.createdAt ? new Intl.DateTimeFormat(undefined, { hour: '2-digit', minute: '2-digit' }).format(new Date((d.createdAt?.toMillis?.() ?? (d.createdAt?.seconds ?? 0) * 1000))) : '',
+    });
+
+    let comments = [];
+    let questions = [];
+    const merge = () => {
+      const all = [...comments, ...questions].sort((a, b) => a.ts - b.ts);
+      setFirestoreMessages(all);
+    };
+
+    const unsubComments = onSnapshot(collection(db, `activeLives/${targetId}/comments`), (snap) => {
+      comments = snap.docs.map((d) => toMsg({ id: d.id, ...d.data() }, 'comment'));
+      merge();
+    }, () => {});
+
+    const unsubQuestions = subscribeToQuestions(targetId, (qs) => {
+      const items = [];
+      qs.forEach((q) => {
+        items.push(toMsg(q, 'question'));
+        if (q.answered && q.answer?.text) {
+          const answerTsMs = q.answer.createdAt
+            ? new Date(q.answer.createdAt).getTime()
+            : (q.createdAt?.toMillis?.() ?? (q.createdAt?.seconds ?? 0) * 1000);
+          items.push({
+            id: `${q.id}__answer`,
+            who: q.answer.authorName || 'Streamer',
+            text: q.answer.text,
+            isQuestion: false,
+            isAnswer: true,
+            answerToWho: q.authorName || 'Spectateur',
+            ts: answerTsMs,
+            time: new Intl.DateTimeFormat(undefined, { hour: '2-digit', minute: '2-digit' }).format(new Date(answerTsMs)),
+          });
+        }
+      });
+      questions = items;
+      merge();
+    });
+
+    return () => { unsubComments(); unsubQuestions(); };
+  }, [activeLiveId, liveId, live.creatorUid]); // eslint-disable-line react-hooks/exhaustive-deps
+
   // WebRTC streaming for broadcaster
   useEffect(() => {
     if (!creatorMode || !liveId || !user || live.createdLocally) return;
@@ -2287,6 +2707,12 @@ function LiveViewer({ liveId, creatorMode = false }) {
       if (!isMounted) return;
 
       try {
+        if (!docSnap.exists()) {
+          console.log('[live-ended] broadcast watcher: doc deleted — triggering ended screen');
+          setEndedLiveSnap((prev) => prev ?? live);
+          setBroadcastEnded(true);
+          return;
+        }
         if (docSnap.exists()) {
           const data = docSnap.data();
 
@@ -2306,7 +2732,16 @@ function LiveViewer({ liveId, creatorMode = false }) {
             return next;
           });
 
-          if (data.status === 'ended') {
+          // Show incoming comments as a brief floating overlay
+          const lc = data?.latestComment;
+          if (lc?.id && lc.id !== lastFloatingCommentIdRef.current) {
+            lastFloatingCommentIdRef.current = lc.id;
+            setFloatingComment({ name: lc.userDisplayName || 'Anonymous', text: lc.text || '' });
+            window.setTimeout(() => setFloatingComment(null), 4000);
+          }
+
+          if (data.status === 'ended' || data.status === 'completed' || data.status === 'cancelled') {
+            console.log('[live-ended] broadcast watcher: status =', data.status, '— triggering ended screen');
             setEndedLiveSnap((prev) => prev ?? live);
             setBroadcastEnded(true);
             setRemoteStream(null);
@@ -2335,11 +2770,23 @@ function LiveViewer({ liveId, creatorMode = false }) {
   useEffect(() => {
     if (!broadcastEnded || creatorMode) return;
     const timer = setTimeout(() => {
-      setEndedLiveSnap(null);
       navigate('/watch', { replace: true });
     }, 5000);
     return () => clearTimeout(timer);
   }, [broadcastEnded, creatorMode, navigate]);
+
+  // Reset ended state only when liveId transitions from truthy → falsy (navigation away from a specific live).
+  // Must NOT fire when liveId was never set — that would instantly clear broadcastEnded for viewers
+  // watching a live from the feed (no liveId in URL), preventing the ended screen from showing.
+  const prevLiveIdForResetRef = useRef(liveId);
+  useEffect(() => {
+    const was = prevLiveIdForResetRef.current;
+    prevLiveIdForResetRef.current = liveId;
+    if (was && !liveId) {
+      setBroadcastEnded(false);
+      setEndedLiveSnap(null);
+    }
+  }, [liveId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Prefetch HLS manifests for adjacent feed items so swiping feels instant.
   useEffect(() => {
@@ -2395,9 +2842,9 @@ function LiveViewer({ liveId, creatorMode = false }) {
       let retryTimer = null;
       let retryCount = 0;
       const MAX_HLS_RETRIES = 30;
-      const HLS_RETRY_DELAY = 3000;
+      const HLS_RETRY_DELAY = 1500;
       // After this many HLS failures, start P2P in parallel (don't wait for HLS to give up)
-      const P2P_PARALLEL_AFTER = 3;
+      const P2P_PARALLEL_AFTER = 1;
 
       // Parallel P2P state
       let p2pSession = null;
@@ -2458,6 +2905,7 @@ function LiveViewer({ liveId, creatorMode = false }) {
 
       const tryHls = () => {
         if (cancelled) return;
+        if (anySourceWonRef.current) return; // P2P/WHEP won while retry timer was pending
         hls?.destroy();
         hls = null;
 
@@ -2613,6 +3061,9 @@ function LiveViewer({ liveId, creatorMode = false }) {
             setWatchStatus('retrying');
             setWatchRetry(retryCount);
             retryTimer = window.setTimeout(connect, RETRY_DELAY);
+          } else if (!cancelled) {
+            console.warn(`[VIEWER] P2P exhausted all retries after disconnect | liveId: ${activeLiveId}`);
+            setWatchStatus('error');
           }
         }
       }, viewerSessionId, user?.uid ?? null).then((result) => {
@@ -2625,6 +3076,9 @@ function LiveViewer({ liveId, creatorMode = false }) {
           setWatchStatus('retrying');
           setWatchRetry(retryCount);
           retryTimer = window.setTimeout(connect, RETRY_DELAY);
+        } else {
+          console.warn(`[VIEWER] P2P exhausted all retries | liveId: ${activeLiveId}`);
+          setWatchStatus('error');
         }
       });
     };
@@ -2654,7 +3108,7 @@ function LiveViewer({ liveId, creatorMode = false }) {
     let retryTimer = null;
     let whepRetryCount = 0;
     const MAX_WHEP_RETRIES = 10;
-    const WHEP_RETRY_DELAY = 3000;
+    const WHEP_RETRY_DELAY = 1000;
 
     const tryWhep = () => {
       if (cancelled) return;
@@ -2775,10 +3229,34 @@ function LiveViewer({ liveId, creatorMode = false }) {
     }
     setChatComposerOpen(false);
     setChatPanelOpen(false);
+    setQaComposerOpen(false);
     setUserSheetOpen(false);
     setEquipmentSheetOpen(false);
-    setImmersive((value) => !value);
+    setImmersive((prev) => {
+      const next = !prev;
+      if (next) {
+        const el = feedRef.current || document.documentElement;
+        (el.requestFullscreen || el.webkitRequestFullscreen || el.mozRequestFullScreen)?.call(el);
+      } else {
+        (document.exitFullscreen || document.webkitExitFullscreen || document.mozCancelFullScreen)?.call(document);
+      }
+      return next;
+    });
   };
+
+  useEffect(() => {
+    const onFsChange = () => {
+      if (!document.fullscreenElement && !document.webkitFullscreenElement) {
+        setImmersive(false);
+      }
+    };
+    document.addEventListener('fullscreenchange', onFsChange);
+    document.addEventListener('webkitfullscreenchange', onFsChange);
+    return () => {
+      document.removeEventListener('fullscreenchange', onFsChange);
+      document.removeEventListener('webkitfullscreenchange', onFsChange);
+    };
+  }, []);
 
   const handleLiveTap = (event, moved) => {
     if (moved > 18 || event.target.closest('button, a, input, textarea, .live-chat-panel, .live-floating-composer')) return;
@@ -2802,7 +3280,7 @@ function LiveViewer({ liveId, creatorMode = false }) {
     if (tapSheetTimer.current) window.clearTimeout(tapSheetTimer.current);
     tapSheetTimer.current = window.setTimeout(() => {
       tapSheetTimer.current = null;
-      if (!chatComposerOpen && !chatPanelOpen) {
+      if (!chatComposerOpen && !chatPanelOpen && !qaComposerOpen) {
         setUserSheetOpen(true);
       }
     }, 480);
@@ -2894,8 +3372,11 @@ function LiveViewer({ liveId, creatorMode = false }) {
     }, 220);
   };
 
-  const chat = useMemo(() => [...(live.chat ?? []), ...(localChat[activeLiveId] ?? [])], [live.chat, localChat, activeLiveId]);
-  const visibleChat = useMemo(() => chat.slice(-4), [chat]);
+  const chat = useMemo(() => {
+    if (firestoreMessages.length > 0) return firestoreMessages;
+    return [...(live.chat ?? []), ...(localChat[activeLiveId] ?? [])];
+  }, [firestoreMessages, live.chat, localChat, activeLiveId]);
+  const visibleChat = useMemo(() => chat.slice(-6), [chat]);
   const chatCount = Math.max(chat.length, viewerCount(live.viewerLabel) + 21);
   const trackStyle = {
     transform: `translate3d(0, calc(${-index * 100}% + ${dragY}px), 0)`,
@@ -2907,17 +3388,76 @@ function LiveViewer({ liveId, creatorMode = false }) {
   }, [chatComposerOpen, chatPanelOpen]);
 
   useEffect(() => {
-    if (!chatComposerOpen && !chatPanelOpen) {
+    if (!qaComposerOpen) return;
+    window.setTimeout(() => qaInputRef.current?.focus(), 80);
+  }, [qaComposerOpen]);
+
+  useEffect(() => {
+    if (!activeLiveId) return undefined;
+    // Reset per-live caches so a new live doesn't inherit old IDs
+    knownQuestionsRef.current = new Set();
+    return subscribeToQuestions(activeLiveId, (qs) => {
+      // Track all seen question IDs — questions created in THIS session (missing from first snapshot)
+      // are the only ones we treat as "mine" for toast purposes when answered.
+      const isFirstSnapshot = knownQuestionsRef.current.size === 0;
+      if (isFirstSnapshot) {
+        qs.forEach((q) => knownQuestionsRef.current.add(q.id));
+      }
+      qs.filter((q) => q.answered && q.answer && !shownAnswerIdsRef.current.has(q.id)).forEach((q) => {
+        shownAnswerIdsRef.current.add(q.id);
+        // Toast only if answer is to a question the current user asked
+        const isMine = user?.uid && q.authorId === user.uid;
+        if (isMine) {
+          if (answerToastTimerRef.current) window.clearTimeout(answerToastTimerRef.current);
+          setAnswerToast({ text: q.answer.text, who: q.answer.authorName || 'Streamer' });
+          answerToastTimerRef.current = window.setTimeout(() => setAnswerToast(null), 5200);
+        }
+      });
+    });
+  }, [activeLiveId, user?.uid]);
+
+  useEffect(() => () => {
+    if (answerToastTimerRef.current) window.clearTimeout(answerToastTimerRef.current);
+  }, []);
+
+  useEffect(() => {
+    if (!chatComposerOpen && !chatPanelOpen && !qaComposerOpen) {
       document.documentElement.style.removeProperty('--live-keyboard-offset');
+      document.documentElement.classList.remove('has-soft-keyboard');
+      setKeyboardOffset(0);
+      if (window.scrollY !== 0) window.scrollTo(0, 0);
       return undefined;
     }
 
     const viewport = window.visualViewport;
     if (!viewport) return undefined;
 
+    let removeTimer = null;
+    const pinScrollTop = () => {
+      if (window.scrollY !== 0 || document.documentElement.scrollTop !== 0 || document.body.scrollTop !== 0) {
+        window.scrollTo(0, 0);
+        document.documentElement.scrollTop = 0;
+        document.body.scrollTop = 0;
+      }
+    };
+
     const updateKeyboardOffset = () => {
       const offset = Math.max(0, window.innerHeight - viewport.height - viewport.offsetTop);
-      document.documentElement.style.setProperty('--live-keyboard-offset', `${Math.round(offset)}px`);
+      const rounded = Math.round(offset);
+      document.documentElement.style.setProperty('--live-keyboard-offset', `${rounded}px`);
+      if (rounded > 80) {
+        if (removeTimer) { window.clearTimeout(removeTimer); removeTimer = null; }
+        document.documentElement.classList.add('has-soft-keyboard');
+      } else if (document.documentElement.classList.contains('has-soft-keyboard') && !removeTimer) {
+        removeTimer = window.setTimeout(() => {
+          document.documentElement.classList.remove('has-soft-keyboard');
+          removeTimer = null;
+          pinScrollTop();
+          window.requestAnimationFrame(pinScrollTop);
+        }, 180);
+      }
+      pinScrollTop();
+      setKeyboardOffset(rounded);
     };
 
     updateKeyboardOffset();
@@ -2927,9 +3467,27 @@ function LiveViewer({ liveId, creatorMode = false }) {
     return () => {
       viewport.removeEventListener('resize', updateKeyboardOffset);
       viewport.removeEventListener('scroll', updateKeyboardOffset);
+      if (removeTimer) window.clearTimeout(removeTimer);
       document.documentElement.style.removeProperty('--live-keyboard-offset');
+      document.documentElement.classList.remove('has-soft-keyboard');
+      setKeyboardOffset(0);
+      pinScrollTop();
+      window.requestAnimationFrame(pinScrollTop);
     };
-  }, [chatComposerOpen, chatPanelOpen]);
+  }, [chatComposerOpen, chatPanelOpen, qaComposerOpen]);
+
+  useEffect(() => {
+    const clean = () => {
+      document.documentElement.style.removeProperty('--live-keyboard-offset');
+      document.documentElement.classList.remove('has-soft-keyboard');
+      if (window.scrollY !== 0) window.scrollTo(0, 0);
+    };
+    window.addEventListener('pagehide', clean);
+    return () => {
+      window.removeEventListener('pagehide', clean);
+      clean();
+    };
+  }, []);
 
   useEffect(() => {
     let active = true;
@@ -3048,7 +3606,7 @@ function LiveViewer({ liveId, creatorMode = false }) {
     }));
     const burstId = Date.now();
     setSendBursts((s) => [...s, { id: burstId, text }]);
-    window.setTimeout(() => setSendBursts((s) => s.filter((b) => b.id !== burstId)), 900);
+    window.setTimeout(() => setSendBursts((s) => s.filter((b) => b.id !== burstId)), 3200);
 
     setChatDraft('');
     setChatComposerOpen(false);
@@ -3091,6 +3649,55 @@ function LiveViewer({ liveId, creatorMode = false }) {
     });
   };
 
+  const sendLiveQuestion = async (event) => {
+    event?.preventDefault();
+    event?.stopPropagation();
+    const text = qaDraft.trim();
+    const targetLiveId = activeLiveId || liveId;
+    if (!text || !targetLiveId || !user?.uid) return;
+
+    qaInputRef.current?.blur();
+    pointerStart.current = null;
+    setIsDragging(false);
+    setDragY(0);
+    setLocalChat((state) => ({
+      ...state,
+      [targetLiveId]: [
+        ...(state[targetLiveId] ?? []),
+        {
+          who: user.displayName || 'Vous',
+          text,
+          time: new Intl.DateTimeFormat(undefined, { hour: '2-digit', minute: '2-digit' }).format(new Date()),
+          isQuestion: true,
+        },
+      ],
+    }));
+    const burstId = Date.now();
+    setSendBursts((s) => [...s, { id: burstId, text }]);
+    window.setTimeout(() => setSendBursts((s) => s.filter((b) => b.id !== burstId)), 3200);
+    setQaDraft('');
+    setQaComposerOpen(false);
+
+    try {
+      await sendQuestion({
+        liveId: targetLiveId,
+        streamCreatorId: live.creatorUid || null,
+        authorId: user.uid,
+        authorName: user.displayName || 'Spectateur',
+        authorAvatar: user.photoURL || null,
+        text,
+      });
+    } catch (err) {
+      console.error('[LiveViewer] Failed to send question:', err);
+    }
+
+    [0, 80, 220].forEach((delay) => {
+      window.setTimeout(() => {
+        window.scrollTo(chatScrollRef.current.x, chatScrollRef.current.y);
+      }, delay);
+    });
+  };
+
   const onChatPointerDown = (event) => {
     chatSwipeOpened.current = false;
     chatSwipeStart.current = { y: event.clientY };
@@ -3118,6 +3725,34 @@ function LiveViewer({ liveId, creatorMode = false }) {
     return <CreatorLiveSession live={live} />;
   }
 
+  const seoTitle = live?.id
+    ? `${liveTitle(live)} - ${familyLabel(live, t)} | Vuvio`
+    : 'Vuvio - Metiers, passions et experiences en direct';
+  const seoDescription = live?.id
+    ? streamDescription(live)
+    : 'Decouvrez le monde en direct a travers le regard de ceux qui le vivent. Metiers, passions, voyages, artisanat, sport, musique et experiences reelles en POV.';
+  const seoCanonical = liveId ? `/watch?live=${encodeURIComponent(liveId)}` : '/watch';
+  const seoImage = liveImage(live);
+  const seoJsonLd = live?.id ? {
+    '@context': 'https://schema.org',
+    '@type': 'BroadcastEvent',
+    name: streamTitle(live),
+    description: seoDescription,
+    url: `${SITE_URL}${seoCanonical}`,
+    isLiveBroadcast: live.status !== 'ended',
+    eventAttendanceMode: 'https://schema.org/OnlineEventAttendanceMode',
+    location: {
+      '@type': 'VirtualLocation',
+      url: `${SITE_URL}${seoCanonical}`,
+    },
+    performer: {
+      '@type': 'Person',
+      name: streamCreator(live),
+    },
+    about: [live.category, live.subcategory, streamLocation(live)].filter(Boolean).join(' - ') || undefined,
+    image: seoImage ? [seoImage.startsWith('http') ? seoImage : `${SITE_URL}${seoImage}`] : undefined,
+  } : null;
+
   return (
     <section
       ref={feedRef}
@@ -3130,6 +3765,7 @@ function LiveViewer({ liveId, creatorMode = false }) {
       onDoubleClick={onLiveDoubleClick}
       onWheel={onWheel}
     >
+      <SEO title={seoTitle} description={seoDescription} canonical={seoCanonical} image={seoImage} jsonLd={seoJsonLd} />
       <div className={isDragging ? 'live-feed__track is-dragging' : 'live-feed__track'} style={trackStyle}>
         {liveFeed.map((item, itemIndex) => {
           const isActive = itemIndex === index;
@@ -3192,13 +3828,13 @@ function LiveViewer({ liveId, creatorMode = false }) {
                       />
                       {!remoteStream ? (
                         <div className="live-slide__connecting">
-                          <i aria-hidden="true" />
+                          {watchStatus === 'error' ? null : <i aria-hidden="true" />}
                           <span>
-                            {watchStatus === 'fallback'
+                            {watchStatus === 'error'
+                              ? 'Stream unavailable. Try again later.'
+                              : watchStatus === 'fallback'
                               ? 'Switching to direct connection…'
-                              : watchRetry > 0
-                                ? 'Reconnecting live'
-                                : 'Connecting live'}
+                              : 'Connecting live'}
                           </span>
                           {import.meta.env.DEV && watchStatus ? <small>{watchStatus}</small> : null}
                         </div>
@@ -3264,7 +3900,7 @@ function LiveViewer({ liveId, creatorMode = false }) {
                       <button
                         type="button"
                         className="live-ended-screen__btn live-ended-screen__btn--primary"
-                        onClick={() => { setBroadcastEnded(false); setEndedLiveSnap(null); navigate('/watch', { replace: true }); }}
+                        onClick={() => { navigate('/watch', { replace: true }); }}
                       >
                         Back to Watch
                       </button>
@@ -3286,33 +3922,50 @@ function LiveViewer({ liveId, creatorMode = false }) {
         <BrandMark size={22} nameSize={12} gap={4} showName />
       </div>
 
-      {/* Live-ended overlay — rendered outside the feed so it persists even if the stream
-          is removed from liveFeed by the Firestore status update */}
-      {broadcastEnded && !creatorMode && endedLiveSnap && (
-        <div className="live-ended-screen" style={{ position: 'fixed', zIndex: 9000 }}>
-          {(endedLiveSnap.coverImageUrl ?? endedLiveSnap.thumbnailUrl ?? endedLiveSnap.image) && (
-            <img src={endedLiveSnap.coverImageUrl ?? endedLiveSnap.thumbnailUrl ?? endedLiveSnap.image} alt="" className="live-ended-screen__cover" />
-          )}
-          <div className="live-ended-screen__avatar">
-            {endedLiveSnap.avatarUrl ? (
-              <img src={endedLiveSnap.avatarUrl} alt="" />
-            ) : (
-              <span>{(endedLiveSnap.streamer ?? endedLiveSnap.name ?? '?')[0].toUpperCase()}</span>
-            )}
-          </div>
-          <p className="live-ended-screen__headline">
-            <strong>@{endedLiveSnap.streamer ?? endedLiveSnap.name}</strong> ended their livestream
-          </p>
-          <div className="live-ended-screen__btns">
-            <Link to={`/profile/${endedLiveSnap.creatorUid}`} className="live-ended-screen__btn" onClick={(e) => e.stopPropagation()}>
-              View profile
-            </Link>
-            <button type="button" className="live-ended-screen__btn live-ended-screen__btn--primary" onClick={() => { setBroadcastEnded(false); setEndedLiveSnap(null); navigate('/watch', { replace: true }); }}>
-              Back to Watch
-            </button>
-          </div>
+      {floatingComment && !creatorMode && (
+        <div className="creator-live-comment">
+          <span>💬</span>
+          <p><strong>{floatingComment.name}</strong>{` ${floatingComment.text}`}</p>
         </div>
       )}
+
+      {/* Live-ended overlay — rendered outside the feed so it persists even if the stream
+          is removed from liveFeed by the Firestore status update */}
+      {broadcastEnded && !creatorMode && (() => {
+        const snap = endedLiveSnap;
+        const streamerName = snap?.streamer ?? snap?.name ?? null;
+        return (
+          <div className="live-ended-screen" style={{ position: 'fixed', zIndex: 9000 }}>
+            {snap && (snap.coverImageUrl ?? snap.thumbnailUrl ?? snap.image) && (
+              <img src={snap.coverImageUrl ?? snap.thumbnailUrl ?? snap.image} alt="" className="live-ended-screen__cover" />
+            )}
+            {snap && (
+              <div className="live-ended-screen__avatar">
+                {snap.avatarUrl ? (
+                  <img src={snap.avatarUrl} alt="" />
+                ) : (
+                  <span>{(streamerName ?? '?')[0].toUpperCase()}</span>
+                )}
+              </div>
+            )}
+            <p className="live-ended-screen__headline">
+              {streamerName
+                ? <><strong>@{streamerName}</strong> ended their livestream</>
+                : 'The livestream has ended'}
+            </p>
+            <div className="live-ended-screen__btns">
+              {snap?.creatorUid && (
+                <Link to={`/profile/${snap.creatorUid}`} className="live-ended-screen__btn" onClick={(e) => e.stopPropagation()}>
+                  View profile
+                </Link>
+              )}
+              <button type="button" className="live-ended-screen__btn live-ended-screen__btn--primary" onClick={() => { navigate('/watch', { replace: true }); }}>
+                Back to Watch
+              </button>
+            </div>
+          </div>
+        );
+      })()}
 
       {!broadcastEnded && liveReady && (
         <div className="live-feed__status">
@@ -3327,7 +3980,7 @@ function LiveViewer({ liveId, creatorMode = false }) {
 
       {!broadcastEnded && (
         <div
-          className={`live-chat${chatComposerOpen || chatPanelOpen ? ' is-lifted' : ''}`}
+          className={`live-chat${chatComposerOpen || chatPanelOpen || qaComposerOpen ? ' is-lifted' : ''}`}
           aria-label="Live chat"
           onPointerDownCapture={onChatPointerDown}
           onPointerUpCapture={onChatPointerUp}
@@ -3422,7 +4075,7 @@ function LiveViewer({ liveId, creatorMode = false }) {
           >
             <Star size={22} strokeWidth={1.8} fill={isLiked ? 'currentColor' : 'none'} />
           </button>
-          <button type="button" onClick={openChatComposer} aria-label={t('live.privateMessage')}>
+          <button type="button" onClick={() => { chatScrollRef.current = { x: window.scrollX || 0, y: window.scrollY || 0 }; setQaComposerOpen(false); setChatPanelOpen(true); }} aria-label={t('live.privateMessage')}>
             <MessageCircle size={22} strokeWidth={1.8} />
           </button>
           <button type="button" onClick={() => { recordShared(); setShareLiveSheetOpen(true); }} aria-label={t('common.share')}>
@@ -3459,6 +4112,31 @@ function LiveViewer({ liveId, creatorMode = false }) {
         <button type="button" className="live-chat-dismiss" aria-label="Close message composer" onClick={closeChatComposer} />
       ) : null}
 
+      {qaComposerOpen ? (
+        <button type="button" className="live-chat-dismiss" aria-label="Fermer" onClick={() => setQaComposerOpen(false)} />
+      ) : null}
+
+      {qaComposerOpen ? (
+        <form className="live-floating-composer" onSubmit={sendLiveQuestion}>
+          <input
+            ref={qaInputRef}
+            type="text"
+            value={qaDraft}
+            onChange={(event) => setQaDraft(event.target.value)}
+            onBlur={() => window.setTimeout(() => {
+              if (!document.activeElement?.closest?.('.live-floating-composer')) {
+                setQaComposerOpen(false);
+              }
+            }, 120)}
+            placeholder="Poser une question…"
+            aria-label="Poser une question"
+          />
+          <button type="submit" className={qaDraft.trim() ? 'is-active' : ''} disabled={!qaDraft.trim()}>
+            Envoyer
+          </button>
+        </form>
+      ) : null}
+
       {chatComposerOpen ? (
         <form className="live-floating-composer" onSubmit={sendLiveMessage}>
           <input
@@ -3467,6 +4145,7 @@ function LiveViewer({ liveId, creatorMode = false }) {
             value={chatDraft}
             onChange={(event) => setChatDraft(event.target.value)}
             onBlur={() => window.setTimeout(() => {
+              if (chatPanelOpen) return;
               if (!document.activeElement?.closest?.('.live-floating-composer')) {
                 setChatComposerOpen(false);
               }
@@ -3480,43 +4159,137 @@ function LiveViewer({ liveId, creatorMode = false }) {
         </form>
       ) : null}
 
-      {chatPanelOpen ? (
-        <section className="live-chat-panel" aria-label="Live chat history">
-          <button type="button" className="live-chat-panel__backdrop" aria-label="Close chat" onClick={() => setChatPanelOpen(false)} />
-          <div className="live-chat-panel__sheet">
-            <span className="live-chat-panel__handle" aria-hidden="true" />
-            <header>
-              <div>
-                <strong>{chatCount} live messages</strong>
-                <span>{live.title ?? live.description}</span>
+      {chatPanelOpen ? (() => {
+        const messagesOnly = chat.filter((m) => !m.isQuestion && !m.isAnswer);
+        const questionsOnly = chat.filter((m) => m.isQuestion || m.isAnswer);
+        const isAsking = chatPanelTab === 'questions';
+        const visibleChatPanel = isAsking ? questionsOnly : messagesOnly;
+        const currentDraft = isAsking ? qaDraft : chatDraft;
+        const currentSetDraft = isAsking ? setQaDraft : setChatDraft;
+        const onComposerSubmit = isAsking ? sendLiveQuestion : sendLiveMessage;
+        const bindComposerRef = (el) => {
+          chatInputRef.current = el;
+          qaInputRef.current = el;
+        };
+        return (
+          <section
+            className={`live-chat-panel${keyboardOffset > 80 ? ' is-keyboard' : ''}`}
+            aria-label="Live chat"
+          >
+            <div
+              className="live-chat-panel__backdrop"
+              role="button"
+              tabIndex={-1}
+              aria-label="Close chat"
+              onPointerDown={(event) => { event.preventDefault(); setChatPanelOpen(false); }}
+            />
+            <div className="live-chat-panel__sheet">
+              <span className="live-chat-panel__handle" aria-hidden="true" />
+
+              <div className="live-chat-panel__tabs" role="tablist">
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={!isAsking}
+                  className={`live-chat-panel__tab${!isAsking ? ' is-active' : ''}`}
+                  onClick={() => setChatPanelTab('messages')}
+                >
+                  <span>Chat</span>
+                  <span className="live-chat-panel__tab-count">{messagesOnly.length}</span>
+                </button>
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={isAsking}
+                  className={`live-chat-panel__tab${isAsking ? ' is-active' : ''}`}
+                  onClick={() => setChatPanelTab('questions')}
+                >
+                  <span>Questions</span>
+                  <span className="live-chat-panel__tab-count">{questionsOnly.filter((m) => m.isQuestion).length}</span>
+                </button>
+                <button
+                  type="button"
+                  className="live-chat-panel__close"
+                  onClick={() => setChatPanelOpen(false)}
+                  aria-label="Close chat"
+                >
+                  <X size={15} strokeWidth={2.2} />
+                </button>
               </div>
-              <button type="button" onClick={() => setChatPanelOpen(false)} aria-label="Close chat">
-                <X size={17} strokeWidth={2} />
-              </button>
-            </header>
-            <div className="live-chat-panel__list">
-              {chat.map((message, messageIndex) => (
-                <article key={`${live.id}-panel-${message.who}-${messageIndex}`}>
-                  <time>{message.time ?? `${Math.max(1, chat.length - messageIndex)}m`}</time>
-                  <p><strong>{message.who}</strong> {message.text}</p>
-                </article>
-              ))}
+
+              <div className="live-chat-panel__list">
+                {visibleChatPanel.length === 0 ? (
+                  <div className="live-chat-panel__empty">
+                    {isAsking
+                      ? 'Aucune question pour le moment.'
+                      : 'Aucun message pour le moment.'}
+                  </div>
+                ) : (
+                  visibleChatPanel.map((message, messageIndex) => (
+                    <article key={message.id ?? `${live.id}-panel-${message.who}-${messageIndex}`} className={`${message.isQuestion ? 'is-question' : ''}${message.isAnswer ? ' is-answer' : ''}`.trim()}>
+                      <time>{message.time ?? `${Math.max(1, visibleChatPanel.length - messageIndex)}m`}</time>
+                      <p>
+                        {message.isQuestion ? <span className="live-chat-panel__q-badge">Q</span> : null}
+                        {message.isAnswer ? <span className="live-chat-panel__a-badge">A</span> : null}
+                        <strong>{message.who}</strong>
+                        {message.isAnswer ? <span className="live-chat-panel__a-to"> → {message.answerToWho}</span> : null}
+                        {' '}{message.text}
+                      </p>
+                    </article>
+                  ))
+                )}
+              </div>
+
+              <form className={`live-chat-panel__composer${isAsking ? ' is-asking' : ''}`} onSubmit={onComposerSubmit}>
+                <button
+                  type="button"
+                  className="live-chat-panel__mode"
+                  onClick={() => setChatPanelTab(isAsking ? 'messages' : 'questions')}
+                  aria-pressed={isAsking}
+                  aria-label={isAsking ? 'Switch to chat' : 'Ask a question'}
+                >
+                  {isAsking ? (
+                    <>
+                      <MessageCircle size={13} strokeWidth={2.2} />
+                      <span>Chat</span>
+                    </>
+                  ) : (
+                    <>
+                      <span className="live-chat-panel__mode-q">?</span>
+                      <span>Ask</span>
+                    </>
+                  )}
+                </button>
+                <input
+                  ref={bindComposerRef}
+                  type="text"
+                  value={currentDraft}
+                  onChange={(event) => currentSetDraft(event.target.value)}
+                  placeholder={isAsking ? 'Ask a question…' : 'Write a message…'}
+                  aria-label={isAsking ? 'Ask a question' : 'Write a message'}
+                />
+                <button type="submit" className={currentDraft.trim() ? 'is-active' : ''} disabled={!currentDraft.trim()}>
+                  {isAsking ? 'Ask' : 'Send'}
+                </button>
+              </form>
             </div>
-            <form className="live-chat-panel__composer" onSubmit={sendLiveMessage}>
-              <input
-                ref={chatInputRef}
-                type="text"
-                value={chatDraft}
-                onChange={(event) => setChatDraft(event.target.value)}
-                placeholder="Write a message..."
-                aria-label="Write a message"
-              />
-              <button type="submit" className={chatDraft.trim() ? 'is-active' : ''} disabled={!chatDraft.trim()}>
-                Send
-              </button>
-            </form>
-          </div>
-        </section>
+          </section>
+        );
+      })() : null}
+
+      {answerToast ? (
+        <button
+          type="button"
+          className="live-answer-toast"
+          onClick={() => { setChatPanelOpen(true); setAnswerToast(null); }}
+          aria-label="Voir la réponse dans le chat"
+        >
+          <span className="live-answer-toast__badge">A</span>
+          <span className="live-answer-toast__body">
+            <strong>{answerToast.who} t'a répondu</strong>
+            <span>{answerToast.text}</span>
+          </span>
+        </button>
       ) : null}
 
       {userSheetOpen ? (
