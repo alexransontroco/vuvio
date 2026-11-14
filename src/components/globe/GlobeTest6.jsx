@@ -360,13 +360,42 @@ export default function GlobeTest6() {
   const [isClosingSelection, setIsClosingSelection] = useState(false);
 
   // GT6 — diag + tile mode. 'original' = Three.js globeImageUrl (prod baseline);
-  // 'carto' = CARTO Dark Matter raster tiles via react-globe.gl's native engine.
+  // 'carto' = Stadia Dark Matter raster tiles via react-globe.gl's native engine.
   const [tileMode, setTileMode] = useState('original');
   const [diagVisible, setDiagVisible] = useState(true);
   const [fpsState, setFpsState] = useState({ fps: 0, zoom: 0, altitude: 2.8, tiles: 0, state: 'idle' });
   const tilesLoadedRef = useRef(0);
   const fpsBufRef = useRef([]);
   const fpsLastSampleRef = useRef(0);
+
+  // GT6 — transition de la texture globe aux tuiles (ou l'inverse).
+  // `transitioning` cache le globe pendant l'échange ; `pendingMode` est le
+  // mode cible pendant l'étape noire. Le fade dure plus longtemps dans le sens
+  // original→vector pour laisser le temps aux premières tuiles de charger.
+  const [transitioning, setTransitioning] = useState(false);
+  const transitionTimerRef = useRef(null);
+  const requestTileMode = useCallback((next) => {
+    setTileMode((current) => {
+      if (current === next) return current;
+      setTransitioning(true);
+      if (transitionTimerRef.current) clearTimeout(transitionTimerRef.current);
+      const fadeOutMs = 350;
+      // Going original → vector needs more headroom for the first wave of
+      // tile fetches ; vector → original is immediate (texture is cached).
+      const loadMs = next === 'carto' ? 500 : 0;
+      transitionTimerRef.current = setTimeout(() => {
+        setTileMode(next);
+        transitionTimerRef.current = setTimeout(() => {
+          setTransitioning(false);
+          transitionTimerRef.current = null;
+        }, loadMs);
+      }, fadeOutMs);
+      return current;
+    });
+  }, []);
+  useEffect(() => () => {
+    if (transitionTimerRef.current) clearTimeout(transitionTimerRef.current);
+  }, []);
 
   const { user } = useAuth();
   const { t } = useTranslation();
@@ -961,7 +990,12 @@ export default function GlobeTest6() {
 
       <div
         className="gt2-globe-offset"
-        style={{ opacity: povSettled ? 1 : 0, transition: 'opacity 220ms ease-out' }}
+        style={{
+          opacity: (povSettled && !transitioning) ? 1 : 0,
+          transition: transitioning
+            ? 'opacity 350ms cubic-bezier(0.4, 0, 0.2, 1)'
+            : 'opacity 450ms cubic-bezier(0.4, 0, 0.2, 1)',
+        }}
       >
       {dims.w > 0 && dims.h > 0 && (
       <Globe
@@ -1179,7 +1213,7 @@ export default function GlobeTest6() {
           <div style={{ display: 'flex', gap: 6, marginBottom: 10 }}>
             <button
               type="button"
-              onClick={() => setTileMode('original')}
+              onClick={() => requestTileMode('original')}
               style={{
                 flex: 1,
                 padding: '6px 8px',
@@ -1198,7 +1232,7 @@ export default function GlobeTest6() {
             </button>
             <button
               type="button"
-              onClick={() => setTileMode('carto')}
+              onClick={() => requestTileMode('carto')}
               style={{
                 flex: 1,
                 padding: '6px 8px',

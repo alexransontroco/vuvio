@@ -34,8 +34,13 @@ Deuxième passe sur `/globe-test-6` après vérification côté réseau (curl mu
 - Nouveau : Errors (code couleur vert/rouge), Max zoom, Key (clé masquée `XXXX…XXXX` ou `(none, localhost dev)`).
 - La clé API complète n'apparaît **jamais** dans le DOM ni les logs (fonction `maskedKey()` qui tronque à 4 chars de chaque côté).
 
+**Transition globe ↔ tuiles**
+- `requestTileMode(next)` orchestre un fade-out 350 ms + swap + fade-in 450 ms via la wrapper `gt2-globe-offset`.
+- Fade-out → swap `tileMode` → délai 500 ms (sens original→vector, laisse charger les premières tuiles) ou 0 ms (vector→original, texture cached) → fade-in.
+- `cubic-bezier(0.4, 0, 0.2, 1)`. Le starfield reste visible pendant la transition (fond cosmique ininterrompu).
+
 **Fichiers modifiés** (GT6 uniquement, zéro impact prod)
-- `src/components/globe/GlobeTest6.jsx` : nouveau tile provider, PerformanceObserver, retina heuristic
+- `src/components/globe/GlobeTest6.jsx` : nouveau tile provider, PerformanceObserver, retina heuristic, `requestTileMode` transition
 - `.env.local` : ajout `VITE_CARTO_API_KEY=` vide avec commentaire explicatif
 
 ---
