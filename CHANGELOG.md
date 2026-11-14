@@ -38,6 +38,8 @@ Deuxième passe sur `/globe-test-6` après vérification côté réseau (curl mu
 - `requestTileMode(next)` orchestre un fade-out 350 ms + swap + fade-in 450 ms via la wrapper `gt2-globe-offset`.
 - Fade-out → swap `tileMode` → délai 500 ms (sens original→vector, laisse charger les premières tuiles) ou 0 ms (vector→original, texture cached) → fade-in.
 - `cubic-bezier(0.4, 0, 0.2, 1)`. Le starfield reste visible pendant la transition (fond cosmique ininterrompu).
+- **Auto-switch sur altitude** (hystérésis 0.4 / 0.65) : au-dessus de 0.65 on reste en texture monde, en-dessous de 0.4 on bascule en tuiles. Détection dans le RAF existant via `autoSideRef`, zéro boucle (requestTileMode no-op si déjà aligné).
+- Boutons Original/Vector gardés comme override manuel : `setTileModeManual` aligne `autoSideRef` sur le choix user pour que l'auto reprenne proprement au prochain crossing du seuil.
 
 **Fichiers modifiés** (GT6 uniquement, zéro impact prod)
 - `src/components/globe/GlobeTest6.jsx` : nouveau tile provider, PerformanceObserver, retina heuristic, `requestTileMode` transition

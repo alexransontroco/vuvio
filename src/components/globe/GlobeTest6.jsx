@@ -374,6 +374,9 @@ export default function GlobeTest6() {
   // original→vector pour laisser le temps aux premières tuiles de charger.
   const [transitioning, setTransitioning] = useState(false);
   const transitionTimerRef = useRef(null);
+  // Hystérésis auto-switch : au-dessus de 0.65 on reste en texture monde,
+  // en-dessous de 0.4 on bascule en tuiles. Entre les deux : état courant.
+  const autoSideRef = useRef('far');
   const requestTileMode = useCallback((next) => {
     setTileMode((current) => {
       if (current === next) return current;
@@ -393,6 +396,12 @@ export default function GlobeTest6() {
       return current;
     });
   }, []);
+  // Override manuel via boutons : aligne autoSideRef sur le choix user pour
+  // que l'auto reprenne proprement au prochain crossing du seuil.
+  const setTileModeManual = useCallback((next) => {
+    autoSideRef.current = next === 'carto' ? 'near' : 'far';
+    requestTileMode(next);
+  }, [requestTileMode]);
   useEffect(() => () => {
     if (transitionTimerRef.current) clearTimeout(transitionTimerRef.current);
   }, []);
@@ -809,6 +818,15 @@ export default function GlobeTest6() {
         stableSince = now;
       }
 
+      // Auto-switch texture ↔ tuiles avec hystérésis. Le crossing déclenche
+      // la transition fade existante — pas de boucle car requestTileMode
+      // no-op si on est déjà dans le mode cible.
+      const nextSide = altitude < 0.4 ? 'near' : altitude > 0.65 ? 'far' : autoSideRef.current;
+      if (nextSide !== autoSideRef.current) {
+        autoSideRef.current = nextSide;
+        requestTileMode(nextSide === 'near' ? 'carto' : 'original');
+      }
+
       const target = getClusterPrecision(altitude);
       if (target !== pendingPrecision) pendingPrecision = target;
 
@@ -1213,7 +1231,7 @@ export default function GlobeTest6() {
           <div style={{ display: 'flex', gap: 6, marginBottom: 10 }}>
             <button
               type="button"
-              onClick={() => requestTileMode('original')}
+              onClick={() => setTileModeManual('original')}
               style={{
                 flex: 1,
                 padding: '6px 8px',
@@ -1232,7 +1250,7 @@ export default function GlobeTest6() {
             </button>
             <button
               type="button"
-              onClick={() => requestTileMode('carto')}
+              onClick={() => setTileModeManual('carto')}
               style={{
                 flex: 1,
                 padding: '6px 8px',
