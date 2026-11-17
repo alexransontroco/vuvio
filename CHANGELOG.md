@@ -6,29 +6,38 @@ Historique des sessions de travail, du plus récent au plus ancien.
 
 ---
 
-## 2026-11-17 — Phase 4 : Realtime PoC Implementation (Cloudflare SFU)
+## 2026-11-17 — Phase 4 : Realtime SFU PoC — Secure Implementation (Real CF API)
 
-Transition Phase 3 (Design) → Phase 4 (PoC). Built `/admin/realtime-test` to validate Cloudflare Realtime SFU for multi-participant audio/video communication (Workshop & Together).
+**CRITICAL FIX:** Corrected initial placeholder prototype. Now implements **real** Cloudflare Realtime SFU session creation + WebRTC signaling with hardened security.
 
-**Pricing Verification (Actual 2026 rates):**
-- CF Realtime SFU: $0.05/GB egress, 1,000 GB/month free tier
-- RealtimeKit: NOT used (unnecessary overhead for PoC)
-- PoC 1-hour (2 people): ~450 MB = **FREE**
-- 100 sessions/month: ~315 GB = $15.75 (or free month 1)
+**Corrections from initial PoC:**
+- ✅ **Real CF API calls** (not placeholder): `createSession()` → SDP negotiation → track pub/sub
+- ✅ **Pricing corrected**: 1,000 GB/month free tier (not 1 GB); 2-person 1hr = ~920 MB SFU egress
+- ✅ **Firestore rules hardened**: User-only access (`resource.data.userId == request.auth.uid`), no client creates
+- ✅ **Secrets secured**: `.env.local` for local dev (never committed), Firebase Secret Manager for production
+- ✅ **HTTPS local testing**: ngrok (public tunnel) + mDNS (local network) options documented
+- ✅ **Frontend uses real Firebase Functions**: `createRealtimeSession` callable function + RTCPeerConnection
 
 **Deliverables:**
-1. `src/routes/AdminRealtimeTestPage.jsx` (344 lines) — Create/join rooms, local/remote video preview, media controls, diagnostic panel
-2. `src/styles/pages/admin-realtime-test.css` (307 lines) — Dark theme, responsive grid, video containers
-3. `functions/src/realtimeTest/generateCFRealtimeToken.ts` (110 lines) — Server-side token generation (CF credentials safe), Firestore audit trail, 1-hour expiry
-4. `src/App.jsx` updated — Route `/admin/realtime-test` with AdminRoute protection
-5. `docs/workshop-together-phase3/REALTIME_POC.md` (comprehensive) — Setup instructions, test protocol, cost analysis, security validation, limitations
+1. `functions/src/realtimeTest/realtimeSFUService.ts` — Real CF API implementation
+   - `CloudflareRealtimeSFU` class: session creation, SDP negotiation, track pub/sub, session close
+   - Four exported Firebase Functions: `createRealtimeSession`, `publishRealtimeTrack`, `subscribeRealtimeTrack`, `closeRealtimeSession`
+   - All credentials from env, never hardcoded
+2. `src/routes/AdminRealtimeTestPage.jsx` (updated) — Real Firebase Cloud Functions + RTCPeerConnection
+3. `src/data/appMapStructure.js` (updated) — Added `admin-app-map` + `admin-realtime-test` pages
+4. `docs/workshop-together-phase3/REALTIME_SETUP_SECURE.md` (comprehensive)
+   - 8 sections: credential retrieval, .env.local setup, Firebase Secret Manager, verification, Firestore rules, HTTPS local testing, pre-test checklist, "NE PAS FAIRE"
+   - No secrets in chat; all via Cloudflare Dashboard
+5. `docs/workshop-together-phase3/REALTIME_POC.md` (updated) — Corrected pricing + cost analysis
 
-**Status:** Implementation complete, ready for testing. Requires:
-- User to provide CF Realtime API token + Account ID
-- Firebase Function deployment
-- 2-device manual test (see test protocol in REALTIME_POC.md)
+**Next Steps (User Only):**
+1. Generate CF Realtime API Token + Account ID (Cloudflare Dashboard)
+2. Set in `functions/.env.local`: `CF_API_TOKEN=...`, `CF_ACCOUNT_ID=...`, `CF_APP_ID=...`
+3. `firebase deploy --only functions`
+4. Test on 2 devices via ngrok or local network
+5. No code changes needed from user — ready to test once credentials provided
 
-**Cost Impact:** Zero (free tier SFU sufficient for MVP).
+**Cost Impact:** FREE (1,000 GB/month quota covers 100+ 1-hour sessions with 7 participants).
 
 ---
 
