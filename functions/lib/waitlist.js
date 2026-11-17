@@ -1,11 +1,13 @@
 import { createHash, createHmac, randomBytes, timingSafeEqual } from 'node:crypto';
 import { FieldValue, Timestamp } from 'firebase-admin/firestore';
 import { onRequest } from 'firebase-functions/v2/https';
+import { onDocumentCreated } from 'firebase-functions/v2/firestore';
 import { onSchedule } from 'firebase-functions/v2/scheduler';
 import { defineSecret } from 'firebase-functions/params';
 import { adminAuth, db } from './shared/firestore.js';
 const turnstileSecret = defineSecret('WAITLIST_TURNSTILE_SECRET');
 const hashSecret = defineSecret('WAITLIST_HASH_SECRET');
+const resendApiKey = defineSecret('RESEND_API_KEY');
 const emailPattern = /^[^\s@<>]+@[^\s@<>]+\.[^\s@<>]+$/;
 const adminEmails = new Set([
     'alexandre.ranson@gmail.com',
@@ -115,7 +117,7 @@ export const waitlist = onRequest({
                     locale,
                     source: 'landing',
                     status: 'subscribed',
-                    consentVersion: 'launch-v1',
+                    consentVersion: 'launch-v2',
                     unsubscribeTokenHash: createHash('sha256').update(unsubscribeToken).digest('hex'),
                 });
                 return true;
@@ -212,6 +214,59 @@ export const waitlist = onRequest({
         if (!res.headersSent)
             return send(res, 500, { code: 'server_error' });
         res.end();
+    }
+});
+export const sendWaitlistConfirmation = onDocumentCreated({
+    document: 'launchWaitlist/{entryId}',
+    region: 'europe-west1',
+    secrets: [resendApiKey],
+    retry: true,
+}, async (event) => {
+    const entry = event.data?.data();
+    const email = normalizeEmail(entry?.email);
+    if (!email || entry?.source !== 'landing' || entry?.status !== 'subscribed')
+        return;
+    const current = await event.data?.ref.get();
+    if (!current?.exists || current.data()?.status !== 'subscribed' || current.data()?.confirmationEmailSentAt)
+        return;
+    const key = resendApiKey.value();
+    if (!key) {
+        console.error('[waitlist-confirmation] RESEND_API_KEY is missing');
+        return;
+    }
+    const french = entry.locale !== 'en';
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 8000);
+    try {
+        const response = await fetch('https://api.resend.com/emails', {
+            method: 'POST',
+            headers: {
+                authorization: `Bearer ${key}`,
+                'content-type': 'application/json',
+                'idempotency-key': `waitlist-confirmation/${event.params.entryId}`,
+            },
+            body: JSON.stringify({
+                from: 'Vuvio <hello@vuvio.app>',
+                to: [email],
+                subject: french ? 'Merci pour votre inscription à Vuvio' : 'Thanks for joining Vuvio',
+                text: french
+                    ? 'Bonjour,\n\nMerci de vous être inscrit à la liste d’attente de Vuvio ! Nous vous tiendrons informé de notre lancement.\n\nÀ bientôt,\nL’équipe Vuvio\n\nPour retirer votre inscription, répondez à cet email ou écrivez à hello@vuvio.app.'
+                    : 'Hello,\n\nThanks for joining the Vuvio waitlist! We’ll let you know when we launch.\n\nSee you soon,\nThe Vuvio team\n\nTo remove your signup, reply to this email or write to hello@vuvio.app.',
+                reply_to: 'hello@vuvio.app',
+            }),
+            signal: controller.signal,
+        });
+        if (!response.ok) {
+            console.error('[waitlist-confirmation] delivery failed', { entryId: event.params.entryId, status: response.status });
+            if (response.status === 409 || response.status === 429 || response.status >= 500)
+                throw new Error(`Resend HTTP ${response.status}`);
+            return;
+        }
+        await event.data?.ref.update({ confirmationEmailSentAt: FieldValue.serverTimestamp() });
+        console.info('[waitlist-confirmation] accepted', { entryId: event.params.entryId });
+    }
+    finally {
+        clearTimeout(timer);
     }
 });
 export const cleanupWaitlist = onSchedule({

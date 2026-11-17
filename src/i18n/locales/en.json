@@ -971,7 +971,7 @@
       },
       "waitlist": {
         "title": "Launch waitlist",
-        "body": "If you join from the landing page, we collect your email address, selected language and consent date to send one email when Vuvio launches. This does not subscribe you to a general marketing newsletter. Cloudflare Turnstile checks automated submissions; your IP address is not stored in the waitlist.",
+        "body": "If you join from the landing page, we collect your email address, selected language and consent date to send a confirmation email, then one email when Vuvio launches. This does not subscribe you to a general marketing newsletter. Resend delivers the confirmation email. Cloudflare Turnstile checks automated submissions; your IP address is not stored in the waitlist.",
         "retention": "We keep your address until the launch announcement is sent, or for no more than 730 days after signup. We then delete it. The consent record is kept with your signup for the same period.",
         "withdraw": "You can withdraw through the link shown after signup, the unsubscribe link in the future email, or by writing to"
       },
@@ -981,7 +981,7 @@
       },
       "sharing": {
         "title": "Data sharing",
-        "body": "Vuvio does not sell your personal data. It may be shared with technical service providers (hosting, video infrastructure, analytics) strictly within the scope of service delivery and under a data processing agreement. In the event of a legal obligation, certain data may be disclosed to competent authorities."
+        "body": "Vuvio does not sell your personal data. It may be shared with technical service providers (hosting, video infrastructure, analytics, email delivery) strictly within the scope of service delivery and under a data processing agreement. In the event of a legal obligation, certain data may be disclosed to competent authorities."
       },
       "retention": {
         "title": "Retention periods"

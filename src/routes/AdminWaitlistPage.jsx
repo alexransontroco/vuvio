@@ -72,7 +72,7 @@ export default function AdminWaitlistPage() {
         <div className="admin-docs-hero__copy">
           <p>VUVIO ADMIN</p>
           <h1>Launch Waitlist</h1>
-          <p>Private launch notifications · consent version launch-v1</p>
+          <p>Private launch notifications · consent recorded per signup</p>
         </div>
         <div className="admin-docs-hero__side">
           <div className="admin-docs-actions">

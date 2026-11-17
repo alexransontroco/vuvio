@@ -971,7 +971,7 @@
       },
       "waitlist": {
         "title": "Liste d'attente du lancement",
-        "body": "Si vous vous inscrivez depuis la page d'accueil, nous recueillons votre adresse email, la langue choisie et la date de votre consentement pour vous envoyer un seul email lors du lancement de Vuvio. Cette inscription ne vaut pas abonnement à une newsletter commerciale. La vérification anti-robot est assurée par Cloudflare Turnstile ; aucune adresse IP n'est conservée dans la liste d'attente.",
+        "body": "Si vous vous inscrivez depuis la page d'accueil, nous recueillons votre adresse email, la langue choisie et la date de votre consentement pour vous envoyer un email de confirmation, puis un email lors du lancement de Vuvio. Cette inscription ne vaut pas abonnement à une newsletter commerciale. L'email de confirmation est acheminé par Resend. La vérification anti-robot est assurée par Cloudflare Turnstile ; aucune adresse IP n'est conservée dans la liste d'attente.",
         "retention": "Votre adresse est conservée jusqu'à l'envoi de l'annonce de lancement, ou au maximum 730 jours après l'inscription. Elle est ensuite supprimée. La preuve du consentement est conservée avec l'inscription pendant cette durée.",
         "withdraw": "Vous pouvez retirer votre inscription depuis le lien affiché après l'envoi du formulaire, depuis le lien de désinscription du futur email, ou en écrivant à"
       },
@@ -981,7 +981,7 @@
       },
       "sharing": {
         "title": "Partage des données",
-        "body": "Vuvio ne vend pas vos données personnelles. Elles peuvent être partagées avec des prestataires techniques (hébergement, infrastructure vidéo, analytiques) dans le strict cadre de la fourniture du service, et sous contrat de traitement. En cas d'obligation légale, certaines données peuvent être communiquées aux autorités compétentes."
+        "body": "Vuvio ne vend pas vos données personnelles. Elles peuvent être partagées avec des prestataires techniques (hébergement, infrastructure vidéo, analytiques, acheminement des emails) dans le strict cadre de la fourniture du service, et sous contrat de traitement. En cas d'obligation légale, certaines données peuvent être communiquées aux autorités compétentes."
       },
       "retention": {
         "title": "Durées de conservation"

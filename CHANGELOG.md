@@ -6,6 +6,13 @@ Historique des sessions de travail, du plus récent au plus ancien.
 
 ---
 
+## 2026-11-18 — Email de confirmation de la liste d’attente
+
+- Ajout d’un déclencheur Firestore qui envoie, via Resend, un court merci en français ou en anglais après une nouvelle inscription sur la page d’accueil. L’inscription reste indépendante de l’envoi.
+- Clé API conservée dans Firebase Secret Manager, clé d’idempotence par inscription et état d’envoi conservé dans la fiche de liste d’attente.
+- Texte du formulaire et politique de confidentialité ajustés pour annoncer l’email de confirmation et l’annonce de lancement.
+- TypeScript vérifié et build frontend réussi après la correction concurrente de l’import Firebase dans `AdminRealtimeTestPage.jsx`. Aucun déploiement : la clé Resend et le domaine expéditeur restent à configurer.
+
 ## 2026-11-17 — Phase 4 : Realtime SFU PoC — Secure Implementation (Real CF API)
 
 **CRITICAL FIX:** Corrected initial placeholder prototype. Now implements **real** Cloudflare Realtime SFU session creation + WebRTC signaling with hardened security.

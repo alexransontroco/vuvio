@@ -223,5 +223,5 @@ export const updateTrustScoresScheduled = onSchedule({
 });
 import { notifyNewMessage } from './notifications/notifyNewMessage.js';
 export { fanOutCreatorLive, notifyNewFollower, notifyNewMessage };
-export { waitlist, cleanupWaitlist } from './waitlist.js';
+export { waitlist, cleanupWaitlist, sendWaitlistConfirmation } from './waitlist.js';
 export { createRealtimeSession, publishRealtimeTrack, subscribeRealtimeTrack, closeRealtimeSession };

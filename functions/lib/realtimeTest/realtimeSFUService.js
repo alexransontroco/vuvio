@@ -14,19 +14,25 @@ import * as admin from 'firebase-admin';
 const CF_API_TOKEN = process.env.CF_API_TOKEN || '';
 const CF_ACCOUNT_ID = process.env.CF_ACCOUNT_ID || '';
 const CF_APP_ID = process.env.CF_APP_ID || '';
+const CF_APP_SECRET = process.env.CF_APP_SECRET || '';
+// Server-side credentials for SFU room access control
+// CF_APP_SECRET is required for creating sessions + managing room access
+// Never expose CF_APP_SECRET to client
 // Use env-based config, not firebase functions:config:set (deprecated)
 // Set via: export CF_API_TOKEN="..." in .env.local or Firebase Secret Manager
 class CloudflareRealtimeSFU {
     token;
     accountId;
     appId;
-    constructor(token, accountId, appId) {
-        if (!token || !accountId || !appId) {
+    appSecret;
+    constructor(token, accountId, appId, appSecret) {
+        if (!token || !accountId || !appId || !appSecret) {
             throw new Error('CF Realtime credentials not configured');
         }
         this.token = token;
         this.accountId = accountId;
         this.appId = appId;
+        this.appSecret = appSecret;
     }
     async cfApi(method, path, body) {
         const url = `https://api.cloudflare.com/client/v4/accounts/${this.accountId}${path}`;
@@ -129,7 +135,7 @@ export const createRealtimeSession = functions.https.onCall(async (data, context
         throw new functions.https.HttpsError('invalid-argument', 'Missing offer SDP');
     }
     try {
-        const sfu = new CloudflareRealtimeSFU(CF_API_TOKEN, CF_ACCOUNT_ID, CF_APP_ID);
+        const sfu = new CloudflareRealtimeSFU(CF_API_TOKEN, CF_ACCOUNT_ID, CF_APP_ID, CF_APP_SECRET);
         // 1. Create session
         const { sessionId, expiresAt } = await sfu.createSession();
         // 2. Negotiate offer/answer
@@ -167,7 +173,7 @@ export const publishRealtimeTrack = functions.https.onCall(async (data, context)
         throw new functions.https.HttpsError('invalid-argument', 'Missing or invalid parameters');
     }
     try {
-        const sfu = new CloudflareRealtimeSFU(CF_API_TOKEN, CF_ACCOUNT_ID, CF_APP_ID);
+        const sfu = new CloudflareRealtimeSFU(CF_API_TOKEN, CF_ACCOUNT_ID, CF_APP_ID, CF_APP_SECRET);
         const track = await sfu.publishTrack(sessionId, trackName, codec);
         return {
             success: true,
@@ -192,7 +198,7 @@ export const subscribeRealtimeTrack = functions.https.onCall(async (data, contex
         throw new functions.https.HttpsError('invalid-argument', 'Missing parameters');
     }
     try {
-        const sfu = new CloudflareRealtimeSFU(CF_API_TOKEN, CF_ACCOUNT_ID, CF_APP_ID);
+        const sfu = new CloudflareRealtimeSFU(CF_API_TOKEN, CF_ACCOUNT_ID, CF_APP_ID, CF_APP_SECRET);
         const track = await sfu.subscribeTrack(sessionId, remoteSessionId, trackName);
         return {
             success: true,
@@ -216,7 +222,7 @@ export const closeRealtimeSession = functions.https.onCall(async (data, context)
         throw new functions.https.HttpsError('invalid-argument', 'Missing sessionId');
     }
     try {
-        const sfu = new CloudflareRealtimeSFU(CF_API_TOKEN, CF_ACCOUNT_ID, CF_APP_ID);
+        const sfu = new CloudflareRealtimeSFU(CF_API_TOKEN, CF_ACCOUNT_ID, CF_APP_ID, CF_APP_SECRET);
         await sfu.closeSession(sessionId);
         // Update Firestore
         await admin.firestore().collection('rtcSessions').doc(sessionId).update({

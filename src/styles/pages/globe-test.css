@@ -420,7 +420,43 @@
 }
 
 .test-globe-screen--maplibre.test-globe-screen--actual.test-globe-screen--maplibre-custom .test-old-globe {
-  background: linear-gradient(180deg, #02050c 0%, #01030a 48%, #000106 100%);
+  background: linear-gradient(180deg, #020310 0%, #01020b 100%);
+}
+
+.test-globe-screen--maplibre-custom .gt2-marker {
+  --marker-pulse-ring: 4px;
+  --marker-halo: 32px;
+}
+
+.test-globe-screen--maplibre-custom .gt2-marker__bubble,
+.test-globe-screen--maplibre-custom .gt2-marker--cluster .gt2-marker__bubble {
+  animation-name: gt6-marker-bubble-pulse;
+}
+
+.test-globe-screen--maplibre-custom .gt2-marker__dot {
+  animation-name: gt6-marker-dot-pulse;
+}
+
+@keyframes gt6-marker-bubble-pulse {
+  0%, 100% {
+    box-shadow: 0 0 0 1px rgba(40, 216, 223, 0.08), 0 0 12px rgba(40, 216, 223, 0.18);
+    border-color: rgba(40, 216, 223, 0.72);
+  }
+  45% {
+    box-shadow: 0 0 0 var(--marker-pulse-ring, 4px) rgba(40, 216, 223, 0.1), 0 0 18px rgba(40, 216, 223, 0.36), 0 0 var(--marker-halo, 32px) rgba(40, 216, 223, 0.1);
+    border-color: rgba(40, 216, 223, 0.9);
+  }
+}
+
+@keyframes gt6-marker-dot-pulse {
+  0%, 100% {
+    box-shadow: 0 0 5px color-mix(in srgb, var(--marker-color, #28d8df) 60%, transparent);
+    transform: scale(1);
+  }
+  40% {
+    box-shadow: 0 0 12px color-mix(in srgb, var(--marker-color, #28d8df) 48%, transparent);
+    transform: scale(1.25);
+  }
 }
 
 .test-globe-screen--actual .test-old-globe__vignette {

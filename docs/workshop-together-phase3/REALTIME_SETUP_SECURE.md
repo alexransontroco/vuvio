@@ -29,13 +29,16 @@
 6. **Copier immédiatement dans `.env.local` (voir étape 3)**
 7. **NE PAS le copier ailleurs, NE PAS le montrer**
 
-### Paramètre 3: CF App ID
+### Paramètre 3: CF App ID + App Secret
 
 **Localisation:** https://dash.cloudflare.com/
 1. Workers & Pages → **Realtime**
 2. Trouver ton app Realtime (ou en créer une)
 3. Copier **App ID** (UUID format)
-4. **Communiquer l'ID uniquement**
+4. Copier **App Secret** (keep private — used for room-level access control)
+5. **Communiquer l'ID uniquement; le Secret ne doit jamais être partagé**
+
+**Important:** App Secret is required server-side for creating sessions + managing room access. Never expose to client.
 
 ---
 
@@ -48,6 +51,7 @@
 CF_API_TOKEN=your_token_here_1234567890abcdef
 CF_ACCOUNT_ID=1a2b3c4d5e6f7g8h
 CF_APP_ID=550e8400-e29b-41d4-a716-446655440000
+CF_APP_SECRET=your_app_secret_keep_private
 
 # Optional: Logging level
 CF_LOG_LEVEL=debug
@@ -114,26 +118,47 @@ const CF_APP_ID = await getSecret('CF_APP_ID');
 
 ---
 
-## 4. Vérifier la Configuration (Local)
+## 4. Vérifier la Configuration (Local + Emulator)
 
+### Step 1: Verify Functions Build
 ```bash
-# 1. Build Firebase Functions
 cd functions
-npm run build
-
-# 2. Test local avec Emulator
-firebase emulators:start --only functions
-
-# 3. Dans un autre terminal, appeler la fonction:
-curl -X POST http://localhost:5001/vuvio-bf328/us-central1/createRealtimeSession \
-  -H "Content-Type: application/json" \
-  -d '{
-    "offer": {
-      "type": "offer",
-      "sdp": "v=0\r\no=- 0 0 IN IP4 127.0.0.1\r\n..."
-    }
-  }'
+npm run build  # Must compile TypeScript with no errors
 ```
+
+### Step 2: Firebase Emulator Test (REQUIRED BEFORE PRODUCTION)
+```bash
+# Start Firestore + Functions emulator
+firebase emulators:start --only firestore,functions
+
+# In another terminal, authenticate as test user
+firebase auth:import /path/to/test-users.json --hash-algo=bcrypt
+
+# Call createRealtimeSession function (emulator port 5001)
+# Requires Authorization header with valid ID token from test user
+```
+
+### Step 3: Room Access Control Verification
+```bash
+# 1. Create session as User A via function
+# → Firestore rtcSessions/{sessionId} created with userId=A
+
+# 2. Try to access session as User B (different UID)
+# → Expected: Firestore rule denies read access
+# → Actual: Verify rule enforcement via Emulator
+
+# 3. User A re-creates same room
+# → Expected: Cloudflare SFU generates new sessionId
+# → Actual: Verify sessionId uniqueness in Firestore audit log
+```
+
+### Step 4: Verification Success Criteria
+- ✅ Functions compile (`npm run build` exit=0)
+- ✅ Firestore Emulator runs without errors
+- ✅ Firebase Functions Emulator callable endpoint responds at http://localhost:5001
+- ✅ Firestore rule `resource.data.userId == request.auth.uid` enforces user isolation
+- ✅ createRealtimeSession returns `{success, sessionId, answer}`
+- ✅ Unauthorized users cannot read other users' sessions
 
 **Résultat attendu:**
 ```json
@@ -223,17 +248,81 @@ npm run dev  # http://localhost:5173
 
 ---
 
-## 7. Checklist Pré-Test
+## 7. Cloudflare SFU Authentication Verification
 
-- [ ] `functions/.env.local` créé avec 3 paramètres
-- [ ] `functions/.env.local` dans `.gitignore`
+**CRITICAL:** Firebase Auth is NOT sufficient for SFU room access control. CF Realtime SFU requires separate authentication.
+
+### Verify CF API Token Permissions
+```bash
+# 1. Test CF API Token validity
+curl -X GET https://api.cloudflare.com/client/v4/accounts/{ACCOUNT_ID}/realtime/apps \
+  -H "Authorization: Bearer {CF_API_TOKEN}" \
+  -H "Content-Type: application/json"
+
+# Expected: 200 OK + list of Realtime apps
+# If 403: Token lacks Realtime scope (create new token with Realtime Read+Write)
+```
+
+### Verify CF App ID + Secret Configuration
+```bash
+# 1. Get CF Realtime app details
+curl -X GET https://api.cloudflare.com/client/v4/accounts/{ACCOUNT_ID}/realtime/apps/{APP_ID} \
+  -H "Authorization: Bearer {CF_API_TOKEN}"
+
+# Expected: 200 OK + app details including appSecret
+# Note: appSecret is returned here but should be stored securely in CF_APP_SECRET env var
+```
+
+### Verify Server-Side Room Access Control
+- **Firebase Auth** → Authenticates user identity (UID)
+- **Firestore Rules** → Controls access to rtcSessions collection
+- **CF App Secret** → Server-side credential for creating sessions + managing track access
+- **Room-Level Isolation** → CF Realtime SFU routes tracks only to authorized participants (server verifies via appSecret)
+
+**Security Model:**
+1. Client: Sends offer (unauthenticated) → Firebase Function validates auth
+2. Server: Creates CF RTC session using App Secret (private)
+3. Server: Returns answer SDP to client
+4. Client: Initiates WebRTC connection using answer
+5. SFU: Accepts media from client, routes to authorized participants only
+
+---
+
+## 8. Checklist Pré-Test
+
+**Build & Config**
+- [ ] `functions/.env.local` créé avec 4 paramètres: `CF_API_TOKEN`, `CF_ACCOUNT_ID`, `CF_APP_ID`, `CF_APP_SECRET`
+- [ ] `functions/.env.local` dans `.gitignore` (vérifier: `git check-ignore functions/.env.local`)
 - [ ] `firebase functions:config:set` **NOT utilisé** (deprecated)
-- [ ] `functions/src/realtimeTest/realtimeSFUService.ts` déployée localement
-- [ ] Firestore rules actualisées (rtcSessions collection)
-- [ ] `npm run dev` démarre sans erreur
-- [ ] `firebase emulators:start` fonctionne
-- [ ] ngrok ou mDNS prêt pour 2 téléphones
-- [ ] Firestore rules testées sur Emulator
+
+**TypeScript & Build**
+- [ ] `npm run build` complète sans erreur TS
+- [ ] `cd functions && npm run build` complète sans erreur TS
+
+**Firebase Emulator**
+- [ ] `firebase emulators:start --only firestore,functions` démarre sans erreur
+- [ ] Firestore rules: `resource.data.userId == request.auth.uid` enforces user isolation
+- [ ] Test rule via Emulator: User A creates session → User B cannot read it
+
+**CF Realtime Verification**
+- [ ] CF API Token valid: GET `/accounts/{ID}/realtime/apps` returns 200 OK
+- [ ] CF App ID exists and has appSecret configured
+- [ ] `CF_APP_SECRET` stored securely in `functions/.env.local`
+- [ ] No secrets exposed in Git history
+
+**Local Dev**
+- [ ] `npm run dev` démarre sur http://localhost:5173 sans erreur
+- [ ] `/admin/realtime-test` accessible (requires admin login)
+- [ ] `createRealtimeSession` Firebase Function callable from frontend
+
+**HTTPS Local Testing**
+- [ ] ngrok tunnel (`ngrok http 5173`) ou mDNS prêt
+- [ ] 2 devices can reach HTTPS URL (same local network or via ngrok)
+- [ ] Camera + microphone permissions work on both devices
+
+**Documentation**
+- [ ] All 8 sections of REALTIME_SETUP_SECURE.md reviewed
+- [ ] Docs accessible from Admin → Docs page (if integrated)
 
 ---
 

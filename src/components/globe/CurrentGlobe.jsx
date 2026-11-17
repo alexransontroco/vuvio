@@ -449,37 +449,39 @@ function buildCollection(streams) {
 
 function styleNativeGlobe(map) {
   const colors = {
-    space: '#030810',
-    ocean: '#12618E',
-    land: '#56614D',
-    green: '#3F6547',
-    urban: '#62695D',
-    boundary: '#9BAA9F',
-    road: '#ACB9AD',
-    minorRoad: '#758779',
-    label: '#E8ECE5',
-    labelDim: '#C0C9BF',
+    space: '#020310',
+    oceanDeep: '#072343',
+    oceanShallow: '#103B61',
+    land: '#1B3B56',
+    natural: '#234B60',
+    mountain: '#36566D',
+    boundary: '#42637C',
+    atmosphere: '#2365A0',
+    road: '#42637C',
+    minorRoad: '#29465F',
+    label: '#D2DEE7',
+    labelDim: '#A4B7C6',
   };
 
   try {
     try {
       map.setFog?.({
-        color: 'rgba(12, 22, 25, 0.12)',
-        'high-color': 'rgba(28, 50, 54, 0.16)',
-        'horizon-blend': 0.08,
+        color: 'rgba(12, 34, 54, 0.14)',
+        'high-color': 'rgba(35, 101, 160, 0.22)',
+        'horizon-blend': 0.1,
         'space-color': colors.space,
-        'star-intensity': 0,
+        'star-intensity': 0.22,
       });
     } catch { /* fog options vary by MapLibre version */ }
     try {
       map.setSky?.({
         'sky-color': colors.space,
-        'horizon-color': '#1A303A',
-        'fog-color': '#294A53',
-        'sky-horizon-blend': 0.18,
-        'horizon-fog-blend': 0.24,
-        'fog-ground-blend': 0.015,
-        'atmosphere-blend': ['interpolate', ['linear'], ['zoom'], 0, 0.5, 4, 0.32, 9, 0.08],
+        'horizon-color': '#17416A',
+        'fog-color': colors.atmosphere,
+        'sky-horizon-blend': 0.2,
+        'horizon-fog-blend': 0.28,
+        'fog-ground-blend': 0.012,
+        'atmosphere-blend': ['interpolate', ['linear'], ['zoom'], 0, 0.46, 4, 0.3, 9, 0.06],
       });
     } catch { /* sky options vary by MapLibre version */ }
 
@@ -493,51 +495,67 @@ function styleNativeGlobe(map) {
           map.setPaintProperty(layer.id, 'background-color', colors.space);
           return;
         }
-        if (type === 'fill' && (id.includes('water') || id.includes('ocean') || id.includes('sea') || sourceLayer.includes('water'))) {
-          map.setPaintProperty(layer.id, 'fill-color', colors.ocean);
-          map.setPaintProperty(layer.id, 'fill-opacity', 1);
-          map.setPaintProperty(layer.id, 'fill-outline-color', '#33769A');
-          return;
-        }
-        if (type === 'fill' && (id.includes('park') || id.includes('wood') || id.includes('forest') || id.includes('green') || id.includes('grass') || id.includes('scrub') || id.includes('meadow'))) {
-          map.setPaintProperty(layer.id, 'fill-color', colors.green);
+        if (type === 'fill' && id === 'water') {
+          map.setPaintProperty(layer.id, 'fill-color', [
+            'match', ['get', 'kind'],
+            ['lake', 'pond', 'reservoir', 'basin'], colors.oceanShallow,
+            colors.oceanDeep,
+          ]);
           map.setPaintProperty(layer.id, 'fill-opacity', 1);
           return;
         }
-        if (type === 'fill' && (id.includes('residential') || id.includes('urban') || id.includes('builtup') || id.includes('industrial'))) {
-          map.setPaintProperty(layer.id, 'fill-color', colors.urban);
+        if (id === 'landcover') {
+          map.setPaintProperty(layer.id, 'fill-color', [
+            'match', ['get', 'kind'],
+            ['wood', 'forest', 'park', 'nature_reserve', 'national_park'], colors.natural,
+            ['grass', 'grassland', 'meadow', 'farmland', 'garden', 'orchard', 'golf_course'], '#285064',
+            ['scrub', 'heath', 'recreation_ground', 'village_green'], '#2B4D5D',
+            ['barren', 'desert', 'rock', 'scree', 'glacier', 'snow'], colors.mountain,
+            colors.natural,
+          ]);
           map.setPaintProperty(layer.id, 'fill-opacity', 1);
           return;
         }
-        if (type === 'fill' && (id.includes('land') || sourceLayer.includes('land'))) {
-          map.setPaintProperty(layer.id, 'fill-color', colors.land);
-          map.setPaintProperty(layer.id, 'fill-opacity', 1);
+        if (id === 'park_national_park' || id === 'park_nature_reserve' || id === 'landuse') {
+          map.setPaintProperty(layer.id, 'fill-color', colors.natural);
+          map.setPaintProperty(layer.id, 'fill-opacity', 0.92);
+          return;
+        }
+        if (id === 'landuse_residential') {
+          map.setPaintProperty(layer.id, 'fill-color', '#24445E');
+          map.setPaintProperty(layer.id, 'fill-opacity', 0.72);
+          return;
+        }
+        if (id === 'building-top') {
+          map.setPaintProperty(layer.id, 'fill-color', colors.mountain);
+          map.setPaintProperty(layer.id, 'fill-outline-color', colors.land);
+          map.setPaintProperty(layer.id, 'fill-opacity', ['interpolate', ['linear'], ['zoom'], 13, 0, 16, 0.55]);
           return;
         }
         if (type === 'line' && (id.includes('admin') || id.includes('boundary') || id.includes('border') || sourceLayer.includes('boundary'))) {
           map.setPaintProperty(layer.id, 'line-color', colors.boundary);
-          map.setPaintProperty(layer.id, 'line-opacity', 0.28);
+          map.setPaintProperty(layer.id, 'line-opacity', 0.36);
           return;
         }
         if (type === 'line' && (id.includes('water') || id.includes('river') || id.includes('stream') || sourceLayer.includes('water'))) {
-          map.setPaintProperty(layer.id, 'line-color', '#4786A2');
-          map.setPaintProperty(layer.id, 'line-opacity', 0.65);
+          map.setPaintProperty(layer.id, 'line-color', colors.oceanShallow);
+          map.setPaintProperty(layer.id, 'line-opacity', 0.7);
           return;
         }
-        if (type === 'line' && (id.includes('motorway') || id.includes('trunk') || id.includes('primary') || id.includes('secondary'))) {
+        if (type === 'line' && (id.includes('_mot_') || id.includes('_trunk_') || id.includes('_pri_') || id.includes('_sec_') || id.includes('motorway') || id.includes('trunk') || id.includes('primary') || id.includes('secondary'))) {
           map.setPaintProperty(layer.id, 'line-color', colors.road);
-          map.setPaintProperty(layer.id, 'line-opacity', 0.58);
+          map.setPaintProperty(layer.id, 'line-opacity', 0.5);
           return;
         }
         if (type === 'line' && (id.includes('road') || id.includes('street') || id.includes('tertiary') || id.includes('minor') || id.includes('service') || id.includes('path'))) {
           map.setPaintProperty(layer.id, 'line-color', colors.minorRoad);
-          map.setPaintProperty(layer.id, 'line-opacity', 0.4);
+          map.setPaintProperty(layer.id, 'line-opacity', 0.34);
           return;
         }
         if (type === 'hillshade') {
           map.setPaintProperty(layer.id, 'hillshade-exaggeration', 0.24);
-          map.setPaintProperty(layer.id, 'hillshade-shadow-color', '#142535');
-          map.setPaintProperty(layer.id, 'hillshade-highlight-color', '#82909B');
+          map.setPaintProperty(layer.id, 'hillshade-shadow-color', '#10243A');
+          map.setPaintProperty(layer.id, 'hillshade-highlight-color', colors.mountain);
           map.setPaintProperty(layer.id, 'hillshade-illumination-direction', 315);
           return;
         }
@@ -549,6 +567,21 @@ function styleNativeGlobe(map) {
         }
       } catch { /* style layers expose different paint properties */ }
     });
+
+    if (map.getSource('protomaps') && !map.getLayer('vuvio-native-land')) {
+      const firstFill = map.getStyle().layers?.find((layer) => layer.type === 'fill');
+      map.addLayer({
+        id: 'vuvio-native-land',
+        type: 'fill',
+        source: 'protomaps',
+        'source-layer': 'earth',
+        filter: ['==', ['get', 'kind'], 'earth'],
+        paint: {
+          'fill-color': colors.land,
+          'fill-opacity': 1,
+        },
+      }, firstFill?.id);
+    }
   } catch { /* style capabilities vary by MapLibre version */ }
 }
 
@@ -937,10 +970,10 @@ export default function CurrentGlobe({ streams, onboarding = false, onOnboarding
       setMapError(message);
     });
 
-    // Fallback: if the map is already loaded by the time the listener attaches
-    // (e.g. fast client-side nav with a cached style), we never get the 'load'
-    // event — poll until it's ready so isMapLoaded flips to true.
+    let initializeMap = null;
+    let mapInitialized = false;
     const loadedPoll = window.setInterval(() => {
+      if (!mapInitialized && map.isStyleLoaded()) initializeMap?.();
       if (map.loaded() && map.getCanvas()?.width > 0 && map.getCanvas()?.height > 0) {
         map.once('idle', () => setIsMapLoaded(true));
         window.clearInterval(loadedPoll);
@@ -965,7 +998,9 @@ export default function CurrentGlobe({ streams, onboarding = false, onOnboarding
     };
     if (variant === 'maplibre-custom') map.on('style.load', revealNativeGlobe);
 
-    map.on('load', () => {
+    initializeMap = () => {
+      if (mapInitialized || !map.isStyleLoaded()) return;
+      mapInitialized = true;
       try {
         window.clearInterval(loadedPoll);
         map.setProjection({ type: 'globe' });
@@ -1013,6 +1048,7 @@ export default function CurrentGlobe({ streams, onboarding = false, onOnboarding
           clusterRadius: 35,
           clusterMaxZoom: 15,
         });
+        const styleLiveHalo = (value, scale) => (variant === 'maplibre-custom' ? ['*', value, scale] : value);
 
         map.addLayer({
           id: 'vuvio-test-cluster-anchor',
@@ -1037,9 +1073,9 @@ export default function CurrentGlobe({ streams, onboarding = false, onOnboarding
           filter: ['!', ['has', 'point_count']],
           paint: {
             'circle-color': markerColorExpression(),
-            'circle-radius': liveColorGlowRadius(0),
-            'circle-blur': 5.5,
-            'circle-opacity': liveColorGlowOpacity(0),
+            'circle-radius': styleLiveHalo(liveColorGlowRadius(0), 0.78),
+            'circle-blur': variant === 'maplibre-custom' ? 4.2 : 5.5,
+            'circle-opacity': styleLiveHalo(liveColorGlowOpacity(0), 0.68),
           },
         });
 
@@ -1051,8 +1087,8 @@ export default function CurrentGlobe({ streams, onboarding = false, onOnboarding
           paint: {
             'circle-color': ['case', ['==', ['get', 'markerType'], MARKER_TYPES.sponsored], '#FFD489', ['==', ['get', 'markerType'], MARKER_TYPES.vuvio], '#DAB2FF', '#F8FFFF'],
             'circle-radius': liveBroadcastHaloRadius(0, selectedId ?? ''),
-            'circle-blur': 2.5,
-            'circle-opacity': liveBroadcastHaloOpacity(0, selectedId ?? ''),
+            'circle-blur': variant === 'maplibre-custom' ? 1.9 : 2.5,
+            'circle-opacity': styleLiveHalo(liveBroadcastHaloOpacity(0, selectedId ?? ''), 0.72),
           },
         });
 
@@ -1063,9 +1099,9 @@ export default function CurrentGlobe({ streams, onboarding = false, onOnboarding
           filter: ['!', ['has', 'point_count']],
           paint: {
             'circle-color': markerColorExpression(),
-            'circle-radius': liveCrowdHaloRadius(0),
-            'circle-blur': 2.2,
-            'circle-opacity': liveCrowdHaloOpacity(0),
+            'circle-radius': styleLiveHalo(liveCrowdHaloRadius(0), 0.78),
+            'circle-blur': variant === 'maplibre-custom' ? 1.7 : 2.2,
+            'circle-opacity': styleLiveHalo(liveCrowdHaloOpacity(0), 0.72),
           },
         });
 
@@ -1143,20 +1179,40 @@ export default function CurrentGlobe({ streams, onboarding = false, onOnboarding
           }
           if (stream.type === 'cluster') {
             const source = map.getSource('vuvio-test-lives');
-            source?.getClusterLeaves(stream.clusterId, stream.count, 0)
-              .then((features) => {
-                const ids = new Set(features.map((feature) => feature.properties?.id));
-                setSelectedCluster({ ...stream, streams: liveStreamsRef.current.filter((live) => ids.has(live.id)) });
-              })
-              .catch(() => setSelectedCluster(null));
+            if (!source) return;
             setSelectedId(null);
             selectedIdRef.current = null;
             pauseUntilRef.current = Date.now() + 8500;
-            source?.getClusterExpansionZoom(stream.clusterId).then((zoom) => {
+            Promise.all([
+              source.getClusterLeaves(stream.clusterId, stream.count, 0),
+              source.getClusterExpansionZoom(stream.clusterId),
+            ]).then(([features, zoom]) => {
+              const ids = new Set(features.map((feature) => feature.properties?.id));
+              setSelectedCluster({ ...stream, streams: liveStreamsRef.current.filter((live) => ids.has(live.id)) });
+
+              let targetCoordinates = coords;
+              if (variant === 'maplibre-custom') {
+                const xyz = features.reduce((sum, feature) => {
+                  const point = feature.geometry?.coordinates;
+                  if (!Array.isArray(point)) return sum;
+                  const longitude = (point[0] * Math.PI) / 180;
+                  const latitude = (point[1] * Math.PI) / 180;
+                  sum[0] += Math.cos(latitude) * Math.cos(longitude);
+                  sum[1] += Math.cos(latitude) * Math.sin(longitude);
+                  sum[2] += Math.sin(latitude);
+                  return sum;
+                }, [0, 0, 0]);
+                if (features.length > 0) {
+                  targetCoordinates = [
+                    (Math.atan2(xyz[1], xyz[0]) * 180) / Math.PI,
+                    (Math.atan2(xyz[2], Math.hypot(xyz[0], xyz[1])) * 180) / Math.PI,
+                  ];
+                }
+              }
               const currentZoom = map.getZoom();
               const expansionZoom = Math.min(zoom + 0.25, currentZoom + 1.25);
               map.easeTo({
-                center: coords,
+                center: targetCoordinates,
                 zoom: Math.min(Math.max(expansionZoom, currentZoom + 0.9), map.getMaxZoom()),
                 duration: 1000,
                 easing: (t) => 1 - Math.pow(1 - t, 3),
@@ -1222,7 +1278,9 @@ export default function CurrentGlobe({ streams, onboarding = false, onOnboarding
       } catch (error) {
         setMapError(error instanceof Error ? error.message : String(error));
       }
-    });
+    };
+    map.on('load', initializeMap);
+    if (map.isStyleLoaded()) initializeMap();
 
     return () => {
       map.getCanvas().removeEventListener('pointerdown', pauseInteraction);
@@ -1238,6 +1296,7 @@ export default function CurrentGlobe({ streams, onboarding = false, onOnboarding
       window.removeEventListener('resize', resizeHaloCanvas);
       map.off('render', revealOnRender);
       map.off('style.load', revealNativeGlobe);
+      if (initializeMap) map.off('load', initializeMap);
       resizeObserver.disconnect();
       window.clearInterval(loadedPoll);
       if (animationRef.current) cancelAnimationFrame(animationRef.current);
