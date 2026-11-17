@@ -3,6 +3,8 @@
  * Snapshots preserve the exact gear information at the time of broadcast
  */
 
+import { equipmentImageForUsage } from '../data/equipmentVisual.js';
+
 const GEAR_SNAPSHOTS_KEY = 'vuvio:gear-snapshots';
 
 export function createGearSnapshot(gear) {
@@ -15,9 +17,16 @@ export function createGearSnapshot(gear) {
     brand: gear.brand,
     model: gear.model,
     displayName: gear.displayName || `${gear.brand} ${gear.model}`,
-    thumbnailUrl: gear.thumbnailUrl || gear.product?.thumbnailUrl || gear.imageUrl || null,
-    imageUrl: gear.imageUrl || gear.thumbnailUrl || gear.product?.thumbnailUrl || null,
+    thumbnailUrl: equipmentImageForUsage(gear, 'public-gear'),
+    imageUrl: equipmentImageForUsage(gear, 'public-gear'),
     imageSource: gear.imageSource || gear.product?.imageSource || 'placeholder',
+    imageRightsStatus: gear.imageRightsStatus || gear.product?.imageRightsStatus || null,
+    imageRightsSource: gear.imageRightsSource || gear.product?.imageRightsSource || null,
+    imageAllowedUsages: gear.imageAllowedUsages || gear.product?.imageAllowedUsages || [],
+    imageRightsCheckedAt: gear.imageRightsCheckedAt || null,
+    imageRightsExpiresAt: gear.imageRightsExpiresAt || null,
+    imageProductId: gear.imageProductId || gear.sourceProductId || null,
+    imageHostingStatus: gear.imageHostingStatus || null,
     provider: gear.provider || gear.product?.provider || 'demo',
     status: gear.status || gear.product?.status || 'placeholder',
     ownership: gear.ownership || 'owned',

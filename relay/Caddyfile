@@ -1,0 +1,27 @@
+{
+	email alexandre.ranson@gmail.com
+}
+
+{$RELAY_DOMAIN} {
+	encode zstd gzip
+
+	@healthz path /healthz /
+	handle @healthz {
+		reverse_proxy relay:8787
+	}
+
+	reverse_proxy relay:8787 {
+		header_up Host {host}
+		header_up X-Forwarded-For {remote_host}
+		header_up X-Forwarded-Proto {scheme}
+		transport http {
+			read_timeout 300s
+			write_timeout 300s
+		}
+	}
+
+	log {
+		output stdout
+		format json
+	}
+}

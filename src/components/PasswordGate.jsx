@@ -23,7 +23,7 @@ function isGated() {
 
 export default function PasswordGate({ children }) {
   const location = useLocation();
-  const isPublicIntro = location.pathname === '/' || location.pathname === '/intro-preview';
+  const isPublicIntro = location.pathname === '/' || location.pathname === '/intro-preview' || location.pathname === '/privacy' || location.pathname === '/unsubscribe';
   const [unlocked, setUnlocked] = useState(() => {
     if (!isGated()) return true;
     try {

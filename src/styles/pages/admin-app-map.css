@@ -1,0 +1,307 @@
+.admin-app-map {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  background-color: #0F172A;
+  color: #E2E8F0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial,
+    sans-serif;
+  overflow: hidden;
+}
+
+.admin-app-map__header {
+  flex-shrink: 0;
+  padding: 20px;
+  background-color: #1E293B;
+  border-bottom: 1px solid #334155;
+}
+
+.admin-app-map__title {
+  margin: 0 0 15px 0;
+  font-size: 24px;
+  font-weight: 600;
+  color: #F1F5F9;
+}
+
+.admin-app-map__toolbar {
+  display: flex;
+  gap: 15px;
+  align-items: center;
+  margin-bottom: 15px;
+}
+
+.admin-app-map__search-box {
+  display: flex;
+  align-items: center;
+  flex: 1;
+  max-width: 400px;
+  background-color: #0F172A;
+  border: 1px solid #475569;
+  border-radius: 6px;
+  padding: 8px 12px;
+  gap: 8px;
+}
+
+.admin-app-map__search-icon {
+  flex-shrink: 0;
+  color: #94A3B8;
+}
+
+.admin-app-map__search-input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  color: #E2E8F0;
+  outline: none;
+  font-size: 14px;
+}
+
+.admin-app-map__search-input::placeholder {
+  color: #64748B;
+}
+
+.admin-app-map__controls {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.admin-app-map__btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  background-color: #334155;
+  border: 1px solid #475569;
+  border-radius: 6px;
+  color: #E2E8F0;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.admin-app-map__btn:hover {
+  background-color: #475569;
+  border-color: #64748B;
+}
+
+.admin-app-map__zoom-level {
+  min-width: 50px;
+  text-align: center;
+  font-size: 13px;
+  color: #94A3B8;
+}
+
+.admin-app-map__filters {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.admin-app-map__filter-btn {
+  padding: 6px 12px;
+  background-color: #334155;
+  border: 1px solid #475569;
+  border-radius: 20px;
+  color: #CBD5E1;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.admin-app-map__filter-btn:hover {
+  background-color: #475569;
+  border-color: #64748B;
+}
+
+.admin-app-map__filter-btn.active {
+  background-color: #0EA5E9;
+  border-color: #0EA5E9;
+  color: #fff;
+}
+
+.admin-app-map__canvas-container {
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+  background-color: #0F172A;
+  cursor: grab;
+  user-select: none;
+}
+
+.admin-app-map__canvas-container:active {
+  cursor: grabbing;
+}
+
+.admin-app-map__svg {
+  display: block;
+}
+
+.admin-app-map__edge {
+  stroke: #64748B;
+  stroke-width: 1.5;
+  opacity: 0.6;
+}
+
+.admin-app-map__edge:hover {
+  stroke: #94A3B8;
+  opacity: 1;
+}
+
+.admin-app-map__edge-label {
+  font-size: 11px;
+  fill: #94A3B8;
+  text-anchor: middle;
+  pointer-events: none;
+}
+
+.admin-app-map__node {
+  cursor: pointer;
+}
+
+.admin-app-map__node-circle {
+  transition: all 0.2s;
+  filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.3));
+}
+
+.admin-app-map__node.hovered .admin-app-map__node-circle {
+  filter: drop-shadow(0 8px 16px rgba(0, 0, 0, 0.5));
+}
+
+.admin-app-map__node-label {
+  font-size: 13px;
+  font-weight: 500;
+  fill: #E2E8F0;
+  text-anchor: middle;
+  pointer-events: none;
+  transition: fill 0.2s;
+}
+
+.admin-app-map__node.hovered .admin-app-map__node-label {
+  fill: #fff;
+  font-weight: 600;
+}
+
+.admin-app-map__node-label.hovered {
+  fill: #fff;
+  font-weight: 600;
+}
+
+.admin-app-map__node-badge {
+  font-size: 9px;
+  fill: #CBD5E1;
+  text-anchor: middle;
+  opacity: 0.8;
+  pointer-events: none;
+  font-weight: 500;
+}
+
+.admin-app-map__tooltip-bg {
+  opacity: 0.95;
+}
+
+.admin-app-map__tooltip-title {
+  font-size: 13px;
+  font-weight: 600;
+  fill: #E2E8F0;
+  pointer-events: none;
+}
+
+.admin-app-map__tooltip-path {
+  font-size: 11px;
+  fill: #94A3B8;
+  pointer-events: none;
+  font-family: 'Monaco', 'Menlo', monospace;
+}
+
+.admin-app-map__tooltip-desc {
+  font-size: 11px;
+  fill: #CBD5E1;
+  pointer-events: none;
+}
+
+.admin-app-map__tooltip-access {
+  font-size: 10px;
+  fill: #64748B;
+  pointer-events: none;
+  font-weight: 500;
+  text-transform: uppercase;
+}
+
+.admin-app-map__legend {
+  flex-shrink: 0;
+  padding: 15px 20px;
+  background-color: #1E293B;
+  border-top: 1px solid #334155;
+  font-size: 12px;
+}
+
+.admin-app-map__legend-title {
+  font-weight: 600;
+  margin-bottom: 8px;
+  color: #F1F5F9;
+}
+
+.admin-app-map__legend-items {
+  display: flex;
+  gap: 20px;
+  margin-bottom: 10px;
+  flex-wrap: wrap;
+}
+
+.admin-app-map__legend-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #CBD5E1;
+}
+
+.admin-app-map__legend-color {
+  width: 12px;
+  height: 12px;
+  border-radius: 2px;
+}
+
+.admin-app-map__legend-badges {
+  display: flex;
+  gap: 15px;
+  flex-wrap: wrap;
+  color: #CBD5E1;
+}
+
+.admin-app-map__legend-badge {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.admin-app-map__legend-badge .badge {
+  display: inline-block;
+  padding: 2px 6px;
+  background-color: #334155;
+  border-radius: 3px;
+  font-size: 10px;
+  font-weight: 500;
+  color: #94A3B8;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .admin-app-map__toolbar {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .admin-app-map__search-box {
+    max-width: 100%;
+  }
+
+  .admin-app-map__filters {
+    justify-content: flex-start;
+  }
+
+  .admin-app-map__legend {
+    display: none;
+  }
+}

@@ -7,7 +7,7 @@ import {
 } from '../components/equipment/EquipmentKit.jsx';
 import { GearImageUploader } from '../components/gear/index.js';
 import { ProductSearch, ProductThumbnail } from '../components/product/index.js';
-import { getProductThumbnailUrl, getProductName } from '../services/productService.js';
+import { inferEquipmentVisualCategory, persistentEquipmentImage } from '../data/equipmentVisual.js';
 import { EQUIPMENT_CATEGORIES, EQUIPMENT_OWNERSHIP } from '../data/equipmentModel.js';
 import {
   addEquipmentItem,
@@ -19,12 +19,14 @@ import {
 } from '../services/equipmentService.js';
 
 const emptyForm = {
-  category: 'recording',
+  category: 'activity',
+  visualCategory: null,
   productId: null,
   externalId: null,
   provider: null,
   brand: '',
   model: '',
+  displayName: '',
   equipmentType: '',
   productUrl: '',
   affiliateUrl: '',
@@ -39,49 +41,53 @@ const emptyForm = {
 function EquipmentForm({ value, onChange, onSave, onCancel, submitLabel = 'Save equipment' }) {
   const [showManualEntry, setShowManualEntry] = useState(!value.productId && !!(value.brand || value.model));
   const [errors, setErrors] = useState({});
+  const nameRef = useRef(null);
   const brandRef = useRef(null);
-  const modelRef = useRef(null);
 
   const handleSave = () => {
     const next = {};
-    if (!value.brand?.trim()) next.brand = 'Brand is required';
-    if (!value.model?.trim()) next.model = 'Model is required';
+    if (!value.productId && !(value.displayName?.trim() || value.model?.trim())) next.name = 'Equipment name is required';
     setErrors(next);
     if (Object.keys(next).length > 0) {
-      const firstRef = next.brand ? brandRef : modelRef;
-      firstRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      nameRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
       return;
     }
     onSave();
   };
 
   const handleProductSelect = (product) => {
-    const thumbnailUrl = getProductThumbnailUrl(product, 'medium');
+    const image = persistentEquipmentImage(product);
     onChange({
       ...value,
       productId: product.id,
       externalId: product.externalId || null,
+      sourceProductId: product.externalId || null,
       provider: product.provider || null,
+      identificationStatus: 'identified',
+      enrichmentStatus: product.provider === 'icecat' || product.enrichedBy === 'icecat' ? 'provider-data' : 'none',
       brand: product.brand,
       model: product.name,
-      equipmentType: product.category,
-      thumbnailUrl: thumbnailUrl || null,
-      imageUrl: thumbnailUrl || '',
-      productUrl: product.sourceProductUrl || product.productUrl || '',
-      affiliateUrl: product.affiliateUrl || '',
-      imageSource: 'product-catalog',
+      displayName: `${product.brand} ${product.name}`.trim(),
+      category: product.category || value.category,
+      equipmentType: product.equipmentType || product.subcategory || product.category || '',
+      visualCategory: inferEquipmentVisualCategory(product),
+      ...image,
+      productUrl: '',
+      affiliateUrl: '',
     });
     setShowManualEntry(false);
   };
 
-  const displayProductName = value.brand && value.model ? `${value.brand} ${value.model}` : 'Equipment';
+  const displayProductName = value.displayName || [value.brand, value.model].filter(Boolean).join(' ') || 'Equipment';
 
   return (
     <section className="equipment-private-form" aria-label="Equipment form">
       <label>
         Category
         <select value={value.category} onChange={(event) => {
-          onChange({ ...value, category: event.target.value });
+          const selectedCategory = event.target.value;
+          const visualCategory = { recording: 'cameras', audio: 'audio', streaming: 'computing', power_accessories: 'energy' }[selectedCategory] || null;
+          onChange({ ...value, category: selectedCategory, visualCategory });
         }}>
           {EQUIPMENT_CATEGORIES.map((category) => (
             <option key={category.id} value={category.id}>{category.label}</option>
@@ -96,6 +102,7 @@ function EquipmentForm({ value, onChange, onSave, onCancel, submitLabel = 'Save 
           <ProductSearch
             categoryId={value.category}
             onSelectProduct={handleProductSelect}
+            onAddManually={() => setShowManualEntry(true)}
             disabled={false}
           />
         </div>
@@ -113,8 +120,14 @@ function EquipmentForm({ value, onChange, onSave, onCancel, submitLabel = 'Save 
                 category: value.category,
                 thumbnailUrl: value.thumbnailUrl || value.imageUrl || null,
                 imageSource: value.imageSource || 'placeholder',
+                imageRightsStatus: value.imageRightsStatus || null,
+                imageRightsSource: value.imageRightsSource || null,
+                imageAllowedUsages: value.imageAllowedUsages || [],
+                imageRightsExpiresAt: value.imageRightsExpiresAt || null,
+                imageHostingStatus: value.imageHostingStatus || null,
               }}
               size="md"
+              usage="persistent-gear"
             />
           </div>
           <div className="equipment-selected-product__info">
@@ -155,15 +168,18 @@ function EquipmentForm({ value, onChange, onSave, onCancel, submitLabel = 'Save 
             </button>
           ) : (
             <div className="equipment-manual-entry">
-              <label ref={brandRef}>
-                Brand
-                <input value={value.brand} onChange={(event) => { onChange({ ...value, brand: event.target.value }); setErrors((e) => ({ ...e, brand: '' })); }} placeholder="Example: GoPro" />
-                {errors.brand ? <span className="equipment-field-error">{errors.brand}</span> : null}
+              <label ref={nameRef}>
+                Equipment name
+                <input value={value.displayName || [value.brand, value.model].filter(Boolean).join(' ')} onChange={(event) => { onChange({ ...value, displayName: event.target.value }); setErrors((e) => ({ ...e, name: '' })); }} placeholder="Example: Sony A7 IV" />
+                {errors.name ? <span className="equipment-field-error">{errors.name}</span> : null}
               </label>
-              <label ref={modelRef}>
-                Model
-                <input value={value.model} onChange={(event) => { onChange({ ...value, model: event.target.value }); setErrors((e) => ({ ...e, model: '' })); }} placeholder="Example: HERO13 Black" />
-                {errors.model ? <span className="equipment-field-error">{errors.model}</span> : null}
+              <label ref={brandRef}>
+                Brand (optional)
+                <input value={value.brand} onChange={(event) => onChange({ ...value, brand: event.target.value })} placeholder="Example: Sony" />
+              </label>
+              <label>
+                Model (optional)
+                <input value={value.model} onChange={(event) => onChange({ ...value, model: event.target.value })} placeholder="Example: A7 IV" />
               </label>
               <label>
                 Equipment type
@@ -174,22 +190,26 @@ function EquipmentForm({ value, onChange, onSave, onCancel, submitLabel = 'Save 
                 imageUrl={value.imageUrl}
                 category={value.category}
                 displayName={displayProductName}
-                onImageChange={(data) => onChange({ ...value, ...data })}
-                onRemoveImage={() => onChange({ ...value, imageUrl: '', imageSource: null })}
+                onImageChange={(data) => onChange({ ...value, ...data, thumbnailUrl: null, imageRightsStatus: 'unknown', imageRightsSource: 'user-provided', imageAllowedUsages: ['persistent-gear'], imageRightsCheckedAt: null, imageRightsExpiresAt: null, imageProductId: null, imageHostingStatus: null })}
+                onRemoveImage={() => onChange({ ...value, imageUrl: '', thumbnailUrl: null, imageSource: null, imageRightsStatus: null, imageRightsSource: null, imageAllowedUsages: [], imageRightsCheckedAt: null, imageRightsExpiresAt: null, imageProductId: null, imageHostingStatus: null })}
               />
             </div>
           )}
         </>
       )}
 
-      <label>
-        Product link
-        <input value={value.productUrl} onChange={(event) => onChange({ ...value, productUrl: event.target.value })} placeholder="https://" />
-      </label>
-      <label>
-        Affiliate link
-        <input value={value.affiliateUrl} onChange={(event) => onChange({ ...value, affiliateUrl: event.target.value })} placeholder="https://" />
-      </label>
+      {(value.productUrl || value.affiliateUrl) && (
+        <>
+          <label>
+            Product link
+            <input value={value.productUrl || ''} onChange={(event) => onChange({ ...value, productUrl: event.target.value })} placeholder="https://" />
+          </label>
+          <label>
+            Affiliate link
+            <input value={value.affiliateUrl || ''} onChange={(event) => onChange({ ...value, affiliateUrl: event.target.value })} placeholder="https://" />
+          </label>
+        </>
+      )}
       <label>
         Ownership status
         <select value={value.ownership} onChange={(event) => onChange({ ...value, ownership: event.target.value })}>
@@ -257,15 +277,22 @@ export default function EquipmentManagePage() {
 
   const saveForm = async () => {
     try {
-      if (!form?.brand?.trim() || !form?.model?.trim()) {
-        showToast('Please enter brand and model');
+      const equipmentName = form?.displayName?.trim() || form?.model?.trim();
+      if (!equipmentName) {
+        showToast('Please enter an equipment name');
         return;
       }
+      const brand = form.brand?.trim() || '';
+      const inferredModel = brand && equipmentName.toLowerCase().startsWith(`${brand.toLowerCase()} `)
+        ? equipmentName.slice(brand.length).trim()
+        : equipmentName;
+      const model = form.model?.trim() || inferredModel;
+      const nextForm = { ...form, brand, model, displayName: equipmentName, visualCategory: form.visualCategory || inferEquipmentVisualCategory({ ...form, brand, model, displayName: equipmentName }), identificationStatus: form.productId ? 'identified' : 'manual' };
       const isEdit = Boolean(editingId);
       if (isEdit) {
-        updateEquipmentItem(editingId, form);
+        updateEquipmentItem(editingId, nextForm);
       } else {
-        addEquipmentItem(form);
+        addEquipmentItem(nextForm);
       }
       await refreshItems();
       setForm(null);

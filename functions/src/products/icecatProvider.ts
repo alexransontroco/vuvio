@@ -1,6 +1,6 @@
 import { logger } from 'firebase-functions';
 import { ProductProvider, ProductSearchQuery, ExternalProduct, ProductImage, normalizeProductName } from './productProvider.js';
-import { fetchIcecatProduct, searchIcecat, IcecatError, IcecatConfig, IcecatProductData } from './icecatService.js';
+import { fetchIcecatProduct, IcecatError, IcecatConfig, IcecatProductData } from './icecatService.js';
 
 export class IcecatProductProvider implements ProductProvider {
   readonly id = 'icecat';
@@ -22,11 +22,6 @@ export class IcecatProductProvider implements ProductProvider {
       if (query.brand && query.mpn) {
         const product = await fetchIcecatProduct({ brand: query.brand, mpn: query.mpn }, this.config);
         return [this.mapToExternal(product)];
-      }
-
-      if (query.text) {
-        const results = await searchIcecat(query.text, this.config, query.limit || 20);
-        return results.map((p) => this.mapToExternal(p));
       }
 
       return [];
@@ -90,6 +85,10 @@ export class IcecatProductProvider implements ProductProvider {
       }
     }
 
+    if (data.thumbnailUrl && !imageUrls.some((image) => image.imageUrl === data.thumbnailUrl)) {
+      imageUrls.push({ imageUrl: data.thumbnailUrl, sourceProvider: 'icecat', sourceUrl: data.sourceUrl, sourceProductId: data.icecatId, rightsStatus: 'provider-hosted' });
+    }
+
     return {
       externalId: data.icecatId,
       provider: 'icecat',
@@ -101,6 +100,12 @@ export class IcecatProductProvider implements ProductProvider {
       gtin: data.gtin?.[0],
       mpn: data.mpn,
       thumbnailUrl: data.thumbnailUrl,
+      imageRightsStatus: data.thumbnailUrl ? 'provider-hosted' : undefined,
+      imageSource: 'icecat',
+      imageRightsSource: 'icecat-api-asset-access-unverified-for-vuvio',
+      imageAllowedUsages: [],
+      imageRightsCheckedAt: new Date().toISOString(),
+      imageProductId: data.icecatId,
       imageUrls,
       sourceProductUrl: data.sourceUrl,
       canImport: true,

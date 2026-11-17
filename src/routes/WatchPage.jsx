@@ -36,6 +36,14 @@ import { followCreator, unfollowCreator } from '../services/creatorService.js';
 import LiveQASheet from '../components/LiveQASheet.jsx';
 import { subscribeToQuestions, sendQuestion, answerQuestion } from '../services/liveQAService.js';
 import { streamCreator, streamDescription, streamLocation, streamTitle } from '../utils/seoData.js';
+import { isWorkshopEnabled } from '../config/workshop.js';
+import { useWorkshopSession } from '../hooks/useWorkshopSession.js';
+import WorkshopJoinCTA from '../components/workshop/WorkshopJoinCTA.jsx';
+import WorkshopJoinSheet from '../components/workshop/WorkshopJoinSheet.jsx';
+import WorkshopParticipantHUD from '../components/workshop/WorkshopParticipantHUD.jsx';
+import WorkshopSpotlightConsentSheet from '../components/workshop/WorkshopSpotlightConsentSheet.jsx';
+import WorkshopSpotlightPip from '../components/workshop/WorkshopSpotlightPip.jsx';
+import WorkshopToast from '../components/workshop/WorkshopToast.jsx';
 
 const SWIPE_THRESHOLD = 58;
 const WHEEL_THRESHOLD = 36;
@@ -62,7 +70,6 @@ const demoVideoLiveIds = [
   'skate-portland',
   'sailor-split',
   'road-cyclist-mallorca',
-  'biking-dolomites',
   'buggy-marrakesh',
   'glacier-guide-iceland',
   'gopro-firefighters-la',
@@ -71,7 +78,6 @@ const demoVideoLiveIds = [
   'muaythai-training-phuket',
   'f16-pilot-miami',
   'gopro-climbing-wall',
-  'fallow-head-chef-london',
   'wingsuit-taschhorn',
   'wingsuit-new-pov',
   'chef-cooking-pov',
@@ -81,6 +87,8 @@ const demoVideoLiveIds = [
   'street-food-chengdu-pov',
   'kitchen-service-pov',
   'watercolor-sketch-pov',
+  'mtb-ridge-queenstown',
+  'honey-hunter-nepal',
 ];
 const CLOCK_TICK_MS = 1000;
 const COVER_CAPTURE_DELAY_MS = 2000;
@@ -1092,7 +1100,7 @@ function GlobeMini({ lng = 0, lat = 0 }) {
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-    const SIZE = 56;
+    const SIZE = 48;
     const dpr = Math.min(window.devicePixelRatio || 1, 2);
     canvas.width = SIZE * dpr;
     canvas.height = SIZE * dpr;
@@ -1173,14 +1181,11 @@ function LiveLocationGlobe({ live, onOpen }) {
   return (
     <button
       type="button"
-      className={`live-location-globe live-location-globe--compass${flashing ? ' is-flashing' : ''}`}
+      className={`live-location-globe${flashing ? ' is-flashing' : ''}`}
       onClick={handleClick}
       aria-label={`${t('common.open')} ${live.city}, ${live.country} on the globe`}
     >
-      <span className="live-location-globe__compass live-location-globe__compass--n" aria-hidden="true">N</span>
-      <span className="live-location-globe__compass live-location-globe__compass--e" aria-hidden="true">E</span>
-      <span className="live-location-globe__compass live-location-globe__compass--s" aria-hidden="true">S</span>
-      <span className="live-location-globe__compass live-location-globe__compass--w" aria-hidden="true">W</span>
+      <span className="live-location-globe__halo" aria-hidden="true" />
       <GlobeMini lng={lng} lat={lat} />
     </button>
   );
@@ -1588,7 +1593,12 @@ function CreatorLiveSession({ live, onEndingChange }) {
               whipCredentials = { url: cfData.webRTCUrl, key: cfData.streamKey };
             }
             if (cfData.relayUrl && cfData.rtmpsIngestUrl && cfData.rtmpsStreamKey) {
-              relayCredentials = { relayUrl: cfData.relayUrl, ingestUrl: cfData.rtmpsIngestUrl, streamKey: cfData.rtmpsStreamKey };
+              relayCredentials = {
+                relayUrl: cfData.relayUrl,
+                ingestUrl: cfData.rtmpsIngestUrl,
+                streamKey: cfData.rtmpsStreamKey,
+                authToken: cfData.relayAuthToken || null,
+              };
             }
 
             // Push hlsManifestUrl into local live state immediately so viewers can start HLS
@@ -1616,7 +1626,7 @@ function CreatorLiveSession({ live, onEndingChange }) {
                 if (ingestUrl && streamKey) {
                   const relayProtocol = window.location.protocol === 'https:' ? 'https:' : 'http:';
                   const relayHost = window.location.hostname || 'localhost';
-                  relayCredentials = { relayUrl: `${relayProtocol}//${relayHost}:8787`, ingestUrl, streamKey };
+                  relayCredentials = { relayUrl: `${relayProtocol}//${relayHost}:8787`, ingestUrl, streamKey, authToken: null };
                   whipCredentials = null;
                   console.log('[INGEST][OVERRIDE] relayLocal=1 → using %s', relayCredentials.relayUrl);
                 } else {
@@ -1701,7 +1711,7 @@ function CreatorLiveSession({ live, onEndingChange }) {
             const keyForLog = relayCredentials.streamKey ? relayCredentials.streamKey.slice(-16) : 'MISSING';
             console.log('[INGEST][PRE-RELAY] Vuvio live id:', live.id, '| CF liveInputId:', cloudflareLiveInputId || 'MISSING', '| relayUrl:', relayCredentials.relayUrl, '| ingestUrl:', relayCredentials.ingestUrl || 'MISSING', '| streamKey suffix:', keyForLog);
             try {
-              await startRtmpRelayBroadcast(live.id, user.uid, stream, relayCredentials.relayUrl, relayCredentials.ingestUrl, relayCredentials.streamKey);
+              await startRtmpRelayBroadcast(live.id, user.uid, stream, relayCredentials.relayUrl, relayCredentials.ingestUrl, relayCredentials.streamKey, relayCredentials.authToken);
               ingestMode = 'rtmps-relay';
               if (active) setRecordingActive(true);
               console.log('[INGEST] relay connected');
@@ -2429,6 +2439,12 @@ function LiveViewer({ liveId, creatorMode = false }) {
   const [userSheetOpen, setUserSheetOpen] = useState(false);
   const [equipmentSheetOpen, setEquipmentSheetOpen] = useState(false);
   const [shareLiveSheetOpen, setShareLiveSheetOpen] = useState(false);
+  const [workshopJoinSheetOpen, setWorkshopJoinSheetOpen] = useState(false);
+  const [workshopHudOpen, setWorkshopHudOpen] = useState(false);
+  const [workshopConsentOpen, setWorkshopConsentOpen] = useState(false);
+  const [workshopToast, setWorkshopToast] = useState(null);
+  const workshopStreamRef = useRef(null);
+  const workshopPrevStatusRef = useRef(null);
   const [chatComposerOpen, setChatComposerOpen] = useState(false);
   const [chatPanelOpen, setChatPanelOpen] = useState(false);
   const [chatPanelTab, setChatPanelTab] = useState('messages');
@@ -2463,6 +2479,66 @@ function LiveViewer({ liveId, creatorMode = false }) {
   const wheelTimer = useRef(null);
   const live = liveFeed[index] ?? liveFeed[0] ?? { id: '', equipment: [] };
   const activeLiveId = live.id;
+
+  // ─── Workshop (Join Activity / Workshop) ───────────────────────────────
+  const workshopFlagOn = isWorkshopEnabled();
+  const workshopMode = live.participation || 'off';
+  const workshopActive = workshopFlagOn && workshopMode !== 'off' && !creatorMode && liveReady;
+  const workshopViewer = useMemo(() => {
+    if (!user) return null;
+    return {
+      userId: user.uid || user.id,
+      userName: user.displayName || user.email || t('workshop.participant.label'),
+      userAvatar: user.photoURL || null,
+    };
+  }, [user?.uid, user?.displayName, user?.email, user?.photoURL]); // eslint-disable-line react-hooks/exhaustive-deps
+  const workshopHostConfig = useMemo(() => {
+    if (!workshopActive) return undefined;
+    return {
+      mode: workshopMode,
+      maxParticipants: live.participationConfig?.maxParticipants || 6,
+      audience: live.participationConfig?.audience || 'everyone',
+      activityTitle: live.participationConfig?.activityTitle || live.title || live.description,
+      hostId: live.creatorUid || live.creatorId || live.id,
+      hostName: live.streamer || live.name || 'Host',
+    };
+  }, [workshopActive, workshopMode, live.participationConfig?.maxParticipants, live.participationConfig?.audience, live.participationConfig?.activityTitle, live.creatorUid, live.creatorId, live.id, live.streamer, live.name, live.title, live.description]);
+  const workshopSession = useWorkshopSession({
+    liveId: workshopActive ? live.id : null,
+    viewer: workshopViewer,
+    hostConfig: workshopHostConfig,
+  });
+  const myWorkshopParticipant = workshopSession?.myParticipant || null;
+  const myWorkshopRequest = workshopSession?.myJoinRequest || null;
+  const workshopParticipantCount = workshopSession?.session?.participants?.length || 0;
+  const workshopMaxParticipants = workshopSession?.session?.maxParticipants || 0;
+  const workshopSpotlightParticipant = workshopSession?.spotlightParticipant || null;
+  const myPendingSpotlight = useMemo(() => {
+    if (!myWorkshopParticipant?.pendingSpotlightRequest) return null;
+    const req = myWorkshopParticipant.pendingSpotlightRequest;
+    if (req.status !== 'pending') return null;
+    if (req.origin !== 'host') return null; // Only host-initiated requests prompt the participant
+    return req;
+  }, [myWorkshopParticipant]);
+
+  // Fire a toast when join request status transitions.
+  useEffect(() => {
+    if (!workshopActive) { workshopPrevStatusRef.current = null; return; }
+    const status = myWorkshopRequest?.status || null;
+    if (status === workshopPrevStatusRef.current) return;
+    if (status === 'accepted') {
+      setWorkshopToast({ icon: 'join', title: t('workshop.joinSheet.accepted') });
+      setWorkshopHudOpen(true);
+    } else if (status === 'declined') {
+      setWorkshopToast({ icon: 'join', title: t('workshop.joinSheet.declined') });
+    }
+    workshopPrevStatusRef.current = status;
+  }, [workshopActive, myWorkshopRequest?.status, t]);
+
+  // Prompt participant when host asks for spotlight.
+  useEffect(() => {
+    if (myPendingSpotlight) setWorkshopConsentOpen(true);
+  }, [myPendingSpotlight?.id]); // eslint-disable-line react-hooks/exhaustive-deps
   // When a specific liveId is requested (viewer navigating to a real broadcast), hide content
   // until that live is loaded into the feed — avoids briefly showing a random mock live.
   // Once the requested live is present in the feed, stop gating so swiping to the next lives
@@ -3423,6 +3499,7 @@ function LiveViewer({ liveId, creatorMode = false }) {
   useEffect(() => {
     if (!chatComposerOpen && !chatPanelOpen && !qaComposerOpen) {
       document.documentElement.style.removeProperty('--live-keyboard-offset');
+      document.documentElement.style.removeProperty('--live-chat-keyboard-height');
       document.documentElement.classList.remove('has-soft-keyboard');
       setKeyboardOffset(0);
       if (window.scrollY !== 0) window.scrollTo(0, 0);
@@ -3442,9 +3519,11 @@ function LiveViewer({ liveId, creatorMode = false }) {
     };
 
     const updateKeyboardOffset = () => {
-      const offset = Math.max(0, window.innerHeight - viewport.height - viewport.offsetTop);
+      const feedBottom = feedRef.current?.getBoundingClientRect().bottom ?? window.innerHeight;
+      const offset = Math.max(0, feedBottom - viewport.height - viewport.offsetTop);
       const rounded = Math.round(offset);
       document.documentElement.style.setProperty('--live-keyboard-offset', `${rounded}px`);
+      document.documentElement.style.setProperty('--live-chat-keyboard-height', `${Math.round(Math.min(300, Math.max(160, viewport.height * 0.55)))}px`);
       if (rounded > 80) {
         if (removeTimer) { window.clearTimeout(removeTimer); removeTimer = null; }
         document.documentElement.classList.add('has-soft-keyboard');
@@ -3469,6 +3548,7 @@ function LiveViewer({ liveId, creatorMode = false }) {
       viewport.removeEventListener('scroll', updateKeyboardOffset);
       if (removeTimer) window.clearTimeout(removeTimer);
       document.documentElement.style.removeProperty('--live-keyboard-offset');
+      document.documentElement.style.removeProperty('--live-chat-keyboard-height');
       document.documentElement.classList.remove('has-soft-keyboard');
       setKeyboardOffset(0);
       pinScrollTop();
@@ -3479,6 +3559,7 @@ function LiveViewer({ liveId, creatorMode = false }) {
   useEffect(() => {
     const clean = () => {
       document.documentElement.style.removeProperty('--live-keyboard-offset');
+      document.documentElement.style.removeProperty('--live-chat-keyboard-height');
       document.documentElement.classList.remove('has-soft-keyboard');
       if (window.scrollY !== 0) window.scrollTo(0, 0);
     };
@@ -3756,7 +3837,7 @@ function LiveViewer({ liveId, creatorMode = false }) {
   return (
     <section
       ref={feedRef}
-      className={`screen live-feed${immersive ? ' is-immersive' : ''}`}
+      className={`screen live-feed${immersive ? ' is-immersive' : ''}${chatPanelOpen ? ' has-chat-panel' : ''}`}
       aria-label="Vuvio live"
       onPointerDown={onPointerDown}
       onPointerMove={onPointerMove}
@@ -4023,12 +4104,27 @@ function LiveViewer({ liveId, creatorMode = false }) {
       {!broadcastEnded && liveReady && <div className="live-feed__details">
         <div className="live-feed__copy">
           <CreatorLink creator={live} className="live-feed__creator" stopPropagation />
+          {(live.title || live.experienceTitle || live.note) && (
+            <h1>{live.title || live.experienceTitle || live.note}</h1>
+          )}
           <p>
             <MapPin size={14} strokeWidth={2} aria-hidden="true" />
             {live.city}, {live.country}
           </p>
           <span>{live.job}{live.job && live.description ? ' • ' : ''}{live.description}</span>
         </div>
+
+        {workshopActive ? (
+          <WorkshopJoinCTA
+            mode={workshopMode}
+            participationConfig={live.participationConfig}
+            myParticipant={myWorkshopParticipant}
+            myJoinRequest={myWorkshopRequest}
+            participantCount={workshopParticipantCount}
+            maxParticipants={workshopMaxParticipants}
+            onOpen={() => (myWorkshopParticipant ? setWorkshopHudOpen(true) : setWorkshopJoinSheetOpen(true))}
+          />
+        ) : null}
 
         <div className="live-actions" aria-label="Live actions">
           <button
@@ -4319,6 +4415,70 @@ function LiveViewer({ liveId, creatorMode = false }) {
           onClose={() => setEquipmentSheetOpen(false)}
           onViewProfile={() => navigate(`/profile/${creatorProfileIdForLive(live)}?tab=equipment`)}
           context={{ liveId: live.id, streamerId: live.creatorUid ?? live.creatorId ?? null, viewerId: user?.uid ?? null }}
+        />
+      ) : null}
+      {workshopActive && workshopSpotlightParticipant && myWorkshopParticipant?.id !== workshopSpotlightParticipant.id ? (
+        <WorkshopSpotlightPip
+          participant={workshopSpotlightParticipant}
+          onEnd={() => {}}
+        />
+      ) : null}
+      {workshopActive && workshopToast ? (
+        <WorkshopToast
+          icon={workshopToast.icon}
+          title={workshopToast.title}
+          hint={workshopToast.hint}
+          onDismiss={() => setWorkshopToast(null)}
+        />
+      ) : null}
+      {workshopActive && workshopJoinSheetOpen ? (
+        <WorkshopJoinSheet
+          participationConfig={live.participationConfig}
+          participantCount={workshopParticipantCount}
+          maxParticipants={workshopMaxParticipants}
+          myParticipant={myWorkshopParticipant}
+          myJoinRequest={myWorkshopRequest}
+          onRequestJoin={() => {
+            if (!workshopViewer) {
+              navigate('/login', { state: { returnTo: `/watch?live=${encodeURIComponent(live.id)}` } });
+              return;
+            }
+            workshopSession.actions.requestJoin();
+            setWorkshopToast({ icon: 'join', title: t('workshop.joinSheet.pending') });
+          }}
+          onCancel={(reqId) => workshopSession.actions.cancelJoinRequest(reqId)}
+          onOpenParticipantHUD={() => { setWorkshopJoinSheetOpen(false); setWorkshopHudOpen(true); }}
+          onClose={() => setWorkshopJoinSheetOpen(false)}
+        />
+      ) : null}
+      {workshopActive && workshopHudOpen && myWorkshopParticipant ? (
+        <WorkshopParticipantHUD
+          myParticipant={myWorkshopParticipant}
+          session={workshopSession.session}
+          spotlightParticipant={workshopSpotlightParticipant}
+          pendingSpotlight={myPendingSpotlight}
+          localStreamRef={workshopStreamRef}
+          onToggleCamera={(on) => workshopSession.actions.setMedia({ cameraOn: on })}
+          onToggleMic={(on) => workshopSession.actions.setMedia({ micOn: on })}
+          onNeedFeedback={() => workshopSession.actions.requestFeedback()}
+          onRequestSpotlight={() => {
+            workshopSession.actions.participantRequestSpotlight();
+            setWorkshopToast({ icon: 'hand', title: t('workshop.toasts.handRaised', { defaultValue: 'Spotlight requested' }) });
+          }}
+          onStopSharing={() => workshopSession.actions.endSpotlight({ by: 'participant' })}
+          onLeave={() => { workshopSession.actions.leaveWorkshop(); setWorkshopHudOpen(false); }}
+        />
+      ) : null}
+      {workshopActive && workshopConsentOpen && myPendingSpotlight ? (
+        <WorkshopSpotlightConsentSheet
+          variant="participant-incoming"
+          participantName={myWorkshopParticipant?.userName}
+          onAccept={() => {
+            workshopSession.actions.setPublicSpotlightConsent(myWorkshopParticipant.id, true);
+            workshopSession.actions.participantRespondSpotlight({ accept: true });
+          }}
+          onDecline={() => workshopSession.actions.participantRespondSpotlight({ accept: false })}
+          onClose={() => setWorkshopConsentOpen(false)}
         />
       ) : null}
     </section>

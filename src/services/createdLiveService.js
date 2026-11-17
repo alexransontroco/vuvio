@@ -216,6 +216,8 @@ export function createLocalLive(draft, creatorUid = null, userCoordinates = null
     equipmentSnapshots: Array.isArray(draft.equipmentSnapshots) ? draft.equipmentSnapshots : [],
     equipmentConfirmed: false,
     equipmentUpdatedAt: new Date().toISOString(),
+    participation: draft.participation || 'off',
+    participationConfig: draft.participationConfig || null,
     createdLocally: true,
   };
 

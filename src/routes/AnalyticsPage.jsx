@@ -1,7 +1,7 @@
 import { ArrowUp, ArrowDown, Eye, Heart, Users, Radio, Activity, MapPin, Search, X, Globe, TrendingUp, Clock } from 'lucide-react';
 import { useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { collection, query, orderBy, limit, getDocs, getDoc, doc, getCountFromServer, where } from 'firebase/firestore';
+import { collection, query, orderBy, limit, getDocs, getDoc, doc, getCountFromServer, where, Timestamp } from 'firebase/firestore';
 import { db } from '../firebase.js';
 import { useAuth } from '../context/AuthContext.jsx';
 import '../styles/pages/analytics.css';
@@ -150,18 +150,21 @@ function ActivityChart({ bars, prevBars, line, labels, barColor, lineColor, barL
   );
 }
 
-function StatCard({ icon: Icon, label, value, format, trend, color, sparkData, pulse }) {
+function StatCard({ icon: Icon, label, value, format, trend, color, sparkData, pulse, onClick }) {
   const animated = useCountUp(value);
   const displayed = format ? format(animated) : animated.toLocaleString();
   const isPositive = trend > 0;
-  return (
-    <article className="stat-card" style={{ '--accent': color }}>
+  const clickable = typeof onClick === 'function';
+
+  const inner = (
+    <>
       <div className="stat-card__header">
         <div className={`stat-card__icon ${pulse ? 'stat-card__icon--pulse' : ''}`} style={{ color }}>
           <Icon size={20} strokeWidth={1.8} />
         </div>
         <span className="stat-card__label">{label}</span>
         {pulse && <span className="stat-card__live-dot" />}
+        {clickable && <span className="stat-card__chevron" aria-hidden="true">›</span>}
       </div>
       <div className="stat-card__body">
         <div>
@@ -179,7 +182,131 @@ function StatCard({ icon: Icon, label, value, format, trend, color, sparkData, p
           </div>
         )}
       </div>
+    </>
+  );
+
+  if (clickable) {
+    return (
+      <button
+        type="button"
+        className="stat-card stat-card--clickable"
+        style={{ '--accent': color }}
+        onClick={onClick}
+      >
+        {inner}
+      </button>
+    );
+  }
+  return (
+    <article className="stat-card" style={{ '--accent': color }}>
+      {inner}
     </article>
+  );
+}
+
+function fmtTs(ts) {
+  const d = ts?.toDate?.() ?? (ts?._seconds ? new Date(ts._seconds * 1000) : ts instanceof Date ? ts : null);
+  if (!d) return '—';
+  return d.toLocaleString('fr-FR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
+}
+
+function flagEmoji(code) {
+  if (!code) return null;
+  return String.fromCodePoint(...[...code.toUpperCase()].map(c => 0x1F1E6 - 65 + c.charCodeAt(0)));
+}
+
+function VisitorsDetailModal({ title, rows, kind, onClose, emptyHint }) {
+  useEffect(() => {
+    const onEsc = (e) => e.key === 'Escape' && onClose();
+    window.addEventListener('keydown', onEsc);
+    document.body.style.overflow = 'hidden';
+    return () => {
+      window.removeEventListener('keydown', onEsc);
+      document.body.style.overflow = '';
+    };
+  }, [onClose]);
+
+  return (
+    <div className="visitors-modal__backdrop" onClick={onClose}>
+      <div className="visitors-modal" onClick={(e) => e.stopPropagation()} role="dialog" aria-label={title}>
+        <header className="visitors-modal__header">
+          <div>
+            <h2>{title}</h2>
+            <p className="visitors-modal__count">{rows.length} {rows.length === 1 ? 'entry' : 'entries'}</p>
+          </div>
+          <button type="button" className="visitors-modal__close" onClick={onClose} aria-label="Close">
+            <X size={18} />
+          </button>
+        </header>
+        <div className="visitors-modal__body">
+          {rows.length === 0 ? (
+            <p className="visitors-modal__empty">{emptyHint || 'No entries to display.'}</p>
+          ) : kind === 'users' ? (
+            <table className="leaderboard-table">
+              <thead>
+                <tr>
+                  <th>User</th>
+                  <th>Username</th>
+                  <th>Email</th>
+                  <th>Created</th>
+                </tr>
+              </thead>
+              <tbody>
+                {rows.map((u) => (
+                  <tr key={u.id || u.uid} className="leaderboard-row">
+                    <td className="leaderboard-title">{u.displayName || '—'}</td>
+                    <td className="leaderboard-metric">{u.username ? `@${u.username}` : '—'}</td>
+                    <td className="leaderboard-metric" style={{ opacity: 0.7 }}>{u.email || '—'}</td>
+                    <td className="leaderboard-metric">{fmtTs(u.createdAt)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          ) : (
+            <table className="leaderboard-table">
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Location</th>
+                  <th>First seen</th>
+                  <th>Last seen</th>
+                  <th>Sessions</th>
+                  <th>Type</th>
+                  <th>Account</th>
+                </tr>
+              </thead>
+              <tbody>
+                {rows.map((v) => {
+                  const isNew = v.firstSeenDate === v.lastSeenDate;
+                  const flag = flagEmoji(v.countryCode);
+                  return (
+                    <tr key={v.anonymousId} className="leaderboard-row">
+                      <td className="leaderboard-metric" style={{ fontFamily: 'monospace', opacity: 0.6 }}>{v.anonymousId?.slice(0, 8)}</td>
+                      <td className="leaderboard-metric">
+                        {flag ? <span title={v.country}>{flag} {v.city || v.country || '—'}</span> : <span style={{ opacity: 0.35 }}>—</span>}
+                      </td>
+                      <td className="leaderboard-metric">{fmtTs(v.firstSeenAt)}</td>
+                      <td className="leaderboard-metric">{fmtTs(v.lastSeenAt)}</td>
+                      <td className="leaderboard-metric">{v.totalSessions ?? 1}</td>
+                      <td className="leaderboard-metric">
+                        <span style={{ color: isNew ? 'var(--vuvio-cyan)' : '#b47bff', fontSize: '0.75rem' }}>
+                          {isNew ? 'new' : 'returning'}
+                        </span>
+                      </td>
+                      <td className="leaderboard-metric">
+                        {v.userId
+                          ? <span style={{ color: '#4ade80', fontSize: '0.75rem' }}>✓ signed up</span>
+                          : <span style={{ opacity: 0.35, fontSize: '0.75rem' }}>—</span>}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          )}
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -421,6 +548,7 @@ export default function AnalyticsPage() {
     dailyViews: [],
     prevDailyLives: [],
     chartLabels: [],
+    periodStartDate: null,
     // Website stats
     website: null,
   });
@@ -428,6 +556,9 @@ export default function AnalyticsPage() {
   const [envFilter, setEnvFilter] = useState('production');
   const [activeFilter, setActiveFilter] = useState(null); // { type: 'creator'|'category', value: string }
   const [liveSearch, setLiveSearch] = useState('');
+  const [detailModal, setDetailModal] = useState(null); // { kind: 'visitors'|'users', type, title }
+  const [modalUsers, setModalUsers] = useState({}); // cache by key
+  const [modalLoading, setModalLoading] = useState(false);
 
   useEffect(() => {
     if (authLoading && !isLocalDev) return;
@@ -602,12 +733,63 @@ export default function AnalyticsPage() {
         dailyViews: viewsBuckets,
         prevDailyLives: prevLivesBuckets,
         chartLabels: labels,
+        periodStartDate,
         website,
       });
     } catch (error) {
       console.error('[Analytics] Load failed:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const openVisitorsModal = (type, title) => {
+    setDetailModal({ kind: 'visitors', type, title });
+  };
+
+  const fetchUsers = async (cacheKey, scope) => {
+    if (modalUsers[cacheKey]) return;
+    setModalLoading(true);
+    try {
+      let qRef = query(collection(db, 'users'), orderBy('createdAt', 'desc'), limit(100));
+      if (scope === 'period' && stats.periodStartDate) {
+        const start = Timestamp.fromDate(new Date(`${stats.periodStartDate}T00:00:00Z`));
+        qRef = query(collection(db, 'users'), where('createdAt', '>=', start), orderBy('createdAt', 'desc'), limit(100));
+      }
+      const snap = await getDocs(qRef);
+      setModalUsers(prev => ({ ...prev, [cacheKey]: snap.docs.map(d => ({ id: d.id, ...d.data() })) }));
+    } catch (e) {
+      console.warn('[Analytics] users fetch failed:', e.message);
+      setModalUsers(prev => ({ ...prev, [cacheKey]: [] }));
+    } finally {
+      setModalLoading(false);
+    }
+  };
+
+  const openUsersModal = () => {
+    setDetailModal({ kind: 'users', type: 'all', title: 'Registered Users' });
+    fetchUsers('all', 'all');
+  };
+
+  const openSignupsModal = () => {
+    setDetailModal({ kind: 'users', type: 'signups', title: `Sign-ups (${timeRange})` });
+    fetchUsers('signups', 'period');
+  };
+
+  const getModalRows = () => {
+    if (!detailModal) return [];
+    if (detailModal.kind === 'users') return modalUsers[detailModal.type] ?? [];
+    const visitors = stats.website?.recentVisitors ?? [];
+    const periodStart = stats.periodStartDate;
+    switch (detailModal.type) {
+      case 'unique':
+        return visitors.filter(v => !periodStart || v.lastSeenDate >= periodStart);
+      case 'new':
+        return visitors.filter(v => !periodStart || v.firstSeenDate >= periodStart);
+      case 'returning':
+        return visitors.filter(v => periodStart && v.firstSeenDate < periodStart && v.lastSeenDate >= periodStart);
+      default:
+        return visitors;
     }
   };
 
@@ -651,13 +833,13 @@ export default function AnalyticsPage() {
       {/* ── WEBSITE ── */}
       <section className="analytics-section-label">WEBSITE</section>
       <section className="analytics-metrics">
-        <StatCard icon={Globe} label="Unique Visitors" value={stats.website?.uniqueVisitors ?? 0} color="var(--vuvio-cyan)" sparkData={stats.website?.sparkUniqueVisitors} />
-        <StatCard icon={TrendingUp} label="New Visitors" value={stats.website?.newVisitors ?? 0} color="var(--vuvio-blue)" sparkData={stats.website?.sparkNewVisitors} />
-        <StatCard icon={Activity} label="Returning Visitors" value={stats.website?.returningVisitors ?? 0} color="#b47bff" />
-        <StatCard icon={Eye} label="Sessions" value={stats.website?.sessions ?? 0} color="rgba(255,255,255,0.5)" sparkData={stats.website?.sparkSessions} />
+        <StatCard icon={Globe} label="Unique Visitors" value={stats.website?.uniqueVisitors ?? 0} color="var(--vuvio-cyan)" sparkData={stats.website?.sparkUniqueVisitors} onClick={() => openVisitorsModal('unique', 'Unique Visitors')} />
+        <StatCard icon={TrendingUp} label="New Visitors" value={stats.website?.newVisitors ?? 0} color="var(--vuvio-blue)" sparkData={stats.website?.sparkNewVisitors} onClick={() => openVisitorsModal('new', 'New Visitors')} />
+        <StatCard icon={Activity} label="Returning Visitors" value={stats.website?.returningVisitors ?? 0} color="#b47bff" onClick={() => openVisitorsModal('returning', 'Returning Visitors')} />
+        <StatCard icon={Eye} label="Sessions" value={stats.website?.sessions ?? 0} color="rgba(255,255,255,0.5)" sparkData={stats.website?.sparkSessions} onClick={() => openVisitorsModal('unique', 'Session Visitors')} />
         <StatCard icon={Eye} label="Page Views" value={stats.website?.pageViews ?? 0} color="rgba(255,255,255,0.4)" sparkData={stats.website?.sparkPageViews} />
-        <StatCard icon={Users} label="Registered Users" value={stats.totalUsers} color="var(--vuvio-orange)" />
-        <StatCard icon={TrendingUp} label="Sign-ups" value={stats.website?.signups ?? 0} color="var(--vuvio-pink)" />
+        <StatCard icon={Users} label="Registered Users" value={stats.totalUsers} color="var(--vuvio-orange)" onClick={openUsersModal} />
+        <StatCard icon={TrendingUp} label="Sign-ups" value={stats.website?.signups ?? 0} color="var(--vuvio-pink)" onClick={openSignupsModal} />
         <StatCard
           icon={Activity}
           label="Visitor → Signup"
@@ -1079,6 +1261,20 @@ export default function AnalyticsPage() {
       <footer className="analytics-footer">
         <p>Data updates every 5 minutes. Last updated: {new Date().toLocaleTimeString()}</p>
       </footer>
+
+      {detailModal && (
+        <VisitorsDetailModal
+          title={detailModal.title}
+          kind={detailModal.kind}
+          rows={getModalRows()}
+          emptyHint={
+            detailModal.kind === 'users'
+              ? (modalLoading ? 'Loading…' : 'No users in this period.')
+              : 'No visitors matching this filter (last 30 recent are loaded).'
+          }
+          onClose={() => setDetailModal(null)}
+        />
+      )}
     </section>
   );
 }

@@ -41,6 +41,7 @@ import { cancelScheduledStream } from './streams/cancelScheduledStream.js';
 import { updateAllTrustScores } from './users/updateTrustScore.js';
 import { fanOutCreatorLive } from './notifications/fanOutCreatorLive.js';
 import { notifyNewFollower } from './notifications/notifyNewFollower.js';
+import { createRealtimeSession, publishRealtimeTrack, subscribeRealtimeTrack, closeRealtimeSession } from './realtimeTest/realtimeSFUService.js';
 
 function pathParts(path = '') {
   return path.replace(/^\/api\/?/, '/').split('/').filter(Boolean);
@@ -190,3 +191,5 @@ export const updateTrustScoresScheduled = onSchedule({
 
 import { notifyNewMessage } from './notifications/notifyNewMessage.js';
 export { fanOutCreatorLive, notifyNewFollower, notifyNewMessage };
+export { waitlist, cleanupWaitlist } from './waitlist.js';
+export { createRealtimeSession, publishRealtimeTrack, subscribeRealtimeTrack, closeRealtimeSession };

@@ -1,8 +1,40 @@
+import { normalizeProductName } from './productProvider.js';
 import { LocalProductProvider } from './localProvider.js';
 import { IcecatProductProvider } from './icecatProvider.js';
 import { ManualProductProvider } from './manualProvider.js';
 import { UpcItemDbProvider } from './upcItemDbProvider.js';
 import { EbayCatalogProvider } from './ebayCatalogProvider.js';
+import { logger } from 'firebase-functions';
+function searchScore(product, query) {
+    const text = normalizeProductName(query.text ?? '');
+    if (!text)
+        return 100;
+    const full = normalizeProductName(`${product.brand} ${product.name}`);
+    const name = normalizeProductName(product.name);
+    if (full === text || name === text)
+        return 300;
+    const words = [full, name, ...(product.aliases ?? []), ...(product.tags ?? []), product.subcategory ?? '']
+        .map(normalizeProductName).join(' ').split(' ').filter(Boolean);
+    const guitarQuery = /^guit(?:ar|are)?$/.test(text);
+    const guitarMatch = words.some((word) => /^guitar|^guitare/.test(word));
+    if (guitarQuery && !guitarMatch)
+        return 0;
+    const tokens = text.split(' ');
+    const nameWords = name.split(' ');
+    let score = tokens.every((token) => nameWords.some((word) => word.startsWith(token))) ? 170 :
+        tokens.every((token) => words.some((word) => word.startsWith(token))) ? 110 :
+            full.includes(text) ? 65 : 0;
+    if (guitarQuery && guitarMatch)
+        score += 70;
+    if (guitarQuery && (normalizeProductName(product.subcategory ?? '').includes('guitar') || /\b(guitar|guitare)\b/.test(name)))
+        score += 35;
+    if (query.category && product.category === query.category)
+        score += 12;
+    const accessoryWords = /\b(batterie|battery|chargeur|charger|housse|case|etui|logo|autocollant|sticker|partition|livre|book|dvd|accordeur|tuner|pedale|pedal|pickguard|body|reparation|pieces?|replacement|compatible|pour|for)\b/;
+    if (accessoryWords.test(full) && !accessoryWords.test(text))
+        score -= guitarQuery ? 160 : tokens.length > 1 ? 85 : 0;
+    return score;
+}
 export class ProductRegistry {
     providers = [];
     register(provider) {
@@ -10,14 +42,76 @@ export class ProductRegistry {
     }
     async search(query) {
         const eligibleProviders = this.providers.filter((p) => p.canHandle(query));
-        const allResults = await Promise.allSettled(eligibleProviders.map((p) => p.search(query)));
-        const flat = [];
-        for (const result of allResults) {
+        const local = eligibleProviders.find((provider) => provider.id === 'local');
+        let localResults = [];
+        if (local) {
+            try {
+                localResults = await local.search(query);
+            }
+            catch {
+                localResults = [];
+            }
+        }
+        const skipExternalDiscovery = !!query.text && localResults.length >= (query.limit ?? 20) &&
+            localResults.every((product) => searchScore(product, query) >= 110);
+        const allResults = await Promise.allSettled(eligibleProviders.filter((provider) => provider !== local && (!skipExternalDiscovery || provider.id === 'icecat')).map((provider) => provider.search(query)));
+        const flat = [...localResults];
+        const searchedProviders = eligibleProviders.filter((provider) => provider !== local && (!skipExternalDiscovery || provider.id === 'icecat'));
+        for (let index = 0; index < allResults.length; index++) {
+            const result = allResults[index];
             if (result.status === 'fulfilled') {
                 flat.push(...result.value);
             }
+            else if (process.env.FUNCTIONS_EMULATOR === 'true') {
+                logger.warn('[Equipment search] Provider failed', { provider: searchedProviders[index].id, error: String(result.reason) });
+            }
         }
-        return this.deduplicate(flat, query.limit || 20);
+        const ranked = flat.map((product) => ({ product, score: searchScore(product, query) }))
+            .filter(({ score }) => score > 0)
+            .sort((a, b) => b.score - a.score || Number(b.product.provider === 'local') - Number(a.product.provider === 'local'))
+            .map(({ product }) => product);
+        const results = this.deduplicate(ranked, query.limit || 20);
+        const icecat = this.providers.find((provider) => provider.id === 'icecat');
+        let enriched = 0;
+        if (icecat) {
+            let attempts = 0;
+            for (let index = 0; index < results.length && attempts < 3; index++) {
+                const candidate = results[index];
+                if (candidate.provider === 'icecat' || !(candidate.gtin || candidate.ean || candidate.upc || (candidate.brand && candidate.mpn)))
+                    continue;
+                attempts++;
+                const directMatch = flat.find((product) => product.provider === 'icecat' &&
+                    ((candidate.gtin && product.gtin === candidate.gtin) ||
+                        (candidate.ean && product.ean === candidate.ean) ||
+                        (candidate.brand && candidate.mpn && normalizeProductName(product.brand) === normalizeProductName(candidate.brand) && normalizeProductName(product.mpn ?? '') === normalizeProductName(candidate.mpn))));
+                const detail = directMatch || (await icecat.search({ gtin: candidate.gtin, ean: candidate.ean, upc: candidate.upc, brand: candidate.brand, mpn: candidate.mpn }))[0];
+                if (!detail || (candidate.gtin && detail.gtin && candidate.gtin !== detail.gtin) ||
+                    (candidate.mpn && detail.mpn && normalizeProductName(candidate.mpn) !== normalizeProductName(detail.mpn)))
+                    continue;
+                results[index] = {
+                    ...candidate,
+                    description: candidate.description || detail.description,
+                    gtin: candidate.gtin || detail.gtin,
+                    mpn: candidate.mpn || detail.mpn,
+                    thumbnailUrl: detail.thumbnailUrl || candidate.thumbnailUrl,
+                    imageRightsStatus: detail.thumbnailUrl ? detail.imageRightsStatus : candidate.imageRightsStatus,
+                    imageSource: detail.thumbnailUrl ? detail.imageSource : candidate.imageSource,
+                    imageRightsSource: detail.thumbnailUrl ? detail.imageRightsSource : candidate.imageRightsSource,
+                    imageAllowedUsages: detail.thumbnailUrl ? detail.imageAllowedUsages : candidate.imageAllowedUsages,
+                    imageRightsCheckedAt: detail.thumbnailUrl ? detail.imageRightsCheckedAt : candidate.imageRightsCheckedAt,
+                    imageRightsExpiresAt: detail.thumbnailUrl ? detail.imageRightsExpiresAt : candidate.imageRightsExpiresAt,
+                    imageProductId: detail.thumbnailUrl ? detail.imageProductId : candidate.imageProductId,
+                    imageHostingStatus: detail.thumbnailUrl ? detail.imageHostingStatus : candidate.imageHostingStatus,
+                    icecatId: detail.externalId,
+                    enrichedBy: 'icecat',
+                };
+                enriched++;
+            }
+        }
+        if (process.env.FUNCTIONS_EMULATOR === 'true') {
+            logger.info('[Equipment search]', { query: query.text || 'identifier', providers: searchedProviders.map((provider, index) => ({ provider: provider.id, results: allResults[index].status === 'fulfilled' ? allResults[index].value.length : 0 })), localResults: localResults.length, enriched, imageCandidates: results.filter((item) => item.thumbnailUrl).length, authorizedImages: results.filter((item) => item.thumbnailUrl && ['authorized', 'manual-approved'].includes(item.imageRightsStatus ?? '')).length, excludedByRelevance: flat.length - ranked.length });
+        }
+        return results;
     }
     async getProduct(providerId, externalId) {
         const provider = this.providers.find((p) => p.id === providerId);
@@ -34,55 +128,24 @@ export class ProductRegistry {
         };
         const result = [];
         for (const product of products) {
-            if (product.gtin) {
-                if (seen.gtin.has(product.gtin))
-                    continue;
-                seen.gtin.add(product.gtin);
-            }
-            if (product.ean) {
-                if (seen.gtin.has(product.ean))
-                    continue;
-                seen.gtin.add(product.ean);
-            }
-            if (product.brand && product.mpn) {
-                const key = `${product.brand.toLowerCase()}:${product.mpn.toLowerCase()}`;
-                if (seen.brandMpn.has(key))
-                    continue;
-                seen.brandMpn.add(key);
-            }
+            const codes = [...new Set([product.gtin, product.ean, product.upc].filter((code) => !!code))];
+            const brandMpn = product.brand && product.mpn ? `${product.brand.toLowerCase()}:${product.mpn.toLowerCase()}` : null;
             const extKey = `${product.provider}:${product.externalId}`;
-            if (seen.providerExtId.has(extKey))
-                continue;
-            seen.providerExtId.add(extKey);
             const nameKey = `${product.brand.toLowerCase()}:${product.normalizedName}`;
-            if (seen.namesBrand.has(nameKey))
+            if (codes.some((code) => seen.gtin.has(code)) ||
+                (brandMpn && seen.brandMpn.has(brandMpn)) ||
+                seen.providerExtId.has(extKey) || seen.namesBrand.has(nameKey))
                 continue;
+            codes.forEach((code) => seen.gtin.add(code));
+            if (brandMpn)
+                seen.brandMpn.add(brandMpn);
+            seen.providerExtId.add(extKey);
             seen.namesBrand.add(nameKey);
             result.push(product);
             if (result.length >= limit)
                 break;
         }
-        // Back-fill thumbnailUrl from other providers for results that have none
-        try {
-            const thumbnailByName = new Map();
-            for (const p of products) {
-                if (p.thumbnailUrl && p.brand && p.normalizedName) {
-                    const key = `${p.brand.toLowerCase()}:${p.normalizedName}`;
-                    if (!thumbnailByName.has(key))
-                        thumbnailByName.set(key, p.thumbnailUrl);
-                }
-            }
-            return result.map((p) => {
-                if (p.thumbnailUrl || !p.brand || !p.normalizedName)
-                    return p;
-                const key = `${p.brand.toLowerCase()}:${p.normalizedName}`;
-                const url = thumbnailByName.get(key);
-                return url ? { ...p, thumbnailUrl: url } : p;
-            });
-        }
-        catch {
-            return result;
-        }
+        return result;
     }
 }
 export function createProductRegistry(config) {

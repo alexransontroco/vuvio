@@ -47,7 +47,6 @@ const demoVideoLiveIds = [
   'skate-portland',
   'sailor-split',
   'road-cyclist-mallorca',
-  'biking-dolomites',
   'buggy-marrakesh',
   'glacier-guide-iceland',
 ];
@@ -982,7 +981,7 @@ function GlobeMini({ lng = 0, lat = 0 }) {
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-    const SIZE = 60;
+    const SIZE = 48;
     const dpr = Math.min(window.devicePixelRatio || 1, 2);
     canvas.width = SIZE * dpr;
     canvas.height = SIZE * dpr;
@@ -1060,10 +1059,7 @@ function LiveLocationGlobe({ live, onOpen }) {
       onClick={onOpen}
       aria-label={`${t('common.open')} ${live.city}, ${live.country} on the globe`}
     >
-      <span className="live-location-globe__compass live-location-globe__compass--n" aria-hidden="true">N</span>
-      <span className="live-location-globe__compass live-location-globe__compass--e" aria-hidden="true">E</span>
-      <span className="live-location-globe__compass live-location-globe__compass--s" aria-hidden="true">S</span>
-      <span className="live-location-globe__compass live-location-globe__compass--w" aria-hidden="true">W</span>
+      <span className="live-location-globe__halo" aria-hidden="true" />
       <GlobeMini lng={lng} lat={lat} />
     </button>
   );

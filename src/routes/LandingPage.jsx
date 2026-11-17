@@ -1,4 +1,5 @@
-import { useNavigate } from 'react-router-dom';
+import { useEffect, useRef, useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { useLanguage } from '../context/LanguageContext.jsx';
 import '../styles/pages/landing.css';
 
@@ -8,7 +9,22 @@ const COPY = {
     titleLines: ['Des passions,', 'des métiers,', 'des expériences'],
     titleAccent: '— en direct.',
     subtitle: 'Découvrez des activités et des passions à travers ceux qui les vivent, au moment où elles se passent.',
-    cta: "Tester l'app",
+    waitlistEyebrow: 'VUVIO ARRIVE BIENTÔT',
+    waitlistTitle: 'Soyez parmi les premiers à explorer.',
+    waitlistSubtitle: "Laissez votre email pour être informé du lancement.",
+    emailLabel: 'Votre adresse email',
+    notify: 'Me prévenir',
+    notifyFinal: 'Être informé du lancement',
+    waitlistNote: 'Un email au lancement. Pas de spam.',
+    privacyNote: 'Votre adresse servira uniquement à vous prévenir du lancement.',
+    privacyLink: 'Politique de confidentialité',
+    betaLink: 'Déjà invité ? Accéder à la bêta →',
+    invalidEmail: 'Saisissez une adresse email valide.',
+    challengeNeeded: 'Validez la vérification avant de continuer.',
+    success: "C'est noté ! Vous serez prévenu au lancement de Vuvio.",
+    technicalError: "L'inscription a échoué. Réessayez dans un instant.",
+    remove: 'Retirer mon inscription',
+    removed: 'Votre adresse a été retirée.',
     scrollHint: 'En savoir plus',
     sections: [
       {
@@ -42,7 +58,22 @@ const COPY = {
     titleLines: ['Passions,', 'crafts,', 'real experiences'],
     titleAccent: '— live.',
     subtitle: 'Discover activities and passions through the people living them, the moment they happen.',
-    cta: 'Try the app',
+    waitlistEyebrow: 'COMING SOON',
+    waitlistTitle: 'Be among the first to explore.',
+    waitlistSubtitle: 'Leave your email to get notified when Vuvio launches.',
+    emailLabel: 'Your email address',
+    notify: 'Notify me',
+    notifyFinal: 'Get notified at launch',
+    waitlistNote: 'One email at launch. No spam.',
+    privacyNote: 'We will use your email only to notify you at launch.',
+    privacyLink: 'Privacy policy',
+    betaLink: 'Already invited? Access the beta →',
+    invalidEmail: 'Enter a valid email address.',
+    challengeNeeded: 'Complete the verification before continuing.',
+    success: "You're on the list! We'll notify you when Vuvio launches.",
+    technicalError: 'Signup failed. Please try again shortly.',
+    remove: 'Remove my signup',
+    removed: 'Your address has been removed.',
     scrollHint: 'Learn more',
     sections: [
       {
@@ -78,6 +109,111 @@ export default function LandingPage() {
   const { language, setLanguage } = useLanguage();
   const lang = language === 'fr' ? 'fr' : 'en';
   const t = COPY[lang];
+  const emailRef = useRef(null);
+  const widgetRef = useRef(null);
+  const turnstileIdRef = useRef(null);
+  const [email, setEmail] = useState('');
+  const [turnstileToken, setTurnstileToken] = useState('');
+  const [status, setStatus] = useState('idle');
+  const [message, setMessage] = useState('');
+  const [subscription, setSubscription] = useState(null);
+  const siteKey = import.meta.env.VITE_TURNSTILE_SITE_KEY;
+
+  useEffect(() => {
+    if (!siteKey) return;
+    let active = true;
+    const render = () => {
+      if (!active || !widgetRef.current || !window.turnstile || turnstileIdRef.current) return;
+      turnstileIdRef.current = window.turnstile.render(widgetRef.current, {
+        sitekey: siteKey,
+        theme: 'dark',
+        size: 'flexible',
+        callback: setTurnstileToken,
+        'expired-callback': () => setTurnstileToken(''),
+        'error-callback': () => setTurnstileToken(''),
+      });
+    };
+    const script = document.getElementById('vuvio-turnstile-script') || document.createElement('script');
+    if (!script.id) {
+      script.id = 'vuvio-turnstile-script';
+      script.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit';
+      script.async = true;
+      document.head.appendChild(script);
+    }
+    script.addEventListener('load', render);
+    render();
+    return () => {
+      active = false;
+      script.removeEventListener('load', render);
+      if (turnstileIdRef.current && window.turnstile) window.turnstile.remove(turnstileIdRef.current);
+      turnstileIdRef.current = null;
+    };
+  }, [siteKey]);
+
+  const resetChallenge = () => {
+    setTurnstileToken('');
+    if (turnstileIdRef.current && window.turnstile) window.turnstile.reset(turnstileIdRef.current);
+  };
+
+  const submitWaitlist = async (event) => {
+    event.preventDefault();
+    if (status === 'loading') return;
+    const normalized = email.trim().toLowerCase();
+    if (!/^[^\s@<>]+@[^\s@<>]+\.[^\s@<>]+$/.test(normalized) || normalized.length > 254) {
+      setStatus('error');
+      setMessage(t.invalidEmail);
+      return;
+    }
+    if (!turnstileToken) {
+      setStatus('error');
+      setMessage(siteKey ? t.challengeNeeded : t.technicalError);
+      return;
+    }
+    setStatus('loading');
+    setMessage('');
+    try {
+      const response = await fetch('/api/waitlist', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: normalized, locale: lang, website: event.currentTarget.elements.website.value, turnstileToken }),
+      });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.code || 'network');
+      setSubscription(result.entryId && result.unsubscribeToken ? result : null);
+      setStatus('success');
+      setMessage(t.success);
+      setEmail('');
+    } catch (error) {
+      setStatus('error');
+      setMessage(error.message === 'invalid_email' ? t.invalidEmail : error.message === 'challenge_failed' ? t.challengeNeeded : t.technicalError);
+    } finally {
+      resetChallenge();
+    }
+  };
+
+  const removeSubscription = async () => {
+    if (!subscription) return;
+    setStatus('loading');
+    try {
+      const response = await fetch('/api/waitlist/subscription', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ entryId: subscription.entryId, token: subscription.unsubscribeToken }),
+      });
+      if (!response.ok) throw new Error('network');
+      setSubscription(null);
+      setStatus('idle');
+      setMessage(t.removed);
+    } catch {
+      setStatus('error');
+      setMessage(t.technicalError);
+    }
+  };
+
+  const focusWaitlist = () => {
+    emailRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    emailRef.current?.focus({ preventScroll: true });
+  };
 
   const enterApp = () => {
     navigate('/intro-preview');
@@ -113,14 +249,42 @@ export default function LandingPage() {
           </h1>
           <div className="vuvio-landing__accent" />
           <p className="vuvio-landing__subtitle">{t.subtitle}</p>
+          <div className="vuvio-landing__waitlist" id="launch-waitlist">
+            <p className="vuvio-landing__waitlist-eyebrow">{t.waitlistEyebrow}</p>
+            <h2 className="vuvio-landing__waitlist-title">{t.waitlistTitle}</h2>
+            <p className="vuvio-landing__waitlist-subtitle">{t.waitlistSubtitle}</p>
+            <form className="vuvio-landing__waitlist-form" onSubmit={submitWaitlist} noValidate>
+              <label className="vuvio-landing__sr-only" htmlFor="launch-email">{t.emailLabel}</label>
+              <input
+                id="launch-email"
+                ref={emailRef}
+                type="email"
+                inputMode="email"
+                autoComplete="email"
+                placeholder={t.emailLabel}
+                value={email}
+                onChange={(event) => { setEmail(event.target.value); if (status === 'error') { setStatus('idle'); setMessage(''); } }}
+                aria-invalid={status === 'error' && message === t.invalidEmail}
+                aria-describedby="launch-waitlist-message"
+              />
+              <input className="vuvio-landing__honeypot" name="website" type="text" tabIndex={-1} autoComplete="off" aria-hidden="true" />
+              <button type="submit" className="vuvio-landing__cta" disabled={status === 'loading'}>
+                {status === 'loading' ? <span className="vuvio-landing__spinner" aria-hidden="true" /> : t.notify}
+              </button>
+            </form>
+            <div ref={widgetRef} className="vuvio-landing__challenge" />
+            <p id="launch-waitlist-message" className={`vuvio-landing__form-message${status === 'error' ? ' is-error' : ''}`} role="status" aria-live="polite">{message}</p>
+            {subscription && <button type="button" className="vuvio-landing__remove" onClick={removeSubscription} disabled={status === 'loading'}>{t.remove}</button>}
+            <p className="vuvio-landing__waitlist-note">{t.waitlistNote}</p>
+            <p className="vuvio-landing__privacy-note">{t.privacyNote} <Link to="/privacy">{t.privacyLink}</Link></p>
+          </div>
           <div className="vuvio-landing__cta-row">
             <button
               type="button"
-              className="vuvio-landing__cta"
+              className="vuvio-landing__beta-link"
               onClick={enterApp}
             >
-              {t.cta}
-              <span aria-hidden>→</span>
+              {t.betaLink}
             </button>
             <a href="#more" className="vuvio-landing__scroll">{t.scrollHint} ↓</a>
           </div>
@@ -159,9 +323,9 @@ export default function LandingPage() {
           <button
             type="button"
             className="vuvio-landing__cta vuvio-landing__cta--large"
-            onClick={enterApp}
+            onClick={focusWaitlist}
           >
-            {t.cta}
+            {t.notifyFinal}
             <span aria-hidden>→</span>
           </button>
           <div className="vuvio-landing__contact">

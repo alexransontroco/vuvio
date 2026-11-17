@@ -1,5 +1,3 @@
-import { logger } from 'firebase-functions';
-
 export interface IcecatConfig {
   username: string;
   password: string;
@@ -37,9 +35,7 @@ interface CacheEntry<T> {
 }
 
 const productCache = new Map<string, CacheEntry<IcecatProductData>>();
-const searchCache = new Map<string, CacheEntry<IcecatProductData[]>>();
 const PRODUCT_CACHE_TTL = 24 * 60 * 60 * 1000;
-const SEARCH_CACHE_TTL = 60 * 60 * 1000;
 const NEGATIVE_CACHE_TTL = 30 * 60 * 1000;
 
 let tokenBucketCount = 10;
@@ -64,7 +60,7 @@ function acquireToken(): boolean {
 // Icecat authenticates via app_key URL parameter, not Basic Auth.
 // username + app_key are both added to the URLSearchParams before the request.
 function addIcecatAuth(params: URLSearchParams, config: IcecatConfig): void {
-  params.set('UserName', config.username);
+  params.set('shopname', config.username);
   if (config.password) {
     params.set('app_key', config.password);
   }
@@ -74,27 +70,28 @@ function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-function parseIcecatResponse(data: Record<string, unknown>): IcecatProductData {
+export function parseIcecatResponse(data: Record<string, unknown>): IcecatProductData {
   const generalInfo = data.GeneralInfo as Record<string, unknown> | undefined;
   if (!generalInfo) {
     throw new IcecatError('parse_error', 'Missing GeneralInfo in Icecat response');
   }
 
   const icecatId = String(generalInfo.IcecatId ?? '');
-  const brand = String(generalInfo.BrandName ?? '');
+  const brand = String(generalInfo.Brand ?? generalInfo.BrandName ?? '');
   const name = String(generalInfo.ProductName ?? '');
   const mpn = generalInfo.BrandPartCode ? String(generalInfo.BrandPartCode) : undefined;
+  if (!icecatId || !brand || !name) throw new IcecatError('parse_error', 'Incomplete Icecat product identity');
 
-  const gtinRaw = generalInfo.GTIN as string[] | undefined;
-  const gtin = Array.isArray(gtinRaw) && gtinRaw.length > 0 ? gtinRaw : undefined;
+  const gtinRaw = generalInfo.GTIN ?? generalInfo.GTINs;
+  const gtin = Array.isArray(gtinRaw) ? gtinRaw.map(String).filter(Boolean) :
+    typeof gtinRaw === 'string' && gtinRaw ? [gtinRaw] : undefined;
 
   const categoryRaw = generalInfo.Category as Record<string, unknown> | undefined;
   let category: string | undefined;
   if (categoryRaw) {
-    const nameArr = categoryRaw.Name as Array<Record<string, unknown>> | undefined;
-    if (Array.isArray(nameArr) && nameArr.length > 0) {
-      category = String(nameArr[0].Value ?? '');
-    }
+    const nameValue = categoryRaw.Name;
+    if (Array.isArray(nameValue)) category = String((nameValue[0] as Record<string, unknown>)?.Value ?? '');
+    else if (nameValue && typeof nameValue === 'object') category = String((nameValue as Record<string, unknown>).Value ?? '');
   }
 
   const summaryRaw = generalInfo.SummaryDescription as Record<string, unknown> | undefined;
@@ -172,13 +169,17 @@ async function fetchFromIcecat(
     return (json as Record<string, unknown>).data as Record<string, unknown>;
   }
 
-  if (response.status === 404) {
-    throw new IcecatError('not_found', `Icecat: product not found`);
+  const errorBody = await response.json().catch(() => null) as { StatusCode?: number } | null;
+  const icecatStatus = errorBody?.StatusCode;
+  if ([4, 8, 16, 17].includes(icecatStatus ?? -1)) {
+    throw new IcecatError('not_found', `Icecat product identifier not found (${icecatStatus})`);
   }
 
-  if (response.status === 401 || response.status === 403) {
+  if (response.status === 401 || response.status === 403 || [5, 9, 12, 14, 15].includes(icecatStatus ?? -1)) {
     throw new IcecatError('access_denied', 'Icecat credentials invalid or insufficient access');
   }
+
+  if (response.status === 404) throw new IcecatError('not_found', 'Icecat product not found');
 
   if (response.status === 429) {
     if (retryCount >= 3) {
@@ -204,7 +205,7 @@ export async function fetchIcecatProduct(
     urlParams = new URLSearchParams({ GTIN: identifier.gtin, lang: config.language });
   } else if (identifier.brand && identifier.mpn) {
     cacheKey = `brand:${identifier.brand}:mpn:${identifier.mpn}`;
-    urlParams = new URLSearchParams({ Brand: identifier.brand, prod_id: identifier.mpn, lang: config.language });
+    urlParams = new URLSearchParams({ Brand: identifier.brand, ProductCode: identifier.mpn, lang: config.language });
   } else if (identifier.icecatId) {
     cacheKey = `icecatId:${identifier.icecatId}`;
     urlParams = new URLSearchParams({ icecat_id: identifier.icecatId, lang: config.language });
@@ -212,12 +213,13 @@ export async function fetchIcecatProduct(
     throw new IcecatError('network_error', 'fetchIcecatProduct: no valid identifier provided');
   }
 
-  // app_key and UserName go in URL params (Icecat rejects them in Authorization header)
+  // The legacy app key is paired with shopname for Product JSON requests.
   addIcecatAuth(urlParams, config);
 
   const cached = productCache.get(cacheKey);
   if (cached) {
     if (Date.now() < cached.expiresAt) {
+      if (!cached.data) throw new IcecatError('not_found', 'Icecat product not found');
       return cached.data;
     }
     productCache.delete(cacheKey);
@@ -241,81 +243,4 @@ export async function fetchIcecatProduct(
   const product = parseIcecatResponse(data);
   productCache.set(cacheKey, { data: product, expiresAt: Date.now() + PRODUCT_CACHE_TTL });
   return product;
-}
-
-export async function searchIcecat(
-  query: string,
-  config: IcecatConfig,
-  limit = 20
-): Promise<IcecatProductData[]> {
-  const cacheKey = `search:${config.language}:${query}:${limit}`;
-  const cached = searchCache.get(cacheKey);
-  if (cached && Date.now() < cached.expiresAt) {
-    return cached.data;
-  }
-
-  const urlParams = new URLSearchParams({ keywords: query, lang: config.language, limit: String(limit) });
-  addIcecatAuth(urlParams, config);
-
-  const url = `https://live.icecat.biz/api/search?${urlParams.toString()}`;
-
-  if (!acquireToken()) {
-    logger.warn('[Icecat] Rate limited during search, returning empty');
-    return [];
-  }
-
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 10000);
-
-  let response: Response;
-  try {
-    response = await fetch(url, {
-      signal: controller.signal,
-      headers: {
-        'User-Agent': 'Vuvio/1.0',
-        Accept: 'application/json',
-      },
-    });
-  } catch (err) {
-    clearTimeout(timeoutId);
-    logger.warn('[Icecat] Search request failed:', err);
-    return [];
-  } finally {
-    clearTimeout(timeoutId);
-  }
-
-  if (response.status === 404) {
-    logger.warn('[Icecat] Search endpoint not available on this account');
-    return [];
-  }
-
-  if (!response.ok) {
-    logger.warn(`[Icecat] Search returned ${response.status}`);
-    return [];
-  }
-
-  let json: unknown;
-  try {
-    json = await response.json();
-  } catch {
-    logger.warn('[Icecat] Failed to parse search response');
-    return [];
-  }
-
-  const items = (json as Record<string, unknown>).data as Array<Record<string, unknown>> | undefined;
-  if (!Array.isArray(items)) {
-    return [];
-  }
-
-  const results: IcecatProductData[] = [];
-  for (const item of items) {
-    try {
-      results.push(parseIcecatResponse(item));
-    } catch {
-      // skip unparseable items silently
-    }
-  }
-
-  searchCache.set(cacheKey, { data: results, expiresAt: Date.now() + SEARCH_CACHE_TTL });
-  return results;
 }

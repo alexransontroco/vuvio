@@ -764,7 +764,7 @@ function EquipmentTab({ equipment, liveEquipment, isOwnProfile, displayName, onM
                   <button type="button" onClick={() => setActiveCategoryId(null)}>{t('common.close')}</button>
                 </header>
                 {category.items.map((item) => (
-                  <EquipmentItemRow key={item.id} item={item} />
+                  <EquipmentItemRow key={item.id} item={item} usage={isOwnProfile ? 'persistent-gear' : 'public-gear'} />
                 ))}
               </section>
             ) : null}

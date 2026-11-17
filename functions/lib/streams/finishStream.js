@@ -4,6 +4,7 @@ import { db } from '../shared/firestore.js';
 import { ApiError } from '../shared/errors.js';
 import { asRecord } from '../shared/validation.js';
 import { streamRef } from './streamHelpers.js';
+import { createCloudflareClient } from '../cloudflare/cloudflareClient.js';
 export async function finishStream(req, res, streamId) {
     const user = await authenticateUser(req);
     const body = req.body ? asRecord(req.body) : {};
@@ -18,6 +19,7 @@ export async function finishStream(req, res, streamId) {
     const creatorId = stream.creatorId ?? stream.creatorUid ?? null;
     if (creatorId !== user.uid)
         throw new ApiError('forbidden', 'Only the creator can finish this stream');
+    const liveInputId = stream.cloudflareLiveInputId || stream.liveInputId || null;
     await db.runTransaction(async (tx) => {
         const current = await tx.get(snap.ref);
         if (!current.exists)
@@ -34,5 +36,16 @@ export async function finishStream(req, res, streamId) {
             replayCleanupPending: true,
         });
     });
+    if (liveInputId) {
+        createCloudflareClient()
+            .deleteLiveInput(liveInputId)
+            .then(() => {
+            console.log(`[finishStream] deleted Cloudflare live input ${liveInputId} for stream ${streamId}`);
+            return activeLiveRef.set({ replayCleanupPending: false, updatedAt: FieldValue.serverTimestamp() }, { merge: true });
+        })
+            .catch((err) => {
+            console.warn(`[finishStream] failed to delete Cloudflare live input ${liveInputId}:`, err instanceof Error ? err.message : err);
+        });
+    }
     res.json({ stream: { id: streamId, status: 'completed' } });
 }

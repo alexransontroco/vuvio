@@ -3,7 +3,7 @@
 Product catalog, product thumbnails, Icecat integration, and affiliate/product reference docs.
 
 Status: Current index  
-Last reviewed: 2026-09-18  
+Last reviewed: 2026-11-16
 Read before coding: Yes, for product catalog, product images, Icecat, gear-product mapping, or affiliate changes.
 
 ## Current Reality
@@ -22,6 +22,7 @@ Read before coding: Yes, for product catalog, product images, Icecat, gear-produ
 
 ## Start Here
 
+- [UNIVERSAL_EQUIPMENT_SEARCH.md](./UNIVERSAL_EQUIPMENT_SEARCH.md) — product-database alternatives, tested provider benchmark, recommended architecture, and roadmap.
 - [PRODUCTS_QUICKSTART.md](PRODUCTS_QUICKSTART.md) — product system quickstart.
 - [PRODUCTS_SYSTEM_GUIDE.md](PRODUCTS_SYSTEM_GUIDE.md) — full product system guide.
 - [ICECAT_INTEGRATION.md](ICECAT_INTEGRATION.md) — Icecat integration notes.

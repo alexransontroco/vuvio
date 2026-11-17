@@ -28,6 +28,9 @@ const certPath = process.env.RTMPS_RELAY_CERT || '../certs/cert.pem';
 const keyPath = process.env.RTMPS_RELAY_KEY || '../certs/key.pem';
 const INACTIVITY_MS = Number(process.env.RTMPS_RELAY_INACTIVITY_MS || 30000);
 const diagnosticsEnabled = process.env.RTMPS_RELAY_DIAGNOSTICS === '1';
+const MAX_CONCURRENT_SESSIONS = Number(process.env.RTMPS_RELAY_MAX_SESSIONS || 3);
+const RELAY_AUTH_TOKEN = process.env.RTMPS_RELAY_AUTH_TOKEN || '';
+const STARTED_AT = Date.now();
 const INPUT_FPS = 15;
 const OUTPUT_FPS = 30; // RTMPS output fps — FFmpeg duplicates frames to fill
 const TARGET_WIDTH = 854;
@@ -533,7 +536,19 @@ function stopSession(sessionId) {
 }
 
 app.get('/', (_req, res) => res.json({ ok: true }));
-app.get('/healthz', (_req, res) => res.json({ ok: true, sessions: sessions.size }));
+app.get('/healthz', (_req, res) => {
+  const mem = process.memoryUsage();
+  res.json({
+    ok: true,
+    sessions: sessions.size,
+    maxSessions: MAX_CONCURRENT_SESSIONS,
+    uptimeSeconds: Math.round((Date.now() - STARTED_AT) / 1000),
+    rssMb: Math.round(mem.rss / 1024 / 1024),
+    heapUsedMb: Math.round(mem.heapUsed / 1024 / 1024),
+    authRequired: !!RELAY_AUTH_TOKEN,
+    nodeVersion: process.version,
+  });
+});
 
 if (diagnosticsEnabled) {
   app.get('/sessions/:sessionId', async (req, res) => {
@@ -574,6 +589,19 @@ if (diagnosticsEnabled) {
 
 app.post('/sessions', async (req, res) => {
   try {
+    if (RELAY_AUTH_TOKEN) {
+      const provided = req.get('x-relay-token') || '';
+      if (provided !== RELAY_AUTH_TOKEN) {
+        console.warn('[relay] 401 missing/invalid x-relay-token');
+        res.status(401).json({ error: 'unauthorized' });
+        return;
+      }
+    }
+    if (sessions.size >= MAX_CONCURRENT_SESSIONS) {
+      console.warn('[relay] 429 session cap reached: %d/%d', sessions.size, MAX_CONCURRENT_SESSIONS);
+      res.status(429).json({ error: 'relay at capacity', current: sessions.size, max: MAX_CONCURRENT_SESSIONS });
+      return;
+    }
     const { liveInputId, ingestUrl, streamKey, sdpOffer, title, iceServers } = req.body || {};
     if (!liveInputId || !ingestUrl || !streamKey || !sdpOffer) {
       res.status(400).json({ error: 'Missing liveInputId, ingestUrl, streamKey, or sdpOffer' });
@@ -598,5 +626,5 @@ const server = existsSync(certPath) && existsSync(keyPath)
 const protocol = server instanceof https.Server ? 'https' : 'http';
 
 server.listen(port, host, () => {
-  console.log(`[relay] listening on ${protocol}://${host}:${port} — ffmpeg=${ffmpegPath} fps=${INPUT_FPS} mode=cfr`);
+  console.log(`[relay] listening on ${protocol}://${host}:${port} — ffmpeg=${ffmpegPath} fps=${INPUT_FPS} mode=cfr maxSessions=${MAX_CONCURRENT_SESSIONS} authRequired=${!!RELAY_AUTH_TOKEN}`);
 });

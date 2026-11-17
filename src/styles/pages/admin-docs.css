@@ -1588,3 +1588,9 @@
     grid-template-columns: repeat(4, minmax(150px, 1fr));
   }
 }
+.admin-waitlist-table-wrap { overflow-x: auto; }
+.admin-waitlist-table { width: 100%; border-collapse: collapse; color: #eaf5f8; font-size: 13px; }
+.admin-waitlist-table th, .admin-waitlist-table td { padding: 12px 14px; border-bottom: 1px solid rgba(255,255,255,.08); text-align: left; }
+.admin-waitlist-table th { color: #8aabb8; font-size: 11px; text-transform: uppercase; letter-spacing: .08em; }
+.admin-waitlist-table button, .admin-docs-actions button { background: transparent; border: 1px solid rgba(30,214,229,.3); border-radius: 999px; color: #1ed6e5; cursor: pointer; padding: 7px 12px; }
+.admin-waitlist-table button:hover, .admin-docs-actions button:hover { background: rgba(30,214,229,.1); }

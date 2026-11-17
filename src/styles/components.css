@@ -6,7 +6,8 @@
   right: max(0px, env(safe-area-inset-right));
   bottom: 0;
   z-index: 92;
-  height: 52px;
+  height: var(--nav-occupied-height);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
   display: flex;
   align-items: center;
   justify-content: space-around;
@@ -21,6 +22,13 @@
   backdrop-filter: blur(24px);
   -webkit-backdrop-filter: blur(24px);
   overflow: visible;
+  touch-action: none;
+  overscroll-behavior: contain;
+}
+
+.bottom-nav__item,
+.bottom-nav__create {
+  touch-action: manipulation;
 }
 
 .bottom-nav::before {
@@ -33,7 +41,7 @@
 
 .bottom-nav__item {
   flex: 1;
-  height: 54px;
+  height: var(--nav-height);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -94,8 +102,9 @@
   flex: none;
   width: 60px;
   height: 60px;
-  display: grid;
-  place-items: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   border: 0;
   border-radius: 50%;
   isolation: isolate;
@@ -104,7 +113,7 @@
   box-shadow:
     0 8px 24px rgba(0, 8, 16, 0.36),
     inset 0 1px 0 rgba(255, 255, 255, 0.04);
-  margin-top: -20px;
+  margin-top: calc(-1 * var(--nav-create-overhang));
   transition:
     transform 200ms cubic-bezier(0.22, 1, 0.36, 1),
     box-shadow 200ms ease,
@@ -1073,6 +1082,26 @@
   font-weight: 650;
 }
 
+.equipment-search-result__name small {
+  display: block;
+  margin-top: 2px;
+  color: rgba(142, 172, 190, 0.72);
+  font-size: 11px;
+}
+
+.equipment-search-result .gear-thumbnail--sm,
+.equipment-search-selected .gear-thumbnail--sm {
+  width: 32px;
+  height: 32px;
+  flex: none;
+}
+
+.equipment-search-status {
+  margin: 6px 0;
+  color: rgba(242, 247, 246, 0.65);
+  font-size: 11px;
+}
+
 .equipment-search-selected {
   display: flex;
   align-items: center;
@@ -1886,7 +1915,7 @@
 
 @media (max-width: 759px) {
   .bottom-nav {
-    position: fixed;
+    position: absolute;
   }
   .bottom-nav-peek {
     position: fixed;

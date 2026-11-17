@@ -1,0 +1,48 @@
+services:
+  relay:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: vuvio-relay:latest
+    container_name: vuvio-relay
+    restart: unless-stopped
+    network_mode: host
+    environment:
+      - PORT=8787
+      - RTMPS_RELAY_HOST=0.0.0.0
+      - FFMPEG_PATH=/usr/bin/ffmpeg
+      - RTMPS_RELAY_MAX_SESSIONS=${RTMPS_RELAY_MAX_SESSIONS:-3}
+      - RTMPS_RELAY_AUTH_TOKEN=${RTMPS_RELAY_AUTH_TOKEN}
+      - RTMPS_RELAY_DIAGNOSTICS=${RTMPS_RELAY_DIAGNOSTICS:-0}
+    ulimits:
+      nofile:
+        soft: 65536
+        hard: 65536
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "5"
+
+  caddy:
+    image: caddy:2-alpine
+    container_name: vuvio-caddy
+    restart: unless-stopped
+    network_mode: host
+    environment:
+      - RELAY_DOMAIN=${RELAY_DOMAIN}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - relay
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+volumes:
+  caddy_data:
+  caddy_config:

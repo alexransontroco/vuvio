@@ -4,7 +4,7 @@ import { mapStreams } from '../data/mapStreams.js';
 import { getCreatedLives, subscribeToCreatedLives } from '../services/createdLiveService.js';
 import '../styles/pages/globe-test.css';
 
-export default function CurrentGlobePage() {
+export default function CurrentGlobePage({ variant = 'current' }) {
   const [createdLives, setCreatedLives] = useState([]);
 
   useEffect(() => {
@@ -13,5 +13,5 @@ export default function CurrentGlobePage() {
 
   useEffect(() => subscribeToCreatedLives(setCreatedLives), []);
 
-  return <CurrentGlobe streams={[...createdLives, ...mapStreams]} />;
+  return <CurrentGlobe streams={[...createdLives, ...mapStreams]} variant={variant} />;
 }

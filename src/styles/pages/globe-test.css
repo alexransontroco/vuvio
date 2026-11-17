@@ -40,7 +40,7 @@
   border-radius: 50%;
   background:
     radial-gradient(circle, transparent 50%, rgba(50, 140, 200, 0.08) 58%, rgba(80, 160, 220, 0.12) 62%, rgba(100, 180, 240, 0.06) 66%, transparent 75%),
-    radial-gradient(circle at 50% 42%, transparent 52%, rgba(70, 150, 210, 0.09) 64%, transparent 80%);
+    radial-gradient(circle at 50% 50%, transparent 52%, rgba(70, 150, 210, 0.09) 64%, transparent 80%);
   filter: blur(2.2px);
   opacity: 0.85;
   pointer-events: none;
@@ -58,11 +58,6 @@
   z-index: 10;
   background: #060d16;
   pointer-events: none;
-}
-
-.test-old-globe__canvas .maplibregl-map,
-.test-old-globe__canvas .maplibregl-canvas-container {
-  background: #060d16 !important;
 }
 
 .globe-atmospheric-halo {
@@ -414,6 +409,18 @@
 
 .test-globe-screen--actual .test-old-globe .maplibregl-canvas {
   filter: brightness(2.1) contrast(1.20) saturate(1.18);
+}
+
+.test-globe-screen--maplibre.test-globe-screen--actual:not(.test-globe-screen--onboarding) .test-old-globe .maplibregl-canvas {
+  filter: brightness(1.3) contrast(1.08) saturate(1.02);
+}
+
+.test-globe-screen--maplibre.test-globe-screen--actual.test-globe-screen--maplibre-custom .test-old-globe .maplibregl-canvas {
+  filter: none;
+}
+
+.test-globe-screen--maplibre.test-globe-screen--actual.test-globe-screen--maplibre-custom .test-old-globe {
+  background: linear-gradient(180deg, #02050c 0%, #01030a 48%, #000106 100%);
 }
 
 .test-globe-screen--actual .test-old-globe__vignette {
@@ -814,7 +821,7 @@
   -webkit-backdrop-filter: blur(28px);
   border-top: 1px solid rgba(39, 221, 235, 0.22);
   border-radius: 22px 22px 0 0;
-  padding: 8px 0 calc(var(--nav-height, 62px) + var(--safe-bottom, 0px) + 8px);
+  padding: 8px 0 calc(var(--nav-occupied-height) + 8px);
   animation: gt2-sheet-rise 300ms cubic-bezier(0.16, 1, 0.3, 1) both;
   max-height: 55dvh;
   display: flex;
@@ -986,14 +993,14 @@
 /* ── HTML Markers ────────────────────────────────────────────────────────────── */
 
 .gt2-marker {
+  --marker-bubble-size: 52px;
+  --marker-stem-size: 18px;
   display: flex;
   flex-direction: column;
   align-items: center;
+  min-width: 44px;
   cursor: pointer;
-  /* CSS2DRenderer (Three.js) overrides inline transform to center the element.
-     padding-bottom aligns the dot center (52+18+3.5=73.5px) with the element
-     center (147/2=73.5px) so the dot anchors to the globe surface. */
-  padding-bottom: 70px;
+  padding-bottom: calc(var(--marker-bubble-size) + var(--marker-stem-size));
   will-change: transform;
   pointer-events: all;
   -webkit-tap-highlight-color: transparent;
@@ -1014,8 +1021,8 @@
 }
 
 .gt2-marker__bubble {
-  width: 52px;
-  height: 52px;
+  width: var(--marker-bubble-size);
+  height: var(--marker-bubble-size);
   border-radius: 50%;
   border: 2.5px solid #28d8df;
   overflow: hidden;
@@ -1029,9 +1036,11 @@
   justify-content: center;
 }
 
+.gt2-marker--avatar {
+  --marker-bubble-size: 40px;
+}
+
 .gt2-marker--avatar .gt2-marker__bubble {
-  width: 40px;
-  height: 40px;
   border-width: 2px;
 }
 
@@ -1051,7 +1060,7 @@
 
 .gt2-marker__stem {
   width: 1.5px;
-  height: 18px;
+  height: var(--marker-stem-size);
   background: linear-gradient(to bottom, var(--marker-color, #28d8df), color-mix(in srgb, var(--marker-color, #28d8df) 20%, transparent));
   flex: none;
 }
@@ -1092,15 +1101,17 @@
     border-color: rgba(40, 216, 223, 0.72);
   }
   45% {
-    box-shadow: 0 0 0 7px rgba(40, 216, 223, 0.18), 0 0 26px rgba(40, 216, 223, 0.6), 0 0 48px rgba(40, 216, 223, 0.18);
+    box-shadow: 0 0 0 var(--marker-pulse-ring, 7px) rgba(40, 216, 223, 0.18), 0 0 26px rgba(40, 216, 223, 0.6), 0 0 var(--marker-halo, 48px) rgba(40, 216, 223, 0.18);
     border-color: rgba(40, 216, 223, 1);
   }
 }
 
 /* Cluster variant */
+.gt2-marker--cluster {
+  --marker-bubble-size: 44px;
+}
+
 .gt2-marker--cluster .gt2-marker__bubble {
-  width: 44px;
-  height: 44px;
   flex-direction: column;
   gap: 1px;
 }
@@ -1176,8 +1187,8 @@
 /* ── Compact filter pill ─────────────────────────────────────────────────────── */
 
 .gt2-filter-pill {
-  position: fixed;
-  bottom: calc(var(--nav-height, 62px) + 14px);
+  position: absolute;
+  bottom: calc(var(--nav-occupied-height) + var(--nav-create-overhang) + 8px);
   left: 50%;
   transform: translateX(-50%);
   z-index: 20;
@@ -1185,6 +1196,7 @@
   align-items: center;
   gap: 7px;
   padding: 10px 20px;
+  min-height: 44px;
   border-radius: 999px;
   background: rgba(8, 20, 34, 0.88);
   border: 0.5px solid rgba(255, 255, 255, 0.15);
@@ -1202,12 +1214,40 @@
   background: rgba(20, 42, 62, 0.92);
 }
 
-/* ── Hide +/− on mobile ──────────────────────────────────────────────────────── */
-
-@media (max-width: 768px) {
-  .gt2-zoom-btn {
-    display: none;
+@media (max-width: 430px) {
+  .gt2-marker {
+    --marker-bubble-size: 46px;
+    --marker-stem-size: 14px;
+    --marker-pulse-ring: 4px;
+    --marker-halo: 28px;
   }
+
+  .gt2-marker--cluster {
+    --marker-bubble-size: 40px;
+  }
+
+  .gt2-marker--avatar {
+    --marker-bubble-size: 36px;
+  }
+
+  .gt2-marker__count {
+    font-size: 14px;
+  }
+
+  .gt2-marker__live-label {
+    font-size: 7px;
+  }
+}
+
+.gt2-space-globe .test-old-globe__controls {
+  left: 12px;
+  bottom: calc(var(--nav-occupied-height) + 12px);
+  gap: 8px;
+}
+
+.gt2-space-globe .test-old-globe__controls button {
+  width: 44px;
+  height: 44px;
 }
 
 /* Upcoming state in stream card / cluster sheet */
@@ -1322,7 +1362,7 @@
 /* Globe container height — fills full viewport; nav overlays on top so the
    dark-blue phone-stage background never peeks between globe and nav. */
 .gt2-space-globe {
-  height: 100dvh;
+  height: 100%;
   touch-action: none;
   overscroll-behavior: contain;
 }
@@ -1376,4 +1416,35 @@ html:has(.gt2-space-globe) {
   inset: 0;
   transform: translateY(2%);
   pointer-events: auto;
+}
+
+/* Culled markers (backside of globe) — stop animation to save CPU. */
+.gt2-marker.is-culled .gt2-marker__bubble,
+.gt2-marker.is-culled .gt2-marker__dot {
+  animation: none;
+}
+
+/* CurrentGlobe (MapLibre) — move zoom controls to the left column so
+   MapBottomSheet at the bottom doesn't hide them. Mirrors GlobeTest2. */
+.test-globe-screen--maplibre.test-globe-screen--actual .test-old-globe__controls {
+  left: 12px;
+  right: auto;
+  bottom: calc(var(--nav-occupied-height, calc(var(--nav-height, 62px) + var(--safe-bottom, 0px))) + 58px);
+  transform: none;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.test-globe-screen--maplibre.test-globe-screen--actual .maplibregl-map {
+  transform: translateY(-4.5%);
+}
+
+.test-globe-screen--maplibre.test-globe-screen--actual .test-old-globe__controls button {
+  width: 34px;
+  height: 34px;
+}
+
+.test-globe-screen--maplibre.test-globe-screen--actual .maplibregl-ctrl-bottom-right {
+  right: 8px;
+  bottom: calc(var(--nav-occupied-height, 62px) + 24px);
 }

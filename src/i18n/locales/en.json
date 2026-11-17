@@ -969,6 +969,12 @@
       "purposes": {
         "title": "Purposes and legal bases"
       },
+      "waitlist": {
+        "title": "Launch waitlist",
+        "body": "If you join from the landing page, we collect your email address, selected language and consent date to send one email when Vuvio launches. This does not subscribe you to a general marketing newsletter. Cloudflare Turnstile checks automated submissions; your IP address is not stored in the waitlist.",
+        "retention": "We keep your address until the launch announcement is sent, or for no more than 730 days after signup. We then delete it. The consent record is kept with your signup for the same period.",
+        "withdraw": "You can withdraw through the link shown after signup, the unsubscribe link in the future email, or by writing to"
+      },
       "location": {
         "title": "Location data",
         "body": "Your geographic location is used solely to display your lives on the world map and improve content relevance. It is not sold. You can disable location tracking at any time in the app's privacy settings."
@@ -1217,52 +1223,116 @@
   },
   "onboarding": {
     "skip": "Skip",
+    "back": "Back",
     "stepXofY": "Step {{step}} of {{total}}",
     "stepLabel": "Step {{n}}",
-    "step1": {
-      "title": "Your profile",
-      "sub": "Add a photo and choose a display name.",
-      "uploadAria": "Upload profile photo",
-      "previewAlt": "Profile photo preview",
-      "addPhoto": "Add photo",
-      "changePhoto": "Change photo",
-      "displayName": "Display name",
-      "namePlaceholder": "Your name"
+    "ctaStart": "Get started",
+    "ctaContinue": "Continue",
+    "ctaContinueWithCount": "Continue ({{count}})",
+    "ctaFinish": "Discover Vuvio",
+    "cover": {
+      "title": "Create your Vuvio profile",
+      "subtitle": "A few quick steps to personalise your experience.",
+      "displayNameLabel": "Display name",
+      "displayNamePlaceholder": "Your name",
+      "addPhoto": "Add a profile photo",
+      "previewSteps": {
+        "interests": { "title": "Interests", "sub": "What you love to explore" },
+        "activities": { "title": "Activities", "sub": "What you practise or follow" },
+        "equipment": { "title": "Equipment", "sub": "The gear you actually use" },
+        "bio": { "title": "Bio", "sub": "A short intro for the community" }
+      }
     },
-    "step2": {
+    "interests": {
       "title": "Your interests",
-      "sub": "Pick the categories you love. We'll personalise your feed."
+      "subtitle": "Pick what you love to explore on Vuvio.",
+      "selectedCount_one": "{{count}} selected",
+      "selectedCount_other": "{{count}} selected"
     },
-    "step3": {
+    "activities": {
       "title": "Your activities",
-      "subFiltered": "Select the activities you practise or follow.",
-      "subAny": "Select the activities you practise or follow.",
-      "empty": "Select at least one category first."
+      "subtitle": "Select what you practise, follow or want to share.",
+      "searchPlaceholder": "Search an activity…",
+      "addFree": "Add \"{{name}}\"",
+      "noResults": "No match. Type your own and tap \"Add\".",
+      "selectedCount_one": "{{count}} selected",
+      "selectedCount_other": "{{count}} selected"
     },
-    "step4": {
-      "title": "Your gear",
-      "subFiltered": "Here's gear that matches your activities.",
-      "subAny": "Check the equipment you use.",
-      "addCustom": "Add custom gear",
-      "brand": "Brand",
-      "model": "Model",
-      "add": "Add"
+    "equipment": {
+      "title": "Build your Gear",
+      "subtitle": "Add the equipment you use for your activities.",
+      "searchPlaceholder": "Search for equipment, a brand or a model…",
+      "searchPlaceholderHint": "e.g. Fender Stratocaster, GoPro HERO13, Garmin Fenix",
+      "searchEmpty": "No match. Add it manually below.",
+      "searchUnavailable": "Catalog unavailable. You can still add your equipment manually.",
+      "searchResultsLabel": "Search results",
+      "activitiesTabsLabel": "Your activities",
+      "categoriesTabsLabel": "Equipment categories",
+      "suggestionsHeader": "Suggestions for you",
+      "suggestionsFor": "Suggestions for {{activities}}",
+      "emptyTitle": "No suggestions yet",
+      "emptySub": "Use the search above or add your equipment manually — a photo of your gear is never required.",
+      "notFoundHint": "Can't find your equipment?",
+      "addMyEquipment": "Add my equipment",
+      "myEquipmentHeader_one": "My Gear ({{count}})",
+      "myEquipmentHeader_other": "My Gear ({{count}})",
+      "addManually": "Add a custom item",
+      "tabAll": "All",
+      "universalTabs": {
+        "all": "All",
+        "cameras": "Cameras",
+        "audio": "Audio",
+        "instruments": "Instruments",
+        "tools": "Tools",
+        "cooking": "Cooking",
+        "outdoor": "Outdoor",
+        "clothing": "Clothing",
+        "accessories": "Accessories",
+        "other": "Other"
+      },
+      "manualForm": {
+        "title": "Add my equipment",
+        "name": "Name",
+        "namePlaceholder": "e.g. My guitar, My backpack, Fender Stratocaster…",
+        "brand": "Brand",
+        "model": "Model",
+        "category": "Category",
+        "categoryAuto": "Auto-detect",
+        "activity": "Associated activity",
+        "optional": "(optional)",
+        "submit": "Add to my equipment"
+      }
     },
-    "step5": {
-      "title": "About you",
-      "sub": "Write a short bio so others can get to know you.",
-      "bioLabel": "Bio",
-      "bioPlaceholder": "Tell us about yourself…"
+    "bio": {
+      "title": "Tell us about yourself",
+      "subtitle": "A short bio so others can get to know you.",
+      "placeholder": "Introduce yourself…",
+      "suggestionsHeader": "A few ideas",
+      "suggestions": {
+        "food": "Food lover and home cook, always sharing new recipes.",
+        "crafts": "Craftsperson passionate about creating with my hands.",
+        "outdoor": "Outdoor enthusiast — hiking, nature and open skies.",
+        "cycling": "Cyclist exploring roads and trails, one ride at a time.",
+        "aviation": "Flying high — pilot sharing views from above.",
+        "sailing": "Sailor following the wind and the horizon.",
+        "watersports": "Living for waves, water and open sea adventures.",
+        "fishing": "Angler patient as the tide — sharing quiet moments on the water.",
+        "music": "Musician and curious listener, always chasing new sounds.",
+        "emergency": "First responder, sharing life from the front lines.",
+        "farming": "Working the land — a life close to nature.",
+        "transport": "On the road and loving every mile.",
+        "energy": "Powering the world, one site at a time."
+      }
     },
-    "step6": {
-      "welcome": "You're all set!",
-      "welcomeName": "Welcome, {{name}}!",
-      "body": "Your profile is ready. Start exploring live streams from around the world."
-    },
-    "cta": {
-      "continue": "Continue",
-      "continueWithCount": "Continue ({{count}})",
-      "explore": "Start exploring"
+    "recap": {
+      "title": "Your profile is ready!",
+      "subtitle": "Here's a quick overview of your selections.",
+      "interestsHeader": "Interests",
+      "activitiesHeader": "Activities",
+      "equipmentHeader_one": "Equipment ({{count}})",
+      "equipmentHeader_other": "Equipment ({{count}})",
+      "bioHeader": "Bio",
+      "editSection": "Edit"
     },
     "gearCats": {
       "camera": "Camera",
@@ -1273,7 +1343,8 @@
     },
     "errors": {
       "sessionLoading": "Session not ready, please try again.",
-      "finishFailed": "Something went wrong. Please try again."
+      "finishFailed": "Something went wrong. Please try again.",
+      "avatarUploadFailed": "Couldn't upload your photo."
     }
   },
   "help": {
@@ -1421,6 +1492,126 @@
       "noAnswer": "Still can't find your answer?",
       "reportProblem": "Report a problem",
       "contactSupport": "Contact support"
+    }
+  },
+  "workshop": {
+    "participation": "Participation",
+    "modes": {
+      "off": "Watch only",
+      "join": "Join allowed",
+      "workshop": "Workshop"
+    },
+    "modesHint": {
+      "off": "Viewers watch only. No participation.",
+      "join": "Viewers can ask to join and practice with you.",
+      "workshop": "Guided activity — accept participants and spotlight their POV."
+    },
+    "audience": "Who can ask to join",
+    "audienceOptions": {
+      "everyone": "Everyone",
+      "followers": "Followers only",
+      "invited": "Invite only"
+    },
+    "maxParticipants": "Max active participants",
+    "participantsHint": "Between {{min}} and {{max}}",
+    "activityTitle": "Activity title",
+    "activityTitlePlaceholder": "e.g. Draw with me — Learn perspective",
+    "advanced": "Advanced",
+    "joinCta": "Join Workshop",
+    "joinCtaActive": "You're in — open",
+    "joinCtaPending": "Request pending…",
+    "joinSheet": {
+      "title": "Join this workshop",
+      "intro": "Practice with the host in real time.",
+      "privacy1": "Your camera and mic stay off until you turn them on.",
+      "privacy2": "Joining does NOT share your POV publicly.",
+      "privacy3": "A separate permission is required before anyone sees your POV.",
+      "request": "Request to join",
+      "cancel": "Cancel request",
+      "pending": "Request sent — waiting for the host to accept.",
+      "accepted": "You're in — opening your participant view…",
+      "declined": "Host declined your request.",
+      "full": "This workshop is full. Try again later.",
+      "cancelled": "Request cancelled.",
+      "closed": "Participation is closed for this live."
+    },
+    "participant": {
+      "label": "Participant",
+      "cameraOn": "Turn camera on",
+      "cameraOff": "Turn camera off",
+      "micOn": "Unmute",
+      "micOff": "Mute",
+      "needFeedback": "Need feedback",
+      "feedbackSent": "Feedback requested",
+      "requestSpotlight": "Request spotlight",
+      "stopSharing": "Stop sharing",
+      "leave": "Leave workshop",
+      "youAreLive": "You're on screen",
+      "yourPreview": "Your preview",
+      "youAreMuted": "You're muted"
+    },
+    "creator": {
+      "participants": "Participants",
+      "requests": "Join requests",
+      "noRequests": "No pending join requests.",
+      "noParticipants": "No participants yet.",
+      "accept": "Accept",
+      "decline": "Decline",
+      "viewPrivate": "View POV",
+      "askPrivateView": "Ask POV access",
+      "requestSpotlight": "Spotlight",
+      "startSpotlight": "Start spotlight",
+      "endSpotlight": "End spotlight",
+      "remove": "Remove",
+      "cameraOn": "Camera on",
+      "cameraOff": "Camera off",
+      "spotlightLive": "On air",
+      "needsFeedback": "Needs feedback",
+      "privateAuthorized": "Private POV authorized",
+      "publicAuthorized": "Public share authorized",
+      "awaitingConsent": "Awaiting consent"
+    },
+    "spotlight": {
+      "incomingTitle": "Share your POV?",
+      "incomingHostBody": "The host would like to show your POV to everyone watching this Live.",
+      "incomingRequestingBody": "The host has approved your request. Confirm you want to be shown to everyone.",
+      "incomingAllow": "Allow",
+      "incomingDecline": "Decline",
+      "hostIncomingTitle": "{{name}} wants to show their POV",
+      "hostIncomingBody": "They've confirmed they're OK with being shown publicly.",
+      "hostAccept": "Accept",
+      "hostDecline": "Decline",
+      "liveNow": "{{name}} is on screen",
+      "endedByParticipant": "Participant stopped sharing.",
+      "endedByHost": "Host ended the spotlight.",
+      "swap": "Swap views"
+    },
+    "feedback": {
+      "queue": "Feedback requests",
+      "empty": "No one asked for feedback yet.",
+      "markDone": "Mark done",
+      "askPrivateViewFirst": "Ask POV access first"
+    },
+    "toasts": {
+      "wantsToJoin": "{{name}} wants to join",
+      "accepted": "{{name}} joined the workshop",
+      "declined": "{{name}} declined",
+      "spotlightRequested": "{{name}} wants to be shown",
+      "spotlightLive": "You're being shown live",
+      "spotlightEnded": "Spotlight ended"
+    },
+    "demo": {
+      "title": "Workshop demo",
+      "intro": "Simulate every role on a single device. No real video. Everything resets when you leave the page.",
+      "roleHost": "Creator",
+      "roleParticipant": "Participant",
+      "roleViewer": "Viewer",
+      "addViewer": "Add simulated viewer",
+      "reset": "Reset session",
+      "logTitle": "Event log",
+      "flagStatus": "Feature flag",
+      "flagOn": "ON",
+      "flagOff": "OFF"
     }
   }
 }

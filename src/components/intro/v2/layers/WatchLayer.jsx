@@ -1,6 +1,7 @@
 import { AnimatePresence, motion } from 'framer-motion';
-import { Search, Flame, Compass, Tv2, Plus, UserRound } from 'lucide-react';
+import { Search, Flame } from 'lucide-react';
 import BrandMark from '../../../BrandMark.jsx';
+import IntroBottomNav from './IntroBottomNav.jsx';
 
 const EASE = [0.22, 1, 0.36, 1];
 
@@ -95,33 +96,13 @@ export default function WatchLayer({ phase, reducedMotion }) {
 
           {/* Bottom nav preview */}
           <motion.div
-            className="introv2-watch__nav"
+            className="introv2-watch__nav-reveal"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 12 }}
             transition={{ duration: 0.55, ease: EASE, delay: 0.3 }}
           >
-            {[
-              { Icon: Tv2, label: 'Watch', active: true },
-              { Icon: Compass, label: 'Explore' },
-              { Icon: Plus, label: '', brand: true },
-              { Icon: Compass, label: 'Globe' },
-              { Icon: UserRound, label: 'Profile' },
-            ].map((item, i) => (
-              <div
-                key={i}
-                className={
-                  'introv2-watch__nav-item' +
-                  (item.active ? ' introv2-watch__nav-item--active' : '') +
-                  (item.brand ? ' introv2-watch__nav-item--brand' : '')
-                }
-              >
-                {item.brand
-                  ? <BrandMark size={22} useLegacy withCircle={false} />
-                  : <item.Icon size={18} strokeWidth={1.8} />}
-                {item.label && <span>{item.label}</span>}
-              </div>
-            ))}
+            <IntroBottomNav />
           </motion.div>
         </motion.div>
       )}

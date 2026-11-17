@@ -29,6 +29,14 @@
     ],
     "rewrites": [
       {
+        "source": "/api/waitlist",
+        "function": { "functionId": "waitlist", "region": "europe-west1" }
+      },
+      {
+        "source": "/api/waitlist/**",
+        "function": { "functionId": "waitlist", "region": "europe-west1" }
+      },
+      {
         "source": "/api/**",
         "function": "api"
       },

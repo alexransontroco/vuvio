@@ -38,6 +38,7 @@ import './styles/pages/onboarding.css';
 import './styles/pages/internal-stream-admin.css';
 import './styles/pages/admin-docs.css';
 import './styles/pages/agents.css';
+import './styles/pages/workshop.css';
 import './components/social/social.css';
 
 initializeMobilePlatform();

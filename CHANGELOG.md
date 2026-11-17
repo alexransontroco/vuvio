@@ -6,6 +6,263 @@ Historique des sessions de travail, du plus récent au plus ancien.
 
 ---
 
+## 2026-11-17 — Phase 4 : Realtime PoC Implementation (Cloudflare SFU)
+
+Transition Phase 3 (Design) → Phase 4 (PoC). Built `/admin/realtime-test` to validate Cloudflare Realtime SFU for multi-participant audio/video communication (Workshop & Together).
+
+**Pricing Verification (Actual 2026 rates):**
+- CF Realtime SFU: $0.05/GB egress, 1,000 GB/month free tier
+- RealtimeKit: NOT used (unnecessary overhead for PoC)
+- PoC 1-hour (2 people): ~450 MB = **FREE**
+- 100 sessions/month: ~315 GB = $15.75 (or free month 1)
+
+**Deliverables:**
+1. `src/routes/AdminRealtimeTestPage.jsx` (344 lines) — Create/join rooms, local/remote video preview, media controls, diagnostic panel
+2. `src/styles/pages/admin-realtime-test.css` (307 lines) — Dark theme, responsive grid, video containers
+3. `functions/src/realtimeTest/generateCFRealtimeToken.ts` (110 lines) — Server-side token generation (CF credentials safe), Firestore audit trail, 1-hour expiry
+4. `src/App.jsx` updated — Route `/admin/realtime-test` with AdminRoute protection
+5. `docs/workshop-together-phase3/REALTIME_POC.md` (comprehensive) — Setup instructions, test protocol, cost analysis, security validation, limitations
+
+**Status:** Implementation complete, ready for testing. Requires:
+- User to provide CF Realtime API token + Account ID
+- Firebase Function deployment
+- 2-device manual test (see test protocol in REALTIME_POC.md)
+
+**Cost Impact:** Zero (free tier SFU sufficient for MVP).
+
+---
+
+## 2026-11-17 — Relais multistream : préparation migration Cloud Run → Hetzner
+
+Diagnostic définitif du multistream en prod via logs Cloud Run : `iceServers count=3 hasTurn=true`, `ontrack` OK, mais **uniquement des candidates `host` protocol=udp** gathered, `frameCount=0`, `ICE state=failed` après 60s. Cause racine confirmée : Cloud Run n'accepte PAS d'ingress UDP arbitraire — HTTPS/443 uniquement. Les IPs internes GCP annoncées sont inaccessibles depuis Internet. Le Live Vuvio continue de fonctionner parce qu'il passe en P2P direct (bypass complet du relais). **Le relais Cloud Run n'a donc jamais pu marcher** — c'est la cause des « live offline » sur YouTube/IG en prod.
+
+- **Audit tarifaire Hetzner** (juin 2026, grille à jour) : CX23 (2 vCPU) €5,49, **CX33 (4 vCPU / 8 GB)** €8,49, CX43 €15,99, CPX22 €19,49, CPX32 €35,49. IPv4 +€0,50. Trafic 20 TB inclus. Cible retenue **CX33 à €8,99 HT/mo** (€10,70 TTC @ TVA DE 19 %) pour 1-3 lives simultanés avec marge CPU >60 %.
+- **Fix architectural clé** : Hetzner attache l'IPv4 publique **directement** à l'interface réseau (pas de NAT 1:1 comme GCE) → `@roamhq/wrtc` gather des candidates `host` déjà routables depuis Internet. Aucune réécriture du relais nécessaire.
+- **Modifs code (committées ici, pas déployées)** :
+  - `relay/server.js` : env `RTMPS_RELAY_MAX_SESSIONS` (default 3) → refus HTTP 429 si cap atteint. Env `RTMPS_RELAY_AUTH_TOKEN` → check header `x-relay-token` sur `POST /sessions`. `/healthz` enrichi (`sessions`, `maxSessions`, `uptimeSeconds`, `rssMb`, `heapUsedMb`, `authRequired`, `nodeVersion`).
+  - `src/services/webrtcService.js` : `startRtmpRelayBroadcast` et `startRtmpRelayIngest` acceptent `authToken`, propagé au header `x-relay-token` des `POST /sessions` + `DELETE /sessions/:id`.
+  - `src/routes/WatchPage.jsx` : extrait `cfData.relayAuthToken` et le pose dans `relayCredentials.authToken`, passé à `startRtmpRelayBroadcast`.
+  - `functions/src/cloudflare/createLiveInputHandler.ts` : expose `relayAuthToken` dans la réponse (lu depuis `RTMPS_RELAY_AUTH_TOKEN` env). Compile OK (`tsc --noEmit` exit=0).
+- **Stack prod ajoutée dans `relay/`** (non déployée) :
+  - `Caddyfile` — reverse proxy auto-TLS Let's Encrypt via `$RELAY_DOMAIN`.
+  - `docker-compose.yml` — services `relay` (host network pour wrtc UDP) + `caddy`, logs rotatifs, restart `unless-stopped`.
+  - `.env.example` — variables à fournir.
+  - `systemd/vuvio-relay.service` — unité pour `docker compose up` au boot, Restart=on-failure.
+  - `cloud-init.yaml` — provisioning Ubuntu 24.04 : Docker + docker-compose plugin, ufw (22/80/443 TCP + 10000-65535 UDP), fail2ban, unattended-upgrades, user `vuvio` non-root dans groupe docker, SSH hardening (no password, no root).
+  - `DEPLOY.md` — procédure complète (API Hetzner curl, DNS, upload, systemd, validation, rollback vers Cloud Run).
+- **Firewall Hetzner recommandé** : TCP 22 depuis IP admin, TCP 80/443 depuis tout, UDP 10000-65535 depuis tout, outbound tout. Session cap serveur (3) + auth token + cap réseau = défense en couches.
+- **Rollback** : `RTMPS_RELAY_URL` dans `functions/.env` reste sur Cloud Run jusqu'à validation E2E. Cloud Run `rtmps-relay` préservé.
+- **Actions utilisateur bloquantes** (listées dans DEPLOY.md) : création compte Hetzner, API token R/W, clé SSH, A record `relay.vuvio.app`, validation du coût €8,99/mo.
+- **Tests E2E prévus post-déploiement** : Vuvio seul · +YouTube · +Instagram · YT+IG · résilience (coupure 1 output) · cleanup final (`sessions:0`).
+- **Hors scope (respecté)** : pas d'OAuth YouTube, pas de refonte Live Vuvio, pas de déploiement sans accord utilisateur sur le coût.
+
+---
+
+## 2026-11-17 — Workshop Phase 3 brief archivé (pas d'exécution)
+
+Brief reçu d'Alex (2026-11-17) décrivant la phase suivante : audit comparatif d'infra temps réel pour Workshop + Together (Cloudflare Stream vs Cloudflare Realtime vs LiveKit), audit sécu Firestore (`activeLives/*`), architecture consentement formalisée, 4 livrables doc (ARCHITECTURE_COMPARISON / WORKSHOP_TOGETHER_ARCHITECTURE / WORKSHOP_SECURITY_AUDIT / IMPLEMENTATION_ROADMAP).
+
+- Brief intégral sauvegardé dans la mémoire Claude → `memory/project_workshop_phase3_brief.md` pour reprise en session future.
+- **Rien d'exécuté** : audit + comparatif + PoC + corrections de règles sont à faire dans une session dédiée.
+- Contraintes retenues : ne pas déployer, ne pas remplacer Cloudflare Stream, ne pas modifier les règles Firestore actives, ne pas perturber les Lives classiques, préserver le Playground.
+
+---
+
+## 2026-11-17 — Workshop Playground : viewer status machine + tests
+
+Correction d'un bug où l'onglet Participant affichait « No participant yet » alors que l'Activity Log montrait « Host accepted Emma ». Cause : le pivot de sélection était un `participantId` (éphémère, supprimé au `leaveWorkshop`) au lieu d'un `userId` stable → dès qu'une persona quittait la session, sa chip disparaissait du picker et l'écran retombait sur l'état vide générique.
+
+- **Nouveau module pur** `src/utils/workshopViewerStatus.js` : `classifyViewer(session, userId)` → union taguée `{kind: 'none'|'absent'|'pending'|'declined'|'left'|'active', participant?, request?}`. Sort les joinRequests par `createdAt` desc pour que la demande la plus récente gagne. Zéro import React — testable directement avec `node --test`.
+- **Picker Impersonate** (`WorkshopDemoPage.jsx`) lie maintenant la sélection à `impersonatedUserId` (persistant à travers leave/rejoin). Chips affichent toutes les personas (`[DEMO_SELF, ...DEMO_SIM_VIEWERS]`) avec badge d'état (`Active` / `Pending` / `Declined` / `Left` / `Not joined`) et `is-active`/is-live markers.
+- **`ParticipantView`** : composant extrait qui branche sur `viewerStatus.kind` et rend l'UI matchante : HUD pour `active`, `EmptyPhoneState` card pour les 4 autres états (card compacte en bas du téléphone, pas de flou plein écran). Actions contextuelles : Cancel / Request again / Request to rejoin / Request to join selon l'état.
+- **`ParticipantControls` (simulation panel)** passe aussi sur `viewerStatus.kind`. Headers : `As Emma — Pending` / `As Emma — Left` / `As Emma — Active · Spotlight Live`. Le pivot `PersonaSwitch` liste toutes les personas avec leur badge d'état — plus de « Switch participant » limité aux membres actuels.
+- **Activity Log cleanup** : `configureSession` ne log plus `session.configured` à chaque remount de hook. Nouveau `getOrCreateSession` retourne `{session, created, changed}` — log uniquement à la création réelle (one-time) ou sur diff de config (nouveau kind `session.updated` avec champs changés). Ça supprime le doublon causé par les deux hooks `useWorkshopSession` parallèles (`self` + `host`).
+- **Empty state visuel** : `.workshop-pg-phone__state` + `.workshop-pg-phone__state-card` — card 320px max centrée, backdrop blur léger (`rgba(4,12,20,.92)`), dot cyan/amber/red selon le tone (`neutral`/`pending`/`warn`/`muted`), bouton CTA cyan Vuvio. Plus de rideau plein écran.
+- **Reset session** reset aussi `impersonatedUserId` à la première sim persona (Emma) au lieu de `null` → on démarre toujours sur un état représentable.
+- **Tests Node natif** (`src/services/__tests__/workshopService.mock.test.js`, 19 tests) : requestJoin / accept / decline / cancel / leave / re-request / full / dup, host-initiated spotlight (accept + decline + camera-off auto-end + consent revoke + leave mid-live), participant-initiated spotlight (consent capturé + host accept + host decline revoke), configureSession dedup (no-op repeat + diff log), classifyViewer edge cases (null session, tri par createdAt).
+- **`npm test`** ajouté au `package.json` : `node --test src/services/__tests__/workshopService.mock.test.js`. Zéro nouvelle dépendance.
+- **Build** : `npx vite build` OK 2m37s, `WorkshopDemoPage-CdJMxcLn.js` 31.12 kB (gz 7.66). Aucun déploiement.
+- **Hors scope (respecté)** : Firestore, WebRTC, Cloudflare, Functions, Lives classiques, flag — aucune touche.
+
+---
+
+## 2026-11-17 — Workshop Creator Studio : refonte UX panneau participants
+
+Refonte complète de l'interface Creator dans `/workshop-demo` pour en faire un vrai espace de gestion d'atelier, compact et utilisable pendant une activité réelle. Le panneau précédent couvrait quasi tout le POV et le creator ne pouvait plus voir sa propre scène ; les notifications de join étaient absentes et le cycle Spotlight (host ⇄ participant) n'était pas lisible.
+
+- **Bottom sheet 3 états** (`WorkshopParticipantsPanel.jsx`, réécrit ~547 lignes) : `closed` / `peek` (~38 % min 220px max 46 %) / `expanded` (~74 % max 82 %). Drag handle avec `setPointerCapture`, snap sur ratio hauteur au relâché (<14 % closed, <50 % peek, sinon expanded). Clavier : Escape ferme, ↑/↓ cycle, chevron toggle peek↔expanded, titre cycle, bouton X ferme. Variant `embedded` conservé pour StudioPage desktop (sans chrome sheet).
+- **Trigger compact** (`.workshop-creator-trigger`) : pill 38 px en bas safe-area du phone frame, affiche `Participants (N)`, badge cyan count, ping dot rouge animé quand au moins une demande pending. Un seul geste pour ouvrir → Peek.
+- **Notification discrète non-bloquante** (`.workshop-creator-incoming`) : toast slide-in avec avatar + inline Accept/Decline (join) ou Open (feedback). Détection via `prevRequestIdsRef` / `prevFeedbackIdsRef` → seulement sur nouvelles entrées. Auto-dismiss 5.2 s, clear si la demande n'est plus pending, masqué si le sheet est ouvert.
+- **Liste Requests unifiée** : merge `joinRequests` + `feedbackQueue` triés par `createdAt` desc, discriminateur `kind: 'join'|'feedback'`. Rows compactes : avatar 28 px + nom + sous-ligne (connection·cam·state·feedback) + actions inline (`is-primary`, `is-ghost`, `is-danger`, `--icon`). Need Feedback jamais auto-publié en Spotlight — action `View POV` (si `hostViewAuthorized`) ou `Ask POV` + `Done`.
+- **Visualisation Spotlight par participant** : helper `spotlightState(session, p)` → `{kind: 'live'|'await'|'raised'|'declined', label}`. Row rend l'action adaptée : host-initiated pending → pill `Awaiting…`, participant-initiated pending → Accept/Decline, declined → Retry, autorisé+caméra ON → Start, live → End.
+- **State machine audit** (`useWorkshopSession.js` + `workshopService.mock.js`, lus sans modif) : `pendingFeedback` filtre déjà `!f.resolvedAt`, `pendingJoinRequests` filtre `status === 'pending'`, `participantRequestSpotlight` wrap `setPublicSpotlightConsent(true)`, IDs via `uid('join'|'fb'|'sp')` uniques. Aucune incohérence trouvée — pas de patch nécessaire.
+- **Dead CSS retirée** (~200 lignes) : `.workshop-participant-card*`, `.workshop-participants-sheet__panel`, `.workshop-participants-tabs*`, `.workshop-participants-list`, `.workshop-participants-empty`, `.workshop-tag*`, `.workshop-pg-phone__creator-scroll*`. Remplacée par la famille `.workshop-sheet-v2__*` + `.workshop-creator-trigger*` + `.workshop-creator-incoming*` (~520 lignes).
+- **Responsive** : `@media (max-width: 540px)` cache les labels d'action (icônes seules), `@media (max-width: 400px)` resserre padding + avatars. `env(safe-area-inset-bottom)` sur handle-zone + trigger.
+- **Build** : `npx vite build` OK 1m46s, `WorkshopDemoPage-Bvd-c1oj.js` 26.75 kB (gz 6.64). Aucun déploiement.
+- **Hors scope (brief respecté)** : aucune touche à Cloudflare, WebRTC, Firestore, Cloud Functions. Feature flag `VITE_WORKSHOP_ENABLED` inchangé. SFU multi-participants toujours `data-sim`.
+
+---
+
+## 2026-11-16 — Workshop Playground refonte : banc d'essai UX desktop-first
+
+Refonte complète de `/workshop-demo` (ex-démo 3 phones côte-à-côte, inutilisable sur 1366×768 + masquée par BottomNav) en **Workshop UX Playground** : un seul téléphone mobile taille réelle (402×720), onglets Viewer/Participant/Creator, panneau Simulation Controls + Activity Log, mode Compare Roles optionnel (>=1400px).
+
+- **Route sortie de AppShell** (`src/App.jsx`) : `/workshop-demo` déplacé **hors** du groupe `<Route element={<AppShell />}>` → plus de `.phone-stage` (contrainte 402px desktop) ni de `BottomNav` qui se superposait. Pas de modif globale de BottomNav.
+- **Réécriture complète** (`src/routes/WorkshopDemoPage.jsx`, ~950 lignes) :
+  - Header brand VUVIO · WORKSHOP PLAYGROUND + boutons Reset / Exit demo + pill "Simulation active".
+  - Tabs rôles + bouton "Compare Roles" (disabled si viewport < 1400px, pas de fallback 3-petits-phones).
+  - Picker participant (Emma/Tom/Léa/Sam) — chaque participant garde son propre état (join, consent, camera, mic).
+  - **PhoneFrame** 402×720 natif, **aucun transform:scale()**, border-radius 40px, box-shadow, fond POV `/pov/used/chef-pov.jpg` + overlay dégradé + badges SIM/LIVE.
+  - Deux hooks `useWorkshopSession` parallèles (self viewer + host) partageant le même `DEMO_LIVE_ID` → état globalement cohérent entre rôles.
+  - `handleReset()` stoppe toutes les tracks MediaStream + clear `streamRefs` + reset session mock.
+  - `streamRefs = useRef(new Map())` au niveau page → caméra préservée en switch de rôles.
+  - `humanizeLog()` : switch sur 24 types d'événements (join.*, spotlight.*, participant.*, activity.*) → texte lisible dans l'Activity Log.
+  - Overlays rôle-aware : JoinCTA/JoinSheet (viewer), ParticipantHUD + ConsentSheet participant-incoming (participant), ParticipantsPanel + ConsentSheet host-incoming (creator), SpotlightPip partagé (sauf sur le phone du participant actuellement en spotlight).
+- **SimulationControls state-aware** :
+  - ViewerControls : Request to join (disabled si full), Cancel pending, Retry declined.
+  - ParticipantControls : Camera on/off, Mic on/off, Raise hand (disabled si camera off), Accept/Decline host-incoming spotlight, Stop sharing, Ask for feedback, Leave, picker participant.
+  - CreatorControls : Approve/Decline pending joins, Approve/Decline raised hands, Stop spotlight, par-participant Ask to feature / Start spotlight / Awaiting consent / Remove.
+  - SimulatedViewers : 4 spectateurs Emma/Tom/Léa/Sam avec boutons Request / Leave.
+- **CSS** (`src/styles/pages/workshop.css`, +~400 lignes) : namespace `.workshop-pg-*` ajouté en fin de fichier (legacy `.workshop-demo-*` conservé pour ne rien casser). Grid 2 colonnes `minmax(0,1fr) minmax(300px,380px)` → single column <1100px, toggle panel mobile, safe-area insets, breakpoints 1100/540/400.
+- **Constante `DEMO_LIVE_ID`** utilisée partout (pas `session.liveId`) → évite les crashes quand `session` est null au premier render avant le `useEffect` de mount.
+- **Build** : `npx vite build` OK 1m05s, WorkshopDemoPage.js 26.14 kB gz 6.63. Aucun déploiement.
+- **Limitations connues** : pas de WebRTC/HLS multi-participant réel (toujours `data-sim`), SpotlightPip reste une placeholder POV, pas de persistance des logs entre rechargements (in-memory par liveId).
+
+---
+
+## 2026-11-16 — Workshop / Join Activity : feature flag + 3 expériences testables
+
+Nouvelle famille de Lives "Join Activity / Workshop" ajoutée en parallèle du Watch classique. Trois modes : WATCH (inchangé), JOIN ACTIVITY (spectateurs peuvent rejoindre), WORKSHOP (atelier avec spotlight consentement mutuel). Feature flag `VITE_WORKSHOP_ENABLED` (off en prod), override localStorage et activation auto sur `/workshop-demo` + hôtes dev.
+
+- **Config** : `src/config/workshop.js` — `isWorkshopEnabled()`, override `localStorage['vuvio_workshop_flag']`, `WORKSHOP_STORAGE_KEYS`.
+- **Service mock** : `src/services/workshopService.mock.js` — pub/sub, in-memory state par liveId : participants, joinRequests, spotlight, log. Pas d'écriture Firestore (mock marqué `data-sim`).
+- **Hook** : `src/hooks/useWorkshopSession.js` — abonnement live + helpers requestJoin/approveJoin/requestSpotlight/acceptSpotlight/declineSpotlight/stopSpotlight/leave.
+- **Composants UI** (`src/components/workshop/`) :
+  - `WorkshopJoinCTA` — bouton flottant au-dessus du composer live, badge participants.
+  - `WorkshopJoinSheet` — bottom sheet avec intent + confirmation préférences (micro, caméra off par défaut).
+  - `WorkshopParticipantHUD` — HUD participant : état, bouton "Request spotlight", quitter.
+  - `WorkshopSpotlightConsentSheet` — variante `participant-incoming` (host demande au participant) et `host-incoming` (participant demande au host).
+  - `WorkshopSpotlightPip` — picture-in-picture simulé quand un autre est en spotlight.
+  - `WorkshopToast` — notifications (join accepted/declined/pending).
+  - `WorkshopParticipantsPanel` — panneau host embedded dans StudioPage (liste participants, requests, bouton spotlight).
+- **Wiring viewer** (`src/routes/WatchPage.jsx`) : import flag + hook, CTA inséré au-dessus de `.live-actions`, sheets conditionnels (Join / HUD / Consent / Pip / Toast).
+- **Wiring creator** (`src/routes/StudioPage.jsx`) : onglet "Workshop" ajouté aux studio-tabs (badges pending/count), `WorkshopParticipantsPanel variant="embedded"`, consent sheet host-incoming. Tous les hooks workshop sont placés **au-dessus des early returns** pour respecter les Rules of Hooks.
+- **Draft Start Live** (`src/components/BottomNav.jsx`) : nouvelle section `ParticipationSection` dans More Options (visible seulement si flag ON) — 3 modes + titre activité + counter maxParticipants + audience. Champs persistés via `createdLiveService.createLocalLive` (`participation`, `participationConfig`).
+- **Demo route** (`src/routes/WorkshopDemoPage.jsx`) : `/workshop-demo` — simulateur 3 rôles (viewer / participant / creator) sur un seul appareil pour tester les flows sans Firestore réel.
+- **i18n** : namespace `workshop.*` complet en `en.json` + `fr.json` (audienceOptions.invited, participantsHint, modes, CTAs, consent, toasts).
+- **CSS** : `src/styles/pages/workshop.css` tout namespacé `.workshop-*` pour ne pas toucher aux Lives classiques. Mode row flex column 72px min-height, counter hint, sheet mobile-first.
+- **Mutual consent** : rejoindre ≠ autoriser POV privé ≠ autoriser spotlight public. Deux consentements séparés (host-initiated spotlight → participant accepte, participant-initiated → host accepte).
+- **Simulations marquées** : composants et service mock marqués `data-sim="workshop-*"` ; aucun flux WebRTC/HLS multi-participant câblé — déferré au choix SFU (Cloudflare Stream Live / Realtime / LiveKit).
+- **Audit sécurité Firestore** : les règles n'ont pas été modifiées (hors scope demandé). Issues à traiter séparément : collection `activeLives/{liveId}/participants/` doit être whitelistée avec validation shape ; `joinRequests` idem ; `spotlight` doc singleton doit être writable uniquement par host OU participant concerné.
+- Build vérifié : `npx vite build` OK 1m24s (WorkshopDemoPage 11.63 kB gz 3.55, WorkshopParticipantsPanel 7.77, StudioPage 13.49, WatchPage 147.57). Pas de déploiement.
+
+---
+
+## 2026-11-16 — Documentation : recherche de bases produits et architecture Equipment
+
+Le document existant `docs/products/UNIVERSAL_EQUIPMENT_SEARCH.md` a été complété avec les alternatives ProductGuru, Open Icecat, Open Products Facts, Barcode Report, UPCitemdb, Wikidata, APIs commerciales et eBay ; les fournisseurs testés sont distingués des candidats encore à vérifier. Ajout du benchmark, de l'architecture recommandée, des suggestions par activité et de la roadmap en trois phases. Le document est lié depuis `docs/products/README.md` et consultable dans Admin → Docs → Products. Aucun déploiement ni changement du parcours public.
+
+---
+
+## 2026-11-16 — Equipment Search : catalogue local prioritaire et repli eBay conservé
+
+Recherche locale et dédoublonnage ajoutés au parcours Equipment, à l'onboarding et à l'ajout rapide de Start Live. ProductGuru a été écarté comme fournisseur de recherche par nom après vérification : `/search?q=` répond en HTML et son OpenAPI JSON documente les rappels de produits. eBay reste disponible en repli ; les anciens équipements ne sont pas migrés. Tests navigateur mobile et builds frontend/Functions effectués ; validation Firestore authentifiée sur émulateur encore à faire. Référence : `docs/products/UNIVERSAL_EQUIPMENT_SEARCH.md`.
+
+---
+
+## 2026-11-16 — WatchPage : bouton Globe redesigné (halo cyan dynamique, suppression boussole)
+
+Redesign du bouton `LiveLocationGlobe` affiché en haut à droite du lecteur Live (`src/routes/WatchPage.jsx` + `src/routes/HomePage.jsx` + `src/styles/pages/live.css`).
+
+- JSX : suppression des 4 labels compass (`N/E/S/W`) dans les deux `LiveLocationGlobe` (Watch + Home — composants dupliqués). Ajout d'un `span.live-location-globe__halo` qui porte le contour cyan + les états hover/focus/flash.
+- CSS (dans `.live-location-globe`) :
+  - `isolation: isolate` pour que les pseudo-éléments puissent passer derrière le canvas via z-index négatif.
+  - `::before` : glow extérieur radial-gradient cyan + `filter: blur(3px)` + animation `live-globe-breathe` (5.2s ease-in-out, opacité 0.5→0.82, scale 0.97→1.05).
+  - `::after` : arc lumineux `conic-gradient` (transparent 0→210°, cyan 260°, pic clair 300°, retombée 340°) + `filter: blur(1.5px)` + animation `live-globe-sweep` (6s linear, rotation 360°).
+  - `.live-location-globe__halo` : fine bordure 1px `rgba(53,227,220,0.55)` + box-shadow cyan doux. Intensifiée au `:hover` / `:focus-visible` (bordure 135,245,240 + glow 18px).
+  - `:active` → `scale(0.96)`.
+  - `.is-flashing` (déclenché au clic sur Watch) → double keyframe `live-globe-flash` sur le glow + `live-globe-flash-ring` sur la bordure (scale 1.22 + glow 56px pic à 40%).
+  - Canvas : ancienne bordure `1px rgba(53,227,220,0.35)` supprimée (remplacée par le halo), ombre portée conservée.
+  - `@media (prefers-reduced-motion: reduce)` → `animation: none` sur ::before/::after/flash.
+- CSS mort conservé (`.live-location-globe__world/surface/marker` + `live-location-pulse`) — pas de refs JSX, mais hors scope du ticket.
+- Build vérifié : `npx vite build` OK.
+
+---
+
+## 2026-11-14 — CurrentGlobe (`/globe-current`) : clustering, backface cull, min-zoom, étoiles derrière globe
+
+Session itérative sur la page `/globe-current` (`src/components/globe/CurrentGlobe.jsx` + `src/styles/pages/globe-test.css`).
+
+**État du fichier à la fin de la session**
+- Clustering **écran union-find** (custom, pas Supercluster) avec radius zoom-aware : `baseRadius = w≤430 ? 92 : 104` → `minRadius = 22/26`, interpolé linéairement sur `zoom∈[1.4, 6]` via `zoomFactor = (zoom-1.4)/4.6`.
+- Signature cache incluant le radius : `` `${radius.toFixed(0)}|${ids.sort().join(';')}` `` pour forcer re-render quand le zoom change.
+- Backface culling great-circle (`cosAngle < 0.42` ≈ 65°) + viewport frustum cull (`margin = 24px`) via WeakMap pour éviter writes DOM redondants.
+- `.gt2-marker.is-culled` CSS → `animation: none` pour supprimer le coût des keyframes sur markers cachés.
+- Marker builder gère `stream.type === 'cluster'` → bulle avec `count` + label "LIVE" + stem + dot.
+- Click cluster → `setSelectedCluster(stream)` + `easeTo({ zoom: max(getZoom()+1.4, 4.2) })` + ouvre `gt2-cluster-sheet`.
+- Halo canvas (`drawAtmosphericHalo`) : `baseRadius = 0.44 * min(w,h)` (ancien 0.38), exclusion stars `globeRadius * 1.15` (ancien 1.08), et à la fin `globalCompositeOperation = 'destination-out'` avec une **ellipse** (`globeRadius*1.02` × `globeRadius*0.92`) pour tenir compte du pitch 35°.
+- `minZoom: INITIAL_ZOOM (1.4)` sur `new maplibregl.Map(...)` — plus possible de dézoomer sous la vue initiale.
+- `loadedPoll` (setInterval 150ms sur `map.loaded()`) → fix premier rendu "halo + espace seul" qui nécessitait un hard reload.
+- `.test-old-globe::before` second gradient recentré `at 50% 50%` (était `42%`).
+- Règle CSS `.test-globe-screen--maplibre.test-globe-screen--actual .test-old-globe__controls` → boutons zoom +/- visibles.
+
+**Tentative abandonnée (reverted)**
+- Passage à **MapLibre native clustering** (`cluster: true, clusterRadius: 56, clusterMaxZoom: 7`) + `querySourceFeatures('vuvio-test-lives')` + `getClusterExpansionZoom(clusterId)` au click.
+- Résultat : plus aucun marker visible. Cause probable : les couches existantes filtrent `['!', ['has', 'point_count']]` donc aucune couche n'indexe les features clusterisées. Il faut ajouter une couche ancre invisible (`type: 'circle'`, `filter: ['has', 'point_count']`, `paint: { 'circle-radius': 1, 'circle-opacity': 0 }`) avant `querySourceFeatures` ne retourne les clusters.
+- Revert complet : source `cluster: false`, re-mis l'union-find, re-mis `setSelectedCluster` + easeTo au click.
+
+**Bugs restants**
+- Un cluster "39 LIVE" en position initiale ne se subdivise pas quand on zoom-in (probablement pins géographiquement très concentrés — exact coords dupliquées pour Paris × 3, Copenhague × 2 + Firestore createdLives peut en ajouter d'autres).
+- Zoom-out après zoom-in sur un cluster : les clusters ne se reforment pas, tous les lives individuels s'affichent. Probablement lié au backface cull + centre caméra non-initial après easeTo → peu de pins visibles au même moment pour cluster.
+- Étoiles encore visibles "devant" le globe par endroits malgré l'ellipse `destination-out` (l'ellipse pitch=35 ne couvre pas parfaitement la projection réelle du globe).
+
+**Prochaines étapes suggérées** (si reprise par Codex)
+1. **Clustering hiérarchique robuste** : repasser à MapLibre Supercluster natif MAIS ajouter une couche ancre invisible (`vuvio-test-cluster-anchor`, `filter: ['has', 'point_count']`, opacity 0) immédiatement après `addSource`. Utiliser `map.querySourceFeatures('vuvio-test-lives')` + `src.getClusterExpansionZoom(clusterId)`. Clés stables `cluster-${count}-${lat.toFixed(2)}-${lng.toFixed(2)}` pour éviter la destruction/recréation du DOM à chaque reindex Supercluster. Le code complet a été écrit puis reverté — récupérable via `git log -p` sur CurrentGlobe.jsx (commits non créés, voir le jsonl de la session si besoin).
+2. **39-cluster ne se subdivise pas** : baisser `clusterRadius` à 40 ou utiliser `clusterMaxZoom: 8` avec Supercluster, OU vérifier que les coordonnées des 39 lives ne sont pas identiques (3 pins Paris exacts dans `src/data/mapStreams.js` lignes ~35-38).
+3. **Étoiles derrière globe** : la vraie solution structurelle serait de mettre le halo canvas BEHIND la canvas MapLibre, mais CSS force `.maplibregl-canvas-container { background: #060d16 !important }` (globe-test.css:65) qui cacherait les étoiles. Il faudrait rendre ce background transparent et placer un canvas "space" séparé **avant** le map canvas dans le DOM. Alternative : agrandir encore l'exclusion ellipse (passer de `*1.02 / *0.92` à `*1.15 / *1.05`).
+
+**Fichiers touchés**
+- `src/components/globe/CurrentGlobe.jsx` (~70 modifs localisées, pas de rewrite global)
+- `src/styles/pages/globe-test.css` (règle `.is-culled`, halo gradient center, controls visibility)
+
+---
+
+## 2026-11-14 — Globe Test 6 : Strategy A overlay (texture + lignes vectorielles)
+
+Pivot architectural après feedback user : le swap `original` ↔ `vector` (instant ou fade) ne pouvait pas reproduire une « enrichissement progressif » parce que `three-globe` impose un mutex `globeObj.visible = !globeTileEngineUrl` (ligne 8189). On passe à une **superposition permanente** : la texture `earth-night` reste toujours visible, et les tuiles Stamen Toner Lines se fondent en overlay par altitude.
+
+**Changements structurels**
+- Fournisseur de tuiles passe à `stamen_toner_lines` (fond transparent + lignes noires de routes/limites, sans labels). URL : `https://tiles.stadiamaps.com/tiles/stamen_toner_lines/{z}/{x}/{y}[@2x].png`.
+- `globeImageUrl` ET `globeTileEngineUrl` sont **tous les deux toujours définis** (plus de toggle `tileMode`).
+- Mise à jour attribution : **© OpenStreetMap, © Stadia Maps, © Stamen Design**.
+
+**Override du mutex three-globe**
+- `useEffect(globeReady)` : traverse la scène Three.js, trouve :
+  - le Mesh texture globe (filtré sur `material.map.image.src.includes('earth-night-threeglobe-4k')`)
+  - le Group `ThreeSlippyMapGlobe` (filtré sur `constructor.name`)
+- Chaque frame RAF : `globeObjRef.current.visible = true` (annule le mutex).
+- Chaque frame RAF : `innerBackLayer.visible = false` (la sphère noire à 0.99×R du tile engine est cachée).
+
+**Opacity altitude-driven dans RAF**
+- Ramp `alt > 1.2` → opacity 0, `alt < 0.3` → opacity 0.75, linéaire entre les deux.
+- Lissage low-pass : `tileOpacityRef += (target - current) * 0.18` (évite les snaps pendant le tween deeplink).
+
+**Patching des matériaux tuile (one-shot par mesh)**
+- Flag `material.__gt6Patched` évite de re-patcher à chaque frame.
+- `transparent: true`, `depthWrite: false`, `polygonOffset: true` + `polygonOffsetFactor/Units: -1` → zéro z-fight avec le mesh texture au même rayon.
+- `blending: NormalBlending` → les lignes noires s'affichent par-dessus la texture bleu-nuit. Au besoin d'une teinte cyan Vuvio, un `ShaderMaterial` custom sera itéré plus tard.
+
+**Simplification UI**
+- Boutons Original/Vector remplacés par un unique **Overlay: ON/OFF** (debug only).
+- Diag affiche `Opacity` (valeur courante) au lieu de `Mode`.
+- Attribution Stadia/Stamen visible en permanence quand overlay ON.
+
+**Suppressions**
+- `tileMode`, `transitioning`, `transitionTimerRef`, `autoSideRef`, `requestTileMode`, `setTileModeManual` — plus de state de transition.
+- `.gt2-globe-offset[data-tile-mode="carto"] canvas { filter: hue-rotate ... }` retiré de `globe-test.css` — la teinte n'est plus faite au niveau canvas.
+
+---
+
 ## 2026-11-13 — Globe Test 6 (suite) : pivot CARTO→Stadia + MAX_ZOOM 14→18 + compteur réel
 
 Deuxième passe sur `/globe-test-6` après vérification côté réseau (curl multi-zoom).

@@ -2,22 +2,6 @@ import { newPovLives } from './newPovStreams.js';
 
 export const lives = [
   {
-    id: 'biking-dolomites',
-    kind: 'video',
-    video: '/assets/videos/biking.mp4',
-    image: '/assets/videos/biking-cover.jpg',
-    streamer: 'Tomas Keller',
-    job: 'Mountain biker',
-    city: "Cortina d'Ampezzo",
-    country: 'Italy',
-    viewers: '1,508',
-    description: 'Dropping into the forest trail after the ridge.',
-    chat: [
-      { who: 'Mila', text: 'that descent is wild' },
-      { who: 'Hugo', text: 'helmet cam feels so fast' },
-    ],
-  },
-  {
     id: 'road-cyclist-mallorca',
     kind: 'video',
     video: '/assets/videos/16232606_2160_3840_30fps.mp4',

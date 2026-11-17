@@ -59,6 +59,12 @@ export default function PrivacyPage() {
         <LegalInfoTable rows={purposes} />
       </LegalSection>
 
+      <LegalSection id="privacy-waitlist" title={t('privacy.sections.waitlist.title')}>
+        <p>{t('privacy.sections.waitlist.body')}</p>
+        <p>{t('privacy.sections.waitlist.retention')}</p>
+        <p>{t('privacy.sections.waitlist.withdraw')} <a href={`mailto:${legalConfig.privacyEmail}`}>{legalConfig.privacyEmail}</a>.</p>
+      </LegalSection>
+
       <LegalSection id="privacy-location" title={t('privacy.sections.location.title')}>
         <p>{t('privacy.sections.location.body')}</p>
       </LegalSection>

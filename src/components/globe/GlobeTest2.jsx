@@ -59,52 +59,79 @@ if (typeof window !== 'undefined') window.THREE = THREE;
 
 // ── Clustering ────────────────────────────────────────────────────────────────
 
-function getClusterPrecision(altitude) {
-  if (altitude > 2.0) return 20;
-  if (altitude > 1.0) return 8;
-  if (altitude > 0.5) return 3;
-  return 1;
-}
-
-function buildClusteredStreams(streams, expandedClusterId, precision = 20) {
-  const groups = new Map();
-  streams.forEach((stream) => {
+function buildClusteredStreams(streams, protectedStreamId, globe, dims, previousGroups = new Map()) {
+  const pov = globe?.pointOfView?.();
+  const radius = dims.w <= 430 ? 70 : 78;
+  const centerLat = (pov?.lat ?? 10) * Math.PI / 180;
+  const centerLng = (pov?.lng ?? 14) * Math.PI / 180;
+  const horizon = 1 / (1 + (pov?.altitude ?? 2.8));
+  const points = streams.map((stream) => {
     const [lng, lat] = stream.coordinates;
-    const key = `${Math.round(lat / precision)}:${Math.round(lng / precision)}`;
-    const current = groups.get(key) ?? [];
-    current.push(stream);
-    groups.set(key, current);
+    const latRad = lat * Math.PI / 180;
+    const lngRad = lng * Math.PI / 180;
+    const facing = Math.sin(latRad) * Math.sin(centerLat)
+      + Math.cos(latRad) * Math.cos(centerLat) * Math.cos(lngRad - centerLng);
+    const screen = globe?.getScreenCoords?.(lat, lng, 0.01)
+      ?? { x: (lng + 180) * dims.w / 360, y: (90 - lat) * dims.h / 180 };
+    const visible = !globe || (facing > horizon - 0.04
+      && Number.isFinite(screen.x) && Number.isFinite(screen.y)
+      && screen.x > -radius && screen.x < dims.w + radius
+      && screen.y > -radius && screen.y < dims.h + radius);
+    return { stream, screen, visible: Boolean(visible) };
+  }).sort((a, b) => String(a.stream.id).localeCompare(String(b.stream.id)));
+
+  const parent = points.map((_, index) => index);
+  const find = (index) => {
+    while (parent[index] !== index) {
+      parent[index] = parent[parent[index]];
+      index = parent[index];
+    }
+    return index;
+  };
+  for (let a = 0; a < points.length; a += 1) {
+    if (!points[a].visible || points[a].stream.id === protectedStreamId) continue;
+    for (let b = a + 1; b < points.length; b += 1) {
+      if (!points[b].visible || points[b].stream.id === protectedStreamId) continue;
+      const sameGroup = previousGroups.get(points[a].stream.id) === previousGroups.get(points[b].stream.id)
+        && previousGroups.has(points[a].stream.id);
+      const threshold = sameGroup ? radius + 12 : radius;
+      if (Math.hypot(points[a].screen.x - points[b].screen.x, points[a].screen.y - points[b].screen.y) <= threshold) {
+        parent[find(b)] = find(a);
+      }
+    }
+  }
+
+  const groups = new Map();
+  points.forEach((point, index) => {
+    const key = find(index);
+    if (!groups.has(key)) groups.set(key, []);
+    groups.get(key).push(point.stream);
   });
 
-  const items = [];
-  groups.forEach((group, key) => {
-    if (group.length < 2 || expandedClusterId === key) {
-      group.forEach((stream) => {
-        items.push({ ...stream, type: 'live', clusterId: key, displayCoordinates: stream.coordinates });
-      });
-      return;
-    }
-
-    let sumLat = 0, sumLng = 0, sumViewers = 0;
-    group.forEach((s) => {
-      sumLat += s.coordinates[1];
-      sumLng += s.coordinates[0];
-      sumViewers += parseInt(String(s.viewers ?? '0').replace(/\D/g, ''), 10) || 0;
+  return [...groups.values()].map((group) => {
+    if (group.length === 1) return { ...group[0], type: 'live', displayCoordinates: group[0].coordinates };
+    let x = 0, y = 0, z = 0, viewers = 0;
+    group.forEach((stream) => {
+      const lat = stream.coordinates[1] * Math.PI / 180;
+      const lng = stream.coordinates[0] * Math.PI / 180;
+      x += Math.cos(lat) * Math.cos(lng);
+      y += Math.cos(lat) * Math.sin(lng);
+      z += Math.sin(lat);
+      viewers += parseInt(String(stream.viewers ?? '0').replace(/\D/g, ''), 10) || 0;
     });
-
-    items.push({
-      id: `cluster-${key}`,
+    const coordinates = [Math.atan2(y, x) * 180 / Math.PI, Math.atan2(z, Math.hypot(x, y)) * 180 / Math.PI];
+    const clusterId = group.map((stream) => String(stream.id)).join('|');
+    return {
+      id: `cluster-${clusterId}`,
       type: 'cluster',
-      clusterId: key,
+      clusterId,
       streams: group,
       count: group.length,
-      viewers: sumViewers,
-      coordinates: [sumLng / group.length, sumLat / group.length],
-      displayCoordinates: [sumLng / group.length, sumLat / group.length],
-    });
+      viewers,
+      coordinates,
+      displayCoordinates: coordinates,
+    };
   });
-
-  return items;
 }
 
 // ── Stars + shooting stars on 2D canvas overlay ─────────────────────────────
@@ -243,8 +270,6 @@ export default function GlobeTest2() {
   const ignoredRequestedLiveRef = useRef(null);
   const navigatedToLiveRef = useRef(null);
   const handleClickRef = useRef(null);
-  const altitudeRef = useRef(2.8);
-  const clusterPrecisionRef = useRef(20);
   const requestedLiveId = searchParams.get('live');
   const [povSettled, setPovSettled] = useState(!requestedLiveId);
   const [globeReady, setGlobeReady] = useState(false);
@@ -265,7 +290,7 @@ export default function GlobeTest2() {
   const [activeActivities, setActiveActivities] = useState([]);
   const [activeStatuses, setActiveStatuses] = useState(['live']);
   const [expandedClusterId, setExpandedClusterId] = useState(null);
-  const [clusterPrecision, setClusterPrecision] = useState(20);
+  const [liveStreams, setLiveStreams] = useState([]);
 
   // ── Data ────────────────────────────────────────────────────────────────────
   useEffect(() => {
@@ -315,8 +340,8 @@ export default function GlobeTest2() {
     [enrichedStreams, activeStatuses],
   );
 
-  const liveStreams = useMemo(() => {
-    const filtered = allLiveStreams.filter((s) => {
+  const filteredStreams = useMemo(() => {
+    return allLiveStreams.filter((s) => {
       if (activeFamily !== 'all' && s.family !== activeFamily) return false;
       if (activeActivities.length === 0) return true;
       return activeActivities.some((activityId) => {
@@ -324,13 +349,29 @@ export default function GlobeTest2() {
         return activity?.subcategories.includes(s.subcategory);
       });
     });
-    const result = buildClusteredStreams(filtered, expandedClusterId, clusterPrecision);
-    if (expandedClusterId) {
-      const stillExists = result.some((s) => s.type === 'cluster' && s.clusterId === expandedClusterId);
-      if (!stillExists) setExpandedClusterId(null);
-    }
-    return result;
-  }, [allLiveStreams, activeFamily, activeActivities, expandedClusterId, clusterPrecision]);
+  }, [allLiveStreams, activeFamily, activeActivities]);
+
+  useEffect(() => {
+    if (!dims.w || !dims.h) return undefined;
+    let previousGroups = new Map();
+    let signature = '';
+    const refresh = () => {
+      const next = buildClusteredStreams(filteredStreams, expandedClusterId || selectedStream?.id, globeReady ? globeRef.current : null, dims, previousGroups);
+      const nextSignature = next.map((item) => item.type === 'cluster'
+        ? `c:${item.clusterId}`
+        : `l:${item.id}`).join(';');
+      if (nextSignature !== signature) {
+        signature = nextSignature;
+        setLiveStreams(next);
+      }
+      previousGroups = new Map(next.flatMap((item) => item.type === 'cluster'
+        ? item.streams.map((stream) => [stream.id, item.clusterId])
+        : []));
+    };
+    refresh();
+    const timer = window.setInterval(refresh, 320);
+    return () => window.clearInterval(timer);
+  }, [filteredStreams, expandedClusterId, selectedStream?.id, globeReady, dims.w, dims.h]);
 
   // htmlElementsData stays stable across selection changes — we hide non-selected
   // markers via CSS (.gt2-space-globe.has-selected .gt2-marker:not(.is-selected))
@@ -509,10 +550,7 @@ export default function GlobeTest2() {
     if (!target) return;
     if (activeFamily !== 'all') setActiveFamily('all');
     if (activeActivities.length) setActiveActivities([]);
-    const [lng, lat] = target.coordinates;
-    const p = clusterPrecisionRef.current;
-    const targetClusterId = `${Math.round(lat / p)}:${Math.round(lng / p)}`;
-    if (expandedClusterId !== targetClusterId) setExpandedClusterId(targetClusterId);
+    if (expandedClusterId !== requestedLiveId) setExpandedClusterId(requestedLiveId);
   }, [activeActivities.length, activeFamily, allLiveStreams, expandedClusterId, requestedLiveId]);
 
   useEffect(() => {
@@ -640,34 +678,10 @@ export default function GlobeTest2() {
     return el;
   }, []);
 
-  // ── RAF — stars + altitude-based precision ──────────────────────────────────
-  // Precision changes rebuild clusters + all CSS2DRenderer DOM markers, which
-  // stutters mid-zoom. Defer the state update until altitude has been stable
-  // (>180ms with no change) so it only fires once the animation settles.
+  // ── RAF — stars ──────────────────────────────────────────────────────────────
   useEffect(() => {
-    let pendingPrecision = clusterPrecisionRef.current;
-    let stableSince = performance.now();
-    let lastAlt = altitudeRef.current;
-
     const animate = (now) => {
       const altitude = globeRef.current?.pointOfView?.()?.altitude ?? 2.3;
-      altitudeRef.current = altitude;
-
-      if (Math.abs(altitude - lastAlt) > 0.002) {
-        lastAlt = altitude;
-        stableSince = now;
-      }
-
-      const target = getClusterPrecision(altitude);
-      if (target !== pendingPrecision) pendingPrecision = target;
-
-      if (
-        pendingPrecision !== clusterPrecisionRef.current &&
-        now - stableSince > 180
-      ) {
-        clusterPrecisionRef.current = pendingPrecision;
-        setClusterPrecision(pendingPrecision);
-      }
 
       // Skip the heavy canvas-2D starfield while a close tween is running —
       // drawing ~180 arcs every frame competes with the camera animation.

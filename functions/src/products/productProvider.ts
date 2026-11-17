@@ -1,4 +1,4 @@
-export type ImageRightsStatus = 'authorized' | 'provider-hosted' | 'manual-approved' | 'unknown';
+export type ImageRightsStatus = 'authorized' | 'provider-hosted' | 'manual-approved' | 'unknown' | 'denied' | 'expired' | 'revoked';
 
 export interface ProductImage {
   imageUrl: string;
@@ -26,7 +26,17 @@ export interface ExternalProduct {
   productUrl?: string;
   officialProductUrl?: string;
   thumbnailUrl?: string;
+  imageRightsStatus?: ImageRightsStatus;
+  imageSource?: string;
+  imageRightsSource?: string;
+  imageAllowedUsages?: string[];
+  imageRightsCheckedAt?: string;
+  imageRightsExpiresAt?: string;
+  imageProductId?: string;
+  imageHostingStatus?: string;
   imageUrls?: ProductImage[];
+  icecatId?: string;
+  enrichedBy?: string;
   sourceProductUrl?: string;
   canImport: boolean;
 }

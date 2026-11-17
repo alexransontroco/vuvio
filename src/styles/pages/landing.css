@@ -112,11 +112,123 @@
 }
 
 .vuvio-landing__subtitle {
-  margin: 0 0 26px;
+  margin: 0 0 20px;
   color: #b5c7d6;
   font-size: clamp(14px, 1.25vw, 16px);
   line-height: 1.5;
   max-width: 540px;
+}
+
+.vuvio-landing__waitlist {
+  max-width: 530px;
+  margin-bottom: 21px;
+}
+
+.vuvio-landing__waitlist-eyebrow {
+  margin: 0 0 7px;
+  color: #1ed6e5;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+}
+
+.vuvio-landing__waitlist-title {
+  margin: 0 0 5px;
+  color: #f7fbff;
+  font-size: clamp(18px, 1.8vw, 23px);
+  line-height: 1.22;
+  letter-spacing: -0.025em;
+}
+
+.vuvio-landing__waitlist-subtitle {
+  margin: 0 0 13px;
+  color: #b5c7d6;
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.vuvio-landing__waitlist-form {
+  display: flex;
+  align-items: stretch;
+  gap: 9px;
+}
+
+.vuvio-landing__waitlist-form input[type="email"] {
+  min-width: 0;
+  flex: 1;
+  padding: 12px 17px;
+  border: 1px solid rgba(181, 199, 214, 0.28);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.055);
+  color: #f7fbff;
+  font: inherit;
+  font-size: 14px;
+  transition: border-color 180ms ease, background 180ms ease;
+}
+
+.vuvio-landing__waitlist-form input[type="email"]::placeholder { color: #8aabb8; }
+.vuvio-landing__waitlist-form input[type="email"]:hover { background: rgba(255, 255, 255, 0.08); }
+.vuvio-landing__waitlist-form input[type="email"]:focus-visible,
+.vuvio-landing button:focus-visible,
+.vuvio-landing a:focus-visible {
+  outline: 2px solid #72f2f7;
+  outline-offset: 3px;
+}
+
+.vuvio-landing__waitlist-form .vuvio-landing__cta {
+  flex: none;
+  justify-content: center;
+  min-height: 46px;
+  box-shadow: none;
+}
+
+.vuvio-landing__cta:disabled {
+  opacity: 0.65;
+  cursor: wait;
+  transform: none;
+}
+
+.vuvio-landing__spinner {
+  width: 17px;
+  height: 17px;
+  border: 2px solid rgba(4, 18, 30, 0.35);
+  border-top-color: #04121e;
+  border-radius: 50%;
+  animation: vuvio-landing-spin 700ms linear infinite;
+}
+
+@keyframes vuvio-landing-spin { to { transform: rotate(360deg); } }
+
+.vuvio-landing__challenge { margin-top: 11px; max-width: 300px; }
+.vuvio-landing__form-message { min-height: 0; margin: 8px 0 0; color: #72f2f7; font-size: 13px; line-height: 1.4; }
+.vuvio-landing__form-message:empty { display: none; }
+.vuvio-landing__form-message.is-error { color: #ffb9bd; }
+.vuvio-landing__waitlist-note,
+.vuvio-landing__privacy-note { margin: 7px 0 0; color: #8aabb8; font-size: 11px; line-height: 1.45; }
+.vuvio-landing__privacy-note a { color: #b5c7d6; text-underline-offset: 3px; }
+.vuvio-landing__remove,
+.vuvio-landing__beta-link {
+  border: 0;
+  background: none;
+  color: #9fdbe1;
+  padding: 0;
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+  text-align: left;
+  transition: color 160ms ease;
+}
+.vuvio-landing__remove { margin-top: 8px; text-decoration: underline; text-underline-offset: 3px; }
+.vuvio-landing__beta-link:hover,
+.vuvio-landing__remove:hover { color: #1ed6e5; }
+.vuvio-landing__honeypot,
+.vuvio-landing__sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
 }
 
 .vuvio-landing__cta-row {
@@ -360,6 +472,12 @@
   border-top: 1px solid rgba(255, 255, 255, 0.04);
 }
 
+.vuvio-landing__unsubscribe { display: grid; place-items: center; padding: 24px; box-sizing: border-box; }
+.vuvio-landing__unsubscribe > div { max-width: 480px; }
+.vuvio-landing__unsubscribe h1 { font-size: clamp(28px, 5vw, 42px); letter-spacing: -.04em; }
+.vuvio-landing__unsubscribe p:not(.vuvio-landing__waitlist-eyebrow) { color: #b5c7d6; line-height: 1.5; }
+.vuvio-landing__unsubscribe a { display: block; margin-top: 22px; color: #1ed6e5; }
+
 /* ---------- Responsive ---------- */
 @media (max-width: 960px) {
   .vuvio-landing__sections {
@@ -398,6 +516,12 @@
   .vuvio-landing__cta-row {
     gap: 16px;
   }
+}
+
+@media (max-width: 430px) {
+  .vuvio-landing__waitlist-form { flex-direction: column; }
+  .vuvio-landing__waitlist-form input[type="email"] { min-height: 46px; box-sizing: border-box; }
+  .vuvio-landing__waitlist-form .vuvio-landing__cta { width: 100%; }
 }
 
 @media (max-width: 540px) {
