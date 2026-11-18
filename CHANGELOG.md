@@ -11,7 +11,23 @@ Historique des sessions de travail, du plus récent au plus ancien.
 - Ajout d’un déclencheur Firestore qui envoie, via Resend, un court merci en français ou en anglais après une nouvelle inscription sur la page d’accueil. L’inscription reste indépendante de l’envoi.
 - Clé API conservée dans Firebase Secret Manager, clé d’idempotence par inscription et état d’envoi conservé dans la fiche de liste d’attente.
 - Texte du formulaire et politique de confidentialité ajustés pour annoncer l’email de confirmation et l’annonce de lancement.
-- TypeScript vérifié et build frontend réussi après la correction concurrente de l’import Firebase dans `AdminRealtimeTestPage.jsx`. Aucun déploiement : la clé Resend et le domaine expéditeur restent à configurer.
+- Domaine Resend vérifié par un envoi test accepté (HTTP 200). Déclencheur déployé et actif dans Firebase, fonction `waitlist` mise à jour et site publié sur `vuvio.app` depuis la source de la version précédente ; la branche expérimentale n’a pas été publiée.
+- Relance automatique du déclencheur retirée après le blocage de sécurité du CLI Firebase. Compilation TypeScript et build frontend réussis ; réception après une vraie inscription encore à confirmer.
+
+---
+
+## 2026-11-18 — Doc interne : recherches Claude-Mem / OmniRoute
+
+Ajout de `docs/ops/AI-DEV-TOOLS-CLAUDE-MEM-OMNIROUTE.md` + entrée dans `docs/ops/README.md` :
+- Présentation Claude-Mem (mémoire persistante cross-sessions) et OmniRoute (routeur unifié 380+ LLM providers, APIs OpenAI-compatibles, fallback auto).
+- Historique complet des tentatives d'install locales : CLI `claude` npm (dyld crash macOS 10.15), Bun 0.5→1.2 (tous KO d'une manière ou d'une autre), `npm install -g omniroute` (fail better-sqlite3 → C++20 vs Clang 12), Node 22+ requis par OmniRoute.
+- État final : `claude-mem` CLI + plugin opérationnels pour les skills manuels, worker auto et OmniRoute non installables sur macOS 10.15.7.
+- Plan de bascule VPS Linux : comparatif Oracle Free Tier / OVHcloud / Hetzner / Scaleway, config matérielle recommandée (2 vCPU/4 GB), install Docker sur Ubuntu 24.04, tunnel SSH ou Tailscale depuis Mac, intégration Claude Code + Codex.
+- Tri clair testé / fonctionne / à vérifier.
+
+Aucune install / souscription effectuée — pure documentation.
+
+---
 
 ## 2026-11-17 — Phase 4 : Realtime SFU PoC — Secure Implementation (Real CF API)
 

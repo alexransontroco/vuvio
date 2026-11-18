@@ -213,7 +213,6 @@ export const sendWaitlistConfirmation = onDocumentCreated({
   document: 'launchWaitlist/{entryId}',
   region: 'europe-west1',
   secrets: [resendApiKey],
-  retry: true,
 }, async (event) => {
   const entry = event.data?.data();
   const email = normalizeEmail(entry?.email);

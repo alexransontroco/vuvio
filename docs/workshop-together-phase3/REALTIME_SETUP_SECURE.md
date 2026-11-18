@@ -6,30 +6,9 @@
 
 ## 1. Récupérer les Paramètres Cloudflare (IDS UNIQUEMENT, PAS SECRETS)
 
-### Paramètre 1: Account ID
+### Paramètre 1: CF App ID + App Secret
 
-**Localisation:** https://dash.cloudflare.com/
-1. Dans le menu gauche: **Workers & Pages**
-2. Vue d'ensemble → Copier **Account ID** (format: 12 caractères hex)
-3. **Communiquer UNIQUEMENT l'ID, jamais le secret**
-
-### Paramètre 2: CF API Token (À CRÉER SÉCURISEMENT)
-
-**Ne JAMAIS:**
-- Partager en chat
-- Mettre dans Git
-- Envoyer par email
-
-**À FAIRE:**
-1. https://dash.cloudflare.com/profile/api-tokens
-2. Créer token: "Create Token" → "Create Custom Token"
-3. Permissions: `Account` → `Realtime` (Read + Write)
-4. Restriction IP: (optionnel, pour Firebase only)
-5. TTL: 90 jours max
-6. **Copier immédiatement dans `.env.local` (voir étape 3)**
-7. **NE PAS le copier ailleurs, NE PAS le montrer**
-
-### Paramètre 3: CF App ID + App Secret
+**IMPORTANT:** Pour les opérations CF Realtime SFU, seul l'**App Secret** est nécessaire pour l'authentification. L'App ID identifie l'application.
 
 **Localisation:** https://dash.cloudflare.com/
 1. Workers & Pages → **Realtime**
@@ -47,15 +26,15 @@
 **Fichier:** `functions/.env.local` (NE PAS committer)
 
 ```bash
-# Cloudflare Realtime credentials
-CF_API_TOKEN=your_token_here_1234567890abcdef
-CF_ACCOUNT_ID=1a2b3c4d5e6f7g8h
+# Cloudflare Realtime SFU credentials (from Cloudflare Dashboard)
+# API base: https://rtc.live.cloudflare.com/v1
+# Authorization uses Bearer token with CF_APP_SECRET
+
 CF_APP_ID=550e8400-e29b-41d4-a716-446655440000
 CF_APP_SECRET=your_app_secret_keep_private
-
-# Optional: Logging level
-CF_LOG_LEVEL=debug
 ```
+
+**Note:** CF_API_TOKEN and CF_ACCOUNT_ID are NOT needed for SFU operations (only CF_APP_SECRET)
 
 **Protéger le fichier:**
 ```bash
@@ -291,7 +270,7 @@ curl -X GET https://api.cloudflare.com/client/v4/accounts/{ACCOUNT_ID}/realtime/
 ## 8. Checklist Pré-Test
 
 **Build & Config**
-- [ ] `functions/.env.local` créé avec 4 paramètres: `CF_API_TOKEN`, `CF_ACCOUNT_ID`, `CF_APP_ID`, `CF_APP_SECRET`
+- [ ] `functions/.env.local` créé avec 2 paramètres: `CF_APP_ID`, `CF_APP_SECRET`
 - [ ] `functions/.env.local` dans `.gitignore` (vérifier: `git check-ignore functions/.env.local`)
 - [ ] `firebase functions:config:set` **NOT utilisé** (deprecated)
 
@@ -305,9 +284,10 @@ curl -X GET https://api.cloudflare.com/client/v4/accounts/{ACCOUNT_ID}/realtime/
 - [ ] Test rule via Emulator: User A creates session → User B cannot read it
 
 **CF Realtime Verification**
-- [ ] CF API Token valid: GET `/accounts/{ID}/realtime/apps` returns 200 OK
-- [ ] CF App ID exists and has appSecret configured
-- [ ] `CF_APP_SECRET` stored securely in `functions/.env.local`
+- [ ] CF App ID retrieved from Cloudflare Dashboard (Realtime section)
+- [ ] CF App Secret retrieved and stored securely in `CF_APP_SECRET` env var
+- [ ] API base URL: `https://rtc.live.cloudflare.com/v1` (official CF SFU endpoint)
+- [ ] Authorization via Bearer token with CF_APP_SECRET (not CF_API_TOKEN)
 - [ ] No secrets exposed in Git history
 
 **Local Dev**

@@ -3,7 +3,7 @@
 Deployment fixes and miscellaneous operational notes.
 
 Status: Current index  
-Last reviewed: 2026-09-18  
+Last reviewed: 2026-11-18  
 Read before coding: Use when changing Firebase deploy, hosting, build, or environment behavior.
 
 ## Current Reality
@@ -23,6 +23,7 @@ Read before coding: Use when changing Firebase deploy, hosting, build, or enviro
 
 - [FIREBASE-DEPLOYMENT-FIX.md](FIREBASE-DEPLOYMENT-FIX.md) — Firebase deployment troubleshooting.
 - [modifications.md](modifications.md) — miscellaneous modification notes.
+- [AI-DEV-TOOLS-CLAUDE-MEM-OMNIROUTE.md](AI-DEV-TOOLS-CLAUDE-MEM-OMNIROUTE.md) — Claude-Mem et OmniRoute : tentatives d'install locales (bloquées par macOS 10.15), auto-hébergement VPS Linux envisagé.
 
 ## Before Done
 
