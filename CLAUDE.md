@@ -1,47 +1,70 @@
-# Vuvio — Instructions pour Claude
+# Vuvio-Lab — Instructions pour Claude
 
-## Ajouter une vidéo live mockup
+> **Tu travailles dans Vuvio-Lab**, une copie expérimentale de Vuvio (git worktree sur la branche `experimental`).
+> La version stable est à `/Users/alexandreranson/Desktop/vuvio` (branches `main` / `phase-4-realtime-poc` / …).
+> **Rien de ce qui est fait ici ne doit toucher la production** tant que ce n'est pas transféré via cherry-pick.
 
-Quand l'utilisateur dit "ajouter une vidéo mockup" ou "ajouter un live mockup", suivre ce checklist dans l'ordre :
+## Règles critiques
 
-1. **Upload vidéo** sur Firebase Storage
-   ```
-   gsutil cp "chemin/local/video.mp4" "gs://vuvio-bf328.firebasestorage.app/mock-videos/live-mockups/nom.mp4"
-   gsutil acl ch -u AllUsers:R "gs://vuvio-bf328.firebasestorage.app/mock-videos/live-mockups/nom.mp4"
-   ```
+1. **Ne jamais déployer** depuis cette worktree. Le script `scripts/guard-no-prod-deploy.js` bloque tout `firebase deploy`, `.firebaserc` pointe sur un projet fictif, et `npm run deploy` exit 1 immédiatement. Ne pas contourner ces garde-fous.
+2. **Ne jamais toucher `/Users/alexandreranson/Desktop/vuvio/**`** depuis ici. Si l'utilisateur demande un fix pour la version stable, lui rappeler qu'il faut `cd` dans l'autre worktree.
+3. **Toutes les opérations Firebase passent par les émulateurs locaux** (Auth 9099, Firestore 8080, Storage 9199, Functions 5001). Voir `src/firebase.js` : le wiring est gardé par `VITE_USE_EMULATORS=1` dans `.env.local`.
+4. **Ne jamais créer de projet Firebase payant** (`vuvio-lab-dev`, etc.) sans accord explicite. Les émulateurs couvrent 100% du dev.
+5. **Services tiers** : si une feature expérimentale utilise Cloudflare Stream, eBay API, Awin, Amazon PA API, Segment, etc., utiliser des stubs ou des sandbox accounts. Ne jamais réutiliser les clés prod.
+6. **Port Vite** : `npm run dev` utilise déjà `--port 5174`. Ne pas le changer (5173 est réservé à la Vuvio stable qui tourne en parallèle).
 
-2. **Générer un thumbnail** avec ffmpeg (à ~2s dans la vidéo)
-   ```
-   ffmpeg -ss 2 -i "chemin/local/video.mp4" -vframes 1 -q:v 2 /tmp/nom-thumb.jpg
-   ```
+## Workflow
 
-3. **Upload thumbnail** sur Firebase Storage
-   ```
-   gsutil cp /tmp/nom-thumb.jpg "gs://vuvio-bf328.firebasestorage.app/mock-videos/live-mockups/nom-thumb.jpg"
-   gsutil acl ch -u AllUsers:R "gs://vuvio-bf328.firebasestorage.app/mock-videos/live-mockups/nom-thumb.jpg"
-   ```
+### Lancer le lab
 
-4. **Ajouter les URLs** dans `src/data/mockVideoUrls.js`
-   - URL vidéo dans `MOCK_VIDEO_URLS`
-   - URL thumbnail dans `MOCK_THUMBNAILS`
-
-5. **Créer le stream** dans `src/data/mockStreams.js` avec `video: MOCK_VIDEO_URLS.xxx` et `image: MOCK_THUMBNAILS.xxx`
-
-6. **Ajouter l'ID** dans `demoVideoLiveIds` dans `src/routes/WatchPage.jsx`
-
-7. **Ajouter coordonnées** dans `src/data/mapStreams.js` pour que le zoom globe fonctionne
-
-## Déployer
-
+```bash
+cd /Users/alexandreranson/Desktop/Vuvio-Lab
+npm install                 # première fois seulement
+npm run emulators &         # terminal 1 : Firebase emulators
+npm run dev                 # terminal 2 : Vite sur http://localhost:5174
 ```
-vite build && firebase deploy --only hosting:vuvio-bf328
+
+### Sauvegarder une expérimentation
+
+```bash
+git add -A
+git commit -m "lab: <description>"
+git push                    # pousse sur origin/experimental
 ```
+
+### Transférer une feature stabilisée vers la prod
+
+Depuis **l'autre worktree** (Vuvio stable) :
+
+```bash
+cd /Users/alexandreranson/Desktop/vuvio
+git checkout main
+git fetch origin experimental
+git log origin/experimental --oneline     # repérer les SHAs à promouvoir
+git cherry-pick <sha1> [<sha2> ...]
+npm run build
+firebase deploy --only hosting:vuvio-bf328
+```
+
+> **Ne jamais merger `experimental` → `main`** directement. Cherry-pick uniquement, feature par feature.
+
+## Ce qui est OK ici
+
+- Casser des choses, prototyper, essayer des refactos profonds.
+- Modifier `src/firebase.js`, les règles Firestore locales, `firebase.json`, `.firebaserc`.
+- Changer de version de dépendance pour tester (mais noter le motif dans `CHANGELOG.md` local).
+- Supprimer des fichiers, tester des migrations, etc.
+
+## Ce qui n'est pas OK ici
+
+- Déployer sur `vuvio-bf328`.
+- Modifier la worktree stable.
+- Utiliser des clés API prod (Firebase, Cloudflare Stream, eBay, Awin, Amazon PA API).
+- Pousser sur `main`.
+- Supprimer la worktree stable (`git worktree remove /Users/alexandreranson/Desktop/vuvio`).
 
 ## Fin de session
 
-Après chaque session de travail significative (feature, bug fix, refacto) :
-
-1. Mettre à jour `CHANGELOG.md` avec ce qui a été fait — **sans attendre que l'utilisateur le demande**
-2. Mettre à jour les fichiers mémoire dans `.claude/projects/.../memory/`
-
-> Règle : Claude met à jour CHANGELOG.md de manière autonome à la fin de chaque session. Ne pas attendre d'instruction explicite.
+1. Mettre à jour le `CHANGELOG.md` de cette worktree (préfixe `LAB:`).
+2. Mettre à jour les mémoires dans `/Users/alexandreranson/.claude/projects/-Users-alexandreranson-Desktop-vuvio/memory/` **avec le préfixe `lab_*`** pour les apprentissages qui ne s'appliquent qu'ici.
+3. Si une feature est prête pour la prod, l'indiquer dans `CHANGELOG.md` et fournir le SHA à cherry-pick.

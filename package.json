@@ -1,18 +1,21 @@
 {
-  "name": "vuvio",
+  "name": "vuvio-lab",
   "private": true,
-  "version": "0.1.0",
+  "version": "0.1.0-lab",
   "type": "module",
   "scripts": {
-    "dev": "vite",
+    "dev": "vite --port 5174",
     "dev:relay": "npm --prefix relay start",
-    "dev:replay": "sh -c 'npm run dev:relay & relay_pid=$!; npm run dev -- --host 0.0.0.0 --port 5173; kill $relay_pid'",
+    "dev:replay": "sh -c 'npm run dev:relay & relay_pid=$!; npm run dev -- --host 0.0.0.0 --port 5174; kill $relay_pid'",
     "build": "vite build",
     "mobile:build": "npm run build && cap sync",
     "cap:sync": "cap sync",
     "ios": "cap open ios",
     "android": "cap open android",
-    "preview": "vite preview"
+    "preview": "vite preview --port 4174",
+    "emulators": "firebase emulators:start --only auth,firestore,storage,functions",
+    "predeploy": "node ./scripts/guard-no-prod-deploy.js",
+    "deploy": "echo 'Production deploy from Vuvio-Lab is blocked. Transfer features to main first.' && exit 1"
   },
   "dependencies": {
     "@capacitor/android": "^7.6.9",

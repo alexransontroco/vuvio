@@ -1,7 +1,25 @@
-Status: Current
+Status: Current (Vuvio-Lab fork)
 Read before coding: Required before editing core app behavior, streaming, replay, auth, deployment, or Firebase logic.
 
-# Vuvio — Agent Instructions
+# Vuvio-Lab — Agent Instructions
+
+> **This directory is Vuvio-Lab**, an experimental git worktree on branch `experimental`.
+> Stable production worktree is at `/Users/alexandreranson/Desktop/vuvio` (branch `main`).
+> Do not deploy from here. Do not touch the stable worktree. See `CLAUDE.md` for full rules.
+
+## Lab-specific guardrails (DO NOT bypass)
+
+- `scripts/guard-no-prod-deploy.js` aborts every `firebase deploy` triggered from this worktree. It is wired to `predeploy` hooks in `firebase.json` for hosting, functions, firestore, storage.
+- `.firebaserc` default project is `vuvio-lab-emulator` (fake). Do not set it to `vuvio-bf328`.
+- `src/firebase.js` connects to local emulators when `VITE_USE_EMULATORS=1` (default in `.env.local`).
+- Vite dev server runs on **port 5174** (via `npm run dev`). The stable Vuvio uses 5173 in parallel — do not collide.
+- `package.json` is named `vuvio-lab`, version `0.1.0-lab`. `npm run deploy` is wired to exit 1.
+
+## Feature transfer
+
+Features promoted to production must be cherry-picked from branch `experimental` into `main` from the stable worktree. Never merge `experimental` → `main`.
+
+---
 
 Vuvio is a mobile-first POV live streaming app. React 19 / Vite 6 / React Router v6, deployed on Firebase Hosting + Cloud Functions (Node 20).
 

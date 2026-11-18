@@ -1,5 +1,6 @@
 {
   "projects": {
-    "default": "vuvio-bf328"
-  }
+    "default": "vuvio-lab-emulator"
+  },
+  "comment": "Vuvio-Lab default is intentionally a fake project id so `firebase deploy` cannot silently target production (vuvio-bf328). Emulators accept any id in singleProjectMode."
 }

@@ -1,16 +1,20 @@
 {
   "functions": {
     "source": "functions",
-    "runtime": "nodejs22"
+    "runtime": "nodejs22",
+    "predeploy": ["node ./scripts/guard-no-prod-deploy.js"]
   },
   "firestore": {
-    "rules": "firestore.rules"
+    "rules": "firestore.rules",
+    "predeploy": ["node ./scripts/guard-no-prod-deploy.js"]
   },
   "storage": {
-    "rules": "storage.rules"
+    "rules": "storage.rules",
+    "predeploy": ["node ./scripts/guard-no-prod-deploy.js"]
   },
   "hosting": {
     "public": "dist",
+    "predeploy": ["node ./scripts/guard-no-prod-deploy.js"],
     "ignore": [
       "firebase.json",
       "**/.*",
@@ -41,5 +45,13 @@
         "destination": "/index.html"
       }
     ]
+  },
+  "emulators": {
+    "auth":      { "port": 9099 },
+    "firestore": { "port": 8080 },
+    "storage":   { "port": 9199 },
+    "functions": { "port": 5001 },
+    "ui":        { "enabled": true, "port": 4000 },
+    "singleProjectMode": true
   }
 }
