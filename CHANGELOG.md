@@ -6,6 +6,37 @@ Historique des sessions de travail, du plus récent au plus ancien.
 
 ---
 
+## 2026-11-18 — Vuvio-Lab : environnement expérimental isolé
+
+Mise en place d'une worktree parallèle pour prototyper sans risquer la prod.
+
+**Créé :**
+- Git worktree `/Users/alexandreranson/Desktop/Vuvio-Lab` sur nouvelle branche `experimental` (basée sur `main`), poussée sur `origin/experimental`.
+- `src/firebase.js` du Lab : wire SDK aux émulateurs locaux (Auth 9099, FS 8080, Storage 9199, Functions 5001) quand `VITE_USE_EMULATORS=1`.
+- `.env.local` Lab avec flags émulateurs + `VITE_FIREBASE_PROJECT_ID=vuvio-lab` fictif.
+- `scripts/guard-no-prod-deploy.js` : script qui exit 1 avec message rouge si invoqué. Branché sur `predeploy` hooks de `firebase.json` (hosting/functions/firestore/storage).
+- `.firebaserc` Lab : `default: vuvio-lab-emulator` (fictif, 3e couche défensive).
+- `package.json` Lab : `name: vuvio-lab`, `dev: vite --port 5174`, `deploy: exit 1`, script `emulators`.
+- `CLAUDE.md` et `AGENTS.md` Lab : règles anti-prod + workflow cherry-pick vers `main`.
+
+**Doc interne :**
+- `docs/ops/VUVIO-LAB-ENVIRONMENT.md` : architecture, isolation, commandes de lancement, workflow transfert feature, limitations (Cloudflare Stream/eBay/Awin pas d'émulateur), reset.
+- `docs/ops/README.md` : index mis à jour.
+
+**Testé :**
+- `git worktree add` + checkout : OK.
+- `git push -u origin experimental` : OK.
+- `node scripts/guard-no-prod-deploy.js` : exit 1 avec message rouge affichant branche courante.
+
+**À valider manuellement :**
+- `npm install` dans Vuvio-Lab (pas encore lancé — node_modules séparés par worktree).
+- `firebase emulators:start` : requiert Firebase CLI + Java 11+.
+- Navigation `http://localhost:5174` avec émulateurs actifs.
+- Déclenchement réel du predeploy guard via `firebase deploy` (le script lui-même est testé).
+- Pas de GitHub Actions dans ce repo (`.github/workflows/` n'existe pas) — aucun risque de CI auto-deploy depuis `experimental`.
+
+---
+
 ## 2026-11-18 — Phase 4 Realtime PoC — Official CF API Compliance (Critical Fix)
 
 **After user code review:** Aligned implementation with official Cloudflare Realtime SFU API documentation (https://developers.cloudflare.com/realtime/sfu/api/).

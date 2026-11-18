@@ -1,15 +1,14 @@
 /**
  * Cloudflare Realtime SFU Service
- * Official API: https://developers.cloudflare.com/realtime/sfu/api/
+ * Official Documentation:
+ * - API: https://developers.cloudflare.com/realtime/sfu/api/
+ * - Connection Patterns: https://developers.cloudflare.com/realtime/sfu/get-started/connection-patterns/
  *
- * Key Concepts:
- * - sessionId: Unique per WebRTC connection (Cloudflare SFU identifier)
- * - roomId: Common grouping for Vuvio participants (server-side logic, stored in Firestore)
- * - CF_APP_SECRET: Authenticates backend to Cloudflare
- * - Server verifies permissions on each publish/subscribe operation
- *
- * Important: App Secret does NOT auto-grant permissions between participants.
- * Server must validate access controls for each track operation.
+ * Correct API Endpoints:
+ * - Create session: POST /apps/{appId}/sessions/new
+ * - Renegotiate: PUT /apps/{appId}/sessions/{sessionId}/renegotiate
+ * - Publish/Subscribe: POST /apps/{appId}/sessions/{sessionId}/tracks/new
+ * - Close track: PUT /apps/{appId}/sessions/{sessionId}/tracks/close
  */
 
 import * as functions from 'firebase-functions';
@@ -25,7 +24,6 @@ const CF_APP_ID = process.env.CF_APP_ID || '';
 const CF_APP_SECRET = process.env.CF_APP_SECRET || '';
 
 // CF Realtime SFU API base URL (official)
-// https://developers.cloudflare.com/realtime/sfu/api/
 const CF_REALTIME_API_BASE = 'https://rtc.live.cloudflare.com/v1';
 
 class CloudflareRealtimeSFU {
@@ -42,7 +40,7 @@ class CloudflareRealtimeSFU {
 
   /**
    * Call CF Realtime SFU API with proper authentication
-   * Authorization uses CF_APP_SECRET (not CF_API_TOKEN)
+   * Authorization uses CF_APP_SECRET
    */
   private async sfuApi(method: string, path: string, body?: unknown) {
     const url = `${CF_REALTIME_API_BASE}${path}`;
@@ -57,8 +55,8 @@ class CloudflareRealtimeSFU {
     });
 
     if (!response.ok) {
-      const error = await response.text();
-      throw new Error(`CF SFU API ${method} ${path}: ${response.status} ${error}`);
+      const errorText = await response.text();
+      throw new Error(`CF SFU API ${method} ${path}: ${response.status} ${errorText}`);
     }
 
     return await response.json();
@@ -66,14 +64,15 @@ class CloudflareRealtimeSFU {
 
   /**
    * Create a new SFU session
-   * POST /apps/{appId}/sessions
-   * Returns: { sessionId, sessionSecret }
+   * POST /apps/{appId}/sessions/new (OFFICIAL ENDPOINT)
+   * Request: Empty body
+   * Response: { sessionId, sessionSecret }
    */
-  async createSession(roomId: string): Promise<{ sessionId: string; sessionSecret: string }> {
-    const result = (await this.sfuApi('POST', `/apps/${this.appId}/sessions`, {})) as any;
+  async createSession(): Promise<{ sessionId: string; sessionSecret: string }> {
+    const result = (await this.sfuApi('POST', `/apps/${this.appId}/sessions/new`, {})) as any;
 
     if (!result.sessionId) {
-      throw new Error('No sessionId in CF SFU response');
+      throw new Error('No sessionId in CF SFU create response');
     }
 
     return {
@@ -83,74 +82,99 @@ class CloudflareRealtimeSFU {
   }
 
   /**
-   * Negotiate SDP offer/answer
-   * PUT /apps/{appId}/sessions/{sessionId}/answer
-   * Client sends offer -> CF returns answer
+   * Renegotiate SDP offer/answer
+   * PUT /apps/{appId}/sessions/{sessionId}/renegotiate (OFFICIAL ENDPOINT)
+   * Request: { sessionDescription: { type, sdp } }
+   * Response: { sessionDescription: { type, sdp } }
    */
   async negotiateOffer(sessionId: string, offer: SDPDescription): Promise<SDPDescription> {
-    const result = (await this.sfuApi('PUT', `/apps/${this.appId}/sessions/${sessionId}/answer`, {
-      sdp: offer.sdp,
+    const result = (await this.sfuApi('PUT', `/apps/${this.appId}/sessions/${sessionId}/renegotiate`, {
+      sessionDescription: {
+        type: offer.type,
+        sdp: offer.sdp,
+      },
     })) as any;
 
-    if (!result.answer) {
-      throw new Error('No answer SDP in CF SFU response');
+    if (!result.sessionDescription || !result.sessionDescription.sdp) {
+      throw new Error('No sessionDescription in CF SFU renegotiate response');
     }
 
     return {
-      type: 'answer',
-      sdp: result.answer,
+      type: result.sessionDescription.type,
+      sdp: result.sessionDescription.sdp,
     };
   }
 
   /**
-   * Publish a local track (server validates permissions)
-   * POST /apps/{appId}/sessions/{sessionId}/tracks/new
+   * Publish a local track
+   * POST /apps/{appId}/sessions/{sessionId}/tracks/new (OFFICIAL ENDPOINT)
+   * Request: { location: "local", trackName, mid, codec }
+   * Response: { tracks: [{ trackId, mid, ... }] }
    */
   async publishTrack(
     sessionId: string,
     trackName: string,
-    codec: 'vp8' | 'opus'
-  ): Promise<{ trackId: string }> {
+    codec: 'vp8' | 'opus',
+    mid: string
+  ): Promise<{ trackId: string; mid: string }> {
     const result = (await this.sfuApi('POST', `/apps/${this.appId}/sessions/${sessionId}/tracks/new`, {
       location: 'local',
       trackName,
-      media: 'inbound',
+      mid,
       codec,
     })) as any;
 
-    if (!result.trackId) {
-      throw new Error('No trackId in CF SFU publish response');
+    if (!result.tracks || !result.tracks[0]) {
+      throw new Error('No tracks in CF SFU publish response');
     }
 
+    const track = result.tracks[0];
     return {
-      trackId: result.trackId,
+      trackId: track.trackId,
+      mid: track.mid,
     };
   }
 
   /**
-   * Subscribe to remote track (server validates room membership)
-   * POST /apps/{appId}/sessions/{sessionId}/tracks/new
-   * location: "remote", sessionId: remoteSessionId
+   * Subscribe to remote track
+   * POST /apps/{appId}/sessions/{sessionId}/tracks/new (OFFICIAL ENDPOINT)
+   * Request: { location: "remote", sessionId: remoteSessionId, trackName, mid }
+   * Response: { tracks: [{ trackId, mid, ... }] }
    */
   async subscribeTrack(
     sessionId: string,
     remoteSessionId: string,
-    trackName: string
-  ): Promise<{ trackId: string }> {
+    trackName: string,
+    mid: string
+  ): Promise<{ trackId: string; mid: string }> {
     const result = (await this.sfuApi('POST', `/apps/${this.appId}/sessions/${sessionId}/tracks/new`, {
       location: 'remote',
       sessionId: remoteSessionId,
       trackName,
-      media: 'outbound',
+      mid,
     })) as any;
 
-    if (!result.trackId) {
-      throw new Error('No trackId in CF SFU subscribe response');
+    if (!result.tracks || !result.tracks[0]) {
+      throw new Error('No tracks in CF SFU subscribe response');
     }
 
+    const track = result.tracks[0];
     return {
-      trackId: result.trackId,
+      trackId: track.trackId,
+      mid: track.mid,
     };
+  }
+
+  /**
+   * Close a track
+   * PUT /apps/{appId}/sessions/{sessionId}/tracks/close (OFFICIAL ENDPOINT)
+   * Request: { trackId }
+   * Response: 200 OK
+   */
+  async closeTrack(sessionId: string, trackId: string): Promise<void> {
+    await this.sfuApi('PUT', `/apps/${this.appId}/sessions/${sessionId}/tracks/close`, {
+      trackId,
+    });
   }
 
   /**
@@ -166,12 +190,6 @@ class CloudflareRealtimeSFU {
  * Firebase Function: Create SFU session
  * Called by authenticated client
  * Returns: { success, sessionId, answer (SDP) }
- *
- * Responsibility:
- * 1. Verify client authentication (Firebase Auth)
- * 2. Create CF SFU session
- * 3. Store session metadata in Firestore (rtcSessions collection)
- * 4. Return sessionId + SDP answer to client
  */
 export const createRealtimeSession = functions.https.onCall(async (data: any, context: any) => {
   if (!context.auth) {
@@ -180,8 +198,8 @@ export const createRealtimeSession = functions.https.onCall(async (data: any, co
 
   const { offer, roomId } = data;
 
-  if (!offer || !offer.sdp) {
-    throw new functions.https.HttpsError('invalid-argument', 'Missing offer SDP');
+  if (!offer || !offer.sdp || !offer.type) {
+    throw new functions.https.HttpsError('invalid-argument', 'Missing offer SDP (must have type + sdp)');
   }
 
   if (!roomId) {
@@ -192,20 +210,21 @@ export const createRealtimeSession = functions.https.onCall(async (data: any, co
     const sfu = new CloudflareRealtimeSFU(CF_APP_ID, CF_APP_SECRET);
 
     // 1. Create CF SFU session
-    const { sessionId, sessionSecret } = await sfu.createSession(roomId);
+    const { sessionId, sessionSecret } = await sfu.createSession();
 
-    // 2. Negotiate SDP offer/answer
+    // 2. Negotiate SDP offer/answer (official format: sessionDescription)
     const answer = await sfu.negotiateOffer(sessionId, offer);
 
     // 3. Store session metadata in Firestore for access control
-    // This is used to verify permissions on subsequent operations
     await admin.firestore().collection('rtcSessions').doc(sessionId).set({
       userId: context.auth.uid,
       roomId: roomId,
       sessionId: sessionId,
+      sessionSecret: sessionSecret,
       createdAt: admin.firestore.Timestamp.now(),
       status: 'active',
-      participants: [context.auth.uid], // Track who's in this room
+      participants: [context.auth.uid],
+      tracks: [],
     });
 
     return {
@@ -224,23 +243,18 @@ export const createRealtimeSession = functions.https.onCall(async (data: any, co
 
 /**
  * Firebase Function: Publish track
- * Called by authenticated client
- * Returns: { success, trackId }
- *
- * Responsibility:
- * 1. Verify client authentication + session ownership
- * 2. Publish track to CF SFU
- * 3. Update Firestore audit log
+ * Called by authenticated client to publish local media
+ * Returns: { success, trackId, mid }
  */
 export const publishRealtimeTrack = functions.https.onCall(async (data: any, context: any) => {
   if (!context.auth) {
     throw new functions.https.HttpsError('unauthenticated', 'User must be authenticated');
   }
 
-  const { sessionId, trackName, codec } = data;
+  const { sessionId, trackName, codec, mid } = data;
 
-  if (!sessionId || !trackName || !['vp8', 'opus'].includes(codec)) {
-    throw new functions.https.HttpsError('invalid-argument', 'Missing or invalid parameters');
+  if (!sessionId || !trackName || !['vp8', 'opus'].includes(codec) || !mid) {
+    throw new functions.https.HttpsError('invalid-argument', 'Missing parameters: sessionId, trackName, codec, mid');
   }
 
   try {
@@ -251,11 +265,24 @@ export const publishRealtimeTrack = functions.https.onCall(async (data: any, con
     }
 
     const sfu = new CloudflareRealtimeSFU(CF_APP_ID, CF_APP_SECRET);
-    const track = await sfu.publishTrack(sessionId, trackName, codec);
+    const track = await sfu.publishTrack(sessionId, trackName, codec as any, mid);
+
+    // Update Firestore audit log
+    await admin.firestore().collection('rtcSessions').doc(sessionId).update({
+      tracks: admin.firestore.FieldValue.arrayUnion({
+        trackId: track.trackId,
+        mid: track.mid,
+        trackName,
+        codec,
+        location: 'local',
+        publishedAt: admin.firestore.Timestamp.now(),
+      }),
+    });
 
     return {
       success: true,
       trackId: track.trackId,
+      mid: track.mid,
     };
   } catch (error) {
     console.error('[publishRealtimeTrack]', error);
@@ -268,34 +295,30 @@ export const publishRealtimeTrack = functions.https.onCall(async (data: any, con
 
 /**
  * Firebase Function: Subscribe to track
- * Called by authenticated client
- * Returns: { success, trackId }
+ * Called by authenticated client to subscribe to remote media
+ * Returns: { success, trackId, mid }
  *
- * Responsibility:
- * 1. Verify client authentication
- * 2. Verify both sessions are in same roomId (Vuvio room access control)
- * 3. Subscribe to remote track
- * 4. Update Firestore audit log
+ * Access control: Both sessions must be in same roomId (Vuvio room isolation)
  */
 export const subscribeRealtimeTrack = functions.https.onCall(async (data: any, context: any) => {
   if (!context.auth) {
     throw new functions.https.HttpsError('unauthenticated', 'User must be authenticated');
   }
 
-  const { sessionId, remoteSessionId, trackName } = data;
+  const { sessionId, remoteSessionId, trackName, mid } = data;
 
-  if (!sessionId || !remoteSessionId || !trackName) {
-    throw new functions.https.HttpsError('invalid-argument', 'Missing parameters');
+  if (!sessionId || !remoteSessionId || !trackName || !mid) {
+    throw new functions.https.HttpsError('invalid-argument', 'Missing parameters: sessionId, remoteSessionId, trackName, mid');
   }
 
   try {
-    // Server-side access control: verify local session ownership
+    // Verify local session ownership
     const localSessionRef = await admin.firestore().collection('rtcSessions').doc(sessionId).get();
     if (!localSessionRef.exists || localSessionRef.data()?.userId !== context.auth.uid) {
       throw new functions.https.HttpsError('permission-denied', 'Session not found or not authorized');
     }
 
-    // Verify both sessions are in same roomId (Vuvio room)
+    // Verify both sessions in same roomId (room isolation)
     const remoteSessionRef = await admin.firestore().collection('rtcSessions').doc(remoteSessionId).get();
     if (!remoteSessionRef.exists) {
       throw new functions.https.HttpsError('invalid-argument', 'Remote session not found');
@@ -308,17 +331,73 @@ export const subscribeRealtimeTrack = functions.https.onCall(async (data: any, c
     }
 
     const sfu = new CloudflareRealtimeSFU(CF_APP_ID, CF_APP_SECRET);
-    const track = await sfu.subscribeTrack(sessionId, remoteSessionId, trackName);
+    const track = await sfu.subscribeTrack(sessionId, remoteSessionId, trackName, mid);
+
+    // Update Firestore audit log
+    await admin.firestore().collection('rtcSessions').doc(sessionId).update({
+      tracks: admin.firestore.FieldValue.arrayUnion({
+        trackId: track.trackId,
+        mid: track.mid,
+        trackName,
+        location: 'remote',
+        remoteSessionId,
+        subscribedAt: admin.firestore.Timestamp.now(),
+      }),
+    });
 
     return {
       success: true,
       trackId: track.trackId,
+      mid: track.mid,
     };
   } catch (error) {
     console.error('[subscribeRealtimeTrack]', error);
     throw new functions.https.HttpsError(
       'internal',
       `Subscribe failed: ${error instanceof Error ? error.message : 'Unknown error'}`
+    );
+  }
+});
+
+/**
+ * Firebase Function: Close track
+ * Called by authenticated client to close specific track
+ * Returns: { success }
+ */
+export const closeRealtimeTrack = functions.https.onCall(async (data: any, context: any) => {
+  if (!context.auth) {
+    throw new functions.https.HttpsError('unauthenticated', 'User must be authenticated');
+  }
+
+  const { sessionId, trackId } = data;
+
+  if (!sessionId || !trackId) {
+    throw new functions.https.HttpsError('invalid-argument', 'Missing sessionId or trackId');
+  }
+
+  try {
+    // Verify session ownership
+    const sessionRef = await admin.firestore().collection('rtcSessions').doc(sessionId).get();
+    if (!sessionRef.exists || sessionRef.data()?.userId !== context.auth.uid) {
+      throw new functions.https.HttpsError('permission-denied', 'Session not found or not authorized');
+    }
+
+    const sfu = new CloudflareRealtimeSFU(CF_APP_ID, CF_APP_SECRET);
+    await sfu.closeTrack(sessionId, trackId);
+
+    // Update Firestore (remove track from audit log)
+    const tracks = sessionRef.data()?.tracks || [];
+    const updatedTracks = tracks.filter((t: any) => t.trackId !== trackId);
+    await admin.firestore().collection('rtcSessions').doc(sessionId).update({
+      tracks: updatedTracks,
+    });
+
+    return { success: true };
+  } catch (error) {
+    console.error('[closeRealtimeTrack]', error);
+    throw new functions.https.HttpsError(
+      'internal',
+      `Close track failed: ${error instanceof Error ? error.message : 'Unknown error'}`
     );
   }
 });

@@ -245,9 +245,9 @@ function liveBroadcastHaloOpacity(clock, selectedId = '') {
   ];
 }
 
-function drawAtmosphericHalo(canvas, ctx, rotation, time, zoom = 1.4, globeCenter = null, options = {}) {
+function drawAtmosphericHalo(canvas, ctx, rotation, time, zoom = 1.4, globeCenter = null) {
   if (!ctx) return;
-  const dpr = options.pixelRatio ?? window.devicePixelRatio ?? 1;
+  const dpr = window.devicePixelRatio || 1;
   const w = canvas.width / dpr;
   const h = canvas.height / dpr;
   const cx = globeCenter?.x ?? w / 2;
@@ -265,9 +265,7 @@ function drawAtmosphericHalo(canvas, ctx, rotation, time, zoom = 1.4, globeCente
 
   // Stars with multi-frequency twinkle — driven by RAF time (always animates)
   const t = time * 0.001; // seconds
-  const starCount = drawStars
-    ? Math.max(options.minStarCount ?? 80, Math.floor((w * h) / (options.areaPerStar ?? 18000)))
-    : 0;
+  const starCount = drawStars ? Math.max(80, Math.floor((w * h) / 18000)) : 0;
   for (let i = 0; i < starCount; i += 1) {
     const seed = i * 97.37;
     const x = (Math.sin(seed * 12.9898) * 43758.5453) % 1;
@@ -282,8 +280,8 @@ function drawAtmosphericHalo(canvas, ctx, rotation, time, zoom = 1.4, globeCente
       + Math.sin(t * f1 + seed * 1.3) * 0.22
       + Math.sin(t * f2 + seed * 3.7) * 0.14
       + Math.sin(t * f3 + seed * 7.1) * 0.07;
-    const size = 0.7 + Math.abs(Math.sin(seed * 0.17)) * (options.maxStarSize ?? 1.6);
-    const opacity = Math.max(0.12, Math.min(1.0, twinkle)) * (options.starOpacity ?? 1);
+    const size = 0.7 + Math.abs(Math.sin(seed * 0.17)) * 1.6;
+    const opacity = Math.max(0.12, Math.min(1.0, twinkle));
 
     const r = 215 + Math.floor(Math.abs(Math.sin(seed * 3.1)) * 40);
     const g = 230 + Math.floor(Math.abs(Math.sin(seed * 2.3)) * 25);
@@ -294,7 +292,7 @@ function drawAtmosphericHalo(canvas, ctx, rotation, time, zoom = 1.4, globeCente
     ctx.fill();
 
     // Bright stars get a cross-shaped spike
-    if (!options.subtle && size > 1.8 && opacity > 0.78) {
+    if (size > 1.8 && opacity > 0.78) {
       ctx.strokeStyle = `rgba(${r}, ${g}, ${b}, ${opacity * 0.40})`;
       ctx.lineWidth = 0.6;
       ctx.beginPath();
@@ -308,10 +306,10 @@ function drawAtmosphericHalo(canvas, ctx, rotation, time, zoom = 1.4, globeCente
 
   // Shooting stars from screen edges
   if (drawStars) {
-    const shootingSlots = options.shootingSlots ?? (zoom < 2.4 ? 4 : 2);
+    const shootingSlots = zoom < 2.4 ? 4 : 2;
     for (let i = 0; i < shootingSlots; i++) {
       const ss = i * 214.7 + 31.9;
-      const period = (options.shootingPeriodBase ?? 8) + Math.abs(Math.sin(ss * 1.3)) * (options.shootingPeriodRange ?? 14);
+      const period = 8 + Math.abs(Math.sin(ss * 1.3)) * 14;
       const phase = (t + ss * 3.1) % period;
       const dur = 1.2 + Math.abs(Math.sin(ss * 4.1)) * 1.0;
 
@@ -374,7 +372,7 @@ function drawAtmosphericHalo(canvas, ctx, rotation, time, zoom = 1.4, globeCente
     const center = map.getCenter();
     const lat1 = center.lat * Math.PI / 180;
     const lng1 = center.lng * Math.PI / 180;
-    const horizonRadius = (options.horizonRadius ?? 82) * Math.PI / 180;
+    const horizonRadius = 82 * Math.PI / 180;
     for (let i = 0; i <= 180; i += 1) {
       const bearing = i * 2 * Math.PI / 180;
       const lat2 = Math.asin(Math.sin(lat1) * Math.cos(horizonRadius) + Math.cos(lat1) * Math.sin(horizonRadius) * Math.cos(bearing));
@@ -452,8 +450,8 @@ function buildCollection(streams) {
 function styleNativeGlobe(map) {
   const colors = {
     space: '#020310',
-    oceanDeep: '#041329',
-    oceanShallow: '#103456',
+    oceanDeep: '#072343',
+    oceanShallow: '#103B61',
     land: '#1B3B56',
     natural: '#234B60',
     mountain: '#36566D',
@@ -469,12 +467,12 @@ function styleNativeGlobe(map) {
     try {
       map.setSky?.({
         'sky-color': colors.space,
-        'horizon-color': '#123253',
-        'fog-color': '#17476E',
-        'sky-horizon-blend': 0.16,
-        'horizon-fog-blend': 0.2,
-        'fog-ground-blend': 0.008,
-        'atmosphere-blend': ['interpolate', ['linear'], ['zoom'], 0, 0.32, 4, 0.2, 9, 0.045],
+        'horizon-color': colors.space,
+        'fog-color': colors.space,
+        'sky-horizon-blend': 0,
+        'horizon-fog-blend': 0,
+        'fog-ground-blend': 0,
+        'atmosphere-blend': 0,
       });
     } catch { /* sky options vary by MapLibre version */ }
 
@@ -500,30 +498,23 @@ function styleNativeGlobe(map) {
         if (id === 'landcover') {
           map.setPaintProperty(layer.id, 'fill-color', [
             'match', ['get', 'kind'],
-            ['wood', 'forest', 'park', 'nature_reserve', 'national_park'], '#173C50',
-            ['grass', 'grassland', 'meadow', 'farmland', 'garden', 'orchard', 'golf_course'], '#234B60',
-            ['scrub', 'heath', 'recreation_ground', 'village_green'], '#1D4256',
-            ['barren', 'desert', 'rock', 'scree'], '#344F63',
-            ['glacier', 'snow'], '#52677A',
+            ['wood', 'forest', 'park', 'nature_reserve', 'national_park'], colors.natural,
+            ['grass', 'grassland', 'meadow', 'farmland', 'garden', 'orchard', 'golf_course'], '#285064',
+            ['scrub', 'heath', 'recreation_ground', 'village_green'], '#2B4D5D',
+            ['barren', 'desert', 'rock', 'scree', 'glacier', 'snow'], colors.mountain,
             colors.natural,
           ]);
           map.setPaintProperty(layer.id, 'fill-opacity', 1);
           return;
         }
         if (id === 'park_national_park' || id === 'park_nature_reserve' || id === 'landuse') {
-          map.setPaintProperty(layer.id, 'fill-color', [
-            'match', ['get', 'kind'],
-            ['residential', 'commercial', 'industrial', 'retail'], '#1B344A',
-            ['quarry', 'mine', 'landfill'], '#30485D',
-            ['park', 'nature_reserve', 'national_park', 'recreation_ground'], '#1B4558',
-            colors.natural,
-          ]);
+          map.setPaintProperty(layer.id, 'fill-color', colors.natural);
           map.setPaintProperty(layer.id, 'fill-opacity', 0.92);
           return;
         }
         if (id === 'landuse_residential') {
-          map.setPaintProperty(layer.id, 'fill-color', '#1B344A');
-          map.setPaintProperty(layer.id, 'fill-opacity', 0.76);
+          map.setPaintProperty(layer.id, 'fill-color', '#24445E');
+          map.setPaintProperty(layer.id, 'fill-opacity', 0.72);
           return;
         }
         if (id === 'building-top') {
@@ -583,43 +574,8 @@ function styleNativeGlobe(map) {
       }, firstFill?.id);
     }
 
-    if (!map.getSource('vuvio-test6-terrain')) {
-      map.addSource('vuvio-test6-terrain', {
-        type: 'raster-dem',
-        tiles: ['https://tiles.mapterhorn.com/{z}/{x}/{y}.webp'],
-        tileSize: 512,
-        minzoom: 0,
-        maxzoom: 12,
-        encoding: 'terrarium',
-        attribution: '<a href="https://mapterhorn.com/attribution">© Mapterhorn</a>',
-      });
-    }
-
-    try {
-      if (!map.getTerrain?.()) {
-        map.setTerrain({ source: 'vuvio-test6-terrain', exaggeration: 0.3 });
-      }
-    } catch { /* terrain is optional if the DEM source is unavailable */ }
-
-    if (!map.getLayer('vuvio-test6-hillshade')) {
-      const firstOverlay = map.getStyle().layers?.find((layer) => layer.type === 'line' || layer.type === 'symbol');
-      map.addLayer({
-        id: 'vuvio-test6-hillshade',
-        type: 'hillshade',
-        source: 'vuvio-test6-terrain',
-        paint: {
-          'hillshade-illumination-anchor': 'map',
-          'hillshade-illumination-direction': 315,
-          'hillshade-exaggeration': 0.4,
-          'hillshade-shadow-color': '#061321',
-          'hillshade-highlight-color': '#657B8C',
-          'hillshade-accent-color': '#1A3146',
-        },
-      }, firstOverlay?.id);
-    }
-
     if (!map.getContainer().querySelector('.maplibregl-ctrl-attrib')) {
-      map.addControl(new maplibregl.AttributionControl({ compact: false }), 'bottom-right');
+      map.addControl(new maplibregl.AttributionControl({ compact: true }), 'bottom-right');
     }
   } catch { /* style capabilities vary by MapLibre version */ }
 }
@@ -1112,9 +1068,9 @@ export default function CurrentGlobe({ streams, onboarding = false, onOnboarding
           filter: ['!', ['has', 'point_count']],
           paint: {
             'circle-color': markerColorExpression(),
-            'circle-radius': styleLiveHalo(liveColorGlowRadius(0), 0.72),
+            'circle-radius': styleLiveHalo(liveColorGlowRadius(0), 0.78),
             'circle-blur': variant === 'maplibre-custom' ? 4.2 : 5.5,
-            'circle-opacity': styleLiveHalo(liveColorGlowOpacity(0), 0.6),
+            'circle-opacity': styleLiveHalo(liveColorGlowOpacity(0), 0.68),
           },
         });
 
@@ -1127,7 +1083,7 @@ export default function CurrentGlobe({ streams, onboarding = false, onOnboarding
             'circle-color': ['case', ['==', ['get', 'markerType'], MARKER_TYPES.sponsored], '#FFD489', ['==', ['get', 'markerType'], MARKER_TYPES.vuvio], '#DAB2FF', '#F8FFFF'],
             'circle-radius': liveBroadcastHaloRadius(0, selectedId ?? ''),
             'circle-blur': variant === 'maplibre-custom' ? 1.9 : 2.5,
-            'circle-opacity': styleLiveHalo(liveBroadcastHaloOpacity(0, selectedId ?? ''), 0.6),
+            'circle-opacity': styleLiveHalo(liveBroadcastHaloOpacity(0, selectedId ?? ''), 0.72),
           },
         });
 
@@ -1138,9 +1094,9 @@ export default function CurrentGlobe({ streams, onboarding = false, onOnboarding
           filter: ['!', ['has', 'point_count']],
           paint: {
             'circle-color': markerColorExpression(),
-            'circle-radius': styleLiveHalo(liveCrowdHaloRadius(0), 0.72),
+            'circle-radius': styleLiveHalo(liveCrowdHaloRadius(0), 0.78),
             'circle-blur': variant === 'maplibre-custom' ? 1.7 : 2.2,
-            'circle-opacity': styleLiveHalo(liveCrowdHaloOpacity(0), 0.6),
+            'circle-opacity': styleLiveHalo(liveCrowdHaloOpacity(0), 0.72),
           },
         });
 
@@ -1628,53 +1584,6 @@ export default function CurrentGlobe({ streams, onboarding = false, onOnboarding
       let rotationTimer = 0;
       let moveEndHandler = null;
       let cancelled = false;
-      const starCanvas = document.createElement('canvas');
-      starCanvas.className = 'globe-atmospheric-halo';
-      starCanvas.style.cssText = 'position:absolute;inset:0;pointer-events:none;z-index:1;opacity:0.72;';
-      containerRef.current?.appendChild(starCanvas);
-      haloCanvasRef.current = starCanvas;
-      const starPixelRatio = Math.min(window.devicePixelRatio || 1, 1);
-      const resizeStarCanvas = () => {
-        const rect = containerRef.current?.getBoundingClientRect();
-        if (!rect || rect.width <= 0 || rect.height <= 0) return;
-        starCanvas.width = Math.round(rect.width * starPixelRatio);
-        starCanvas.height = Math.round(rect.height * starPixelRatio);
-        starCanvas.style.width = `${rect.width}px`;
-        starCanvas.style.height = `${rect.height}px`;
-        starCanvas.getContext('2d')?.setTransform(starPixelRatio, 0, 0, starPixelRatio, 0, 0);
-      };
-      const renderStars = () => {
-        if (document.visibilityState === 'hidden') return;
-        const center = map.getCenter();
-        drawAtmosphericHalo(
-          starCanvas,
-          starCanvas.getContext('2d'),
-          0,
-          performance.now(),
-          map.getZoom(),
-          { ...map.project([center.lng, center.lat]), map },
-          {
-            areaPerStar: 30000,
-            horizonRadius: 90,
-            maxStarSize: 1.15,
-            minStarCount: 42,
-            pixelRatio: starPixelRatio,
-            shootingPeriodBase: 36,
-            shootingPeriodRange: 42,
-            shootingSlots: 1,
-            starOpacity: 0.78,
-            subtle: true,
-          },
-        );
-      };
-      const starResizeObserver = new ResizeObserver(() => {
-        resizeStarCanvas();
-        renderStars();
-      });
-      if (containerRef.current) starResizeObserver.observe(containerRef.current);
-      resizeStarCanvas();
-      renderStars();
-      const starTimer = window.setInterval(renderStars, 180);
       const rotate = () => {
         if (document.visibilityState === 'hidden'
           || Date.now() <= pauseUntilRef.current
@@ -1706,10 +1615,6 @@ export default function CurrentGlobe({ streams, onboarding = false, onOnboarding
       return () => {
         cancelled = true;
         window.clearTimeout(rotationTimer);
-        window.clearInterval(starTimer);
-        starResizeObserver.disconnect();
-        starCanvas.remove();
-        if (haloCanvasRef.current === starCanvas) haloCanvasRef.current = null;
         if (moveEndHandler) map.off('moveend', moveEndHandler);
       };
     }

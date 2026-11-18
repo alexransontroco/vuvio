@@ -227,7 +227,6 @@ export const sendWaitlistConfirmation = onDocumentCreated({
     return;
   }
 
-  const french = entry.locale !== 'en';
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), 8000);
   try {
@@ -241,10 +240,9 @@ export const sendWaitlistConfirmation = onDocumentCreated({
       body: JSON.stringify({
         from: 'Vuvio <hello@vuvio.app>',
         to: [email],
-        subject: french ? 'Merci pour votre inscription à Vuvio' : 'Thanks for joining Vuvio',
-        text: french
-          ? 'Bonjour,\n\nMerci de vous être inscrit à la liste d’attente de Vuvio ! Nous vous tiendrons informé de notre lancement.\n\nÀ bientôt,\nL’équipe Vuvio\n\nPour retirer votre inscription, répondez à cet email ou écrivez à hello@vuvio.app.'
-          : 'Hello,\n\nThanks for joining the Vuvio waitlist! We’ll let you know when we launch.\n\nSee you soon,\nThe Vuvio team\n\nTo remove your signup, reply to this email or write to hello@vuvio.app.',
+        subject: 'Thanks for joining Vuvio',
+        text: 'Hello,\n\nThanks for joining the Vuvio waitlist! We’ll let you know when we launch.\n\nSee you soon,\nThe Vuvio team\n\nTo remove your signup, reply to this email or write to hello@vuvio.app.',
+        html: '<div style="font-family:Arial,sans-serif;color:#14242e;line-height:1.6"><p>Hello,</p><p>Thanks for joining the Vuvio waitlist! We’ll let you know when we launch.</p><p>See you soon,</p><p style="margin:20px 0 8px"><img src="https://vuvio.app/assets/logo/vuvio-logo.png" width="40" height="40" alt="" style="display:inline-block;vertical-align:middle;border:0"><strong style="margin-left:10px;vertical-align:middle;font-size:18px;color:#14242e">Vuvio</strong></p><p style="font-size:12px;color:#61737d">To remove your signup, reply to this email or write to <a href="mailto:hello@vuvio.app">hello@vuvio.app</a>.</p></div>',
         reply_to: 'hello@vuvio.app',
       }),
       signal: controller.signal,

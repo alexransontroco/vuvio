@@ -1286,6 +1286,7 @@ export default function AdminDocsPage() {
           <div className="admin-docs-actions">
             <a href="/admin/docs" className="is-active">{copy.openDocs}</a>
             <a href="/admin/marketing">Marketing</a>
+            <a href="/admin/waitlist">Waitlist</a>
             <a href="/admin/investor-crm">Investor CRM</a>
             <a href="/admin/analytics">{copy.openAnalytics}</a>
           </div>
