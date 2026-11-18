@@ -450,17 +450,17 @@ function buildCollection(streams) {
 function styleNativeGlobe(map) {
   const colors = {
     space: '#020310',
-    oceanDeep: '#072343',
-    oceanShallow: '#103B61',
-    land: '#1B3B56',
-    natural: '#234B60',
-    mountain: '#36566D',
-    boundary: '#42637C',
-    atmosphere: '#2365A0',
-    road: '#42637C',
-    minorRoad: '#29465F',
-    label: '#D2DEE7',
-    labelDim: '#A4B7C6',
+    oceanDeep: '#061A33',
+    oceanShallow: '#0D3C5D',
+    land: '#102D49',
+    natural: '#174456',
+    mountain: '#3A6076',
+    boundary: '#568AA8',
+    atmosphere: '#16497A',
+    road: '#3C6888',
+    minorRoad: '#24465F',
+    label: '#C9DDED',
+    labelDim: '#91ADC2',
   };
 
   try {
@@ -498,23 +498,31 @@ function styleNativeGlobe(map) {
         if (id === 'landcover') {
           map.setPaintProperty(layer.id, 'fill-color', [
             'match', ['get', 'kind'],
-            ['wood', 'forest', 'park', 'nature_reserve', 'national_park'], colors.natural,
-            ['grass', 'grassland', 'meadow', 'farmland', 'garden', 'orchard', 'golf_course'], '#285064',
-            ['scrub', 'heath', 'recreation_ground', 'village_green'], '#2B4D5D',
-            ['barren', 'desert', 'rock', 'scree', 'glacier', 'snow'], colors.mountain,
+            ['wood', 'forest', 'park', 'nature_reserve', 'national_park'], '#123B4D',
+            ['grass', 'grassland', 'meadow', 'farmland', 'garden', 'orchard', 'golf_course'], '#1B4A5C',
+            ['scrub', 'heath', 'recreation_ground', 'village_green'], '#174153',
+            ['barren', 'desert', 'rock', 'scree'], '#31566D',
+            ['glacier', 'snow'], '#426985',
             colors.natural,
           ]);
           map.setPaintProperty(layer.id, 'fill-opacity', 1);
           return;
         }
         if (id === 'park_national_park' || id === 'park_nature_reserve' || id === 'landuse') {
-          map.setPaintProperty(layer.id, 'fill-color', colors.natural);
-          map.setPaintProperty(layer.id, 'fill-opacity', 0.92);
+          map.setPaintProperty(layer.id, 'fill-color', [
+            'match', ['get', 'kind'],
+            ['residential', 'retail'], '#143550',
+            ['commercial', 'industrial', 'institutional', 'school', 'university', 'airport'], '#1A405A',
+            ['quarry', 'mine', 'landfill'], '#315166',
+            ['park', 'nature_reserve', 'national_park', 'recreation_ground'], '#123B4D',
+            colors.natural,
+          ]);
+          map.setPaintProperty(layer.id, 'fill-opacity', 0.94);
           return;
         }
         if (id === 'landuse_residential') {
-          map.setPaintProperty(layer.id, 'fill-color', '#24445E');
-          map.setPaintProperty(layer.id, 'fill-opacity', 0.72);
+          map.setPaintProperty(layer.id, 'fill-color', '#143550');
+          map.setPaintProperty(layer.id, 'fill-opacity', 0.82);
           return;
         }
         if (id === 'building-top') {
@@ -525,7 +533,8 @@ function styleNativeGlobe(map) {
         }
         if (type === 'line' && (id.includes('admin') || id.includes('boundary') || id.includes('border') || sourceLayer.includes('boundary'))) {
           map.setPaintProperty(layer.id, 'line-color', colors.boundary);
-          map.setPaintProperty(layer.id, 'line-opacity', 0.36);
+          map.setPaintProperty(layer.id, 'line-opacity', 0.52);
+          map.setPaintProperty(layer.id, 'line-width', ['interpolate', ['linear'], ['zoom'], 0, 0.35, 4, 0.5, 9, 0.72, 13, 0.9]);
           return;
         }
         if (type === 'line' && (id.includes('water') || id.includes('river') || id.includes('stream') || sourceLayer.includes('water'))) {
@@ -575,7 +584,7 @@ function styleNativeGlobe(map) {
     }
 
     if (!map.getContainer().querySelector('.maplibregl-ctrl-attrib')) {
-      map.addControl(new maplibregl.AttributionControl({ compact: true }), 'bottom-right');
+      map.addControl(new maplibregl.AttributionControl({ compact: false }), 'bottom-right');
     }
   } catch { /* style capabilities vary by MapLibre version */ }
 }
@@ -909,6 +918,15 @@ export default function CurrentGlobe({ streams, onboarding = false, onOnboarding
     });
 
     mapRef.current = map;
+    const globeSurface = containerRef.current.closest('.test-old-globe');
+    const hideStarfieldOnZoom = () => globeSurface?.classList.add('is-zoomed');
+    const syncStarfieldAfterZoom = () => {
+      globeSurface?.classList.toggle('is-zoomed', map.getZoom() > INITIAL_ZOOM + 0.05);
+    };
+    if (variant === 'maplibre-custom') {
+      map.on('zoomstart', hideStarfieldOnZoom);
+      map.on('zoomend', syncStarfieldAfterZoom);
+    }
 
     const resizeMap = () => {
       const rect = containerRef.current?.getBoundingClientRect();
@@ -1288,6 +1306,8 @@ export default function CurrentGlobe({ streams, onboarding = false, onOnboarding
       map.off('zoomstart', pauseInteraction);
       map.off('dragend', resumeInteraction);
       map.off('zoomend', resumeInteraction);
+      map.off('zoomstart', hideStarfieldOnZoom);
+      map.off('zoomend', syncStarfieldAfterZoom);
       window.removeEventListener('resize', resizeHaloCanvas);
       map.off('render', revealOnRender);
       map.off('style.load', revealNativeGlobe);
