@@ -51,7 +51,7 @@ Content-Type: application/json
 
 ## 1. Create Session
 
-**Endpoint:** `POST /apps/{appId}/sessions`
+**Endpoint:** `POST /apps/{appId}/sessions/new` (OFFICIAL)
 
 **Request:**
 ```json
@@ -88,19 +88,25 @@ return { sessionId, answer };
 
 ## 2. Negotiate SDP
 
-**Endpoint:** `PUT /apps/{appId}/sessions/{sessionId}/answer`
+**Endpoint:** `PUT /apps/{appId}/sessions/{sessionId}/renegotiate` (OFFICIAL)
 
 **Request (Client Offer):**
 ```json
 {
-  "sdp": "v=0\r\no=- ... \r\n"
+  "sessionDescription": {
+    "type": "offer",
+    "sdp": "v=0\r\no=- ... \r\n"
+  }
 }
 ```
 
 **Response (Server Answer):**
 ```json
 {
-  "answer": "v=0\r\no=- ... \r\n"
+  "sessionDescription": {
+    "type": "answer",
+    "sdp": "v=0\r\no=- ... \r\n"
+  }
 }
 ```
 
@@ -194,7 +200,22 @@ await sfu.subscribeTrack(sessionId, remoteSessionId, 'video');
 
 ---
 
-## 5. Close Session
+## 5. Close Track
+
+**Endpoint:** `PUT /apps/{appId}/sessions/{sessionId}/tracks/close` (OFFICIAL)
+
+**Request:**
+```json
+{
+  "trackId": "track-id-456"
+}
+```
+
+**Response:** 200 OK
+
+---
+
+## 6. Close Session
 
 **Endpoint:** `DELETE /apps/{appId}/sessions/{sessionId}`
 
