@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
 import BottomNav from './BottomNav.jsx';
+import LabBadge from './LabBadge.jsx';
 import NotificationToast from './NotificationToast.jsx';
 import { useAuth } from '../context/AuthContext.jsx';
 import { useFollowedCreatorNotifications } from '../hooks/useFollowedCreatorNotifications.js';
@@ -34,6 +35,7 @@ export default function AppShell() {
         ) : null}
       </section>
       <NotificationToast notifications={notifications} onDismiss={dismissNotification} />
+      <LabBadge />
     </main>
   );
 }

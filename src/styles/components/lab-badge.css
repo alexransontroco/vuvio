@@ -1,0 +1,46 @@
+/* Vuvio-Lab permanent LAB badge */
+.lab-badge {
+  position: fixed;
+  top: max(10px, env(safe-area-inset-top, 10px));
+  left: max(10px, env(safe-area-inset-left, 10px));
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 9px 4px 7px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #ff3b3b, #ff8800);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  line-height: 1;
+  pointer-events: none;
+  user-select: none;
+  box-shadow: 0 2px 10px rgba(255, 59, 59, 0.45), 0 0 0 1.5px rgba(255, 255, 255, 0.35);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+}
+
+.lab-badge__dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 0 6px #fff;
+  animation: lab-badge-pulse 1.8s ease-in-out infinite;
+}
+
+.lab-badge__label {
+  font-family: "SF Mono", ui-monospace, Menlo, monospace;
+}
+
+@keyframes lab-badge-pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%      { opacity: 0.55; transform: scale(0.82); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lab-badge__dot { animation: none; }
+}

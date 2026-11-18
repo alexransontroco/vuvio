@@ -21,6 +21,7 @@ import './styles/components.css';
 import './styles/components/notification-toast.css';
 import './styles/components/intro.css';
 import './styles/components/intro-v2.css';
+import './styles/components/lab-badge.css';
 import './styles/pages/live.css';
 import './styles/pages/live-recap.css';
 import './styles/pages/explore.css';

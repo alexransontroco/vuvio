@@ -10,6 +10,13 @@ __pycache__/
 .env
 .env.local
 .env.*.local
+functions/.env
+
+# Vuvio-Lab emulator data (persistent across sessions)
+.emulator-data/
+firestore-debug.log
+firebase-debug.log
+ui-debug.log
 
 .claude/
 

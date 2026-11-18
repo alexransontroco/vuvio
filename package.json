@@ -13,7 +13,8 @@
     "ios": "cap open ios",
     "android": "cap open android",
     "preview": "vite preview --port 4174",
-    "emulators": "firebase emulators:start --only auth,firestore,storage,functions",
+    "emulators": "firebase emulators:start --only auth,firestore,storage,functions --import=./.emulator-data --export-on-exit=./.emulator-data",
+    "lab": "sh ./scripts/launch-lab.sh",
     "predeploy": "node ./scripts/guard-no-prod-deploy.js",
     "deploy": "echo 'Production deploy from Vuvio-Lab is blocked. Transfer features to main first.' && exit 1"
   },

@@ -1,7 +1,7 @@
 {
   "functions": {
     "source": "functions",
-    "runtime": "nodejs22",
+    "runtime": "nodejs20",
     "predeploy": ["node ./scripts/guard-no-prod-deploy.js"]
   },
   "firestore": {
