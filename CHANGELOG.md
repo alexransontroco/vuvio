@@ -6,6 +6,35 @@ Historique des sessions de travail, du plus récent au plus ancien.
 
 ---
 
+## 2026-11-18 — Phase 4 Realtime PoC — Official CF API Compliance (Critical Fix)
+
+**After user code review:** Aligned implementation with official Cloudflare Realtime SFU API documentation (https://developers.cloudflare.com/realtime/sfu/api/).
+
+**Critical corrections:**
+- ❌ Was: `https://api.cloudflare.com/client/v4/accounts/{id}` with CF_API_TOKEN (incorrect)
+- ✅ Now: `https://rtc.live.cloudflare.com/v1` with CF_APP_SECRET (official)
+- ✅ Removed: CF_API_TOKEN and CF_ACCOUNT_ID from SFU operations (not needed)
+- ✅ Credentials simplified: Only CF_APP_ID + CF_APP_SECRET required
+
+**Architecture alignment:**
+- **sessionId** (Cloudflare): Unique per WebRTC connection
+- **roomId** (Vuvio): Server-side participant grouping (Firestore-based)
+- **5-layer security model**: Firebase Auth → Firestore Rules → Cloud Function → App Secret → CF SFU
+- **Room isolation**: subscribeRealtimeTrack validates roomId match (access control)
+- **App Secret**: Authenticates backend to Cloudflare (does NOT auto-grant permissions)
+
+**Documentation:**
+- `REALTIME_SETUP_SECURE.md`: Updated with official API + correct credential setup
+- `REALTIME_CF_API_GUIDE.md`: New comprehensive guide (5 endpoints, security model, Emulator testing)
+
+**Code quality:**
+- CloudflareRealtimeSFU: (appId, appSecret) constructor
+- sfuApi method: Bearer auth with App Secret
+- Server-side permission validation: Room membership checks
+- Proper error handling for CF SFU responses
+
+---
+
 ## 2026-11-18 — Email de confirmation de la liste d’attente
 
 - Ajout d’un déclencheur Firestore qui envoie, via Resend, un court merci en français ou en anglais après une nouvelle inscription sur la page d’accueil. L’inscription reste indépendante de l’envoi.
