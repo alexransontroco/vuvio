@@ -6,6 +6,53 @@ Historique des sessions de travail, du plus récent au plus ancien.
 
 ---
 
+## 2026-11-19 — Réorganisation Git (3 branches) + transfert POV/landing experimental → main
+
+Grand nettoyage du dépôt pour simplifier le workflow quotidien.
+
+**Nouveau modèle 3 branches**
+- `main` → production, stable, déployable. Push direct interdit.
+- `dev` → travail quotidien, intégration des features.
+- `experimental` → labs, PoCs (worktree Vuvio-Lab).
+- Branches obsolètes (`backup/*`, `feat/*`, `phase-4-realtime-poc`) archivées sous `backup/pre-reorg-2026-11-16/*`.
+
+**Sauvegarde complète avant toute opération destructive**
+- Bundle complet : `~/Desktop/vuvio-backup-2026-11-16/vuvio-full-20261119-1747.bundle` (811 MB).
+- Patches des fichiers non commités : `uncommitted-tracked-phase4.patch`, `agent-a8f8ccf4-uncommitted.patch`.
+- Snapshot tarball worktree phase-4 : `worktree-phase4-snapshot.tar.gz`.
+- Branches de backup `backup/pre-reorg-2026-11-16/<nom>` une par branche d'origine.
+
+**Worktrees nettoyés**
+- Worktree ghost `agent-aaab2c16` : purge physique de `.git/worktrees/` (git prune ne nettoyait pas).
+- Worktree locké `agent-a8f8ccf4` : unlock + remove force (modifs sauvées dans patch).
+- Reste 2 worktrees : repo principal + Vuvio-Lab (`~/Desktop/Vuvio-Lab`, branche `experimental`).
+
+**`.gitignore` élargi**
+- Ajouté : `.firebase/`, `functions/lib/`, `Screen_Recording_*.{mp4,mov}`, `Image\ ChatGPT*.{png,jpg,jpeg}`, UUIDs racine `/????????-????-????-????-????????????.{png,jpg,jpeg}`, `/spectateur*.png`.
+- `functions/lib/` (output TS build) + caches Firebase untracked.
+
+**Transfert experimental → dev → main**
+- POV folder reorg : nouveaux paths `public/pov/{used,unused}/`, ajout `mtb-ridge-queenstown` + `honey-hunter-nepal`, retrait `biking-dolomites` + `fallow-head-chef-london`.
+- Landing redesign : nouvelle `LandingPage.jsx` + screens + `landing.css`.
+- i18n EN/FR mises à jour (landing + intro).
+- Intro v2 layers mis à jour (+ nouveau `IntroBottomNav.jsx`).
+- **Workshop/SFU/globe-test-7 restent sur `experimental` uniquement.**
+- Build vérifié : `npx vite build` OK (1m 8s).
+
+**Doc et mémoire**
+- `docs/GIT-WORKFLOW.md` nouveau (workflow complet, règles d'or, recovery).
+- `CLAUDE.md` : section "Workflow Git — 3 branches" ajoutée + règle deploy uniquement depuis `main`.
+- Mémoire : `project_git_workflow.md` mise à jour avec snapshot 2026-11-19.
+
+**Push GitHub**
+- `main` : `cd1fd7d` → `398b6ee`.
+- `dev` : `2b61261` → `398b6ee`.
+- `experimental` : déjà sync (`c1aa6cd`).
+
+Aucun déploiement production effectué.
+
+---
+
 ## 2026-11-13 — Globe Test 6 (suite) : pivot CARTO→Stadia + MAX_ZOOM 14→18 + compteur réel
 
 Deuxième passe sur `/globe-test-6` après vérification côté réseau (curl multi-zoom).
