@@ -37,6 +37,21 @@ Quand l'utilisateur dit "ajouter une vidéo mockup" ou "ajouter un live mockup",
 vite build && firebase deploy --only hosting:vuvio-bf328
 ```
 
+Ne déployer QUE depuis `main`. Jamais depuis `dev` ni `experimental`.
+
+## Workflow Git — 3 branches
+
+- **`main`** → production, stable, toujours déployable
+- **`dev`** → travail quotidien, intégration des features
+- **`experimental`** → labos, PoCs, features instables
+
+Détail complet dans [docs/GIT-WORKFLOW.md](docs/GIT-WORKFLOW.md).
+
+Raccourcis :
+- Nouvelle feature → `git checkout dev && git checkout -b feat/<slug>`
+- Promotion `dev` → `main` : `git checkout main && git merge --ff-only dev`
+- Ne jamais `git push --force` sur `main`
+
 ## Fin de session
 
 Après chaque session de travail significative (feature, bug fix, refacto) :
