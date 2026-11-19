@@ -1,14 +1,13 @@
 import { useState, useEffect, useRef } from 'react';
 import { Search, X, ChevronRight } from 'lucide-react';
-import { searchProducts } from '../../services/productSearchService.js';
-import { getProductName } from '../../services/productService.js';
+import { searchLocalProducts, searchProducts } from '../../services/productSearchService.js';
 import { ProductThumbnail } from './ProductThumbnail.jsx';
 import './product-search.css';
 
 /**
  * ProductSearch - Search and select products with autocomplete
  */
-export function ProductSearch({ categoryId, onSelectProduct, disabled = false }) {
+export function ProductSearch({ categoryId, onSelectProduct, onAddManually, disabled = false }) {
   const [query, setQuery] = useState('');
   const [results, setResults] = useState([]);
   const [isOpen, setIsOpen] = useState(false);
@@ -19,37 +18,40 @@ export function ProductSearch({ categoryId, onSelectProduct, disabled = false })
 
   useEffect(() => {
     if (debounceTimer.current) clearTimeout(debounceTimer.current);
-    if (!query || query.length < 2) {
+    const trimmed = query.trim();
+    if (trimmed.length < 2) {
       setResults([]);
       setSearchError(null);
+      setIsLoading(false);
+      setIsOpen(false);
       return;
     }
 
-    setIsLoading(true);
+    const controller = new AbortController();
+    const local = searchLocalProducts(trimmed, { category: categoryId });
+    setResults(local);
+    setIsOpen(true);
+    setIsLoading(false);
     setSearchError(null);
+    if (trimmed.length < 3) return () => controller.abort();
     debounceTimer.current = setTimeout(async () => {
+      setIsLoading(true);
       try {
-        const products = await searchProducts(query, { category: categoryId });
-        setResults(products);
-        setIsOpen(true);
+        const products = await searchProducts(trimmed, { category: categoryId, signal: controller.signal });
+        if (!controller.signal.aborted) setResults(products);
       } catch (err) {
-        console.error('[ProductSearch] Search failed:', err);
-
-        // Determine error type
-        if (err.code === 'permission-denied') {
-          setSearchError('permission');
-        } else if (err.code === 'unavailable') {
-          setSearchError('unavailable');
-        } else if (err.message?.includes('network') || err.code === 'network-error') {
-          setSearchError('network');
-        } else {
-          setSearchError('unknown');
+        if (!controller.signal.aborted) {
+          setSearchError(err.status === 429 ? 'quota' : 'unavailable');
+          setResults(local);
         }
-        setResults([]);
       } finally {
-        setIsLoading(false);
+        if (!controller.signal.aborted) setIsLoading(false);
       }
-    }, 300);
+    }, 350);
+    return () => {
+      clearTimeout(debounceTimer.current);
+      controller.abort();
+    };
   }, [query, categoryId]);
 
   const handleSelectProduct = (product) => {
@@ -66,7 +68,7 @@ export function ProductSearch({ categoryId, onSelectProduct, disabled = false })
           ref={searchInputRef}
           type="text"
           className="product-search__input"
-          placeholder="Search by brand or model..."
+          placeholder="Search equipment..."
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           onFocus={() => query.length >= 2 && setIsOpen(true)}
@@ -88,24 +90,16 @@ export function ProductSearch({ categoryId, onSelectProduct, disabled = false })
         <>
           <div className="product-search__backdrop" onClick={() => setIsOpen(false)} />
           <div className="product-search__dropdown">
-            {isLoading ? (
+            {isLoading && results.length === 0 ? (
               <div className="product-search__state">
                 <div className="spinner" />
                 <span>Searching...</span>
               </div>
             ) : searchError ? (
               <div className="product-search__state product-search__error">
-                {searchError === 'permission' && (
-                  <span>Unable to search products. Please try again.</span>
-                )}
+                {searchError === 'quota' && <span>Search limit reached. Try again later or add manually.</span>}
                 {searchError === 'unavailable' && (
                   <span>Service temporarily unavailable. Please try again later.</span>
-                )}
-                {searchError === 'network' && (
-                  <span>Connection error. Please check your internet.</span>
-                )}
-                {searchError === 'unknown' && (
-                  <span>Unable to search products. Please try again.</span>
                 )}
               </div>
             ) : results.length === 0 ? (
@@ -115,10 +109,6 @@ export function ProductSearch({ categoryId, onSelectProduct, disabled = false })
                 ) : (
                   <>
                     <span>No matching products found.</span>
-                    <button type="button" className="product-search__not-found-action">
-                      Can't find your equipment?
-                      <ChevronRight size={16} />
-                    </button>
                   </>
                 )}
               </div>
@@ -133,13 +123,19 @@ export function ProductSearch({ categoryId, onSelectProduct, disabled = false })
                   >
                     <ProductThumbnail product={product} size="sm" />
                     <div className="product-search__result-info">
-                      <strong>{getProductName(product)}</strong>
-                      <small>{product.description}</small>
+                      <strong>{product.brand} {product.name}</strong>
+                      <small>{product.equipmentType || product.category || 'Equipment'}</small>
                     </div>
                     <ChevronRight size={16} />
                   </button>
                 ))}
               </div>
+            )}
+            {onAddManually && (
+              <button type="button" className="product-search__not-found-action" onClick={() => { setIsOpen(false); onAddManually(); }}>
+                Can't find your equipment? Add manually
+                <ChevronRight size={16} />
+              </button>
             )}
           </div>
         </>

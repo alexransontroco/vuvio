@@ -44,6 +44,7 @@ export async function searchProductsHandler(req: Request, res: Response): Promis
   try {
     const q = typeof req.query.q === 'string' ? req.query.q : undefined;
     const brand = typeof req.query.brand === 'string' ? req.query.brand : undefined;
+    const mpn = typeof req.query.mpn === 'string' ? req.query.mpn : undefined;
     const gtin = typeof req.query.gtin === 'string' ? req.query.gtin : undefined;
     const ean = typeof req.query.ean === 'string' ? req.query.ean : undefined;
     const upc = typeof req.query.upc === 'string' ? req.query.upc : undefined;
@@ -51,13 +52,14 @@ export async function searchProductsHandler(req: Request, res: Response): Promis
     const rawLimit = parseInt(String(req.query.limit ?? '20'), 10);
     const limit = Math.min(isNaN(rawLimit) ? 20 : rawLimit, 50);
 
-    if (!q && !brand && !gtin && !ean && !upc) {
-      throw new ApiError('bad_request', 'Provide at least one of: q, brand, gtin, ean, upc');
+    if (!q && !(brand && mpn) && !gtin && !ean && !upc) {
+      throw new ApiError('bad_request', 'Provide q, brand and mpn, gtin, ean, or upc');
     }
 
     const query = {
       text: q,
       brand,
+      mpn,
       gtin,
       ean,
       upc,
@@ -128,7 +130,7 @@ export async function importProductHandler(req: Request, res: Response): Promise
       normalizedBrand: normalizeProductName(product.brand),
       category,
       description: product.description,
-      thumbnailUrl: product.thumbnailUrl,
+      thumbnailUrl: product.imageRightsStatus === 'authorized' && product.imageAllowedUsages?.includes('persistent-gear') && product.imageRightsSource && (product.imageSource !== 'icecat' || product.imageHostingStatus === 'self-hosted') ? product.thumbnailUrl : null,
       gtin: product.gtin,
       ean: product.ean,
       mpn: product.mpn,
@@ -136,7 +138,13 @@ export async function importProductHandler(req: Request, res: Response): Promise
       externalProductId: product.externalId,
       sourceProductUrl: product.sourceProductUrl,
       imageSource: product.imageUrls?.[0]?.sourceProvider,
-      imageRightsStatus: product.imageUrls?.[0]?.rightsStatus,
+      imageRightsStatus: product.imageRightsStatus ?? product.imageUrls?.[0]?.rightsStatus ?? null,
+      imageRightsSource: product.imageRightsSource ?? null,
+      imageAllowedUsages: product.imageAllowedUsages ?? [],
+      imageRightsCheckedAt: product.imageRightsCheckedAt ?? null,
+      imageRightsExpiresAt: product.imageRightsExpiresAt ?? null,
+      imageProductId: product.imageProductId ?? product.externalId,
+      imageHostingStatus: product.imageHostingStatus ?? null,
       searchTerms: buildSearchTerms(product),
       status: 'active',
       createdAt: FieldValue.serverTimestamp(),

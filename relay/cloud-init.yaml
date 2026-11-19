@@ -1,0 +1,90 @@
+#cloud-config
+# Vuvio relay — Hetzner Cloud / Ubuntu 24.04 LTS
+# Provisions Docker, docker-compose plugin, firewall (ufw), fail2ban,
+# unattended security upgrades, and the systemd unit.
+# This file is passed as user-data when creating the VM via Hetzner Cloud API.
+
+package_update: true
+package_upgrade: true
+
+packages:
+  - ca-certificates
+  - curl
+  - gnupg
+  - ufw
+  - fail2ban
+  - unattended-upgrades
+  - jq
+
+users:
+  - name: vuvio
+    shell: /bin/bash
+    sudo: ALL=(ALL) NOPASSWD:ALL
+    groups: [docker]
+    ssh_authorized_keys:
+      # Injected via Hetzner "ssh_keys" when creating the VM (not here, to avoid committing)
+
+write_files:
+  - path: /etc/ssh/sshd_config.d/99-vuvio.conf
+    permissions: '0644'
+    content: |
+      PasswordAuthentication no
+      PermitRootLogin no
+      ChallengeResponseAuthentication no
+      UsePAM yes
+      AllowUsers vuvio
+
+  - path: /etc/sysctl.d/99-vuvio.conf
+    permissions: '0644'
+    content: |
+      net.core.rmem_max=4194304
+      net.core.wmem_max=4194304
+      net.ipv4.udp_rmem_min=16384
+      net.ipv4.udp_wmem_min=16384
+
+  - path: /opt/vuvio-relay/.env.placeholder
+    permissions: '0600'
+    owner: vuvio:vuvio
+    content: |
+      # Overwrite /opt/vuvio-relay/.env with real values before starting the service.
+      RELAY_DOMAIN=relay.vuvio.app
+      RTMPS_RELAY_AUTH_TOKEN=CHANGEME
+      RTMPS_RELAY_MAX_SESSIONS=3
+
+runcmd:
+  # Docker repo
+  - install -m 0755 -d /etc/apt/keyrings
+  - curl -fsSL https://download.docker.com/linux/ubuntu/gpg | gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+  - chmod a+r /etc/apt/keyrings/docker.gpg
+  - echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu $(. /etc/os-release && echo "$VERSION_CODENAME") stable" > /etc/apt/sources.list.d/docker.list
+  - apt-get update
+  - apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+  - usermod -aG docker vuvio
+  - systemctl enable --now docker
+
+  # Firewall (ufw) — Hetzner Cloud Firewall also applies, this is defense-in-depth
+  - ufw default deny incoming
+  - ufw default allow outgoing
+  - ufw allow 22/tcp
+  - ufw allow 80/tcp
+  - ufw allow 443/tcp
+  - ufw allow 10000:65535/udp
+  - ufw --force enable
+
+  # Fail2ban basic
+  - systemctl enable --now fail2ban
+
+  # Kernel tune for UDP
+  - sysctl --system
+
+  # Create relay app dir (code uploaded separately)
+  - mkdir -p /opt/vuvio-relay
+  - chown -R vuvio:vuvio /opt/vuvio-relay
+
+  # SSH hardening reload
+  - systemctl restart ssh
+
+  # Auto security upgrades
+  - dpkg-reconfigure --priority=low unattended-upgrades
+
+final_message: "Vuvio relay VM provisioned. Upload code to /opt/vuvio-relay, write .env, install systemd unit, then: systemctl enable --now vuvio-relay"

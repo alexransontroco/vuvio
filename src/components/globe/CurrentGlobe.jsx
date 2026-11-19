@@ -1,11 +1,15 @@
-import { Bell, LocateFixed, Minus, Play, Plus, X } from 'lucide-react';
+import { Bell, BellOff, ChevronUp, LocateFixed, Minus, Play, Plus, SlidersHorizontal, X } from 'lucide-react';
 import maplibregl from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { ACTIVITY_CATEGORIES } from '../../data/activityCategories.js';
 import { enrichExperience } from '../../data/experienceTaxonomy.js';
 import { analyticsService } from '../../services/analytics/analyticsService.ts';
+import { getCountdownState, makeCountdownLabels } from '../../utils/countdown.js';
+import { createNotification, getRemindedStreamIds } from '../../services/notificationService.js';
+import { useAuth } from '../../context/AuthContext.jsx';
 import MapBottomSheet from '../map/MapBottomSheet.jsx';
 
 const MARKER_TYPES = {
@@ -20,11 +24,11 @@ const STYLE_URL = 'https://basemaps.cartocdn.com/gl/dark-matter-nolabels-gl-styl
 /* Vuvio Midnight Blue palette — applied to all vector layers after style.load */
 const PAL = {
   space:      '#030816',
-  ocean:      '#07182E',
+  ocean:      '#0A2850',
   oceanDeep:  '#040E1F',
-  land:       '#102B46',
-  landLow:    '#0B1F35',
-  landHigh:   '#17375C',
+  land:       '#0f1e30',
+  landLow:    '#0f1e30',
+  landHigh:   '#0f1e30',
   park:       '#164A49',
   road:       '#41617C',
   roadMinor:  '#2B445C',
@@ -38,7 +42,7 @@ const LIVE_COLOR = '#ff0066';
 const UPCOMING_COLOR = '#0099ff';
 const ROTATE_DEGREES_PER_SECOND = 1.8;
 const ACTUAL_ROTATION_INTERVAL = 48;
-const INITIAL_ZOOM = 1.15;
+const INITIAL_ZOOM = 1.4;
 const SELECTED_LIVE_ZOOM = 4.0;
 const REQUESTED_LIVE_ZOOM = 4.2;
 const PING_COLOR = '#ff8a1f';
@@ -241,16 +245,16 @@ function liveBroadcastHaloOpacity(clock, selectedId = '') {
   ];
 }
 
-function drawAtmosphericHalo(canvas, ctx, rotation, time, zoom = 1.4) {
+function drawAtmosphericHalo(canvas, ctx, rotation, time, zoom = 1.4, globeCenter = null) {
   if (!ctx) return;
   const dpr = window.devicePixelRatio || 1;
   const w = canvas.width / dpr;
   const h = canvas.height / dpr;
-  const cx = w / 2;
-  const cy = h / 2;
-  // At zoom 1.4 the globe fills ~38% of the min dimension.
+  const cx = globeCenter?.x ?? w / 2;
+  const cy = globeCenter?.y ?? h / 2;
+  // At zoom 1.4 the globe fills ~44% of the min dimension (measured empirically).
   // Each extra zoom level doubles the projected globe radius.
-  const baseRadius = Math.min(w, h) * 0.38;
+  const baseRadius = Math.min(w, h) * 0.44;
   const zoomScale = Math.pow(2, Math.max(0, zoom - 1.4));
   const globeRadius = baseRadius * zoomScale;
   // If the globe completely fills the canvas, skip all star drawing.
@@ -261,7 +265,6 @@ function drawAtmosphericHalo(canvas, ctx, rotation, time, zoom = 1.4) {
 
   // Stars with multi-frequency twinkle — driven by RAF time (always animates)
   const t = time * 0.001; // seconds
-  const exclusion = globeRadius * 1.08;
   const starCount = drawStars ? Math.max(80, Math.floor((w * h) / 18000)) : 0;
   for (let i = 0; i < starCount; i += 1) {
     const seed = i * 97.37;
@@ -269,10 +272,6 @@ function drawAtmosphericHalo(canvas, ctx, rotation, time, zoom = 1.4) {
     const y = (Math.sin((seed + 19.19) * 78.233) * 24634.6345) % 1;
     const px = Math.abs(x) * w;
     const py = Math.abs(y) * h;
-    const distanceFromGlobe = Math.hypot(px - cx, py - cy);
-
-    if (distanceFromGlobe < exclusion) continue;
-
     // Each star has its own irregular multi-frequency twinkle
     const f1 = 0.18 + Math.abs(Math.sin(seed * 5.3)) * 0.55;
     const f2 = 0.52 + Math.abs(Math.sin(seed * 2.7)) * 0.90;
@@ -362,6 +361,33 @@ function drawAtmosphericHalo(canvas, ctx, rotation, time, zoom = 1.4) {
       ctx.fill();
     }
   }
+
+  // Cut stars from the exact projected horizon so the overlay cannot cover land.
+  ctx.save();
+  ctx.globalCompositeOperation = 'destination-out';
+  ctx.fillStyle = 'rgba(0,0,0,1)';
+  ctx.beginPath();
+  if (globeCenter?.map) {
+    const map = globeCenter.map;
+    const center = map.getCenter();
+    const lat1 = center.lat * Math.PI / 180;
+    const lng1 = center.lng * Math.PI / 180;
+    const horizonRadius = 82 * Math.PI / 180;
+    for (let i = 0; i <= 180; i += 1) {
+      const bearing = i * 2 * Math.PI / 180;
+      const lat2 = Math.asin(Math.sin(lat1) * Math.cos(horizonRadius) + Math.cos(lat1) * Math.sin(horizonRadius) * Math.cos(bearing));
+      const lng2 = lng1 + Math.atan2(Math.sin(bearing) * Math.sin(horizonRadius) * Math.cos(lat1), Math.cos(horizonRadius) - Math.sin(lat1) * Math.sin(lat2));
+      const point = map.project([lng2 * 180 / Math.PI, lat2 * 180 / Math.PI]);
+      if (i === 0) ctx.moveTo(point.x, point.y);
+      else ctx.lineTo(point.x, point.y);
+    }
+    ctx.closePath();
+    ctx.fill();
+  } else {
+    ctx.ellipse(cx, cy, globeRadius * 1.02, globeRadius * 0.92, 0, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  ctx.restore();
 }
 
 // Thin elegant ring for selected marker — one refined subtle ring only
@@ -421,25 +447,34 @@ function buildCollection(streams) {
   };
 }
 
-function brightenBaseGlobe(map) {
+function styleNativeGlobe(map) {
+  const colors = {
+    space: '#0B1020',
+    oceanDeep: '#0B1020',
+    oceanShallow: '#111B30',
+    land: '#1A2036',
+    natural: '#202943',
+    mountain: '#303B55',
+    boundary: '#53647F',
+    atmosphere: '#235A84',
+    road: '#4B82A9',
+    minorRoad: '#2E5774',
+    label: '#D8EBF8',
+    labelDim: '#9BC2D7',
+  };
+
   try {
-    /* Atmospheric cyan halo + midnight space */
-    map.setFog?.({
-      color: 'rgba(36, 139, 235, 0.22)',
-      'high-color': 'rgba(36, 139, 235, 0.32)',
-      'horizon-blend': 0.12,
-      'space-color': PAL.space,
-      'star-intensity': 0.88,
-    });
-    map.setSky?.({
-      'sky-color': PAL.space,
-      'horizon-color': '#0A2140',
-      'fog-color': PAL.atmosphere,
-      'sky-horizon-blend': 0.5,
-      'horizon-fog-blend': 0.7,
-      'fog-ground-blend': 0.05,
-      'atmosphere-blend': ['interpolate', ['linear'], ['zoom'], 0, 1, 5, 0.7, 10, 0.1],
-    });
+    try {
+      map.setSky?.({
+        'sky-color': colors.space,
+        'horizon-color': '#1C2541',
+        'fog-color': '#0B1020',
+        'sky-horizon-blend': 0.08,
+        'horizon-fog-blend': 0.02,
+        'fog-ground-blend': 0,
+        'atmosphere-blend': 0.02,
+      });
+    } catch { /* sky options vary by MapLibre version */ }
 
     map.getStyle().layers?.forEach((layer) => {
       const id = layer.id.toLowerCase();
@@ -447,108 +482,206 @@ function brightenBaseGlobe(map) {
       const type = layer.type;
 
       try {
-        /* Background — outer space */
+        if (type === 'background') {
+          map.setPaintProperty(layer.id, 'background-color', colors.space);
+          return;
+        }
+        if (type === 'fill' && id === 'water') {
+          map.setPaintProperty(layer.id, 'fill-color', [
+            'match', ['get', 'kind'],
+            ['lake', 'pond', 'reservoir', 'basin'], colors.oceanShallow,
+            colors.oceanDeep,
+          ]);
+          map.setPaintProperty(layer.id, 'fill-opacity', 1);
+          return;
+        }
+        if (id === 'landcover') {
+          map.setPaintProperty(layer.id, 'fill-color', [
+            'match', ['get', 'kind'],
+            ['wood', 'forest', 'park', 'nature_reserve', 'national_park'], '#18263D',
+            ['grass', 'grassland', 'meadow', 'farmland', 'garden', 'orchard', 'golf_course'], '#202B44',
+            ['scrub', 'heath', 'recreation_ground', 'village_green'], '#1D283F',
+            ['barren', 'desert', 'rock', 'scree'], '#2A3048',
+            ['glacier', 'snow'], '#3A435A',
+            colors.natural,
+          ]);
+          map.setPaintProperty(layer.id, 'fill-opacity', 1);
+          return;
+        }
+        if (id === 'park_national_park' || id === 'park_nature_reserve' || id === 'landuse') {
+          map.setPaintProperty(layer.id, 'fill-color', [
+            'match', ['get', 'kind'],
+            ['residential', 'retail'], '#1C293F',
+            ['commercial', 'industrial', 'institutional', 'school', 'university', 'airport'], '#202C45',
+            ['quarry', 'mine', 'landfill'], '#2A3048',
+            ['park', 'nature_reserve', 'national_park', 'recreation_ground'], '#18263D',
+            colors.natural,
+          ]);
+          map.setPaintProperty(layer.id, 'fill-opacity', 0.94);
+          return;
+        }
+        if (id === 'landuse_residential') {
+          map.setPaintProperty(layer.id, 'fill-color', '#1C293F');
+          map.setPaintProperty(layer.id, 'fill-opacity', 0.82);
+          return;
+        }
+        if (id === 'building-top') {
+          map.setPaintProperty(layer.id, 'fill-color', colors.mountain);
+          map.setPaintProperty(layer.id, 'fill-outline-color', colors.land);
+          map.setPaintProperty(layer.id, 'fill-opacity', ['interpolate', ['linear'], ['zoom'], 13, 0, 16, 0.55]);
+          return;
+        }
+        if (type === 'line' && (id.includes('admin') || id.includes('boundary') || id.includes('border') || sourceLayer.includes('boundary'))) {
+          map.setPaintProperty(layer.id, 'line-color', colors.boundary);
+          map.setPaintProperty(layer.id, 'line-opacity', 0.58);
+          map.setPaintProperty(layer.id, 'line-width', ['interpolate', ['linear'], ['zoom'], 0, 0.35, 4, 0.5, 9, 0.72, 13, 0.9]);
+          return;
+        }
+        if (type === 'line' && (id.includes('water') || id.includes('river') || id.includes('stream') || sourceLayer.includes('water'))) {
+          map.setPaintProperty(layer.id, 'line-color', colors.oceanShallow);
+          map.setPaintProperty(layer.id, 'line-opacity', 0.7);
+          return;
+        }
+        if (type === 'line' && (id.includes('_mot_') || id.includes('_trunk_') || id.includes('_pri_') || id.includes('_sec_') || id.includes('motorway') || id.includes('trunk') || id.includes('primary') || id.includes('secondary'))) {
+          map.setPaintProperty(layer.id, 'line-color', colors.road);
+          map.setPaintProperty(layer.id, 'line-opacity', 0.5);
+          return;
+        }
+        if (type === 'line' && (id.includes('road') || id.includes('street') || id.includes('tertiary') || id.includes('minor') || id.includes('service') || id.includes('path'))) {
+          map.setPaintProperty(layer.id, 'line-color', colors.minorRoad);
+          map.setPaintProperty(layer.id, 'line-opacity', 0.34);
+          return;
+        }
+        if (type === 'hillshade') {
+          map.setPaintProperty(layer.id, 'hillshade-exaggeration', 0.24);
+          map.setPaintProperty(layer.id, 'hillshade-shadow-color', '#10243A');
+          map.setPaintProperty(layer.id, 'hillshade-highlight-color', colors.mountain);
+          map.setPaintProperty(layer.id, 'hillshade-illumination-direction', 315);
+          return;
+        }
+        if (type === 'symbol' && layer.layout?.['text-field']) {
+          const isWater = id.includes('water') || id.includes('ocean') || id.includes('sea') || id.includes('marine');
+          map.setPaintProperty(layer.id, 'text-color', isWater ? colors.labelDim : colors.label);
+          map.setPaintProperty(layer.id, 'text-halo-color', colors.space);
+          map.setPaintProperty(layer.id, 'text-halo-width', 1.1);
+        }
+      } catch { /* style layers expose different paint properties */ }
+    });
+
+    if (map.getSource('protomaps') && !map.getLayer('vuvio-native-land')) {
+      const firstFill = map.getStyle().layers?.find((layer) => layer.type === 'fill');
+      map.addLayer({
+        id: 'vuvio-native-land',
+        type: 'fill',
+        source: 'protomaps',
+        'source-layer': 'earth',
+        filter: ['==', ['get', 'kind'], 'earth'],
+        paint: {
+          'fill-color': colors.land,
+          'fill-opacity': 1,
+        },
+      }, firstFill?.id);
+    }
+
+    if (map.getSource('protomaps') && !map.getLayer('vuvio-native-city-glow')) {
+      const largeCityFilter = [
+        'all',
+        ['==', ['get', 'kind'], 'locality'],
+        ['==', ['get', 'kind_detail'], 'city'],
+        ['>=', ['get', 'population_rank'], 13],
+      ];
+
+      map.addLayer({
+        id: 'vuvio-native-city-glow',
+        type: 'circle',
+        source: 'protomaps',
+        'source-layer': 'places',
+        minzoom: 1,
+        filter: largeCityFilter,
+        paint: {
+          'circle-color': '#D98A43',
+          'circle-radius': [
+            'interpolate', ['linear'], ['zoom'],
+            1, ['interpolate', ['linear'], ['get', 'population_rank'], 13, 5.5, 17, 7],
+            7, ['interpolate', ['linear'], ['get', 'population_rank'], 13, 7, 17, 9],
+          ],
+          'circle-blur': 0.9,
+          'circle-opacity': 0.3,
+        },
+      });
+
+      map.addLayer({
+        id: 'vuvio-native-city-light-core',
+        type: 'circle',
+        source: 'protomaps',
+        'source-layer': 'places',
+        minzoom: 1,
+        filter: largeCityFilter,
+        paint: {
+          'circle-color': '#EAB976',
+          'circle-radius': [
+            'interpolate', ['linear'], ['zoom'],
+            1, ['interpolate', ['linear'], ['get', 'population_rank'], 13, 1.4, 17, 1.8],
+            7, ['interpolate', ['linear'], ['get', 'population_rank'], 13, 1.8, 17, 2.4],
+          ],
+          'circle-opacity': 0.78,
+        },
+      });
+    }
+
+    if (!map.getContainer().querySelector('.maplibregl-ctrl-attrib')) {
+      map.addControl(new maplibregl.AttributionControl({ compact: false }), 'bottom-right');
+    }
+  } catch { /* style capabilities vary by MapLibre version */ }
+}
+
+function brightenBaseGlobe(map, includeHighResolutionImagery = false, useRasterTextures = true, customNativeStyle = false) {
+  try {
+    if (customNativeStyle) {
+      styleNativeGlobe(map);
+    } else {
+      map.setSky?.({
+        'sky-color': PAL.space,
+        'horizon-color': '#071522',
+        'fog-color': '#071522',
+        'sky-horizon-blend': 0.18,
+        'horizon-fog-blend': 0.24,
+        'fog-ground-blend': 0.02,
+        'atmosphere-blend': 0.035,
+      });
+    }
+
+    if (useRasterTextures) map.getStyle().layers?.forEach((layer) => {
+      const id = layer.id.toLowerCase();
+      const type = layer.type;
+
+      try {
         if (type === 'background') {
           map.setPaintProperty(layer.id, 'background-color', PAL.space);
           return;
         }
-
-        /* Water (fills + lines for rivers) */
-        if (type === 'fill' && (id.includes('water') || id.includes('ocean') || id.includes('sea')
-            || sourceLayer.includes('water'))) {
-          map.setPaintProperty(layer.id, 'fill-color', PAL.ocean);
-          map.setPaintProperty(layer.id, 'fill-opacity', 1);
-          return;
-        }
-        if (type === 'line' && (id.includes('water') || id.includes('river') || id.includes('stream')
-            || sourceLayer.includes('water'))) {
-          map.setPaintProperty(layer.id, 'line-color', PAL.ocean);
-          map.setPaintProperty(layer.id, 'line-opacity', 0.9);
-          return;
-        }
-
-        /* Parks / forest / green */
-        if (type === 'fill' && (id.includes('park') || id.includes('wood') || id.includes('forest')
-            || id.includes('green') || id.includes('grass') || id.includes('scrub')
-            || id.includes('meadow') || id.includes('golf') || id.includes('pitch'))) {
-          map.setPaintProperty(layer.id, 'fill-color', PAL.park);
-          map.setPaintProperty(layer.id, 'fill-opacity', 0.78);
-          return;
-        }
-
-        /* Land / landcover / landuse — tiered */
-        if (type === 'fill' && (id.includes('landcover') || id.includes('landuse'))) {
-          map.setPaintProperty(layer.id, 'fill-color', PAL.landLow);
-          map.setPaintProperty(layer.id, 'fill-opacity', 0.55);
-          return;
-        }
-        if (type === 'fill' && (id.includes('residential') || id.includes('urban')
-            || id.includes('builtup') || id.includes('industrial'))) {
-          map.setPaintProperty(layer.id, 'fill-color', PAL.landHigh);
-          map.setPaintProperty(layer.id, 'fill-opacity', 0.55);
-          return;
-        }
-        if (type === 'fill' && (id.includes('land') || sourceLayer.includes('land'))) {
-          map.setPaintProperty(layer.id, 'fill-color', PAL.land);
-          map.setPaintProperty(layer.id, 'fill-opacity', 1);
-          return;
-        }
-
-        /* Buildings — subtle highlight */
-        if (type === 'fill' && id.includes('building')) {
-          map.setPaintProperty(layer.id, 'fill-color', PAL.landHigh);
-          map.setPaintProperty(layer.id, 'fill-opacity', 0.78);
-          return;
-        }
-        if (type === 'fill-extrusion' && id.includes('building')) {
-          /* Fill-extrusion is expensive at close zoom — hide instead of paint */
+        if (type === 'fill') {
           map.setLayoutProperty(layer.id, 'visibility', 'none');
           return;
         }
-
-        /* Admin boundaries */
-        if (type === 'line' && (id.includes('admin') || id.includes('boundary')
-            || id.includes('border') || sourceLayer.includes('boundary'))) {
-          map.setPaintProperty(layer.id, 'line-color', PAL.road);
-          map.setPaintProperty(layer.id, 'line-opacity', 0.38);
+        if (type === 'fill-extrusion' && id.includes('building')) {
+          map.setLayoutProperty(layer.id, 'visibility', 'none');
+          return;
+        }
+        if (type === 'line') {
+          const isBoundary = id.includes('admin') || id.includes('boundary') || id.includes('border');
+          const isWater = id.includes('water') || id.includes('river') || id.includes('stream');
+          map.setPaintProperty(layer.id, 'line-color', isBoundary ? '#8BA8B5' : isWater ? '#102B3B' : '#365367');
+          map.setPaintProperty(layer.id, 'line-opacity', isBoundary ? 0.2 : isWater ? 0.18 : 0.24);
           return;
         }
 
-        /* Roads tiered */
-        if (type === 'line' && (id.includes('motorway') || id.includes('trunk'))) {
-          map.setPaintProperty(layer.id, 'line-color', PAL.motorway);
-          map.setPaintProperty(layer.id, 'line-opacity', 0.78);
-          return;
-        }
-        if (type === 'line' && (id.includes('primary') || id.includes('secondary'))) {
-          map.setPaintProperty(layer.id, 'line-color', PAL.road);
-          map.setPaintProperty(layer.id, 'line-opacity', 0.7);
-          return;
-        }
-        if (type === 'line' && (id.includes('road') || id.includes('street')
-            || id.includes('tertiary') || id.includes('minor') || id.includes('service')
-            || id.includes('path') || id.includes('track'))) {
-          map.setPaintProperty(layer.id, 'line-color', PAL.roadMinor);
-          map.setPaintProperty(layer.id, 'line-opacity', 0.55);
-          return;
-        }
-
-        /* Rail */
-        if (type === 'line' && (id.includes('rail') || id.includes('transit'))) {
-          map.setPaintProperty(layer.id, 'line-color', PAL.road);
-          map.setPaintProperty(layer.id, 'line-opacity', 0.32);
-          return;
-        }
-
-        /* Hide base-style city/POI circles (conflict with Vuvio Live markers) */
         if (type === 'circle') {
           map.setLayoutProperty(layer.id, 'visibility', 'none');
           return;
         }
 
-        /* Labels (symbols) — keep visible, repaint in Vuvio palette for progressive reveal */
         if (type === 'symbol') {
-          /* Hide icon-only POI markers to avoid clutter against Live markers */
           try {
             const iconImage = layer.layout?.['icon-image'];
             const hasText = !!layer.layout?.['text-field'];
@@ -559,13 +692,13 @@ function brightenBaseGlobe(map) {
           } catch { /* layout may be undefined */ }
 
           if (id.includes('country') || id.includes('continent')) {
-            map.setPaintProperty(layer.id, 'text-color', PAL.label);
+            map.setPaintProperty(layer.id, 'text-color', '#B7C7D0');
             map.setPaintProperty(layer.id, 'text-halo-color', PAL.space);
-            map.setPaintProperty(layer.id, 'text-halo-width', 1.5);
+            map.setPaintProperty(layer.id, 'text-halo-width', 1);
             return;
           }
           if (id.includes('water') || id.includes('ocean') || id.includes('sea') || id.includes('marine')) {
-            map.setPaintProperty(layer.id, 'text-color', PAL.labelDim);
+            map.setPaintProperty(layer.id, 'text-color', '#728B9B');
             map.setPaintProperty(layer.id, 'text-halo-color', PAL.space);
             map.setPaintProperty(layer.id, 'text-halo-width', 1);
             return;
@@ -573,20 +706,97 @@ function brightenBaseGlobe(map) {
           if (id.includes('city') || id.includes('place') || id.includes('town')
               || id.includes('village') || id.includes('suburb') || id.includes('neighbourhood')
               || id.includes('neighborhood')) {
-            map.setPaintProperty(layer.id, 'text-color', PAL.label);
+            map.setPaintProperty(layer.id, 'text-color', '#B7C7D0');
             map.setPaintProperty(layer.id, 'text-halo-color', PAL.space);
-            map.setPaintProperty(layer.id, 'text-halo-width', 1.2);
+            map.setPaintProperty(layer.id, 'text-halo-width', 1);
             return;
           }
-          /* Any remaining text label: dim (streets, POI names at close zoom) */
           try {
-            map.setPaintProperty(layer.id, 'text-color', PAL.labelDim);
+            map.setPaintProperty(layer.id, 'text-color', '#728B9B');
             map.setPaintProperty(layer.id, 'text-halo-color', PAL.space);
             map.setPaintProperty(layer.id, 'text-halo-width', 1);
           } catch { /* layer without text-color */ }
         }
       } catch { /* paint property may not exist on all layers */ }
     });
+
+    if (useRasterTextures && !map.getSource('vuvio-earth-surface')) {
+      map.addSource('vuvio-earth-surface', {
+        type: 'raster',
+        tiles: [`${window.location.origin}/assets/globe/maplibre-earth-night/{z}/{x}/{y}.jpg`],
+        tileSize: 256,
+        minzoom: 0,
+        maxzoom: 4,
+        scheme: 'xyz',
+      });
+      const underlay = map.getStyle().layers?.find((layer) => layer.type === 'line' || layer.type === 'symbol');
+      map.addLayer({
+        id: 'vuvio-earth-surface-raster',
+        type: 'raster',
+        source: 'vuvio-earth-surface',
+        paint: {
+          'raster-opacity': 1,
+          'raster-fade-duration': 0,
+          'raster-saturation': -0.28,
+          'raster-contrast': 0.08,
+        },
+      }, underlay?.id);
+    }
+
+    if (useRasterTextures && !map.getSource('vuvio-earth-detail')) {
+      map.addSource('vuvio-earth-detail', {
+        type: 'raster',
+        tiles: ['https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/BlueMarble_NextGeneration/default/GoogleMapsCompatible_Level8/{z}/{y}/{x}.jpeg'],
+        tileSize: 256,
+        minzoom: 0,
+        maxzoom: 8,
+        scheme: 'xyz',
+        attribution: 'NASA GIBS — Blue Marble Next Generation',
+      });
+      const underlay = map.getStyle().layers?.find((layer) => layer.type === 'line' || layer.type === 'symbol');
+      map.addLayer({
+        id: 'vuvio-earth-detail-raster',
+        type: 'raster',
+        source: 'vuvio-earth-detail',
+        minzoom: 2,
+        paint: {
+          'raster-opacity': ['interpolate', ['linear'], ['zoom'], 2, 0, 3, 0.025, 4, 0.05, 5, 0.07, 8, 0.08],
+          'raster-fade-duration': 0,
+          'raster-saturation': -0.48,
+          'raster-contrast': 0.02,
+          'raster-brightness-min': 0.01,
+          'raster-brightness-max': 0.9,
+        },
+      }, underlay?.id);
+    }
+
+    if (useRasterTextures && includeHighResolutionImagery && !map.getSource('vuvio-earth-high-resolution')) {
+      map.addSource('vuvio-earth-high-resolution', {
+        type: 'raster',
+        tiles: ['https://tiles.maps.eox.at/wmts/1.0.0/s2cloudless_3857/default/GoogleMapsCompatible/{z}/{y}/{x}.jpg'],
+        tileSize: 256,
+        minzoom: 0,
+        maxzoom: 21,
+        scheme: 'xyz',
+        attribution: '<a href="https://cloudless.eox.at/">EOxCloudless</a> by EOX IT Services GmbH (Contains modified Copernicus Sentinel data 2016) · <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a>',
+      });
+      const underlay = map.getStyle().layers?.find((layer) => layer.type === 'line' || layer.type === 'symbol');
+      map.addLayer({
+        id: 'vuvio-earth-high-resolution-raster',
+        type: 'raster',
+        source: 'vuvio-earth-high-resolution',
+        minzoom: 1,
+        paint: {
+          'raster-opacity': ['interpolate', ['linear'], ['zoom'], 1, 0.1, 2, 0.12, 3, 0.14, 4, 0.15, 5, 0.14, 6, 0.12, 7, 0.14, 8, 0.2, 9, 0.27, 10, 0.35, 11, 0.43, 12, 0.5, 14, 0.58, 16, 0.62],
+          'raster-fade-duration': 0,
+          'raster-saturation': -0.48,
+          'raster-contrast': 0.02,
+          'raster-brightness-min': 0,
+          'raster-brightness-max': 1,
+        },
+      }, underlay?.id);
+      map.addControl(new maplibregl.AttributionControl({ compact: false }), 'bottom-right');
+    }
   } catch {
     // Base style support can differ entre MapLibre versions/providers.
   }
@@ -594,13 +804,19 @@ function brightenBaseGlobe(map) {
 
 export default function CurrentGlobe({ streams, onboarding = false, onOnboardingLiveSelect, variant = 'current' }) {
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const { t } = useTranslation();
+  const { user } = useAuth();
   const containerRef = useRef(null);
   const mapRef = useRef(null);
   const haloCanvasRef = useRef(null);
   const pauseUntilRef = useRef(0);
   const animationRef = useRef(null);
   const dvMarkersRef = useRef({});
+  const htmlMarkersRef = useRef({});
+  const liveStreamsRef = useRef([]);
+  const lastClusterSignatureRef = useRef('');
+  const handleClickRef = useRef(null);
   const selectedIdRef = useRef(null);
   const selectionReturnViewRef = useRef(null);
   const [activeFamily, setActiveFamily] = useState('all');
@@ -608,6 +824,8 @@ export default function CurrentGlobe({ streams, onboarding = false, onOnboarding
   const [activeStatuses, setActiveStatuses] = useState(['live']);
   const [sheetState, setSheetState] = useState('closed');
   const [selectedId, setSelectedId] = useState(null);
+  const [selectedCluster, setSelectedCluster] = useState(null);
+  const [displayedStreams, setDisplayedStreams] = useState([]);
   const [hoveredId, setHoveredId] = useState('');
   const [hoverStream, setHoverStream] = useState(null);
   const [hoverPos, setHoverPos] = useState({ x: 0, y: 0 });
@@ -615,9 +833,47 @@ export default function CurrentGlobe({ streams, onboarding = false, onOnboarding
   const [mapError, setMapError] = useState('');
   const [isMapLoaded, setIsMapLoaded] = useState(false);
   const [fpsHud, setFpsHud] = useState({ fps: 0, zoom: 0, tiles: 0, mem: 0 });
+  const [now, setNow] = useState(() => Date.now());
+  const [remindedIds, setRemindedIds] = useState(() => new Set());
   const lastHaloZoomRef = useRef(-1);
   const fpsBufRef = useRef([]);
   const fpsEnabled = searchParams.get('fps') === '1' || searchParams.get('fps') === 'true';
+  const cLabels = useMemo(() => makeCountdownLabels(t), [t]);
+
+  useEffect(() => {
+    const timer = window.setInterval(() => setNow(Date.now()), 1000);
+    return () => window.clearInterval(timer);
+  }, []);
+
+  useEffect(() => {
+    if (!user?.uid) { setRemindedIds(new Set()); return undefined; }
+    let active = true;
+    getRemindedStreamIds(user.uid)
+      .then((ids) => { if (active) setRemindedIds(new Set(ids)); })
+      .catch(() => {});
+    return () => { active = false; };
+  }, [user?.uid]);
+
+  const toggleRemind = useCallback(async (stream) => {
+    if (!user?.uid || !stream?.id) return;
+    const next = new Set(remindedIds);
+    if (next.has(stream.id)) {
+      next.delete(stream.id);
+    } else {
+      next.add(stream.id);
+      try {
+        await createNotification(user.uid, {
+          type: 'remind_me',
+          streamId: stream.id,
+          creatorName: stream.name ?? stream.creatorName ?? '',
+          title: stream.experienceTitle ?? stream.title ?? '',
+          scheduledAt: stream.startsAt ?? null,
+          image: stream.image ?? null,
+        });
+      } catch { /* non-blocking */ }
+    }
+    setRemindedIds(next);
+  }, [remindedIds, user?.uid]);
 
   const enrichedStreams = useMemo(() => streams.map(enrichExperience), [streams]);
   const requestedLiveId = searchParams.get('live') ?? '';
@@ -636,6 +892,7 @@ export default function CurrentGlobe({ streams, onboarding = false, onOnboarding
   }, [activeActivities, activeFamily, activeStatuses, statusLiveStreams]);
 
   const liveStreams = standardStreams;
+  liveStreamsRef.current = liveStreams;
 
   const selectedLive = enrichedStreams.find((stream) => stream.id === selectedId) ?? null;
   const watchPathForLive = (live) => {
@@ -693,27 +950,41 @@ export default function CurrentGlobe({ streams, onboarding = false, onOnboarding
       zoom: INITIAL_ZOOM,
       pitch: 35,
       bearing: 0,
-      minZoom: 0,
-      maxZoom: 6,
+      minZoom: INITIAL_ZOOM,
+      maxZoom: 16,
       maxPitch: 80,
       projection: { type: 'globe' },
       attributionControl: false,
       logoPosition: 'bottom-left',
       renderWorldCopies: false,
       fadeDuration: 0,
-      pixelRatio: Math.min(window.devicePixelRatio || 1, window.matchMedia?.('(pointer: coarse)').matches ? 1 : 1.25),
+      pixelRatio: variant === 'maplibre-custom'
+        ? Math.min(window.devicePixelRatio || 1, window.matchMedia?.('(pointer: coarse)').matches ? 1 : 1.1)
+        : Math.min(window.devicePixelRatio || 1, window.matchMedia?.('(pointer: coarse)').matches ? 1 : 1.25),
     });
 
     mapRef.current = map;
+    const globeSurface = containerRef.current.closest('.test-old-globe');
+    const hideStarfieldOnZoom = () => globeSurface?.classList.add('is-zoomed');
+    const syncStarfieldAfterZoom = () => {
+      globeSurface?.classList.toggle('is-zoomed', map.getZoom() > INITIAL_ZOOM + 0.05);
+    };
+    if (variant === 'maplibre-custom') {
+      map.on('zoomstart', hideStarfieldOnZoom);
+      map.on('zoomend', syncStarfieldAfterZoom);
+    }
 
-    // Setup atmospheric halo canvas
-    const haloCanvas = document.createElement('canvas');
-    haloCanvas.className = 'globe-atmospheric-halo';
-    haloCanvas.style.cssText = 'position: absolute; inset: 0; pointer-events: none; z-index: 1;';
-    containerRef.current.appendChild(haloCanvas);
-    haloCanvasRef.current = haloCanvas;
+    const resizeMap = () => {
+      const rect = containerRef.current?.getBoundingClientRect();
+      if (rect?.width > 0 && rect?.height > 0) map.resize();
+    };
+    const resizeObserver = new ResizeObserver(resizeMap);
+    resizeObserver.observe(containerRef.current);
+    requestAnimationFrame(() => requestAnimationFrame(resizeMap));
 
     const resizeHaloCanvas = () => {
+      const haloCanvas = haloCanvasRef.current;
+      if (!haloCanvas) return;
       const rect = containerRef.current.getBoundingClientRect();
       haloCanvas.width = rect.width * (window.devicePixelRatio || 1);
       haloCanvas.height = rect.height * (window.devicePixelRatio || 1);
@@ -722,8 +993,15 @@ export default function CurrentGlobe({ streams, onboarding = false, onOnboarding
       const ctx = haloCanvas.getContext('2d');
       if (ctx) ctx.scale(window.devicePixelRatio || 1, window.devicePixelRatio || 1);
     };
-    resizeHaloCanvas();
-    window.addEventListener('resize', resizeHaloCanvas);
+    if (variant !== 'maplibre-custom') {
+      const haloCanvas = document.createElement('canvas');
+      haloCanvas.className = 'globe-atmospheric-halo';
+      haloCanvas.style.cssText = 'position: absolute; inset: 0; pointer-events: none; z-index: 1;';
+      containerRef.current.appendChild(haloCanvas);
+      haloCanvasRef.current = haloCanvas;
+      resizeHaloCanvas();
+      window.addEventListener('resize', resizeHaloCanvas);
+    }
     map.touchZoomRotate.disableRotation();
 
     const pauseInteraction = () => {
@@ -751,11 +1029,49 @@ export default function CurrentGlobe({ streams, onboarding = false, onOnboarding
       setMapError(message);
     });
 
-    map.on('load', () => {
+    let initializeMap = null;
+    let mapInitialized = false;
+    const loadedPoll = window.setInterval(() => {
+      if (!mapInitialized && map.isStyleLoaded()) initializeMap?.();
+      if (map.loaded() && map.getCanvas()?.width > 0 && map.getCanvas()?.height > 0) {
+        map.once('idle', () => setIsMapLoaded(true));
+        window.clearInterval(loadedPoll);
+      }
+    }, 150);
+
+    const revealOnRender = () => {
+      if (map.loaded() && map.getCanvas()?.width > 0 && map.getCanvas()?.height > 0) {
+        map.once('idle', () => setIsMapLoaded(true));
+        map.off('render', revealOnRender);
+      }
+    };
+    map.on('render', revealOnRender);
+
+    const revealNativeGlobe = () => {
+      if (variant !== 'maplibre-custom') return;
+      map.setProjection({ type: 'globe' });
+      styleNativeGlobe(map);
+      resizeMap();
+      map.triggerRepaint();
+      setIsMapLoaded(true);
+    };
+    if (variant === 'maplibre-custom') map.on('style.load', revealNativeGlobe);
+
+    initializeMap = () => {
+      if (mapInitialized || !map.isStyleLoaded()) return;
+      mapInitialized = true;
       try {
-        setIsMapLoaded(true);
+        window.clearInterval(loadedPoll);
         map.setProjection({ type: 'globe' });
-        brightenBaseGlobe(map);
+        resizeMap();
+        if (variant === 'maplibre-custom') setIsMapLoaded(true);
+        map.once('idle', () => setIsMapLoaded(true));
+        brightenBaseGlobe(
+          map,
+          !onboarding && variant === 'current',
+          variant === 'current',
+          variant === 'maplibre-custom',
+        );
 
         // PERF: SVG unsharp-mask disabled — was re-filtering the whole WebGL canvas
         // every frame via CSS filter, costing 30-50% of frame time. Opt-in with ?sharpen=1.
@@ -782,12 +1098,31 @@ export default function CurrentGlobe({ streams, onboarding = false, onOnboarding
           );
         }
 
-        map.setPadding({ top: 0, bottom: 135, left: 0, right: 0 });
+        map.setPadding({ top: 0, bottom: 165, left: 0, right: 0 });
 
         map.addSource('vuvio-test-lives', {
           type: 'geojson',
           data: buildCollection(liveStreams),
-          cluster: false,
+          cluster: true,
+          clusterRadius: 35,
+          clusterMaxZoom: 15,
+        });
+        const styleLiveHalo = (value, scale) => (variant === 'maplibre-custom' ? ['*', value, scale] : value);
+
+        map.addLayer({
+          id: 'vuvio-test-cluster-anchor',
+          type: 'circle',
+          source: 'vuvio-test-lives',
+          filter: ['has', 'point_count'],
+          paint: { 'circle-radius': 1, 'circle-opacity': 0 },
+        });
+
+        map.addLayer({
+          id: 'vuvio-test-point-anchor',
+          type: 'circle',
+          source: 'vuvio-test-lives',
+          filter: ['!', ['has', 'point_count']],
+          paint: { 'circle-radius': 1, 'circle-opacity': 0 },
         });
 
         map.addLayer({
@@ -797,9 +1132,9 @@ export default function CurrentGlobe({ streams, onboarding = false, onOnboarding
           filter: ['!', ['has', 'point_count']],
           paint: {
             'circle-color': markerColorExpression(),
-            'circle-radius': liveColorGlowRadius(0),
-            'circle-blur': 5.5,
-            'circle-opacity': liveColorGlowOpacity(0),
+            'circle-radius': styleLiveHalo(liveColorGlowRadius(0), 0.78),
+            'circle-blur': variant === 'maplibre-custom' ? 4.2 : 5.5,
+            'circle-opacity': styleLiveHalo(liveColorGlowOpacity(0), 0.68),
           },
         });
 
@@ -811,8 +1146,8 @@ export default function CurrentGlobe({ streams, onboarding = false, onOnboarding
           paint: {
             'circle-color': ['case', ['==', ['get', 'markerType'], MARKER_TYPES.sponsored], '#FFD489', ['==', ['get', 'markerType'], MARKER_TYPES.vuvio], '#DAB2FF', '#F8FFFF'],
             'circle-radius': liveBroadcastHaloRadius(0, selectedId ?? ''),
-            'circle-blur': 2.5,
-            'circle-opacity': liveBroadcastHaloOpacity(0, selectedId ?? ''),
+            'circle-blur': variant === 'maplibre-custom' ? 1.9 : 2.5,
+            'circle-opacity': styleLiveHalo(liveBroadcastHaloOpacity(0, selectedId ?? ''), 0.72),
           },
         });
 
@@ -823,9 +1158,9 @@ export default function CurrentGlobe({ streams, onboarding = false, onOnboarding
           filter: ['!', ['has', 'point_count']],
           paint: {
             'circle-color': markerColorExpression(),
-            'circle-radius': liveCrowdHaloRadius(0),
-            'circle-blur': 2.2,
-            'circle-opacity': liveCrowdHaloOpacity(0),
+            'circle-radius': styleLiveHalo(liveCrowdHaloRadius(0), 0.78),
+            'circle-blur': variant === 'maplibre-custom' ? 1.7 : 2.2,
+            'circle-opacity': styleLiveHalo(liveCrowdHaloOpacity(0), 0.72),
           },
         });
 
@@ -845,12 +1180,13 @@ export default function CurrentGlobe({ streams, onboarding = false, onOnboarding
           },
         });
 
-        // Luminous core for live markers — soft light point, no hard edge
+        // Luminous core kept for ambient halo tying but hidden — avatar markers (HTML) render on top.
         map.addLayer({
           id: 'vuvio-test-live-points',
           type: 'circle',
           source: 'vuvio-test-lives',
           filter: ['!', ['has', 'point_count']],
+          layout: { visibility: 'none' },
           paint: {
             'circle-color': markerColorExpression(),
             'circle-radius': livePointRadius(0, selectedId ?? ''),
@@ -887,9 +1223,10 @@ export default function CurrentGlobe({ streams, onboarding = false, onOnboarding
           },
         });
 
-        const selectFeature = (event) => {
-          const feature = event.features?.[0];
-          if (!feature) return;
+        const selectStream = (stream) => {
+          if (!stream) return;
+          const coords = stream.coordinates;
+          if (!coords) return;
           if (!selectedIdRef.current) {
             const center = map.getCenter();
             selectionReturnViewRef.current = {
@@ -899,49 +1236,75 @@ export default function CurrentGlobe({ streams, onboarding = false, onOnboarding
               pitch: map.getPitch(),
             };
           }
-          const nextSelectedId = feature.properties.id;
-          const stream = enrichedStreams.find((s) => s.id === nextSelectedId);
-          if (stream) {
-            analyticsService.trackGlobePinClicked(
-              stream.id,
-              stream.creatorId || stream.id,
-              feature.geometry.coordinates[1],
-              feature.geometry.coordinates[0]
-            );
+          if (stream.type === 'cluster') {
+            const source = map.getSource('vuvio-test-lives');
+            if (!source) return;
+            setSelectedId(null);
+            selectedIdRef.current = null;
+            pauseUntilRef.current = Date.now() + 8500;
+            Promise.all([
+              source.getClusterLeaves(stream.clusterId, stream.count, 0),
+              source.getClusterExpansionZoom(stream.clusterId),
+            ]).then(([features, zoom]) => {
+              const ids = new Set(features.map((feature) => feature.properties?.id));
+              setSelectedCluster({ ...stream, streams: liveStreamsRef.current.filter((live) => ids.has(live.id)) });
+
+              let targetCoordinates = coords;
+              if (variant === 'maplibre-custom') {
+                const xyz = features.reduce((sum, feature) => {
+                  const point = feature.geometry?.coordinates;
+                  if (!Array.isArray(point)) return sum;
+                  const longitude = (point[0] * Math.PI) / 180;
+                  const latitude = (point[1] * Math.PI) / 180;
+                  sum[0] += Math.cos(latitude) * Math.cos(longitude);
+                  sum[1] += Math.cos(latitude) * Math.sin(longitude);
+                  sum[2] += Math.sin(latitude);
+                  return sum;
+                }, [0, 0, 0]);
+                if (features.length > 0) {
+                  targetCoordinates = [
+                    (Math.atan2(xyz[1], xyz[0]) * 180) / Math.PI,
+                    (Math.atan2(xyz[2], Math.hypot(xyz[0], xyz[1])) * 180) / Math.PI,
+                  ];
+                }
+              }
+              const currentZoom = map.getZoom();
+              const expansionZoom = Math.min(zoom + 0.25, currentZoom + 1.25);
+              map.easeTo({
+                center: targetCoordinates,
+                zoom: Math.min(Math.max(expansionZoom, currentZoom + 0.9), map.getMaxZoom()),
+                duration: 1000,
+                easing: (t) => 1 - Math.pow(1 - t, 3),
+                essential: true,
+              });
+            }).catch(() => {});
+            return;
           }
-          selectedIdRef.current = nextSelectedId;
-          setSelectedId(nextSelectedId);
-          onOnboardingLiveSelect?.(nextSelectedId);
+          analyticsService.trackGlobePinClicked(
+            stream.id,
+            stream.creatorId || stream.id,
+            coords[1],
+            coords[0],
+          );
+          setSelectedCluster(null);
+          selectedIdRef.current = stream.id;
+          setSelectedId(stream.id);
+          onOnboardingLiveSelect?.(stream.id);
           pauseUntilRef.current = Date.now() + 8500;
+          const currentZoom = map.getZoom();
+          const targetZoom = variant === 'maplibre-custom'
+            ? Math.min(currentZoom + 1.5, map.getMaxZoom())
+            : Math.min(Math.max(SELECTED_LIVE_ZOOM, currentZoom + 0.6), map.getMaxZoom());
           map.easeTo({
-            center: feature.geometry.coordinates,
-            zoom: SELECTED_LIVE_ZOOM,
-            duration: 820,
+            center: coords,
+            zoom: targetZoom,
+            duration: 950,
             easing: (t) => 1 - Math.pow(1 - t, 3),
             essential: true,
           });
         };
 
-        map.on('click', 'vuvio-test-live-hit', selectFeature);
-        map.on('click', 'vuvio-test-live-points', selectFeature);
-
-        // OPTIMIZATION 2: Cluster click handler removed
-        // map.on('click', 'vuvio-test-clusters', (event) => {
-        //   const feature = event.features?.[0];
-        //   const clusterId = feature?.properties?.cluster_id;
-        //   if (!feature || clusterId === undefined) return;
-        //   const source = map.getSource('vuvio-test-lives');
-        //   source.getClusterExpansionZoom(clusterId, (error, zoom) => {
-        //     if (error) return;
-        //     pauseUntilRef.current = Date.now() + 2400;
-        //     map.easeTo({
-        //       center: feature.geometry.coordinates,
-        //       zoom: Math.min(zoom + 0.35, SELECTED_LIVE_ZOOM),
-        //       duration: 650,
-        //       essential: true,
-        //     });
-        //   });
-        // });
+        handleClickRef.current = selectStream;
 
         map.on('mouseenter', 'vuvio-test-live-hit', () => {
           map.getCanvas().style.cursor = 'pointer';
@@ -974,7 +1337,9 @@ export default function CurrentGlobe({ streams, onboarding = false, onOnboarding
       } catch (error) {
         setMapError(error instanceof Error ? error.message : String(error));
       }
-    });
+    };
+    map.on('load', initializeMap);
+    if (map.isStyleLoaded()) initializeMap();
 
     return () => {
       map.getCanvas().removeEventListener('pointerdown', pauseInteraction);
@@ -987,10 +1352,19 @@ export default function CurrentGlobe({ streams, onboarding = false, onOnboarding
       map.off('zoomstart', pauseInteraction);
       map.off('dragend', resumeInteraction);
       map.off('zoomend', resumeInteraction);
+      map.off('zoomstart', hideStarfieldOnZoom);
+      map.off('zoomend', syncStarfieldAfterZoom);
       window.removeEventListener('resize', resizeHaloCanvas);
+      map.off('render', revealOnRender);
+      map.off('style.load', revealNativeGlobe);
+      if (initializeMap) map.off('load', initializeMap);
+      resizeObserver.disconnect();
+      window.clearInterval(loadedPoll);
       if (animationRef.current) cancelAnimationFrame(animationRef.current);
       for (const marker of Object.values(dvMarkersRef.current)) marker.remove();
       dvMarkersRef.current = {};
+      for (const marker of Object.values(htmlMarkersRef.current)) marker.remove();
+      htmlMarkersRef.current = {};
       if (haloCanvasRef.current?.parentNode) haloCanvasRef.current.parentNode.removeChild(haloCanvasRef.current);
       document.getElementById('vuvio-globe-svg-filters')?.remove();
       map.remove();
@@ -1002,9 +1376,11 @@ export default function CurrentGlobe({ streams, onboarding = false, onOnboarding
 
   useEffect(() => {
     const map = mapRef.current;
-    const source = map?.getSource('vuvio-test-lives');
-    if (!source) return;
-    source.setData(liveStreamsCollection);
+    if (!map) return undefined;
+    const update = () => map.getSource('vuvio-test-lives')?.setData(liveStreamsCollection);
+    if (map.getSource('vuvio-test-lives')) update();
+    else map.once('load', update);
+    return () => map.off('load', update);
   }, [liveStreamsCollection]);
 
   useEffect(() => {
@@ -1048,38 +1424,266 @@ export default function CurrentGlobe({ streams, onboarding = false, onOnboarding
     };
   }, [requestedLive]);
 
-  // OPTIMIZATION 8: DOM markers disabled
-  // Double-V pulse markers (test mode only) - removed for performance
-  // These SVG overlays duplicate canvas rendering and add DOM overhead
-  // useEffect(() => {
-  //   const map = mapRef.current;
-  //   if (!map) return;
-  //
-  //   const sync = () => {
-  //     const currentIds = new Set(liveStreams.map((s) => s.id));
-  //     for (const [id, marker] of Object.entries(dvMarkersRef.current)) {
-  //       if (!currentIds.has(id)) { marker.remove(); delete dvMarkersRef.current[id]; }
-  //     }
-  //     for (const stream of liveStreams) {
-  //       if (dvMarkersRef.current[stream.id]) continue;
-  //       const color = stream.familyColor || '#2BD9C8';
-  //       const delay = (pulseSeed(stream.id) * 2.2).toFixed(2);
-  //       const el = document.createElement('div');
-  //       el.className = 'vuvio-dv-pulse';
-  //       el.style.cssText = `--dv-color:${color};--dv-delay:${delay}s`;
-  //       el.innerHTML = '<svg viewBox="-16 -15 32 28" width="32" height="28" aria-hidden="true"><circle cx="0" cy="-9" r="2" fill="currentColor" opacity="0.9"/><path d="M-9,-4 L-5.5,5 L0,-1 L5.5,5 L9,-4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>';
-  //       dvMarkersRef.current[stream.id] = new maplibregl.Marker({ element: el, anchor: 'center' })
-  //         .setLngLat(stream.coordinates)
-  //         .addTo(map);
-  //     }
-  //   };
-  //
-  //   if (map.loaded()) sync(); else map.once('load', sync);
-  // }, [liveStreams]);
+  // HTML avatar markers — look matches GlobeTest2 (.gt2-marker)
+  const buildMarkerElement = useCallback((stream) => {
+    const el = document.createElement('div');
+    el._vuvioStream = stream;
+    el.dataset.streamId = stream.id;
+    el.style.setProperty('--marker-color', stream.familyColor || '#28d8df');
+
+    if (stream.type === 'cluster') {
+      el.className = 'gt2-marker gt2-marker--cluster';
+      el.innerHTML = `
+        <div class="gt2-marker__bubble">
+          <span class="gt2-marker__count">${stream.count}</span>
+          <span class="gt2-marker__live-label">LIVE</span>
+        </div>
+        <div class="gt2-marker__stem"></div>
+        <div class="gt2-marker__dot"></div>
+      `;
+    } else {
+      el.className = 'gt2-marker gt2-marker--avatar';
+      const img = stream.image || '';
+      const initial = (stream.name || stream.creatorName || '?')[0].toUpperCase();
+      el.innerHTML = img
+        ? `<div class="gt2-marker__bubble"><img src="${img}" alt="" loading="lazy" /></div><div class="gt2-marker__stem"></div><div class="gt2-marker__dot"></div>`
+        : `<div class="gt2-marker__bubble"><span class="gt2-marker__initial">${initial}</span></div><div class="gt2-marker__stem"></div><div class="gt2-marker__dot"></div>`;
+    }
+
+    el.addEventListener('click', (e) => {
+      e.stopPropagation();
+      handleClickRef.current?.(el._vuvioStream);
+    });
+    return el;
+  }, []);
 
   useEffect(() => {
     const map = mapRef.current;
     if (!map) return undefined;
+
+    const computeClusters = () => {
+      if (!map.getLayer('vuvio-test-cluster-anchor') || !map.getLayer('vuvio-test-point-anchor')) return;
+      if (!map.isSourceLoaded('vuvio-test-lives')) return;
+      const center = map.getCenter();
+      const zoom = map.getZoom();
+      const centerLatRad = (center.lat * Math.PI) / 180;
+      const centerLngRad = (center.lng * Math.PI) / 180;
+      const sinCLat = Math.sin(centerLatRad);
+      const cosCLat = Math.cos(centerLatRad);
+      const globeMode = zoom < 6;
+      const byId = new Map(liveStreams.map((stream) => [String(stream.id), stream]));
+      const seen = new Set();
+      const next = [];
+      const canvas = map.getCanvas();
+      const width = canvas.clientWidth;
+      const height = canvas.clientHeight;
+      const sourceFeatures = map.querySourceFeatures('vuvio-test-lives');
+      const targetZoom = Math.floor(zoom);
+      const tileZooms = [...new Set(sourceFeatures.map((feature) => feature._z))];
+      tileZooms.sort((a, b) => Math.abs(a - targetZoom) - Math.abs(b - targetZoom));
+      const features = sourceFeatures.filter((feature) => feature._z === tileZooms[0]);
+
+      for (const feature of features) {
+        const clusterId = feature.properties?.cluster_id;
+        const isCluster = feature.properties?.point_count != null;
+        const key = isCluster
+          ? `cluster-${clusterId}-${feature.properties.point_count}`
+          : String(feature.properties?.id);
+        if (seen.has(key)) continue;
+
+        const coords = feature.geometry?.coordinates;
+        if (!Array.isArray(coords)) continue;
+        const point = map.project(coords);
+        if (!Number.isFinite(point.x) || !Number.isFinite(point.y)
+          || point.x < -24 || point.x > width + 24
+          || point.y < -24 || point.y > height + 24) continue;
+        if (globeMode) {
+          const latRad = (coords[1] * Math.PI) / 180;
+          const lngRad = (coords[0] * Math.PI) / 180;
+          const cosAngle = sinCLat * Math.sin(latRad)
+            + cosCLat * Math.cos(latRad) * Math.cos(lngRad - centerLngRad);
+          if (cosAngle < 0.42) continue;
+        }
+        seen.add(key);
+
+        if (isCluster) {
+          next.push({
+            id: key,
+            type: 'cluster',
+            clusterId,
+            count: Number(feature.properties.point_count),
+            coordinates: coords,
+          });
+        } else {
+          const stream = byId.get(String(feature.properties?.id));
+          if (stream) next.push(stream);
+        }
+      }
+
+      const nextSignature = next.map((item) => `${item.id}:${item.count ?? 1}:${item.coordinates.join(',')}`).sort().join(';');
+      if (nextSignature === lastClusterSignatureRef.current) return;
+      lastClusterSignatureRef.current = nextSignature;
+      setDisplayedStreams(next);
+    };
+
+    let clusterRaf = 0;
+    const scheduleClusters = () => {
+      if (clusterRaf) return;
+      clusterRaf = requestAnimationFrame(() => {
+        clusterRaf = 0;
+        computeClusters();
+      });
+    };
+
+    lastClusterSignatureRef.current = '';
+    scheduleClusters();
+    map.on('render', scheduleClusters);
+    map.on('sourcedata', scheduleClusters);
+    map.on('moveend', scheduleClusters);
+    return () => {
+      cancelAnimationFrame(clusterRaf);
+      map.off('render', scheduleClusters);
+      map.off('sourcedata', scheduleClusters);
+      map.off('moveend', scheduleClusters);
+    };
+  }, [liveStreams]);
+
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return undefined;
+
+    let cullRafPending = false;
+    const cullVisCache = new WeakMap();
+    const cullBackfaceMarkers = () => {
+      if (cullRafPending) return;
+      cullRafPending = true;
+      requestAnimationFrame(() => {
+        cullRafPending = false;
+        const center = map.getCenter();
+        const zoom = map.getZoom();
+        const centerLatRad = (center.lat * Math.PI) / 180;
+        const centerLngRad = (center.lng * Math.PI) / 180;
+        const sinCLat = Math.sin(centerLatRad);
+        const cosCLat = Math.cos(centerLatRad);
+        // Globe projection flattens past zoom ~6 → skip backface check once we're zoomed in.
+        const globeMode = zoom < 6;
+        const canvas = map.getCanvas();
+        const w = canvas.clientWidth;
+        const h = canvas.clientHeight;
+        const margin = 24;
+
+        for (const marker of Object.values(htmlMarkersRef.current)) {
+          const el = marker.getElement();
+          let hide = false;
+          const ll = marker.getLngLat();
+          if (globeMode) {
+            const latRad = (ll.lat * Math.PI) / 180;
+            const lngRad = (ll.lng * Math.PI) / 180;
+            const cosAngle = sinCLat * Math.sin(latRad)
+              + cosCLat * Math.cos(latRad) * Math.cos(lngRad - centerLngRad);
+            // Hide markers more than ~65° from view center — the ones near
+            // the horizon are heavily distorted and visually barely there.
+            if (cosAngle < 0.42) hide = true;
+          }
+          if (!hide) {
+            // Viewport frustum cull: hide markers outside the canvas rect.
+            const p = map.project(ll);
+            if (!Number.isFinite(p.x) || !Number.isFinite(p.y)
+              || p.x < -margin || p.x > w + margin
+              || p.y < -margin || p.y > h + margin) {
+              hide = true;
+            }
+          }
+          if (cullVisCache.get(el) !== hide) {
+            cullVisCache.set(el, hide);
+            el.style.visibility = hide ? 'hidden' : '';
+            el.classList.toggle('is-culled', hide);
+          }
+        }
+      });
+    };
+
+    const sync = () => {
+      const currentIds = new Set(displayedStreams.map((s) => s.id));
+      for (const [id, marker] of Object.entries(htmlMarkersRef.current)) {
+        if (!currentIds.has(id)) {
+          marker.remove();
+          delete htmlMarkersRef.current[id];
+        }
+      }
+      for (const stream of displayedStreams) {
+        const existing = htmlMarkersRef.current[stream.id];
+        if (existing) {
+          existing.getElement()._vuvioStream = stream;
+          existing.setLngLat(stream.coordinates);
+          continue;
+        }
+        const el = buildMarkerElement(stream);
+        htmlMarkersRef.current[stream.id] = new maplibregl.Marker({ element: el, anchor: 'center' })
+          .setLngLat(stream.coordinates)
+          .addTo(map);
+      }
+      cullBackfaceMarkers();
+    };
+
+    sync();
+    map.on('move', cullBackfaceMarkers);
+    map.on('zoom', cullBackfaceMarkers);
+    return () => {
+      map.off('move', cullBackfaceMarkers);
+      map.off('zoom', cullBackfaceMarkers);
+    };
+  }, [buildMarkerElement, displayedStreams]);
+
+  useEffect(() => {
+    document.querySelectorAll('.gt2-marker.is-selected').forEach((el) => el.classList.remove('is-selected'));
+    if (!selectedId) return undefined;
+    const el = document.querySelector(`.gt2-marker[data-stream-id="${selectedId}"]`);
+    if (el) el.classList.add('is-selected');
+    return undefined;
+  }, [selectedId]);
+
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return undefined;
+    if (variant === 'maplibre-custom') {
+      let rotationTimer = 0;
+      let moveEndHandler = null;
+      let cancelled = false;
+      const rotate = () => {
+        if (document.visibilityState === 'hidden'
+          || Date.now() <= pauseUntilRef.current
+          || selectedId
+          || map.getZoom() > 2.5
+          || map.isMoving()
+          || !map.isStyleLoaded()) {
+          rotationTimer = window.setTimeout(rotate, 300);
+          return;
+        }
+
+        const center = map.getCenter();
+        const delta = ROTATE_DEGREES_PER_SECOND * 2;
+        moveEndHandler = () => {
+          if (moveEndHandler) map.off('moveend', moveEndHandler);
+          moveEndHandler = null;
+          if (!cancelled) rotate();
+        };
+        map.on('moveend', moveEndHandler);
+        map.easeTo({
+          center: [center.lng + delta, center.lat],
+          duration: 2000,
+          easing: (progress) => progress,
+          essential: true,
+        });
+      };
+
+      rotate();
+      return () => {
+        cancelled = true;
+        window.clearTimeout(rotationTimer);
+        if (moveEndHandler) map.off('moveend', moveEndHandler);
+      };
+    }
     if (animationRef.current) cancelAnimationFrame(animationRef.current);
     let lastRotationTime = performance.now();
     let lastPulseTime = 0;
@@ -1147,7 +1751,8 @@ export default function CurrentGlobe({ streams, onboarding = false, onOnboarding
       if (haloCanvas && (zoom < 4.0 || Math.abs(zoom - lastHaloZoomRef.current) > 0.05)) {
         lastHaloZoomRef.current = zoom;
         const ctx = haloCanvas.getContext('2d');
-        drawAtmosphericHalo(haloCanvas, ctx, totalRotation, time, zoom);
+      const center = map.getCenter();
+      drawAtmosphericHalo(haloCanvas, ctx, totalRotation, time, zoom, { ...map.project([center.lng, center.lat]), map });
       }
 
       animationRef.current = requestAnimationFrame(tick);
@@ -1157,7 +1762,7 @@ export default function CurrentGlobe({ streams, onboarding = false, onOnboarding
     return () => {
       if (animationRef.current) cancelAnimationFrame(animationRef.current);
     };
-  }, [selectedId]);
+  }, [selectedId, variant]);
 
   /* FPS HUD — visible via ?fps=1 to diagnose perf without devtools */
   useEffect(() => {
@@ -1222,6 +1827,8 @@ export default function CurrentGlobe({ streams, onboarding = false, onOnboarding
     if (!map) return;
     map.setProjection({ type: 'globe' });
     setSelectedId(null);
+    setSelectedCluster(null);
+    selectedIdRef.current = null;
     setHoveredId('');
     pauseUntilRef.current = Date.now() + 2200;
 
@@ -1284,7 +1891,7 @@ export default function CurrentGlobe({ streams, onboarding = false, onOnboarding
 
   return (
     <section
-      className={`screen test-globe-screen test-globe-screen--maplibre test-globe-screen--actual${onboarding ? ' test-globe-screen--onboarding' : ''}`}
+      className={`screen test-globe-screen test-globe-screen--maplibre test-globe-screen--actual test-globe-screen--${variant}${onboarding ? ' test-globe-screen--onboarding' : ''}`}
       data-sheet-state={sheetState}
       aria-label="Current Vuvio globe"
     >
@@ -1293,6 +1900,22 @@ export default function CurrentGlobe({ streams, onboarding = false, onOnboarding
         {!isMapLoaded && <div className="test-old-globe__loading-mask" aria-hidden="true" />}
         <div className="test-old-globe__vignette" />
         {mapError ? <div className="test-old-globe__error">Error: {mapError}</div> : null}
+
+        {!onboarding && (
+          <div className="gt2-status-bar">
+            <button
+              type="button"
+              className={`gt2-status-btn${activeStatuses.includes('live') && !activeStatuses.includes('upcoming') ? ' gt2-status-btn--active' : ''}`}
+              onClick={() => setActiveStatuses(['live'])}
+            >Live</button>
+            <button type="button" className="gt2-status-btn gt2-status-btn--dim" disabled>Recent</button>
+            <button
+              type="button"
+              className={`gt2-status-btn${activeStatuses.includes('upcoming') && !activeStatuses.includes('live') ? ' gt2-status-btn--active' : ''}`}
+              onClick={() => setActiveStatuses(['upcoming'])}
+            >Upcoming</button>
+          </div>
+        )}
 
         {fpsEnabled && (
           <div
@@ -1379,35 +2002,101 @@ export default function CurrentGlobe({ streams, onboarding = false, onOnboarding
                 </span>
                 <h2>{selectedLive.experienceTitle}</h2>
                 <p>{selectedLive.name} · {selectedLive.city}, {selectedLive.country}</p>
-                <strong>{selectedLive.viewers} viewers</strong>
+                {selectedLive.status === 'upcoming' ? (() => {
+                  const cd = getCountdownState(selectedLive.startsAt, now, cLabels);
+                  return (
+                    <div className="gt2-card__countdown">
+                      <span className="gt2-card__countdown-label">{cd.label}</span>
+                      {cd.value && <strong className="gt2-card__countdown-value">{cd.value}</strong>}
+                    </div>
+                  );
+                })() : <strong>{selectedLive.viewers} viewers</strong>}
               </div>
               <div className="test-globe-card__actions">
-                <button
-                  type="button"
-                  className="test-globe-card__watch"
-                  onClick={() => navigate(watchPathForLive(selectedLive))}
-                >
-                  <Play size={13} fill="currentColor" strokeWidth={1.8} />
-                  Watch
-                </button>
-                <button
-                  type="button"
-                  className="test-globe-card__profile"
-                  onClick={() => navigate(`/profile/${selectedLive.creatorId ?? selectedLive.id}`)}
-                >
-                  Profile
-                </button>
-                <button
-                  type="button"
-                  className="test-globe-card__notify"
-                  aria-label="Notify me"
-                >
-                  <Bell size={14} strokeWidth={1.8} />
-                </button>
+                {selectedLive.status === 'upcoming' ? (
+                  <button
+                    type="button"
+                    className={`gt2-card__remind-btn${remindedIds.has(selectedLive.id) ? ' is-active' : ''}`}
+                    onClick={() => toggleRemind(selectedLive)}
+                  >
+                    {remindedIds.has(selectedLive.id)
+                      ? <><BellOff size={13} strokeWidth={2} />Rappel activé</>
+                      : <><Bell size={13} strokeWidth={2} />Me notifier</>}
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    className="test-globe-card__watch"
+                    onClick={() => navigate(watchPathForLive(selectedLive))}
+                  >
+                    <Play size={13} fill="currentColor" strokeWidth={1.8} />
+                    Watch
+                  </button>
+                )}
               </div>
             </div>
           </aside>
         ) : null}
+
+        {!onboarding && selectedCluster && (
+          <div className="gt2-cluster-sheet">
+            <div className="gt2-cluster-sheet__handle" />
+            <div className="gt2-cluster-sheet__header">
+              <span className="gt2-cluster-sheet__title">
+                {selectedCluster.count} live{selectedCluster.count > 1 ? 's' : ''}
+                {selectedCluster.streams[0]?.city ? ` in ${selectedCluster.streams[0].city}` : ' nearby'}
+              </span>
+              <button
+                type="button"
+                className="gt2-cluster-sheet__close"
+                onClick={recenter}
+                aria-label="Close"
+              >
+                <X size={16} strokeWidth={2} />
+              </button>
+            </div>
+            <div className="gt2-cluster-sheet__list">
+              {selectedCluster.streams.map((s) => {
+                const profilePath = s.creatorUid ? `/profile/${s.creatorUid}` : null;
+                return (
+                  <div key={s.id} className="gt2-cluster-sheet__item">
+                    <button
+                      type="button"
+                      className="gt2-cluster-sheet__item-left"
+                      onClick={() => { if (profilePath) { setSelectedCluster(null); navigate(profilePath); } }}
+                      aria-label={`View ${s.name}'s profile`}
+                    >
+                      <img src={s.image} alt="" loading="lazy" />
+                    </button>
+                    <button
+                      type="button"
+                      className="gt2-cluster-sheet__item-body"
+                      onClick={() => { if (profilePath) { setSelectedCluster(null); navigate(profilePath); } }}
+                    >
+                      <span className="gt2-cluster-sheet__item-title">{s.experienceTitle || s.subcategory}</span>
+                      <span className="gt2-cluster-sheet__item-creator">{s.name}</span>
+                      <span className="gt2-cluster-sheet__item-meta">
+                        {s.city}, {s.country}
+                        {s.status === 'upcoming'
+                          ? ` · ${s.day === 'TODAY' ? "Aujourd'hui" : 'Demain'} ${s.time}`
+                          : ` · ${s.viewers?.toLocaleString?.() ?? s.viewers} viewers`}
+                      </span>
+                    </button>
+                    {s.status === 'upcoming' ? (
+                      <span className="gt2-cluster-sheet__item-soon">À venir</span>
+                    ) : (
+                      <button
+                        type="button"
+                        className="gt2-cluster-sheet__item-watch"
+                        onClick={() => { setSelectedCluster(null); navigate(watchPathForLive(s)); }}
+                      >Watch</button>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
 
       </div>
     </section>

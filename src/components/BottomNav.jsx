@@ -1,4 +1,4 @@
-import { Bike, Briefcase, CalendarPlus, Camera, ChevronDown, ChevronLeft, Compass, Footprints, Globe2, ImagePlus, Mountain, MoreHorizontal, Pencil, Plane, Play, Radio, Tv2, UserRound, UtensilsCrossed, Video, Waves, X } from 'lucide-react';
+import { Bike, Briefcase, CalendarPlus, Camera, ChevronDown, ChevronLeft, Compass, Eye, Footprints, Globe2, GraduationCap, HandHelping, ImagePlus, Lightbulb, Mountain, MoreHorizontal, Pencil, Plane, Play, Radio, Tv2, UserRound, Users, UtensilsCrossed, Video, Waves, X } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { NavLink, useLocation, useNavigate } from 'react-router-dom';
@@ -24,6 +24,7 @@ import {
   rememberLiveEquipmentSetup,
   rememberLiveEquipmentSetupBySubcategory,
 } from '../services/equipmentService.js';
+import { isWorkshopEnabled, PARTICIPATION_LIMITS } from '../config/workshop.js';
 
 const navItems = [
   { to: '/watch', labelKey: 'navigation.watch', icon: Tv2 },
@@ -46,6 +47,12 @@ const initialLiveDraft = {
   privacy: 'Everyone',
   quality: '1080p',
   equipmentIds: [],
+  participation: 'off',
+  participationConfig: {
+    maxParticipants: 6,
+    audience: 'everyone',
+    activityTitle: '',
+  },
 };
 
 const privacyOptions = ['Everyone', 'Followers', 'Private'];
@@ -101,6 +108,102 @@ const QUICK_CATEGORIES = [
   { id: 'Flying',   label: 'Flying',   family: 'air',   subcategory: 'Paragliding', icon: Plane },
 ];
 
+function ParticipationSection({ draft, onUpdateDraft }) {
+  const { t } = useTranslation();
+  const mode = draft.participation || 'off';
+  const cfg = draft.participationConfig || { maxParticipants: 6, audience: 'everyone', activityTitle: '' };
+  const limits = { min: PARTICIPATION_LIMITS?.minParticipants ?? 1, max: PARTICIPATION_LIMITS?.maxParticipants ?? 12 };
+
+  const updateMode = (next) => onUpdateDraft('participation', next);
+  const updateCfg = (patch) => onUpdateDraft('participationConfig', { ...cfg, ...patch });
+
+  const modes = [
+    { id: 'off', label: t('workshop.modes.off'), hint: t('workshop.modesHint.off'), icon: Lightbulb },
+    { id: 'join', label: t('workshop.modes.join'), hint: t('workshop.modesHint.join'), icon: HandHelping },
+    { id: 'workshop', label: t('workshop.modes.workshop'), hint: t('workshop.modesHint.workshop'), icon: Users },
+  ];
+
+  const audiences = [
+    { id: 'everyone', label: t('workshop.audienceOptions.everyone') },
+    { id: 'followers', label: t('workshop.audienceOptions.followers') },
+    { id: 'invited', label: t('workshop.audienceOptions.invited') },
+  ];
+
+  return (
+    <section className="create-live-flow__section workshop-start-section">
+      <h2>{t('workshop.participation')}</h2>
+      <div className="workshop-mode-row">
+        {modes.map((m) => {
+          const Icon = m.icon;
+          const isActive = mode === m.id;
+          return (
+            <button
+              key={m.id}
+              type="button"
+              className={`workshop-mode-chip${isActive ? ' is-active' : ''}`}
+              onClick={() => updateMode(m.id)}
+              aria-pressed={isActive}
+            >
+              <Icon size={14} strokeWidth={2} />
+              <strong>{m.label}</strong>
+              <span>{m.hint}</span>
+            </button>
+          );
+        })}
+      </div>
+
+      {mode !== 'off' ? (
+        <>
+          <div className="workshop-field">
+            <label>{t('workshop.activityTitle')}</label>
+            <input
+              type="text"
+              value={cfg.activityTitle || ''}
+              onChange={(e) => updateCfg({ activityTitle: e.target.value })}
+              placeholder={t('workshop.activityTitle')}
+              maxLength={80}
+            />
+          </div>
+
+          <div className="workshop-field">
+            <label>{t('workshop.maxParticipants')}</label>
+            <div className="workshop-counter" role="group" aria-label={t('workshop.maxParticipants')}>
+              <button
+                type="button"
+                onClick={() => updateCfg({ maxParticipants: Math.max(limits.min, (cfg.maxParticipants || limits.min) - 1) })}
+                aria-label="Decrease"
+              >−</button>
+              <span>{cfg.maxParticipants || limits.min}</span>
+              <button
+                type="button"
+                onClick={() => updateCfg({ maxParticipants: Math.min(limits.max, (cfg.maxParticipants || limits.min) + 1) })}
+                aria-label="Increase"
+              >+</button>
+              <small>{t('workshop.participantsHint', { min: limits.min, max: limits.max, defaultValue: '' })}</small>
+            </div>
+          </div>
+
+          <div className="workshop-field">
+            <label>{t('workshop.audience')}</label>
+            <div className="workshop-audience-row">
+              {audiences.map((a) => (
+                <button
+                  key={a.id}
+                  type="button"
+                  className={`workshop-audience-chip${cfg.audience === a.id ? ' is-active' : ''}`}
+                  onClick={() => updateCfg({ audience: a.id })}
+                >
+                  {a.label}
+                </button>
+              ))}
+            </div>
+          </div>
+        </>
+      ) : null}
+    </section>
+  );
+}
+
 function StartLiveFlow({
   draft, onUpdateDraft, onLaunch,
   autoCoverEnabled, onAutoCoverToggle,
@@ -110,16 +213,29 @@ function StartLiveFlow({
   hasPreviousSetup,
   savedDestinations, onSaveDestination, onRemoveDestination,
 }) {
+  const { t } = useTranslation();
   const videoRef = useRef(null);
   const streamRef = useRef(null);
   const launchedRef = useRef(false);
+  const typeHintTimerRef = useRef(null);
   const [cameraState, setCameraState] = useState('pending');
   const [privacyOpen, setPrivacyOpen] = useState(false);
   const [moreOptionsOpen, setMoreOptionsOpen] = useState(false);
   const [showFullCategories, setShowFullCategories] = useState(false);
+  const [liveTypeHint, setLiveTypeHint] = useState(null); // null | 'join' | 'workshop'
   // Multistream destinations — stream keys are session-only (never persisted)
   const [destSheet, setDestSheet] = useState(null); // null | 'instagram' | 'youtube' | 'custom'
   const [sessionDests, setSessionDests] = useState({}); // { [provider]: { url, streamKey, id?, enabled } }
+
+  const showLiveTypeHint = (which) => {
+    setLiveTypeHint(which);
+    if (typeHintTimerRef.current) clearTimeout(typeHintTimerRef.current);
+    typeHintTimerRef.current = setTimeout(() => setLiveTypeHint(null), 3200);
+  };
+
+  useEffect(() => () => {
+    if (typeHintTimerRef.current) clearTimeout(typeHintTimerRef.current);
+  }, []);
 
   useEffect(() => {
     let active = true;
@@ -294,6 +410,58 @@ function StartLiveFlow({
         )}
       </div>
 
+      {/* Live type (preview) */}
+      <div className="start-live-type-group">
+        <label className="start-live-label">{t('create.liveType.label')}</label>
+        <div className="start-live-types">
+          <button
+            type="button"
+            className="start-live-type is-active"
+            aria-pressed="true"
+          >
+            <span className="start-live-type__icon start-live-type__icon--cyan">
+              <Eye size={16} strokeWidth={1.8} />
+            </span>
+            <span className="start-live-type__name">{t('create.liveType.watchOnly')}</span>
+          </button>
+          <button
+            type="button"
+            className="start-live-type is-coming"
+            aria-pressed="false"
+            aria-disabled="true"
+            onClick={() => showLiveTypeHint('join')}
+            onMouseEnter={() => showLiveTypeHint('join')}
+            onFocus={() => showLiveTypeHint('join')}
+          >
+            <span className="start-live-type__icon start-live-type__icon--green">
+              <Users size={16} strokeWidth={1.8} />
+            </span>
+            <span className="start-live-type__name">{t('create.liveType.openToJoin')}</span>
+            <span className="start-live-type__badge">{t('create.liveType.soon')}</span>
+          </button>
+          <button
+            type="button"
+            className="start-live-type is-coming"
+            aria-pressed="false"
+            aria-disabled="true"
+            onClick={() => showLiveTypeHint('workshop')}
+            onMouseEnter={() => showLiveTypeHint('workshop')}
+            onFocus={() => showLiveTypeHint('workshop')}
+          >
+            <span className="start-live-type__icon start-live-type__icon--purple">
+              <GraduationCap size={16} strokeWidth={1.8} />
+            </span>
+            <span className="start-live-type__name">{t('create.liveType.workshop')}</span>
+            <span className="start-live-type__badge">{t('create.liveType.soon')}</span>
+          </button>
+        </div>
+        {liveTypeHint && (
+          <div className={`start-live-type-hint start-live-type-hint--${liveTypeHint}`} role="status">
+            {t(`create.liveType.hint.${liveTypeHint}`)}
+          </div>
+        )}
+      </div>
+
       {/* Broadcast to */}
       <div className="start-live-broadcast">
         <label className="start-live-label">Broadcast to</label>
@@ -460,6 +628,9 @@ function StartLiveFlow({
               ))}
             </div>
           </section>
+          {isWorkshopEnabled() && (
+            <ParticipationSection draft={draft} onUpdateDraft={onUpdateDraft} />
+          )}
           <section className="create-live-flow__section">
             <h2>Equipment</h2>
             {quickAddOpen ? (
@@ -671,7 +842,7 @@ export default function BottomNav({ collapsible = false, collapsed = false, onEx
   const [autoCoverEnabled, setAutoCoverEnabled] = useState(true);
   const [equipmentLibrary, setEquipmentLibrary] = useState(() => getEquipmentLibrary());
   const [quickAddOpen, setQuickAddOpen] = useState(false);
-  const [quickAddDraft, setQuickAddDraft] = useState({ category: 'recording', brand: '', model: '' });
+  const [quickAddDraft, setQuickAddDraft] = useState({ category: 'recording', brand: '', model: '', displayName: '' });
   const [scheduleStatus, setScheduleStatus] = useState('idle');
   const [scheduleError, setScheduleError] = useState('');
   const [scheduledLives, setScheduledLives] = useState([]);
@@ -788,6 +959,14 @@ export default function BottomNav({ collapsible = false, collapsed = false, onEx
       geoCountry: place?.country || null,
       countryCode: place?.countryCode || userProfile?.countryCode || null,
       location: place?.label || draft.location,
+      participation: draft.participation || 'off',
+      participationConfig: draft.participation && draft.participation !== 'off'
+        ? {
+            maxParticipants: draft.participationConfig?.maxParticipants || 6,
+            audience: draft.participationConfig?.audience || 'everyone',
+            activityTitle: (draft.participationConfig?.activityTitle || '').trim() || draft.title.trim() || 'Live activity',
+          }
+        : null,
     };
     const selectedIds = effectiveDraft.equipmentIds ?? [];
     const live = createLocalLive({
@@ -890,12 +1069,17 @@ export default function BottomNav({ collapsible = false, collapsed = false, onEx
 
   const openQuickAdd = (category = 'recording') => {
     const suggestedTypes = category === 'activity' ? (SUBCATEGORY_EQUIPMENT_TYPES[draft.subcategory] ?? []) : [];
-    setQuickAddDraft({ category, brand: '', model: '', equipmentType: suggestedTypes[0] ?? '' });
+    setQuickAddDraft({ category, brand: '', model: '', displayName: '', equipmentType: suggestedTypes[0] ?? '' });
     setQuickAddOpen(true);
   };
 
   const saveQuickEquipment = () => {
-    if (!quickAddDraft.brand.trim() || !quickAddDraft.model.trim()) return;
+    const equipmentName = quickAddDraft.displayName?.trim() || quickAddDraft.model?.trim();
+    if (!equipmentName) return;
+    const brand = quickAddDraft.brand?.trim() || '';
+    const inferredModel = brand && equipmentName.toLowerCase().startsWith(`${brand.toLowerCase()} `)
+      ? equipmentName.slice(brand.length).trim()
+      : equipmentName;
     const fallbackType = quickAddDraft.category === 'audio'
       ? 'Microphone'
       : quickAddDraft.category === 'activity'
@@ -903,6 +1087,9 @@ export default function BottomNav({ collapsible = false, collapsed = false, onEx
         : 'Equipment';
     const item = addEquipmentItem({
       ...quickAddDraft,
+      brand,
+      model: quickAddDraft.model?.trim() || inferredModel,
+      displayName: equipmentName,
       equipmentType: quickAddDraft.equipmentType?.trim() || fallbackType,
       compatibleActivityIds: quickAddDraft.category === 'activity' && draft.subcategory ? [draft.subcategory] : undefined,
       isPublic: true,
@@ -912,7 +1099,7 @@ export default function BottomNav({ collapsible = false, collapsed = false, onEx
     setEquipmentLibrary(nextLibrary);
     getEquipmentLibraryWithProducts().then(setEquipmentLibrary).catch(() => {});
     setDraft((current) => ({ ...current, equipmentIds: [...new Set([...(current.equipmentIds ?? []), item.id])] }));
-    setQuickAddDraft({ category: 'recording', brand: '', model: '' });
+    setQuickAddDraft({ category: 'recording', brand: '', model: '', displayName: '' });
     setQuickAddOpen(false);
   };
 
@@ -1024,7 +1211,7 @@ export default function BottomNav({ collapsible = false, collapsed = false, onEx
           onClick={() => setCreateOpen(true)}
           aria-label={t('navigation.create')}
         >
-          <BrandMark size={40} withCircle={false} useLegacy style={{ marginTop: 10 }} />
+          <BrandMark size={40} withCircle={false} useLegacy />
           <span className="bottom-nav__create-badge" aria-hidden="true">+</span>
         </button>
         {navItems.slice(2).map(({ to, labelKey, icon: Icon }) => (

@@ -169,16 +169,16 @@ export default function PovLayer({ phase, videoRef, reducedMotion, soundEnabled,
       {(phase === 'equipment' || phase === 'globe') && <video src={FIREFIGHTER_LIVE.video} preload="auto" muted playsInline style={{ display: 'none' }} />}
       <div className={`introv2-opening introv2-opening--${openingStage}`} aria-hidden="true">
         <div className="introv2-opening__first introv2-opening__first--piano">
-          <video ref={pianoRef} src="/intro/pov-piano-dubai.mp4" poster="/intro/pov-piano-dubai.jpg" muted playsInline preload="auto" disablePictureInPicture />
+          <video ref={pianoRef} src="/pov/used/pov-piano-dubai.mp4" poster="/pov/used/pov-piano-dubai.jpg" muted playsInline preload="auto" disablePictureInPicture />
         </div>
         <div className="introv2-opening__second">
-          <video ref={motoRef} src="/intro/pov-moto-opening.mp4" muted playsInline preload="auto" disablePictureInPicture />
+          <video ref={motoRef} src="/pov/used/pov-moto-opening.mp4" muted playsInline preload="auto" disablePictureInPicture />
         </div>
         <div className="introv2-opening__third">
-          <video ref={alpineRef} src="/intro/pov-alpine-ridge.mp4" poster="/intro/pov-alpine-ridge.jpg" muted playsInline preload="auto" disablePictureInPicture />
+          <video ref={alpineRef} src="/pov/used/pov-alpine-ridge.mp4" poster="/pov/used/pov-alpine-ridge.jpg" muted playsInline preload="auto" disablePictureInPicture />
         </div>
         <div className="introv2-opening__fourth">
-          <video ref={wingsuitRef} src="/intro/pov-wingsuit.mp4" poster="/intro/pov-wingsuit.jpg" muted playsInline preload="auto" disablePictureInPicture />
+          <video ref={wingsuitRef} src="/pov/used/pov-wingsuit.mp4" poster="/pov/used/pov-wingsuit.jpg" muted playsInline preload="auto" disablePictureInPicture />
         </div>
       </div>
     </>

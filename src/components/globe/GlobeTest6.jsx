@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import Globe from 'react-globe.gl';
+import maplibregl from 'maplibre-gl';
+import 'maplibre-gl/dist/maplibre-gl.css';
 import * as THREE from 'three';
 import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js';
 import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
@@ -10,7 +12,7 @@ import { mapStreams } from '../../data/mapStreams.js';
 import { ACTIVITY_CATEGORIES } from '../../data/activityCategories.js';
 import { getCreatedLives, subscribeToCreatedLives } from '../../services/createdLiveService.js';
 import MapBottomSheet from '../map/MapBottomSheet.jsx';
-import { LocateFixed, Minus, Plus, SlidersHorizontal, ChevronUp, X, Play, Bell, BellOff, Layers, RefreshCw, MapPin, Eye, EyeOff } from 'lucide-react';
+import { LocateFixed, Minus, Plus, SlidersHorizontal, ChevronUp, X, Play, Bell, BellOff, RefreshCw, MapPin, Eye, EyeOff } from 'lucide-react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { getCountdownState, makeCountdownLabels } from '../../utils/countdown.js';
@@ -228,44 +230,163 @@ function drawStars(canvas, ctx, time, altitude) {
   }
 }
 
-// ── GT6 — Vector raster tile provider ───────────────────────────────────────
-// The CARTO public basemaps CDN (basemaps.cartocdn.com/dark_all/...) is now
-// paywalled and serves a 2513-byte placeholder PNG to unauthenticated clients
-// (confirmed 2026-11-13 via curl at zoom 2→18). We route to Stadia Maps'
-// `alidade_smooth_dark` instead — same OSS "Dark Matter" lineage (OSM data,
-// OpenMapTiles rendering), free on localhost without a key, keyed for prod.
-// Attribution © OSM, © Stadia Maps, © OpenMapTiles stays mandatory.
-const STADIA_TILES_HOST = 'https://tiles.stadiamaps.com';
-const STADIA_STYLE = 'alidade_smooth_dark';
-// VITE_CARTO_API_KEY kept as the env var name for backwards compat with the
-// previously configured .env entry; used here as the Stadia Maps API key for
-// production domains. On localhost the key is not required.
-const TILES_API_KEY = (typeof import.meta !== 'undefined' && import.meta.env?.VITE_CARTO_API_KEY) || '';
-const TILES_MAX_ZOOM = 18;  // Enough to read street names in Montmartre.
-const TILES_MIN_ZOOM = 0;
-// Desktop retina gets @2x tiles for sharp street labels at zoom 16-18. Mobile
-// (pointer:coarse) stays on @1x to protect cellular bandwidth + GPU memory —
-// a retina mobile at DPR 3 would otherwise fetch 4× payload per tile.
-const TILES_RETINA = (() => {
-  if (typeof window === 'undefined') return false;
-  const isTouch = window.matchMedia?.('(pointer: coarse)').matches;
-  if (isTouch) return false;
-  return (window.devicePixelRatio || 1) > 1.25;
-})();
+// ── GT6 — MapLibre layer (city/street-level handoff) ───────────────────────
+// Second engine stacked on top of react-globe.gl, enabled only when the camera
+// drops under a certain altitude. Uses the free CARTO Dark Matter vector style
+// then repaints every layer with Vuvio's Midnight Blue palette for coherence
+// with the Three.js globe texture. No API key required.
+const GT6_MAP_STYLE_URL = 'https://basemaps.cartocdn.com/gl/dark-matter-nolabels-gl-style/style.json';
 
-function buildCartoTileUrl(x, y, z) {
-  // react-globe.gl passes (x, y, level) matching the standard XYZ scheme.
-  if (z < TILES_MIN_ZOOM || z > TILES_MAX_ZOOM) return null;
-  const suffix = TILES_RETINA ? '@2x.png' : '.png';
-  const key = TILES_API_KEY ? `?api_key=${encodeURIComponent(TILES_API_KEY)}` : '';
-  return `${STADIA_TILES_HOST}/tiles/${STADIA_STYLE}/${z}/${x}/${y}${suffix}${key}`;
-}
+const GT6_PAL = {
+  space:      '#030816',
+  ocean:      '#07182E',
+  oceanDeep:  '#040E1F',
+  land:       '#102B46',
+  landLow:    '#0B1F35',
+  landHigh:   '#17375C',
+  park:       '#164A49',
+  road:       '#41617C',
+  roadMinor:  '#2B445C',
+  motorway:   '#5A7EA0',
+  atmosphere: '#248BEB',
+  label:      '#D8E6F2',
+  labelDim:   '#8EA3BA',
+};
 
-// Diagnostic helper — masks the API key so it never appears in logs or DOM.
-function maskedKey() {
-  if (!TILES_API_KEY) return '(none, localhost dev)';
-  const k = TILES_API_KEY;
-  return k.length <= 8 ? '***' : `${k.slice(0, 4)}…${k.slice(-4)}`;
+// Repaint every vector layer of the CARTO Dark Matter style to the Vuvio
+// Midnight Blue palette. Copied from CurrentGlobe.jsx so GT6 stays isolated.
+function brightenGT6BaseMap(map) {
+  try {
+    map.setFog?.({
+      color: 'rgba(36, 139, 235, 0.22)',
+      'high-color': 'rgba(36, 139, 235, 0.32)',
+      'horizon-blend': 0.12,
+      'space-color': GT6_PAL.space,
+      'star-intensity': 0.88,
+    });
+    map.setSky?.({
+      'sky-color': GT6_PAL.space,
+      'horizon-color': '#0A2140',
+      'fog-color': GT6_PAL.atmosphere,
+      'sky-horizon-blend': 0.5,
+      'horizon-fog-blend': 0.7,
+      'fog-ground-blend': 0.05,
+      'atmosphere-blend': ['interpolate', ['linear'], ['zoom'], 0, 1, 5, 0.7, 10, 0.1],
+    });
+
+    map.getStyle().layers?.forEach((layer) => {
+      const id = layer.id.toLowerCase();
+      const sourceLayer = String(layer['source-layer'] ?? '').toLowerCase();
+      const type = layer.type;
+      try {
+        if (type === 'background') {
+          map.setPaintProperty(layer.id, 'background-color', GT6_PAL.space);
+          return;
+        }
+        if (type === 'fill' && (id.includes('water') || id.includes('ocean') || id.includes('sea') || sourceLayer.includes('water'))) {
+          map.setPaintProperty(layer.id, 'fill-color', GT6_PAL.ocean);
+          map.setPaintProperty(layer.id, 'fill-opacity', 1);
+          return;
+        }
+        if (type === 'line' && (id.includes('water') || id.includes('river') || id.includes('stream') || sourceLayer.includes('water'))) {
+          map.setPaintProperty(layer.id, 'line-color', GT6_PAL.ocean);
+          map.setPaintProperty(layer.id, 'line-opacity', 0.9);
+          return;
+        }
+        if (type === 'fill' && (id.includes('park') || id.includes('wood') || id.includes('forest') || id.includes('green') || id.includes('grass') || id.includes('scrub') || id.includes('meadow') || id.includes('golf') || id.includes('pitch'))) {
+          map.setPaintProperty(layer.id, 'fill-color', GT6_PAL.park);
+          map.setPaintProperty(layer.id, 'fill-opacity', 0.78);
+          return;
+        }
+        if (type === 'fill' && (id.includes('landcover') || id.includes('landuse'))) {
+          map.setPaintProperty(layer.id, 'fill-color', GT6_PAL.landLow);
+          map.setPaintProperty(layer.id, 'fill-opacity', 0.55);
+          return;
+        }
+        if (type === 'fill' && (id.includes('residential') || id.includes('urban') || id.includes('builtup') || id.includes('industrial'))) {
+          map.setPaintProperty(layer.id, 'fill-color', GT6_PAL.landHigh);
+          map.setPaintProperty(layer.id, 'fill-opacity', 0.55);
+          return;
+        }
+        if (type === 'fill' && (id.includes('land') || sourceLayer.includes('land'))) {
+          map.setPaintProperty(layer.id, 'fill-color', GT6_PAL.land);
+          map.setPaintProperty(layer.id, 'fill-opacity', 1);
+          return;
+        }
+        if (type === 'fill' && id.includes('building')) {
+          map.setPaintProperty(layer.id, 'fill-color', GT6_PAL.landHigh);
+          map.setPaintProperty(layer.id, 'fill-opacity', 0.78);
+          return;
+        }
+        if (type === 'fill-extrusion' && id.includes('building')) {
+          map.setLayoutProperty(layer.id, 'visibility', 'none');
+          return;
+        }
+        if (type === 'line' && (id.includes('admin') || id.includes('boundary') || id.includes('border') || sourceLayer.includes('boundary'))) {
+          map.setPaintProperty(layer.id, 'line-color', GT6_PAL.road);
+          map.setPaintProperty(layer.id, 'line-opacity', 0.38);
+          return;
+        }
+        if (type === 'line' && (id.includes('motorway') || id.includes('trunk'))) {
+          map.setPaintProperty(layer.id, 'line-color', GT6_PAL.motorway);
+          map.setPaintProperty(layer.id, 'line-opacity', 0.78);
+          return;
+        }
+        if (type === 'line' && (id.includes('primary') || id.includes('secondary'))) {
+          map.setPaintProperty(layer.id, 'line-color', GT6_PAL.road);
+          map.setPaintProperty(layer.id, 'line-opacity', 0.7);
+          return;
+        }
+        if (type === 'line' && (id.includes('road') || id.includes('street') || id.includes('tertiary') || id.includes('minor') || id.includes('service') || id.includes('path') || id.includes('track'))) {
+          map.setPaintProperty(layer.id, 'line-color', GT6_PAL.roadMinor);
+          map.setPaintProperty(layer.id, 'line-opacity', 0.55);
+          return;
+        }
+        if (type === 'line' && (id.includes('rail') || id.includes('transit'))) {
+          map.setPaintProperty(layer.id, 'line-color', GT6_PAL.road);
+          map.setPaintProperty(layer.id, 'line-opacity', 0.32);
+          return;
+        }
+        if (type === 'circle') {
+          map.setLayoutProperty(layer.id, 'visibility', 'none');
+          return;
+        }
+        if (type === 'symbol') {
+          try {
+            const iconImage = layer.layout?.['icon-image'];
+            const hasText = !!layer.layout?.['text-field'];
+            if (iconImage && !hasText) {
+              map.setLayoutProperty(layer.id, 'visibility', 'none');
+              return;
+            }
+          } catch { /* noop */ }
+          if (id.includes('country') || id.includes('continent')) {
+            map.setPaintProperty(layer.id, 'text-color', GT6_PAL.label);
+            map.setPaintProperty(layer.id, 'text-halo-color', GT6_PAL.space);
+            map.setPaintProperty(layer.id, 'text-halo-width', 1.5);
+            return;
+          }
+          if (id.includes('water') || id.includes('ocean') || id.includes('sea') || id.includes('marine')) {
+            map.setPaintProperty(layer.id, 'text-color', GT6_PAL.labelDim);
+            map.setPaintProperty(layer.id, 'text-halo-color', GT6_PAL.space);
+            map.setPaintProperty(layer.id, 'text-halo-width', 1);
+            return;
+          }
+          if (id.includes('city') || id.includes('place') || id.includes('town') || id.includes('village') || id.includes('suburb') || id.includes('neighbourhood') || id.includes('neighborhood')) {
+            map.setPaintProperty(layer.id, 'text-color', GT6_PAL.label);
+            map.setPaintProperty(layer.id, 'text-halo-color', GT6_PAL.space);
+            map.setPaintProperty(layer.id, 'text-halo-width', 1.2);
+            return;
+          }
+          try {
+            map.setPaintProperty(layer.id, 'text-color', GT6_PAL.labelDim);
+            map.setPaintProperty(layer.id, 'text-halo-color', GT6_PAL.space);
+            map.setPaintProperty(layer.id, 'text-halo-width', 1);
+          } catch { /* noop */ }
+        }
+      } catch { /* noop */ }
+    });
+  } catch { /* noop */ }
 }
 
 // ── GT6 — Fictional Paris/Montmartre lives (prototype-only) ────────────────
@@ -359,52 +480,19 @@ export default function GlobeTest6() {
   const [globeReady, setGlobeReady] = useState(false);
   const [isClosingSelection, setIsClosingSelection] = useState(false);
 
-  // GT6 — diag + tile mode. 'original' = Three.js globeImageUrl (prod baseline);
-  // 'carto' = Stadia Dark Matter raster tiles via react-globe.gl's native engine.
-  const [tileMode, setTileMode] = useState('original');
   const [diagVisible, setDiagVisible] = useState(true);
-  const [fpsState, setFpsState] = useState({ fps: 0, zoom: 0, altitude: 2.8, tiles: 0, state: 'idle' });
-  const tilesLoadedRef = useRef(0);
+  const [fpsState, setFpsState] = useState({ fps: 0, zoom: 0, altitude: 2.8, state: 'idle' });
   const fpsBufRef = useRef([]);
   const fpsLastSampleRef = useRef(0);
 
-  // GT6 — transition de la texture globe aux tuiles (ou l'inverse).
-  // `transitioning` cache le globe pendant l'échange ; `pendingMode` est le
-  // mode cible pendant l'étape noire. Le fade dure plus longtemps dans le sens
-  // original→vector pour laisser le temps aux premières tuiles de charger.
-  const [transitioning, setTransitioning] = useState(false);
-  const transitionTimerRef = useRef(null);
-  // Hystérésis auto-switch : au-dessus de 0.65 on reste en texture monde,
-  // en-dessous de 0.4 on bascule en tuiles. Entre les deux : état courant.
-  const autoSideRef = useRef('far');
-  const requestTileMode = useCallback((next) => {
-    setTileMode((current) => {
-      if (current === next) return current;
-      setTransitioning(true);
-      if (transitionTimerRef.current) clearTimeout(transitionTimerRef.current);
-      const fadeOutMs = 350;
-      // Going original → vector needs more headroom for the first wave of
-      // tile fetches ; vector → original is immediate (texture is cached).
-      const loadMs = next === 'carto' ? 500 : 0;
-      transitionTimerRef.current = setTimeout(() => {
-        setTileMode(next);
-        transitionTimerRef.current = setTimeout(() => {
-          setTransitioning(false);
-          transitionTimerRef.current = null;
-        }, loadMs);
-      }, fadeOutMs);
-      return current;
-    });
-  }, []);
-  // Override manuel via boutons : aligne autoSideRef sur le choix user pour
-  // que l'auto reprenne proprement au prochain crossing du seuil.
-  const setTileModeManual = useCallback((next) => {
-    autoSideRef.current = next === 'carto' ? 'near' : 'far';
-    requestTileMode(next);
-  }, [requestTileMode]);
-  useEffect(() => () => {
-    if (transitionTimerRef.current) clearTimeout(transitionTimerRef.current);
-  }, []);
+  // GT6 — Two-engine hybrid. 'globe' = react-globe.gl (Three.js), 'map' = MapLibre.
+  // Phase 2: engine switch is manual (Force buttons in diag); Phase 3 will wire
+  // altitude-based hysteresis. The MapLibre instance is lazy-created the first
+  // time engineMode !== 'globe' to avoid paying the WebGL cost up-front.
+  const [engineMode, setEngineMode] = useState('globe');
+  const mapContainerRef = useRef(null);
+  const mapRef = useRef(null);
+  const [mapReady, setMapReady] = useState(false);
 
   const { user } = useAuth();
   const { t } = useTranslation();
@@ -537,8 +625,19 @@ export default function GlobeTest6() {
         controls.autoRotate = !requestedLiveIdAtMount;
         controls.autoRotateSpeed = 0.4;
         controls.enableZoom = true;
-        controls.minDistance = 150;
+        // GT6 — on descend bien plus bas que GT2 (minDistance 150 → alt ≈ 0.5)
+        // pour atteindre l'échelle rue (Montmartre preset = alt 0.04 → dist 104).
+        controls.minDistance = 102;
         controls.maxDistance = 800;
+        // Molette/pinch plus progressif en bas (1 cran = -2 % de distance au
+        // lieu des -5 % par défaut) pour ne pas coller au sol en un seul clic.
+        controls.zoomSpeed = 0.7;
+        // GT6 — première interaction user (zoom/pan/rotate) coupe le spin
+        // définitivement. react-globe.gl ne le fait pas pour le zoom molette.
+        controls.addEventListener('start', () => {
+          userInteractedRef.current = true;
+          controls.autoRotate = false;
+        });
       }
 
       if (!requestedLiveIdAtMount) {
@@ -662,6 +761,7 @@ export default function GlobeTest6() {
     if (controls) controls.autoRotate = !userInteractedRef.current && !selectedStream && !selectedCluster && !expandedClusterId;
   }, [selectedStream, selectedCluster, expandedClusterId]);
 
+
   useEffect(() => {
     if (!requestedLiveId) return;
     if (ignoredRequestedLiveRef.current === requestedLiveId) return;
@@ -737,7 +837,13 @@ export default function GlobeTest6() {
       const controls = globeRef.current?.controls?.();
       if (controls) controls.autoRotate = false;
       const coords = obj.displayCoordinates || obj.coordinates;
-      globeRef.current?.pointOfView({ lat: coords[1] - 5, lng: coords[0], altitude: 0.5 }, 500);
+      // Single click = aperçu de la zone ; double click = dive niveau rue
+      // (dévoile les markers individuels car le clusterPrecision descend).
+      const clusterAlt = isDouble ? 0.08 : 0.4;
+      globeRef.current?.pointOfView(
+        { lat: coords[1] - (isDouble ? 0 : 5), lng: coords[0], altitude: clusterAlt },
+        isDouble ? 900 : 500,
+      );
       return;
     }
 
@@ -745,9 +851,11 @@ export default function GlobeTest6() {
     setSelectedCluster(null);
     setSelectedStream(obj);
     const currentAlt = globeRef.current?.pointOfView?.()?.altitude ?? 2.3;
-    const altitude = isDouble ? 0.4 : Math.min(1.2, currentAlt);
+    // Single click = focus Paris-level (0.18). Double click = street-level
+    // (0.05), ce qui tombe dans la fenêtre d'opacité max de l'overlay tiles.
+    const altitude = isDouble ? 0.05 : Math.min(0.18, currentAlt);
     const coords = obj.displayCoordinates || obj.coordinates;
-    globeRef.current?.pointOfView({ lat: coords[1], lng: coords[0], altitude }, isDouble ? 500 : 700);
+    globeRef.current?.pointOfView({ lat: coords[1], lng: coords[0], altitude }, isDouble ? 900 : 700);
     const controls = globeRef.current?.controls?.();
     if (controls) controls.autoRotate = false;
   }, []);
@@ -818,15 +926,6 @@ export default function GlobeTest6() {
         stableSince = now;
       }
 
-      // Auto-switch texture ↔ tuiles avec hystérésis. Le crossing déclenche
-      // la transition fade existante — pas de boucle car requestTileMode
-      // no-op si on est déjà dans le mode cible.
-      const nextSide = altitude < 0.4 ? 'near' : altitude > 0.65 ? 'far' : autoSideRef.current;
-      if (nextSide !== autoSideRef.current) {
-        autoSideRef.current = nextSide;
-        requestTileMode(nextSide === 'near' ? 'carto' : 'original');
-      }
-
       const target = getClusterPrecision(altitude);
       if (target !== pendingPrecision) pendingPrecision = target;
 
@@ -862,7 +961,6 @@ export default function GlobeTest6() {
           fps,
           altitude: Number(altitude.toFixed(3)),
           zoom: Math.round(Math.max(0, Math.min(16, 10 - Math.log2(Math.max(0.03, altitude)) * 2))),
-          tiles: tilesLoadedRef.current,
         }));
       }
 
@@ -903,7 +1001,7 @@ export default function GlobeTest6() {
   const zoomBy = (factor) => {
     const pov = globeRef.current?.pointOfView();
     if (!pov) return;
-    globeRef.current.pointOfView({ ...pov, altitude: Math.max(0.3, Math.min(5, pov.altitude * factor)) }, 400);
+    globeRef.current.pointOfView({ ...pov, altitude: Math.max(0.04, Math.min(5, pov.altitude * factor)) }, 400);
   };
 
   const recenter = () => {
@@ -933,55 +1031,49 @@ export default function GlobeTest6() {
 
   const watchPath = (s) => `/watch?live=${encodeURIComponent(s.id)}`;
 
-  // GT6: pass-through tile URL builder. We used to count calls here, but that
-  // over-counts (react-globe.gl may call the builder for cached tiles) and
-  // under-counts errors (a cached tile returns a URL but never reaches the
-  // network). Actual accounting now happens via PerformanceObserver below.
-  const cartoTileEngine = useCallback((x, y, z) => buildCartoTileUrl(x, y, z), []);
-
-  // Reset counters when switching modes so numbers reflect the active mode,
-  // not accumulated history.
+  // ── MapLibre — lazy init + palette repaint ─────────────────────────────────
+  // The MapLibre instance stays null until the user switches engine to 'map'
+  // (or future hysteresis triggers the handoff). Once created it persists in
+  // the DOM but we flip pointer-events + visibility to hide it when 'globe' is
+  // active. Mobile keeps both WebGL contexts alive only when strictly needed.
   useEffect(() => {
-    tilesLoadedRef.current = 0;
-    setFpsState((prev) => ({
-      ...prev,
-      tiles: 0,
-      state: tileMode === 'carto' ? 'loading-tiles' : 'idle',
-      errors: 0,
-    }));
-  }, [tileMode]);
+    if (engineMode !== 'map') return;
+    if (mapRef.current) return;
+    const container = mapContainerRef.current;
+    if (!container) return;
 
-  // Accurate tile accounting via PerformanceObserver — counts actual network
-  // fetches to the Stadia host, tracks failures (transferSize === 0 combined
-  // with no responseStart indicates a network/CORS error).
-  useEffect(() => {
-    if (tileMode !== 'carto') return undefined;
-    if (typeof PerformanceObserver === 'undefined') return undefined;
-
-    let tiles = 0;
-    let errors = 0;
-    const flush = () => {
-      setFpsState((prev) => ({ ...prev, tiles, errors, state: tiles > 0 ? 'streaming' : 'loading-tiles' }));
-      tilesLoadedRef.current = tiles;
-    };
-
-    const observer = new PerformanceObserver((list) => {
-      for (const entry of list.getEntries()) {
-        if (entry.initiatorType !== 'img' && entry.initiatorType !== 'fetch' && entry.initiatorType !== 'xmlhttprequest') continue;
-        if (!entry.name.includes('tiles.stadiamaps.com')) continue;
-        tiles += 1;
-        // Resource Timing exposes `responseStatus` on Chrome 120+; fall back
-        // to size-based heuristic for Safari/older Firefox: 0 bytes decoded
-        // and 0 transferred = fetch failed before body arrived.
-        const failed = (entry.responseStatus && entry.responseStatus >= 400)
-          || (entry.decodedBodySize === 0 && entry.transferSize === 0);
-        if (failed) errors += 1;
-      }
-      flush();
+    const map = new maplibregl.Map({
+      container,
+      style: GT6_MAP_STYLE_URL,
+      center: [2.3522, 48.8566],
+      zoom: 11,
+      attributionControl: false,
+      pitchWithRotate: false,
+      // Disable MapLibre native globe projection: we stay flat (mercator) because
+      // the handoff from the Three.js globe is handled by our own crossfade.
+      projection: 'mercator',
     });
-    observer.observe({ type: 'resource', buffered: true });
-    return () => observer.disconnect();
-  }, [tileMode]);
+
+    map.on('load', () => {
+      brightenGT6BaseMap(map);
+      setMapReady(true);
+    });
+
+    mapRef.current = map;
+
+    return () => {
+      // Unmount removes the DOM, we tear down the map to free the GL context.
+      try { map.remove(); } catch { /* noop */ }
+      mapRef.current = null;
+      setMapReady(false);
+    };
+  }, [engineMode]);
+
+  // Resize MapLibre when the container dims change (once created).
+  useEffect(() => {
+    if (!mapRef.current) return;
+    try { mapRef.current.resize(); } catch { /* noop */ }
+  }, [dims.w, dims.h, engineMode]);
 
   return (
     <div
@@ -990,6 +1082,19 @@ export default function GlobeTest6() {
       style={{ position: 'relative', width: '100%', background: '#000011', overflow: 'hidden' }}
     >
       <canvas ref={starsCanvasRef} style={{ position: 'absolute', inset: 0, pointerEvents: 'none', zIndex: 1 }} />
+
+      {/* MapLibre layer — stacked above the Three.js globe; hidden until engineMode === 'map'. */}
+      <div
+        ref={mapContainerRef}
+        style={{
+          position: 'absolute',
+          inset: 0,
+          zIndex: engineMode === 'map' ? 2 : 0,
+          opacity: engineMode === 'map' && mapReady ? 1 : 0,
+          transition: 'opacity 400ms cubic-bezier(0.4, 0, 0.2, 1)',
+          pointerEvents: engineMode === 'map' ? 'auto' : 'none',
+        }}
+      />
 
       {/* Top status bar */}
       <div className="gt2-status-bar">
@@ -1009,10 +1114,8 @@ export default function GlobeTest6() {
       <div
         className="gt2-globe-offset"
         style={{
-          opacity: (povSettled && !transitioning) ? 1 : 0,
-          transition: transitioning
-            ? 'opacity 350ms cubic-bezier(0.4, 0, 0.2, 1)'
-            : 'opacity 450ms cubic-bezier(0.4, 0, 0.2, 1)',
+          opacity: povSettled ? 1 : 0,
+          transition: 'opacity 450ms cubic-bezier(0.4, 0, 0.2, 1)',
         }}
       >
       {dims.w > 0 && dims.h > 0 && (
@@ -1023,9 +1126,7 @@ export default function GlobeTest6() {
         animateIn={false}
         onGlobeReady={() => setGlobeReady(true)}
         backgroundColor="rgba(0,0,0,0)"
-        globeImageUrl={tileMode === 'original' ? '/assets/globe/earth-night-threeglobe-4k.jpg' : null}
-        globeTileEngineUrl={tileMode === 'carto' ? cartoTileEngine : undefined}
-        tilesRendererOpts={tileMode === 'carto' ? { lruCache: { maxSize: 400 } } : undefined}
+        globeImageUrl='/assets/globe/earth-night-threeglobe-4k.jpg'
         showAtmosphere={true}
         atmosphereColor="rgba(40,216,223,0.15)"
         atmosphereAltitude={0.09}
@@ -1228,49 +1329,15 @@ export default function GlobeTest6() {
             </button>
           </div>
 
-          <div style={{ display: 'flex', gap: 6, marginBottom: 10 }}>
-            <button
-              type="button"
-              onClick={() => setTileModeManual('original')}
-              style={{
-                flex: 1,
-                padding: '6px 8px',
-                background: tileMode === 'original' ? 'rgba(40,216,223,0.18)' : 'rgba(216,230,242,0.06)',
-                border: `1px solid ${tileMode === 'original' ? '#28d8df' : 'rgba(216,230,242,0.18)'}`,
-                color: tileMode === 'original' ? '#28d8df' : '#d8e6f2',
-                borderRadius: 6,
-                fontSize: 10,
-                textTransform: 'uppercase',
-                letterSpacing: 0.4,
-                cursor: 'pointer',
-                fontWeight: 600,
-              }}
-            >
-              Original
-            </button>
-            <button
-              type="button"
-              onClick={() => setTileModeManual('carto')}
-              style={{
-                flex: 1,
-                padding: '6px 8px',
-                background: tileMode === 'carto' ? 'rgba(40,216,223,0.18)' : 'rgba(216,230,242,0.06)',
-                border: `1px solid ${tileMode === 'carto' ? '#28d8df' : 'rgba(216,230,242,0.18)'}`,
-                color: tileMode === 'carto' ? '#28d8df' : '#d8e6f2',
-                borderRadius: 6,
-                fontSize: 10,
-                textTransform: 'uppercase',
-                letterSpacing: 0.4,
-                cursor: 'pointer',
-                fontWeight: 600,
-              }}
-            >
-              <Layers size={10} strokeWidth={2} style={{ verticalAlign: '-2px', marginRight: 4 }} />
-              Vector
-            </button>
-          </div>
-
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '4px 12px', marginBottom: 10 }}>
+            <span style={{ color: '#8ea3ba' }}>Engine</span>
+            <span style={{
+              color: engineMode === 'map' ? '#B47BFF' : '#28d8df',
+              textAlign: 'right',
+              textTransform: 'uppercase',
+              letterSpacing: 0.4,
+              fontWeight: 600,
+            }}>{engineMode === 'map' ? 'MapLibre' : 'Three.js'}</span>
             <span style={{ color: '#8ea3ba' }}>FPS</span>
             <span style={{
               color: fpsState.fps >= 50 ? '#36d9a0' : fpsState.fps >= 30 ? '#f5c66b' : '#ff5d6c',
@@ -1281,24 +1348,45 @@ export default function GlobeTest6() {
             <span style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>{fpsState.altitude}</span>
             <span style={{ color: '#8ea3ba' }}>Zoom≈</span>
             <span style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>{fpsState.zoom}</span>
-            <span style={{ color: '#8ea3ba' }}>Tiles</span>
-            <span style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>{fpsState.tiles}</span>
-            <span style={{ color: '#8ea3ba' }}>Errors</span>
-            <span style={{
-              color: (fpsState.errors || 0) > 0 ? '#ff5d6c' : '#36d9a0',
-              textAlign: 'right',
-              fontVariantNumeric: 'tabular-nums',
-            }}>{fpsState.errors || 0}</span>
-            <span style={{ color: '#8ea3ba' }}>Mode</span>
-            <span style={{ textAlign: 'right' }}>{tileMode === 'carto' ? 'vector' : 'original'}</span>
-            {tileMode === 'carto' && (
-              <>
-                <span style={{ color: '#8ea3ba' }}>Max&nbsp;z</span>
-                <span style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>{TILES_MAX_ZOOM}{TILES_RETINA ? ' @2x' : ''}</span>
-                <span style={{ color: '#8ea3ba' }}>Key</span>
-                <span style={{ textAlign: 'right' }}>{maskedKey()}</span>
-              </>
-            )}
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6, marginBottom: 6 }}>
+            <button
+              type="button"
+              onClick={() => setEngineMode('globe')}
+              style={{
+                padding: '5px 6px',
+                background: engineMode === 'globe' ? 'rgba(40,216,223,0.18)' : 'rgba(216,230,242,0.06)',
+                border: `1px solid ${engineMode === 'globe' ? '#28d8df' : 'rgba(216,230,242,0.18)'}`,
+                color: engineMode === 'globe' ? '#28d8df' : '#d8e6f2',
+                borderRadius: 6,
+                fontSize: 10,
+                cursor: 'pointer',
+                fontWeight: 600,
+                textTransform: 'uppercase',
+                letterSpacing: 0.4,
+              }}
+            >
+              Force Three
+            </button>
+            <button
+              type="button"
+              onClick={() => setEngineMode('map')}
+              style={{
+                padding: '5px 6px',
+                background: engineMode === 'map' ? 'rgba(180,123,255,0.22)' : 'rgba(216,230,242,0.06)',
+                border: `1px solid ${engineMode === 'map' ? '#B47BFF' : 'rgba(216,230,242,0.18)'}`,
+                color: engineMode === 'map' ? '#B47BFF' : '#d8e6f2',
+                borderRadius: 6,
+                fontSize: 10,
+                cursor: 'pointer',
+                fontWeight: 600,
+                textTransform: 'uppercase',
+                letterSpacing: 0.4,
+              }}
+            >
+              Force Map
+            </button>
           </div>
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
@@ -1393,30 +1481,6 @@ export default function GlobeTest6() {
         </button>
       )}
 
-      {/* ── Attribution (required by licence when vector tile mode is on) */}
-      {tileMode === 'carto' && (
-        <div
-          style={{
-            position: 'absolute',
-            bottom: 8,
-            left: 8,
-            zIndex: 20,
-            background: 'rgba(5, 8, 22, 0.7)',
-            color: '#d8e6f2',
-            font: '10px/1.4 system-ui, sans-serif',
-            padding: '3px 7px',
-            borderRadius: 4,
-            backdropFilter: 'blur(4px)',
-            pointerEvents: 'auto',
-          }}
-        >
-          © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noreferrer" style={{ color: '#28d8df' }}>OpenStreetMap</a>
-          {' '}· ©{' '}
-          <a href="https://stadiamaps.com/" target="_blank" rel="noreferrer" style={{ color: '#28d8df' }}>Stadia Maps</a>
-          {' '}· ©{' '}
-          <a href="https://openmaptiles.org/" target="_blank" rel="noreferrer" style={{ color: '#28d8df' }}>OpenMapTiles</a>
-        </div>
-      )}
     </div>
   );
 }

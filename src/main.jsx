@@ -2,7 +2,6 @@ import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
 import App from './App.jsx';
-import PasswordGate from './components/PasswordGate.jsx';
 import { AuthProvider } from './context/AuthContext.jsx';
 import { LanguageProvider } from './context/LanguageContext.jsx';
 import { MessagingProvider } from './context/MessagingContext.jsx';
@@ -39,6 +38,7 @@ import './styles/pages/onboarding.css';
 import './styles/pages/internal-stream-admin.css';
 import './styles/pages/admin-docs.css';
 import './styles/pages/agents.css';
+import './styles/pages/workshop.css';
 import './components/social/social.css';
 
 initializeMobilePlatform();
@@ -46,19 +46,17 @@ initializeMobilePlatform();
 createRoot(document.getElementById('root')).render(
   <StrictMode>
     <BrowserRouter future={{ v7_relativeSplatPath: true, v7_startTransition: true }}>
-      <PasswordGate>
-        <LanguageProvider>
-          <ThemeProvider>
-            <AuthProvider>
-              <MessagingProvider>
-                <ViewModeProvider>
-                  <App />
-                </ViewModeProvider>
-              </MessagingProvider>
-            </AuthProvider>
-          </ThemeProvider>
-        </LanguageProvider>
-      </PasswordGate>
+      <LanguageProvider>
+        <ThemeProvider>
+          <AuthProvider>
+            <MessagingProvider>
+              <ViewModeProvider>
+                <App />
+              </ViewModeProvider>
+            </MessagingProvider>
+          </AuthProvider>
+        </ThemeProvider>
+      </LanguageProvider>
     </BrowserRouter>
   </StrictMode>,
 );

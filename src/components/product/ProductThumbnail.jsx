@@ -6,8 +6,8 @@
  */
 
 import { useState, useEffect } from 'react';
-import { Loader } from 'lucide-react';
-import { getCategoryIcon } from '../../data/equipmentModel.js';
+import { BatteryCharging, Bike, Camera, CookingPot, Loader, Mic, Music2, Package, Radio, Watch, Wrench } from 'lucide-react';
+import { canDisplayEquipmentImage, validEquipmentImageUrl } from '../../data/equipmentVisual.js';
 import '../gear/gear-thumbnail.css';
 
 /**
@@ -35,6 +35,7 @@ export function ProductThumbnail({
   onError,
   onClick,
   selected = false,
+  usage = 'search-preview',
 }) {
   const [imageError, setImageError] = useState(false);
   const [imageLoading, setImageLoading] = useState(false);
@@ -51,6 +52,17 @@ export function ProductThumbnail({
     thumbnailUrl,
     imageSource,
   } = product;
+  const equipmentType = `${product.subcategory || ''} ${product.equipmentType || ''}`.toLowerCase();
+  const FallbackIcon = equipmentType.includes('piano') || equipmentType.includes('guitar') ? Music2
+    : equipmentType.includes('cook') || equipmentType.includes('mixer') ? CookingPot
+      : equipmentType.includes('tool') || equipmentType.includes('drill') ? Wrench
+        : equipmentType.includes('watch') ? Watch
+          : equipmentType.includes('cycl') || equipmentType.includes('bike') ? Bike
+            : category === 'recording' ? Camera
+              : category === 'audio' ? Mic
+                : category === 'streaming' ? Radio
+                  : category === 'power_accessories' ? BatteryCharging
+                    : Package;
 
   // Determine image URL based on processing status
   const getImageUrl = () => {
@@ -65,12 +77,12 @@ export function ProductThumbnail({
     }
 
     // Processed image URL (from image processing pipeline)
-    if (imageStatus?.status === 'ready' && imageStatus.urls?.medium) {
+    if (imageStatus?.status === 'ready' && imageStatus.urls?.medium && canDisplayEquipmentImage(product, usage) && validEquipmentImageUrl(imageStatus.urls.medium)) {
       return imageStatus.urls.medium;
     }
 
     // Fallback to simple thumbnailUrl field (for seeded products)
-    if (thumbnailUrl) {
+    if (thumbnailUrl && canDisplayEquipmentImage(product, usage) && validEquipmentImageUrl(thumbnailUrl)) {
       return thumbnailUrl;
     }
 
@@ -80,6 +92,11 @@ export function ProductThumbnail({
   const imageUrl = getImageUrl();
   const isProcessing = imageStatus?.status === 'processing';
   const isFailed = imageStatus?.status === 'failed';
+
+  useEffect(() => {
+    setImageError(false);
+    setImageLoading(Boolean(imageUrl));
+  }, [imageUrl]);
 
   const handleImageLoad = () => setImageLoading(false);
 
@@ -110,6 +127,7 @@ export function ProductThumbnail({
               )}
               <img
                 src={imageUrl}
+                loading={priority ? 'eager' : 'lazy'}
                 alt={name}
                 className={`gear-thumbnail__image ${imageLoading ? 'is-loading' : ''}`}
                 onLoad={handleImageLoad}
@@ -118,9 +136,7 @@ export function ProductThumbnail({
             </>
           ) : (
             <div className="gear-thumbnail__fallback">
-              <span style={{ fontSize: size === 'sm' ? '14px' : size === 'md' ? '18px' : '24px' }}>
-                {getCategoryIcon(category)}
-              </span>
+              <FallbackIcon size={size === 'sm' ? 17 : size === 'md' ? 22 : 28} strokeWidth={1.8} aria-hidden="true" />
             </div>
           )}
 

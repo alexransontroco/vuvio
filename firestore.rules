@@ -282,5 +282,17 @@ service cloud.firestore {
       allow create, update: if request.auth != null;
       allow delete: if false;
     }
+
+    match /launchWaitlist/{entryId} {
+      allow read, write: if false;
+    }
+
+    match /launchWaitlistEmailIndex/{entryId} {
+      allow read, write: if false;
+    }
+
+    match /launchWaitlistRateLimits/{entryId} {
+      allow read, write: if false;
+    }
   }
 }

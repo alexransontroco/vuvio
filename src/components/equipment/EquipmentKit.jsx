@@ -20,10 +20,13 @@ import {
 import { createPortal } from 'react-dom';
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { searchProducts, resolveAffiliateOffers } from '../../services/productSearchService.js';
+import { searchLocalProducts, searchProducts } from '../../services/productSearchService.js';
+import { ProductThumbnail } from '../product/ProductThumbnail.jsx';
+import EquipmentVisual from './EquipmentVisual.jsx';
+import { getEquipmentVisual, persistentEquipmentImage } from '../../data/equipmentVisual.js';
 import { GearThumbnail, GearItemRow } from '../gear/index.js';
 import { AlertCircle } from 'lucide-react';
-import { EQUIPMENT_CATEGORIES, EQUIPMENT_OWNERSHIP, SUBCATEGORY_EQUIPMENT_TYPES, getCategoryIcon } from '../../data/equipmentModel.js';
+import { EQUIPMENT_CATEGORIES, EQUIPMENT_OWNERSHIP, SUBCATEGORY_EQUIPMENT_TYPES } from '../../data/equipmentModel.js';
 import { equipmentLabel, groupEquipmentByCategory } from '../../services/equipmentService.js';
 import { openOffer } from '../../services/affiliateService.js';
 
@@ -40,23 +43,10 @@ export function EquipmentIcon({ category, size = 19 }) {
   return <Icon size={size} strokeWidth={1.8} />;
 }
 
-function EquipmentThumbnail({ imageUrl, category, label }) {
-  const [imageError, setImageError] = useState(false);
-
+function EquipmentThumbnail({ item, usage }) {
   return (
     <div className="equipment-item-row__icon">
-      {imageUrl && !imageError ? (
-        <img
-          src={imageUrl}
-          alt={label}
-          className="equipment-item-row__img"
-          onError={() => setImageError(true)}
-        />
-      ) : (
-        <span className="equipment-item-row__icon-emoji" aria-hidden="true">
-          {getCategoryIcon(category)}
-        </span>
-      )}
+      <EquipmentVisual equipment={item} size={20} usage={usage} />
     </div>
   );
 }
@@ -93,19 +83,14 @@ export function EquipmentCategoryCard({ category, count, onClick }) {
   );
 }
 
-export function EquipmentItemRow({ item, selectable = false, selected = false, onToggle, onOpen, actions, compact = false }) {
+export function EquipmentItemRow({ item, selectable = false, selected = false, onToggle, onOpen, actions, compact = false, usage = 'persistent-gear' }) {
   const { t } = useTranslation();
-  const thumbnailUrl = item.thumbnailUrl || item.product?.thumbnailUrl || item.imageUrl || null;
   const content = (
     <>
-      <EquipmentThumbnail
-        imageUrl={thumbnailUrl}
-        category={item.category}
-        label={equipmentLabel(item)}
-      />
+      <EquipmentThumbnail item={item} usage={usage} />
       <span className="equipment-item-row__copy">
         <strong>{equipmentLabel(item)}</strong>
-        <small>{item.equipmentType || t('equipment.defaultType')}</small>
+        <small>{item.associatedActivity || item.equipmentType || t('equipment.defaultType')}</small>
         <EquipmentBadge item={item} />
       </span>
       {item.offers?.length > 0 ? <span className="equipment-affiliate-pill">{t('equipment.affiliateLink')}</span> : null}
@@ -163,7 +148,7 @@ export function GearInLive({ items, onViewLive, compact = false }) {
       <GearItemRow
         key={item.id ?? item.equipmentId}
         id={item.id ?? item.equipmentId}
-        imageUrl={item.thumbnailUrl || item.product?.thumbnailUrl || item.imageUrl}
+        imageUrl={getEquipmentVisual(item, 'public-gear').imageUrl}
         category={item.category}
         brand={item.brand}
         model={item.model}
@@ -339,6 +324,7 @@ export function QuickAddEquipmentForm({ value, onChange, onCancel, onSave, sugge
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState([]);
   const [searching, setSearching] = useState(false);
+  const [searchError, setSearchError] = useState('');
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [manualMode, setManualMode] = useState(false);
   const abortRef = useRef(null);
@@ -346,20 +332,35 @@ export function QuickAddEquipmentForm({ value, onChange, onCancel, onSave, sugge
   useEffect(() => {
     const q = searchQuery.trim();
     if (!q || manualMode) {
+      abortRef.current?.abort();
       setSearchResults([]);
+      setSearching(false);
+      setSearchError('');
       return;
     }
+    const local = searchLocalProducts(q, { category: value.category });
+    setSearchResults(local);
+    setSearchError('');
+    if (q.length < 3) return;
+    const controller = new AbortController();
+    abortRef.current?.abort();
+    abortRef.current = controller;
     const timer = setTimeout(async () => {
-      abortRef.current?.abort();
-      const controller = new AbortController();
-      abortRef.current = controller;
       setSearching(true);
-      const results = await searchProducts(q, { signal: controller.signal });
-      setSearching(false);
-      setSearchResults(results);
-    }, 400);
-    return () => clearTimeout(timer);
-  }, [searchQuery, manualMode]);
+      try {
+        const results = await searchProducts(q, { signal: controller.signal, category: value.category });
+        if (!controller.signal.aborted) setSearchResults(results);
+      } catch (error) {
+        if (!controller.signal.aborted) {
+          setSearchResults(local);
+          setSearchError(error.status === 429 ? 'Search limit reached' : 'Search unavailable');
+        }
+      } finally {
+        if (!controller.signal.aborted) setSearching(false);
+      }
+    }, 350);
+    return () => { clearTimeout(timer); controller.abort(); };
+  }, [searchQuery, manualMode, value.category]);
 
   function handleSelectProduct(product) {
     setSelectedProduct(product);
@@ -369,15 +370,14 @@ export function QuickAddEquipmentForm({ value, onChange, onCancel, onSave, sugge
       ...value,
       brand: product.brand ?? value.brand,
       model: product.name ?? value.model,
-      thumbnailUrl: product.thumbnailUrl ?? null,
-      imageUrl: product.thumbnailUrl ?? null,
-      imageSource: product.imageSource ?? 'product-catalog',
-      productId: product.externalId ?? null,
+      displayName: `${product.brand ?? ''} ${product.name ?? ''}`.trim(),
+      category: product.category ?? value.category,
+      equipmentType: product.equipmentType ?? value.equipmentType,
+      ...persistentEquipmentImage(product),
+      productId: product.id ?? null,
+      provider: product.provider ?? 'vuvioCatalog',
+      offers: [],
     });
-    resolveAffiliateOffers({ brand: product.brand, name: product.name, mpn: product.mpn, gtin: product.gtin, category: value.category })
-      .then((offers) => {
-        if (offers.length > 0) onChange({ ...value, brand: product.brand ?? value.brand, model: product.name ?? value.model, thumbnailUrl: product.thumbnailUrl ?? null, imageUrl: product.thumbnailUrl ?? null, imageSource: product.imageSource ?? 'product-catalog', productId: product.externalId ?? null, offers });
-      });
   }
 
   const showSearch = !manualMode;
@@ -417,13 +417,10 @@ export function QuickAddEquipmentForm({ value, onChange, onCancel, onSave, sugge
               {searchResults.map((p) => (
                 <li key={`${p.provider}:${p.externalId}`}>
                   <button type="button" className="equipment-search-result" onClick={() => handleSelectProduct(p)}>
-                    {p.thumbnailUrl ? (
-                      <img src={p.thumbnailUrl} alt="" className="equipment-search-result__thumb" />
-                    ) : (
-                      <div className="equipment-search-result__thumb equipment-search-result__thumb--empty" />
-                    )}
+                    <ProductThumbnail product={p} size="sm" />
                     <span className="equipment-search-result__name">
                       <strong>{p.brand}</strong> {p.name}
+                      <small>{p.equipmentType || p.category || 'Equipment'}</small>
                     </span>
                   </button>
                 </li>
@@ -431,19 +428,19 @@ export function QuickAddEquipmentForm({ value, onChange, onCancel, onSave, sugge
             </ul>
           )}
 
+          {searchError && <p className="equipment-search-status" role="status">{searchError}. Add manually if needed.</p>}
+
           {selectedProduct && (
             <div className="equipment-search-selected">
-              {selectedProduct.thumbnailUrl && (
-                <img src={selectedProduct.thumbnailUrl} alt="" className="equipment-search-result__thumb" />
-              )}
+              <ProductThumbnail product={selectedProduct} size="sm" usage="persistent-gear" />
               <span>{selectedProduct.brand} {selectedProduct.name}</span>
-              <button type="button" className="equipment-search-clear" onClick={() => { setSelectedProduct(null); onChange({ ...value, brand: '', model: '', thumbnailUrl: null, imageUrl: null, productId: null, offers: [] }); }}>
+              <button type="button" className="equipment-search-clear" onClick={() => { setSelectedProduct(null); onChange({ ...value, brand: '', model: '', displayName: '', thumbnailUrl: null, imageUrl: null, productId: null, offers: [] }); }}>
                 <X size={12} />
               </button>
             </div>
           )}
 
-          <button type="button" className="equipment-manual-link" onClick={() => setManualMode(true)}>
+          <button type="button" className="equipment-manual-link" onClick={() => { setManualMode(true); setSelectedProduct(null); onChange({ ...value, productId: null, provider: 'user' }); }}>
             {t('equipment.quickAdd.addManually')}
           </button>
         </div>
@@ -467,12 +464,18 @@ export function QuickAddEquipmentForm({ value, onChange, onCancel, onSave, sugge
               ) : null}
             </label>
           ) : null}
+          {manualMode && (
+            <label>
+              Equipment name
+              <input value={value.displayName ?? ''} onChange={(event) => onChange({ ...value, displayName: event.target.value })} placeholder="Example: Sony A7 IV" />
+            </label>
+          )}
           <label>
-            {t('equipment.quickAdd.brand')}
+            {t('equipment.quickAdd.brand')} (optional)
             <input value={value.brand} onChange={(event) => onChange({ ...value, brand: event.target.value })} placeholder="Example: Canyon" />
           </label>
           <label>
-            {t('equipment.quickAdd.model')}
+            {t('equipment.quickAdd.model')} (optional)
             <input value={value.model} onChange={(event) => onChange({ ...value, model: event.target.value })} placeholder="Example: Spectral CF 8" />
           </label>
         </>
@@ -480,7 +483,7 @@ export function QuickAddEquipmentForm({ value, onChange, onCancel, onSave, sugge
 
       <div className="equipment-form-actions">
         <button type="button" onClick={onCancel}>{t('common.cancel')}</button>
-        <button type="button" className="is-primary" onClick={onSave} disabled={!value.brand.trim() || !value.model.trim()}>{t('equipment.quickAdd.addAndSelect')}</button>
+        <button type="button" className="is-primary" onClick={onSave} disabled={!(value.displayName?.trim() || value.model?.trim())}>{t('equipment.quickAdd.addAndSelect')}</button>
       </div>
     </section>
   );

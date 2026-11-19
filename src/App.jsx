@@ -25,16 +25,17 @@ const DiscoverFeedPage    = lazy(() => import('./routes/DiscoverFeedPage.jsx'));
 const DiscoverCategoryPage = lazy(() => import('./routes/DiscoverCategoryPage.jsx'));
 const EditProfilePage     = lazy(() => import('./routes/EditProfilePage.jsx'));
 const EquipmentManagePage = lazy(() => import('./routes/EquipmentManagePage.jsx'));
-const ProfileGearPage     = lazy(() => import('./routes/ProfileGearPage.jsx'));
 const ForgotPasswordPage  = lazy(() => import('./routes/ForgotPasswordPage.jsx'));
 const HelpPage            = lazy(() => import('./routes/HelpPage.jsx'));
 const InternalStreamAdminPage = lazy(() => import('./routes/InternalStreamAdminPage.jsx'));
 const CurrentGlobePage    = lazy(() => import('./routes/CurrentGlobePage.jsx'));
+const CurrentGlobeMapLibrePage = lazy(() => import('./routes/CurrentGlobeMapLibrePage.jsx'));
 const GlobeTest2Page      = lazy(() => import('./routes/GlobeTest2Page.jsx'));
 const GlobeTest3Page      = lazy(() => import('./routes/GlobeTest3Page.jsx'));
 const GlobeTest4Page      = lazy(() => import('./routes/GlobeTest4Page.jsx'));
 const GlobeTest5Page      = lazy(() => import('./routes/GlobeTest5Page.jsx'));
 const GlobeTest6Page      = lazy(() => import('./routes/GlobeTest6Page.jsx'));
+const GlobeTest7Page      = lazy(() => import('./routes/GlobeTest7Page.jsx'));
 const LoginPage           = lazy(() => import('./routes/LoginPage.jsx'));
 const LiveRecapPage       = lazy(() => import('./routes/LiveRecapPageSimple.jsx'));
 const LiveSummaryPage     = lazy(() => import('./routes/LiveSummaryPage.jsx'));
@@ -54,6 +55,8 @@ const AnalyticsPage       = lazy(() => import('./routes/AnalyticsPage.jsx'));
 const AdminDocsPage       = lazy(() => import('./routes/AdminDocsPage.jsx'));
 const AdminInvestorCrmPage = lazy(() => import('./routes/AdminInvestorCrmPage.jsx'));
 const AdminMarketingPage   = lazy(() => import('./routes/AdminMarketingPage.jsx'));
+const AdminWaitlistPage    = lazy(() => import('./routes/AdminWaitlistPage.jsx'));
+const WaitlistUnsubscribePage = lazy(() => import('./routes/WaitlistUnsubscribePage.jsx'));
 const CreatorStatsPage     = lazy(() => import('./routes/CreatorStatsPage.jsx'));
 const PrivacySettingsPage  = lazy(() => import('./routes/PrivacySettingsPage.jsx'));
 const DesktopLayout       = lazy(() => import('./components/desktop/DesktopLayout.jsx'));
@@ -64,6 +67,9 @@ const NotFoundPage        = lazy(() => import('./routes/NotFoundPage.jsx'));
 const IntroPreviewPage    = lazy(() => import('./routes/IntroPreviewPage.jsx'));
 const IntroPreviewV1Page  = lazy(() => import('./routes/IntroPreviewV1Page.jsx'));
 const StudioPage          = lazy(() => import('./routes/StudioPage.jsx'));
+const WorkshopDemoPage    = lazy(() => import('./routes/WorkshopDemoPage.jsx'));
+const AdminAppMapPage     = lazy(() => import('./routes/AdminAppMapPage.jsx'));
+const AdminRealtimeTestPage = lazy(() => import('./routes/AdminRealtimeTestPage.jsx'));
 
 function RouteFallback() {
   const { t } = useTranslation();
@@ -132,6 +138,7 @@ export default function App() {
 
       {/* ── Public standalone ── */}
       <Route path="/intro-preview" element={<Lazy component={IntroPreviewPage} />} />
+      <Route path="/unsubscribe" element={<Lazy component={WaitlistUnsubscribePage} />} />
       <Route path="/intro-preview-v1" element={<Lazy component={IntroPreviewV1Page} />} />
       <Route path="/vision" element={<Lazy component={VisionPage} />} />
       <Route path="/agents" element={<Lazy component={AgentsPage} />} />
@@ -142,7 +149,10 @@ export default function App() {
       <Route path="/admin/docs" element={<AdminRoute><Lazy component={AdminDocsPage} /></AdminRoute>} />
       <Route path="/admin/investor-crm" element={<AdminRoute><Lazy component={AdminInvestorCrmPage} /></AdminRoute>} />
       <Route path="/admin/marketing" element={<AdminRoute><Lazy component={AdminMarketingPage} /></AdminRoute>} />
+      <Route path="/admin/waitlist" element={<AdminRoute><Lazy component={AdminWaitlistPage} /></AdminRoute>} />
       <Route path="/admin/analytics" element={<AdminRoute><Lazy component={AnalyticsPage} /></AdminRoute>} />
+      <Route path="/admin/app-map" element={<AdminRoute><Lazy component={AdminAppMapPage} /></AdminRoute>} />
+      <Route path="/admin/realtime-test" element={<AdminRoute><Lazy component={AdminRealtimeTestPage} /></AdminRoute>} />
 
       {/* ── Auth pages (redirect if already logged in) ── */}
       <Route
@@ -194,6 +204,10 @@ export default function App() {
         }
       />
 
+      {/* Workshop UX Playground — rendered OUTSIDE AppShell so that neither
+          the phone-stage width constraint nor the BottomNav overlay the demo. */}
+      <Route path="/workshop-demo" element={<Lazy component={WorkshopDemoPage} />} />
+
       {/* ── App shell with bottom nav ── */}
       <Route element={<AppShell />}>
         <Route path="/home" element={<Navigate to="/watch" replace />} />
@@ -210,12 +224,14 @@ export default function App() {
         <Route path="/globe"         element={<Lazy component={GlobeTest2Page} />} />
         <Route path="/map"           element={<Lazy component={GlobeTest2Page} />} />
         <Route path="/globe-current" element={<Lazy component={CurrentGlobePage} />} />
+        <Route path="/globe-current-maplibre" element={<Lazy component={CurrentGlobeMapLibrePage} />} />
         <Route path="/map-current"   element={<Lazy component={CurrentGlobePage} />} />
         <Route path="/globe-test-2"  element={<Lazy component={GlobeTest2Page} />} />
         <Route path="/globe-test-3"  element={<Lazy component={GlobeTest3Page} />} />
         <Route path="/globe-test-4"  element={<Lazy component={GlobeTest4Page} />} />
         <Route path="/globe-test-5"  element={<Lazy component={GlobeTest5Page} />} />
         <Route path="/globe-test-6"  element={<Lazy component={GlobeTest6Page} />} />
+        <Route path="/globe-test-7"  element={<Lazy component={GlobeTest7Page} />} />
         <Route path="/terms"       element={<Lazy component={TermsPage} />} />
         <Route path="/privacy"    element={<Lazy component={PrivacyPage} />} />
         <Route path="/guidelines" element={<Lazy component={CommunityGuidelinesPage} />} />
@@ -278,7 +294,7 @@ export default function App() {
           path="/profile/gear"
           element={
             <ProtectedRoute>
-              <Lazy component={ProfileGearPage} />
+              <Navigate to="/profile/equipment" replace />
             </ProtectedRoute>
           }
         />
@@ -346,7 +362,6 @@ export default function App() {
             </ProtectedRoute>
           }
         />
-
         <Route path="*" element={<Lazy component={NotFoundPage} />} />
       </Route>
     </Routes>

@@ -5,6 +5,7 @@ import { createLiveInput, createCloudflareClient } from './cloudflareClient.js';
 import { ApiError } from '../shared/errors.js';
 import { asRecord, stringField } from '../shared/validation.js';
 const RTMPS_RELAY_URL = process.env.RTMPS_RELAY_URL || '';
+const RTMPS_RELAY_AUTH_TOKEN = process.env.RTMPS_RELAY_AUTH_TOKEN || '';
 export async function createLiveInputHandler(req, res) {
     try {
         const user = await authenticateUser(req);
@@ -112,6 +113,7 @@ export async function createLiveInputHandler(req, res) {
             webRTCUrl: input.webRTCUrl,
             streamKey: input.streamKey,
             relayUrl: hasRelay ? RTMPS_RELAY_URL : null,
+            relayAuthToken: hasRelay && RTMPS_RELAY_AUTH_TOKEN ? RTMPS_RELAY_AUTH_TOKEN : null,
             rtmpsIngestUrl: hasRelay ? input.ingestUrl : null,
             rtmpsStreamKey: hasRelay ? input.streamKey : null,
             outputs: outputResults,

@@ -17,8 +17,8 @@ export default function SceneEquipment({ reducedMotion }) {
     <section className="intro-equip" aria-label="Equipment reveal">
       {/* Keep the live backdrop visible but dimmed/blurred */}
       <IntroVideo
-        src="/intro/povs-montage.mp4"
-        poster="/intro/povs-poster.jpg"
+        src="/pov/used/povs-montage.mp4"
+        poster="/pov/used/povs-poster.jpg"
         className="intro-equip__backdrop-video"
         loop
       />

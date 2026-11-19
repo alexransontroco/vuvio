@@ -185,11 +185,14 @@ async function createFixedResolutionStream(sourceStream, width = 1280, height = 
   return canvasStream;
 }
 
-async function startRtmpRelayIngest(relayUrl, liveInputId, ingestUrl, streamKey, stream) {
+let relayAuthToken = null;
+
+async function startRtmpRelayIngest(relayUrl, liveInputId, ingestUrl, streamKey, stream, authToken = null) {
   if (!relayUrl) throw new Error('Missing RTMPS relay URL');
   if (!ingestUrl || !streamKey) throw new Error('Missing Cloudflare RTMPS credentials');
 
   relayBaseUrl = relayUrl.replace(/\/$/, '');
+  relayAuthToken = authToken || null;
   console.log('[relay-browser] startRtmpRelayIngest called relayUrl=%s vuvioLiveId=%s hasIngestUrl=%s hasStreamKey=%s', relayUrl, liveInputId, !!ingestUrl, !!streamKey);
 
   const fixedStream = await createFixedResolutionStream(stream, 854, 480, 15);
@@ -261,9 +264,11 @@ async function startRtmpRelayIngest(relayUrl, liveInputId, ingestUrl, streamKey,
   console.log('[relay-browser] POST offer -> %s/sessions', relayBaseUrl);
   let response;
   try {
+    const headers = { 'Content-Type': 'application/json' };
+    if (relayAuthToken) headers['x-relay-token'] = relayAuthToken;
     response = await fetch(`${relayBaseUrl}/sessions`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers,
       body: JSON.stringify({ liveInputId, ingestUrl, streamKey, sdpOffer: pc.localDescription.sdp, iceServers: rtcConfig.iceServers }),
     });
     console.log('[relay-browser] relay response status=%s', response.status);
@@ -339,10 +344,14 @@ async function stopRtmpRelayConnection() {
   } finally {
     if (relayBaseUrl && relaySessionId) {
       const sessionId = relaySessionId;
+      const baseUrl = relayBaseUrl;
+      const token = relayAuthToken;
       relaySessionId = null;
-      fetch(`${relayBaseUrl}/sessions/${sessionId}`, { method: 'DELETE' }).catch(() => {});
+      const headers = token ? { 'x-relay-token': token } : undefined;
+      fetch(`${baseUrl}/sessions/${sessionId}`, { method: 'DELETE', headers }).catch(() => {});
     }
     relayBaseUrl = null;
+    relayAuthToken = null;
   }
 }
 
@@ -802,15 +811,15 @@ export async function watchBroadcast(liveId, onStreamReceived, watcherId = `view
   }
 }
 
-export async function startRtmpRelayBroadcast(liveId, userId, existingStream = null, relayUrl = null, ingestUrl = null, streamKey = null) {
+export async function startRtmpRelayBroadcast(liveId, userId, existingStream = null, relayUrl = null, ingestUrl = null, streamKey = null, authToken = null) {
   try {
-    console.log('[relay] startRtmpRelayBroadcast liveId:', liveId, 'relayUrl:', relayUrl);
+    console.log('[relay] startRtmpRelayBroadcast liveId:', liveId, 'relayUrl:', relayUrl, 'authToken:', authToken ? 'set' : 'none');
     if (existingStream?.getTracks?.().length) {
       localStream = existingStream;
     } else {
       localStream = await requestVuvioMediaStream({ video: { width: 1280, height: 720 }, audio: true });
     }
-    await startRtmpRelayIngest(relayUrl, liveId, ingestUrl, streamKey, localStream);
+    await startRtmpRelayIngest(relayUrl, liveId, ingestUrl, streamKey, localStream, authToken);
     return localStream;
   } catch (err) {
     console.error('[relay] Relay broadcast failed (WHIP still active):', err.message);
@@ -837,8 +846,9 @@ export function stopRtmpRelayBroadcastSync() {
     if (localStream) { localStream.getTracks().forEach(t => t.stop()); localStream = null; }
     if (relayPeerConnection) { relayPeerConnection.close(); relayPeerConnection = null; }
     if (relayBaseUrl && relaySessionId) {
-      fetch(`${relayBaseUrl}/sessions/${relaySessionId}`, { method: 'DELETE' }).catch(() => {});
-      relaySessionId = null; relayBaseUrl = null;
+      const headers = relayAuthToken ? { 'x-relay-token': relayAuthToken } : undefined;
+      fetch(`${relayBaseUrl}/sessions/${relaySessionId}`, { method: 'DELETE', headers }).catch(() => {});
+      relaySessionId = null; relayBaseUrl = null; relayAuthToken = null;
     }
     console.log('[relay] No active relay session to stop');
   } catch (err) {

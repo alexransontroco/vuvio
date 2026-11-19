@@ -69,8 +69,8 @@ export default function SceneWatch({ reducedMotion }) {
           }}
         >
           <IntroVideo
-            src="/intro/povs-montage.mp4"
-            poster="/intro/povs-poster.jpg"
+            src="/pov/used/povs-montage.mp4"
+            poster="/pov/used/povs-poster.jpg"
             className="intro-livecard__video"
             loop
             playbackRate={0.85}

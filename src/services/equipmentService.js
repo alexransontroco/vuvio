@@ -10,7 +10,8 @@ import {
   serverTimestamp,
 } from 'firebase/firestore';
 import { demoEquipmentItems, demoLiveEquipmentIds, EQUIPMENT_CATALOG, EQUIPMENT_CATEGORIES, EQUIPMENT_PRODUCT_ID_MAP } from '../data/equipmentModel.js';
-import { resolveEquipmentProduct, getProductThumbnailUrl } from './productService.js';
+import { resolveEquipmentProduct } from './productService.js';
+import { persistentEquipmentImage, equipmentImageForUsage } from '../data/equipmentVisual.js';
 
 const EQUIPMENT_KEY = 'vuvio:equipment-library';
 const LIVE_SETUP_KEY = 'vuvio:last-live-equipment';
@@ -90,12 +91,14 @@ export function normalizeEquipmentItem(item) {
 // ── Firestore helpers ─────────────────────────────────────────────────────────
 
 function toFirestoreDoc(item, userId) {
-  const { id, userId: _uid, ...rest } = item;
-  // base64 data URLs would exceed Firestore's 1MB document limit — strip them
-  const imageUrl = rest.imageUrl?.startsWith('data:') ? null : (rest.imageUrl ?? null);
+  const { id, userId: _uid, product: _product, ...rest } = item;
+  const image = persistentEquipmentImage(rest);
+  const imageUrl = image.imageUrl?.startsWith('data:') ? null : image.imageUrl;
   return {
     ...rest,
+    ...image,
     imageUrl,
+    thumbnailUrl: imageUrl,
     creatorId: userId,
     updatedAt: serverTimestamp(),
   };
@@ -185,7 +188,9 @@ export function getEquipmentLibrary(seedItems = demoEquipmentItems) {
 
 function mergeEquipmentProduct(item, product) {
   if (!item || !product) return item;
-  const thumbnailUrl = getProductThumbnailUrl(product, 'medium') || product.thumbnailUrl || null;
+  const ownImage = persistentEquipmentImage(item);
+  const productImage = persistentEquipmentImage(product);
+  const image = ownImage.imageUrl ? ownImage : productImage.imageUrl ? productImage : ownImage;
   return {
     ...item,
     product,
@@ -194,9 +199,7 @@ function mergeEquipmentProduct(item, product) {
     model: item.model || product.name,
     productUrl: item.productUrl || product.productUrl || '',
     affiliateUrl: item.affiliateUrl || product.affiliateUrl || '',
-    thumbnailUrl,
-    imageUrl: item.imageUrl || thumbnailUrl,
-    imageSource: item.imageSource || product.imageSource || 'placeholder',
+    ...image,
     imageStatus: item.imageStatus || product.status || 'placeholder',
     provider: item.provider || product.provider || 'demo',
     status: item.status || product.status || 'placeholder',
@@ -217,7 +220,10 @@ export async function getEquipmentLibraryWithProducts(seedItems = [], options = 
 }
 
 export function saveEquipmentLibrary(items) {
-  const normalized = items.map(normalizeEquipmentItem).filter(Boolean);
+  const normalized = items.map(normalizeEquipmentItem).filter(Boolean).map((item) => {
+    const { product: _product, ...rest } = item;
+    return { ...rest, ...persistentEquipmentImage(item) };
+  });
   const win = safeWindow();
   if (win) {
     try {
@@ -385,9 +391,16 @@ export function buildEquipmentSnapshots(items, ids) {
     ownership: item.ownership,
     affiliateUrl: item.affiliateUrl,
     productUrl: item.productUrl,
-    thumbnailUrl: item.thumbnailUrl || item.product?.thumbnailUrl || item.imageUrl || null,
-    imageUrl: item.imageUrl || item.thumbnailUrl || item.product?.thumbnailUrl || null,
+    thumbnailUrl: equipmentImageForUsage(item, 'public-gear'),
+    imageUrl: equipmentImageForUsage(item, 'public-gear'),
     imageSource: item.imageSource || item.product?.imageSource || 'placeholder',
+    imageRightsStatus: item.imageRightsStatus || item.product?.imageRightsStatus || null,
+    imageRightsSource: item.imageRightsSource || item.product?.imageRightsSource || null,
+    imageAllowedUsages: item.imageAllowedUsages || item.product?.imageAllowedUsages || [],
+    imageRightsCheckedAt: item.imageRightsCheckedAt || null,
+    imageRightsExpiresAt: item.imageRightsExpiresAt || null,
+    imageProductId: item.imageProductId || item.sourceProductId || null,
+    imageHostingStatus: item.imageHostingStatus || null,
     provider: item.provider || item.product?.provider || 'demo',
     status: item.status || item.product?.status || 'placeholder',
   }));

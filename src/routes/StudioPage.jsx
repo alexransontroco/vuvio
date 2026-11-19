@@ -1,11 +1,15 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { addDoc, collection, doc, getDocs, limit, onSnapshot, orderBy, query, serverTimestamp, updateDoc, where } from 'firebase/firestore';
-import { Eye, ExternalLink, Loader2, MessageCircle, MessageSquare, Radio, Send } from 'lucide-react';
+import { Eye, ExternalLink, Loader2, MessageCircle, MessageSquare, Radio, Send, Users } from 'lucide-react';
 import { db } from '../firebase.js';
 import { useAuth } from '../context/AuthContext.jsx';
 import { answerQuestion, subscribeToQuestions } from '../services/liveQAService.js';
 import '../styles/pages/live.css';
+import { isWorkshopEnabled } from '../config/workshop.js';
+import { useWorkshopSession } from '../hooks/useWorkshopSession.js';
+import WorkshopParticipantsPanel from '../components/workshop/WorkshopParticipantsPanel.jsx';
+import WorkshopSpotlightConsentSheet from '../components/workshop/WorkshopSpotlightConsentSheet.jsx';
 
 function formatElapsed(startMs) {
   if (!startMs) return '—';
@@ -212,6 +216,40 @@ export default function StudioPage() {
     if (el) el.scrollTop = el.scrollHeight;
   }, [comments, activeTab]);
 
+  const workshopFlagOn = isWorkshopEnabled();
+  const workshopMode = live?.participation || 'off';
+  const workshopActive = workshopFlagOn && workshopMode !== 'off' && Boolean(resolvedLiveId);
+  const workshopHostConfig = useMemo(() => {
+    if (!workshopActive) return undefined;
+    return {
+      mode: workshopMode,
+      maxParticipants: live?.participationConfig?.maxParticipants || 6,
+      audience: live?.participationConfig?.audience || 'everyone',
+      activityTitle: live?.participationConfig?.activityTitle || live?.title || '',
+      hostId: live?.creatorUid || user?.uid || resolvedLiveId,
+      hostName: live?.name || user?.displayName || 'Host',
+    };
+  }, [workshopActive, workshopMode, live?.participationConfig?.maxParticipants, live?.participationConfig?.audience, live?.participationConfig?.activityTitle, live?.title, live?.creatorUid, live?.name, user?.uid, user?.displayName, resolvedLiveId]);
+  const workshopViewer = useMemo(() => (
+    workshopActive && user ? { userId: user.uid, userName: user.displayName || 'Host' } : null
+  ), [workshopActive, user?.uid, user?.displayName]);
+  const workshopSession = useWorkshopSession({
+    liveId: workshopActive ? resolvedLiveId : null,
+    viewer: workshopViewer,
+    hostConfig: workshopHostConfig,
+  });
+  const workshopPendingJoin = workshopSession?.pendingJoinRequests?.length || 0;
+  const workshopParticipantCount = workshopSession?.session?.participants?.length || 0;
+  const hostIncomingSpotlight = useMemo(() => {
+    const parts = workshopSession?.session?.participants || [];
+    return parts.find((p) => {
+      const req = p.pendingSpotlightRequest;
+      return req?.status === 'pending' && req.origin === 'participant';
+    }) || null;
+  }, [workshopSession?.session?.participants]);
+  const [hostConsentOpen, setHostConsentOpen] = useState(false);
+  useEffect(() => { if (hostIncomingSpotlight) setHostConsentOpen(true); }, [hostIncomingSpotlight?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+
   if (authLoading || resolveState === 'resolving') {
     return (
       <main className="studio-page studio-page--centered">
@@ -310,6 +348,21 @@ export default function StudioPage() {
               <span>Chat</span>
               {comments.length > 0 ? <span className="studio-tab__badge studio-tab__badge--muted">{comments.length}</span> : null}
             </button>
+            {workshopActive ? (
+              <button
+                type="button"
+                role="tab"
+                aria-selected={activeTab === 'workshop'}
+                className={`studio-tab${activeTab === 'workshop' ? ' is-active' : ''}`}
+                onClick={() => setActiveTab('workshop')}
+              >
+                <Users size={14} strokeWidth={1.9} />
+                <span>Workshop</span>
+                {workshopPendingJoin > 0 ? <span className="studio-tab__badge">{workshopPendingJoin}</span> : (
+                  workshopParticipantCount > 0 ? <span className="studio-tab__badge studio-tab__badge--muted">{workshopParticipantCount}</span> : null
+                )}
+              </button>
+            ) : null}
           </div>
           {sendError ? <span className="studio-feed__error">{sendError}</span> : null}
         </header>
@@ -380,7 +433,7 @@ export default function StudioPage() {
               })}
             </div>
           )
-        ) : (
+        ) : activeTab === 'chat' ? (
           <div className="studio-chat">
             {comments.length === 0 ? (
               <div className="studio-feed__empty studio-feed__empty--chat">
@@ -439,8 +492,35 @@ export default function StudioPage() {
               </button>
             </form>
           </div>
-        )}
+        ) : workshopActive ? (
+          <div className="studio-workshop">
+            <WorkshopParticipantsPanel
+              variant="embedded"
+              session={workshopSession.session}
+              pendingJoinRequests={workshopSession.pendingJoinRequests}
+              pendingFeedback={workshopSession.pendingFeedback}
+              onRespondJoin={(id, opts) => workshopSession.actions.respondJoinRequest(id, opts)}
+              onViewPrivate={() => {}}
+              onAskPrivateView={(pid) => workshopSession.actions.setHostViewAuthorization(pid, true)}
+              onRequestSpotlight={(pid) => workshopSession.actions.hostRequestSpotlight(pid)}
+              onStartSpotlight={(pid) => workshopSession.actions.startSpotlight(pid)}
+              onEndSpotlight={() => workshopSession.actions.endSpotlight({ by: 'host' })}
+              onRemoveParticipant={(pid) => workshopSession.actions.removeParticipant(pid)}
+              onResolveFeedback={(fid) => workshopSession.actions.resolveFeedback(fid)}
+              onRespondParticipantSpotlight={(pid, opts) => workshopSession.actions.hostRespondSpotlight(pid, opts)}
+            />
+          </div>
+        ) : null}
       </section>
+      {workshopActive && hostConsentOpen && hostIncomingSpotlight ? (
+        <WorkshopSpotlightConsentSheet
+          variant="host-incoming"
+          participantName={hostIncomingSpotlight.userName}
+          onAccept={() => workshopSession.actions.hostRespondSpotlight(hostIncomingSpotlight.id, { accept: true })}
+          onDecline={() => workshopSession.actions.hostRespondSpotlight(hostIncomingSpotlight.id, { accept: false })}
+          onClose={() => setHostConsentOpen(false)}
+        />
+      ) : null}
     </main>
   );
 }

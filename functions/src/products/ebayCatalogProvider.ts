@@ -64,9 +64,10 @@ export class EbayCatalogProvider implements ProductProvider {
       return cachedToken.token;
     }
 
-    const credentials = Buffer.from(`${this.config.clientId}:${this.config.clientSecret}`).toString('base64');
+    const credentials = Buffer.from(`${this.config.clientId.trim()}:${this.config.clientSecret.trim()}`).toString('base64');
     const response = await fetch(TOKEN_URL, {
       method: 'POST',
+      signal: AbortSignal.timeout(6000),
       headers: {
         Authorization: `Basic ${credentials}`,
         'Content-Type': 'application/x-www-form-urlencoded',
@@ -104,7 +105,7 @@ export class EbayCatalogProvider implements ProductProvider {
       });
 
       if (query.text) {
-        params.set('q', query.text);
+        params.set('q', /^guit$/i.test(query.text.trim()) ? 'guitare' : query.text);
       } else if (query.gtin || query.ean || query.upc) {
         params.set('q', query.gtin ?? query.ean ?? query.upc ?? '');
       } else if (query.mpn && query.brand) {
@@ -114,6 +115,7 @@ export class EbayCatalogProvider implements ProductProvider {
       }
 
       const response = await fetch(`${SEARCH_URL}?${params}`, {
+        signal: AbortSignal.timeout(6000),
         headers: {
           Authorization: `Bearer ${token}`,
           'X-EBAY-C-MARKETPLACE-ID': this.config.marketplaceId,
@@ -143,6 +145,13 @@ export class EbayCatalogProvider implements ProductProvider {
           name,
           normalizedName: normalizeProductName(name),
           thumbnailUrl,
+          imageRightsStatus: 'unknown',
+          imageSource: 'ebayCatalog',
+          imageRightsSource: 'ebay-api-license-public-display-conditional',
+          imageAllowedUsages: [],
+          imageRightsCheckedAt: new Date().toISOString(),
+          imageRightsExpiresAt: new Date(Date.now() + 6 * 60 * 60 * 1000).toISOString(),
+          imageProductId: item.itemId,
           sourceProductUrl: item.itemWebUrl,
           canImport: false,
         };
@@ -152,7 +161,7 @@ export class EbayCatalogProvider implements ProductProvider {
           seen.set(key, product);
         }
       }
-      return Array.from(seen.values()).slice(0, query.limit ?? 10);
+      return Array.from(seen.values());
     } catch (err) {
       logger.warn('[EbayCatalog] search failed:', err);
       return [];

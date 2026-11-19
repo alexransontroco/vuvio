@@ -14,13 +14,14 @@ async function getAuthToken() {
  * Search products via the Vuvio backend API.
  * Supports text, brand, gtin, ean, category query params.
  */
-export async function searchProductsAPI(query, { brand, gtin, ean, category, limit = 20 } = {}) {
-  if (!query && !brand && !gtin && !ean) return [];
+export async function searchProductsAPI(query, { brand, mpn, gtin, ean, category, limit = 20 } = {}) {
+  if (!query && !(brand && mpn) && !gtin && !ean) return [];
 
   try {
     const params = new URLSearchParams();
     if (query) params.set('q', query);
     if (brand) params.set('brand', brand);
+    if (mpn) params.set('mpn', mpn);
     if (gtin) params.set('gtin', gtin);
     if (ean) params.set('ean', ean);
     if (category) params.set('category', category);
