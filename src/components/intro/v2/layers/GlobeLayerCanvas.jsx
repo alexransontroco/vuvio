@@ -1,8 +1,8 @@
 import { AnimatePresence, motion } from 'framer-motion';
 import { useEffect, useRef, useState } from 'react';
-import { Compass, Globe2, MapPin, MousePointer2, Play, Tv2, UserRound, X } from 'lucide-react';
+import { MapPin, MousePointer2, Play, X } from 'lucide-react';
 import { CHEF_LIVE, FIREFIGHTER_LIVE, INTRO_LIVES } from '../introLives.js';
-import BrandMark from '../../../BrandMark.jsx';
+import IntroBottomNav from './IntroBottomNav.jsx';
 
 const EASE = [0.22, 1, 0.36, 1];
 const CENTER_LAT = 25 * Math.PI / 180;
@@ -428,13 +428,7 @@ export default function GlobeLayerCanvas({ phase, visible, preload, reducedMotio
             <>
               <div className="introv2-globe__zoom-controls" aria-hidden="true"><span>+</span><span>−</span></div>
               {!selectedLive && <div className="introv2-globe__filters" aria-hidden="true">☷&nbsp; Filters <span>⌃</span></div>}
-              <div className="introv2-globe__nav" aria-hidden="true">
-                <div><Tv2 size={19} /><span>Watch</span></div>
-                <div><Compass size={19} /><span>Explore</span></div>
-                <div className="introv2-globe__nav-create"><BrandMark size={25} useLegacy withCircle={false} /></div>
-                <div className="is-active"><Globe2 size={19} /><span>Globe</span></div>
-                <div><UserRound size={19} /><span>Profile</span></div>
-              </div>
+              <IntroBottomNav active="Globe" />
             </>
           )}
         </motion.div>

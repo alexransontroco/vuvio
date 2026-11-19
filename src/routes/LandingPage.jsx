@@ -16,7 +16,7 @@ const COPY = {
     notifyFinal: 'Être informé du lancement',
     waitlistNote: 'Confirmation immédiate, puis un email au lancement.',
     privacyLink: 'Politique de confidentialité',
-    betaLink: 'Déjà invité ? Accéder à la bêta',
+    betaLink: 'Accéder à la bêta',
     invalidEmail: 'Saisissez une adresse email valide.',
     challengeNeeded: 'Validez la vérification avant de continuer.',
     success: "C'est noté. Nous vous préviendrons au lancement.",
@@ -77,7 +77,7 @@ const COPY = {
     notifyFinal: 'Get notified at launch',
     waitlistNote: 'Instant confirmation, then one email at launch.',
     privacyLink: 'Privacy policy',
-    betaLink: 'Already invited? Access the beta',
+    betaLink: 'Access the beta',
     invalidEmail: 'Enter a valid email address.',
     challengeNeeded: 'Complete the verification before continuing.',
     success: "You're on the list. We'll notify you at launch.",
@@ -363,8 +363,8 @@ export default function LandingPage() {
             {t.waitlistNote} · <Link to="/privacy" className="vuvio-landing__text-link vuvio-landing__text-link--muted">{t.privacyLink}</Link>
           </p>
 
-          <button type="button" className="vuvio-landing__text-link vuvio-landing__beta-link" onClick={enterApp}>
-            {t.betaLink} →
+          <button type="button" className="vuvio-landing__beta-btn" onClick={enterApp}>
+            {t.betaLink} <span aria-hidden="true">→</span>
           </button>
         </div>
       </section>

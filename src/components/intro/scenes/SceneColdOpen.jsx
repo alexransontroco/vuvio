@@ -15,8 +15,8 @@ export default function SceneColdOpen({ reducedMotion }) {
         style={{ position: 'absolute', inset: 0 }}
       >
         <IntroVideo
-          src="/intro/povs-montage.mp4"
-          poster="/intro/povs-poster.jpg"
+          src="/pov/used/povs-montage.mp4"
+          poster="/pov/used/povs-poster.jpg"
           className="intro-cold__video"
           loop={false}
         />

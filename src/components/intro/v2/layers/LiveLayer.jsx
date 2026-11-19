@@ -1,9 +1,9 @@
 import { AnimatePresence, motion } from 'framer-motion';
 import { useEffect, useMemo, useState } from 'react';
-import { Heart, MessageCircle, Gift, Share2, Backpack, MapPin, MousePointer2, Tv2, Compass, Globe2, UserRound, UserRoundPlus, Star, Send, VolumeX } from 'lucide-react';
+import { Heart, MessageCircle, Gift, Share2, Backpack, MapPin, MousePointer2, UserRoundPlus, Star, Send, VolumeX } from 'lucide-react';
 import { BIKING_LIVE, CHEF_LIVE, FIREFIGHTER_LIVE } from '../introLives.js';
 import WatchMiniGlobe from '../../../WatchMiniGlobe.jsx';
-import BrandMark from '../../../BrandMark.jsx';
+import IntroBottomNav from './IntroBottomNav.jsx';
 
 const EASE = [0.22, 1, 0.36, 1];
 
@@ -231,19 +231,13 @@ export default function LiveLayer({ phase, reducedMotion, selectedLive, autoOpen
             </motion.div>
           )}
           {phase === 'globelive' && (
-            <nav className="bottom-nav introv2-live__bottom-nav" aria-label="Vuvio navigation">
-              <div className="bottom-nav__item active"><span className="bottom-nav__icon"><Tv2 size={23} strokeWidth={1.9} /></span><span className="bottom-nav__label">Watch</span></div>
-              <div className="bottom-nav__item"><span className="bottom-nav__icon"><Compass size={23} strokeWidth={1.9} /></span><span className="bottom-nav__label">Explore</span></div>
-              <button type="button" className={'bottom-nav__create introv2-live__create' + (createPressed ? ' is-pressed' : '')} onClick={() => { setCreatePressed(true); onCreatePress(); }} aria-label="Start a live">
-                <BrandMark size={40} withCircle={false} useLegacy style={{ marginTop: 10 }} />
-                <span className="bottom-nav__create-badge" aria-hidden="true">+</span>
-                {autoCreate && !reducedMotion && !createPressed && (
+            <IntroBottomNav
+              onCreate={() => { setCreatePressed(true); onCreatePress(); }}
+              createPressed={createPressed}
+              cursor={autoCreate && !reducedMotion && !createPressed && (
                   <motion.span className="introv2-live__create-cursor" initial={{ opacity: 0, x: 40, y: -32 }} animate={{ opacity: [0, 1, 1, 1], x: [40, 40, 0, 0], y: [-32, -32, 0, 0], scale: [1, 1, 1, 0.72] }} transition={{ delay: 6.35, duration: 0.9, times: [0, 0.15, 0.82, 1], ease: EASE }} aria-hidden="true"><MousePointer2 size={25} fill="white" strokeWidth={1.5} /></motion.span>
-                )}
-              </button>
-              <div className="bottom-nav__item"><span className="bottom-nav__icon"><Globe2 size={23} strokeWidth={1.9} /></span><span className="bottom-nav__label">Globe</span></div>
-              <div className="bottom-nav__item"><span className="bottom-nav__icon"><UserRound size={23} strokeWidth={1.9} /></span><span className="bottom-nav__label">Profile</span></div>
-            </nav>
+              )}
+            />
           )}
         </motion.div>
       )}

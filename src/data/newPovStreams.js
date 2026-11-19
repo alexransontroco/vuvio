@@ -89,11 +89,11 @@ export const newPovStreams = [
     family: 'earth',
     subcategory: 'Tour',
     povType: 'fixed',
-    experienceTitle: 'Courtyard housing site review',
-    description: 'Checking shade, concrete edges and circulation before handover.',
+    experienceTitle: 'Sketching a housing project',
+    description: 'Hand sketches of plans and elevations before the next review.',
     chat: [
-      { who: 'Remy', text: 'love the material palette' },
-      { who: 'Jo', text: 'show the courtyard again' },
+      { who: 'Remy', text: 'love the line weight' },
+      { who: 'Jo', text: 'zoom on the elevation' },
     ],
   },
   {
@@ -715,7 +715,7 @@ export const newPovStreams = [
     city: 'Dubai',
     country: 'United Arab Emirates',
     viewers: '1,096',
-    coordinates: [55.2708, 25.2048],
+    coordinates: [55.193, 25.255],
     family: 'earth',
     subcategory: 'Transport',
     povType: 'pov',
@@ -762,7 +762,7 @@ export const newPovLives = newPovStreams.map((stream) => ({
 }));
 
 const upcomingById = {
-  'architect-rotterdam': ['TODAY', '18:30', 'Final walkthrough in Rotterdam'],
+  'architect-rotterdam': ['TODAY', '18:30', 'Sketching a housing project'],
   'electrician-montreal': ['TMRW', '09:15', 'Old loft panel check'],
   'mechanic-detroit': ['TODAY', '16:45', 'Engine bay diagnosis'],
   'caver-slovenia': ['TMRW', '11:20', 'Postojna lamp line'],

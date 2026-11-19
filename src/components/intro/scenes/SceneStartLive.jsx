@@ -26,8 +26,8 @@ export default function SceneStartLive({ reducedMotion, onExit }) {
     <section className="intro-start" aria-label="Start Live">
       {/* Dim backdrop video */}
       <IntroVideo
-        src="/intro/povs-montage.mp4"
-        poster="/intro/povs-poster.jpg"
+        src="/pov/used/povs-montage.mp4"
+        poster="/pov/used/povs-poster.jpg"
         className="intro-start__video-bg"
         loop
       />
@@ -51,7 +51,7 @@ export default function SceneStartLive({ reducedMotion, onExit }) {
           transition={{ delay: 0.15, duration: 0.55, ease: EASE }}
         >
           <img
-            src="/intro/povs-poster.jpg"
+            src="/pov/used/povs-poster.jpg"
             alt=""
             className="intro-start__preview-video"
             style={{ width: '100%', height: '100%', objectFit: 'cover' }}
@@ -152,8 +152,8 @@ export default function SceneStartLive({ reducedMotion, onExit }) {
             transition={{ duration: 0.8, ease: EASE }}
           >
             <IntroVideo
-              src="/intro/povs-montage.mp4"
-              poster="/intro/povs-poster.jpg"
+              src="/pov/used/povs-montage.mp4"
+              poster="/pov/used/povs-poster.jpg"
               className="intro-start__final-video"
               loop
             />

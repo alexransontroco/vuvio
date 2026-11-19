@@ -62,7 +62,6 @@ const demoVideoLiveIds = [
   'skate-portland',
   'sailor-split',
   'road-cyclist-mallorca',
-  'biking-dolomites',
   'buggy-marrakesh',
   'glacier-guide-iceland',
   'gopro-firefighters-la',
@@ -71,7 +70,6 @@ const demoVideoLiveIds = [
   'muaythai-training-phuket',
   'f16-pilot-miami',
   'gopro-climbing-wall',
-  'fallow-head-chef-london',
   'wingsuit-taschhorn',
   'wingsuit-new-pov',
   'chef-cooking-pov',
@@ -81,6 +79,8 @@ const demoVideoLiveIds = [
   'street-food-chengdu-pov',
   'kitchen-service-pov',
   'watercolor-sketch-pov',
+  'mtb-ridge-queenstown',
+  'honey-hunter-nepal',
 ];
 const CLOCK_TICK_MS = 1000;
 const COVER_CAPTURE_DELAY_MS = 2000;

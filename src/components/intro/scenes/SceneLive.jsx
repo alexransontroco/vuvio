@@ -33,8 +33,8 @@ export default function SceneLive({ reducedMotion }) {
     <section className="intro-live" aria-label="Live viewer">
       {/* Full-bleed video */}
       <IntroVideo
-        src="/intro/povs-montage.mp4"
-        poster="/intro/povs-poster.jpg"
+        src="/pov/used/povs-montage.mp4"
+        poster="/pov/used/povs-poster.jpg"
         className="intro-live__video"
         loop
       />

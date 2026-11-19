@@ -1,12 +1,12 @@
 import { AnimatePresence, motion } from 'framer-motion';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
-  Bike, Briefcase, ChevronDown, ChevronLeft, Compass, Footprints,
-  Globe2, MoreHorizontal, Mountain, MousePointer2, Pencil, Plane, Radio, Tv2,
-  UserRound, UtensilsCrossed, Waves, X,
+  Bike, Briefcase, ChevronDown, ChevronLeft, Footprints,
+  Globe2, MoreHorizontal, Mountain, MousePointer2, Pencil, Plane, Radio,
+  UtensilsCrossed, Waves, X,
 } from 'lucide-react';
-import BrandMark from '../../../BrandMark.jsx';
 import { BIKING_LIVE } from '../introLives.js';
+import IntroBottomNav from './IntroBottomNav.jsx';
 
 const EASE = [0.22, 1, 0.36, 1];
 const CATEGORIES = [
@@ -117,13 +117,7 @@ export default function StartLiveLayer({ phase, reducedMotion, autoLaunch, onLau
               <div className="introv2-start__quick"><Globe2 size={14} /> Everyone <ChevronDown size={12} /></div>
             </div>
           </motion.div>
-          <div className="introv2-start__nav">
-            <div className="introv2-start__nav-item"><Tv2 size={18} /><span>Watch</span></div>
-            <div className="introv2-start__nav-item"><Compass size={18} /><span>Explore</span></div>
-            <div className="introv2-start__nav-create"><BrandMark size={24} useLegacy withCircle={false} /></div>
-            <div className="introv2-start__nav-item"><Globe2 size={18} /><span>Globe</span></div>
-            <div className="introv2-start__nav-item"><UserRound size={18} /><span>Profile</span></div>
-          </div>
+          <IntroBottomNav createActive />
           {launching && (
             <motion.div
               className="introv2-start__launch-overlay"

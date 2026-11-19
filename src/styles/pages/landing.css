@@ -375,6 +375,37 @@
 
 .vuvio-landing__beta-link:hover { color: var(--cyan); }
 
+.vuvio-landing__beta-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  align-self: flex-start;
+  margin-top: 4px;
+  padding: 12px 22px;
+  border: 1px solid var(--cyan);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--cyan);
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  cursor: pointer;
+  transition: background 180ms ease, color 180ms ease, transform 180ms ease, box-shadow 180ms ease;
+}
+
+.vuvio-landing__beta-btn:hover {
+  background: var(--cyan);
+  color: var(--ink);
+  transform: translateY(-1px);
+  box-shadow: 0 10px 28px rgba(40, 216, 223, 0.28);
+}
+
+.vuvio-landing__beta-btn:active { transform: translateY(0); }
+.vuvio-landing__beta-btn span { transition: transform 180ms ease; }
+.vuvio-landing__beta-btn:hover span { transform: translateX(3px); }
+
 /* ---------- CTA button ---------- */
 .vuvio-landing__cta {
   display: inline-flex;
