@@ -35,6 +35,7 @@ const GlobeTest3Page      = lazy(() => import('./routes/GlobeTest3Page.jsx'));
 const GlobeTest4Page      = lazy(() => import('./routes/GlobeTest4Page.jsx'));
 const GlobeTest5Page      = lazy(() => import('./routes/GlobeTest5Page.jsx'));
 const GlobeTest6Page      = lazy(() => import('./routes/GlobeTest6Page.jsx'));
+const GlobeTest7Page      = lazy(() => import('./routes/GlobeTest7Page.jsx'));
 const LoginPage           = lazy(() => import('./routes/LoginPage.jsx'));
 const LiveRecapPage       = lazy(() => import('./routes/LiveRecapPageSimple.jsx'));
 const LiveSummaryPage     = lazy(() => import('./routes/LiveSummaryPage.jsx'));
@@ -230,6 +231,7 @@ export default function App() {
         <Route path="/globe-test-4"  element={<Lazy component={GlobeTest4Page} />} />
         <Route path="/globe-test-5"  element={<Lazy component={GlobeTest5Page} />} />
         <Route path="/globe-test-6"  element={<Lazy component={GlobeTest6Page} />} />
+        <Route path="/globe-test-7"  element={<Lazy component={GlobeTest7Page} />} />
         <Route path="/terms"       element={<Lazy component={TermsPage} />} />
         <Route path="/privacy"    element={<Lazy component={PrivacyPage} />} />
         <Route path="/guidelines" element={<Lazy component={CommunityGuidelinesPage} />} />

@@ -399,7 +399,18 @@
     "startLiveNow": "Démarrer le live",
     "cameraStarting": "Démarrage de la caméra…",
     "cameraDenied": "Accès caméra refusé",
-    "cameraUnavailable": "Aucune caméra disponible"
+    "cameraUnavailable": "Aucune caméra disponible",
+    "liveType": {
+      "label": "Type de live",
+      "watchOnly": "Vue libre",
+      "openToJoin": "Ouvert à tous",
+      "workshop": "Atelier",
+      "soon": "Bientôt",
+      "hint": {
+        "join": "Bientôt — Partagez vos activités avec d'autres participants.",
+        "workshop": "Bientôt — Animez des ateliers interactifs et partagez votre savoir-faire."
+      }
+    }
   },
   "profile": {
     "title": "Profil",

@@ -693,7 +693,18 @@
     "startLiveNow": "Start live",
     "cameraStarting": "Starting camera…",
     "cameraDenied": "Camera access denied",
-    "cameraUnavailable": "No camera available"
+    "cameraUnavailable": "No camera available",
+    "liveType": {
+      "label": "Live type",
+      "watchOnly": "Watch only",
+      "openToJoin": "Open to join",
+      "workshop": "Workshop",
+      "soon": "Soon",
+      "hint": {
+        "join": "Coming soon — Share your activities with other participants.",
+        "workshop": "Coming soon — Host interactive workshops and share your skills."
+      }
+    }
   },
   "categories": {
     "air": {

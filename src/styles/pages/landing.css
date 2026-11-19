@@ -1,15 +1,91 @@
+/* ==========================================================================
+   Vuvio Landing — minimale, aérée, cinématographique.
+   Palette : bleu nuit profond + turquoise lumineux.
+   Mobile-first.
+   ========================================================================== */
+
 .vuvio-landing {
   position: fixed;
   inset: 0;
   overflow-y: auto;
   overflow-x: hidden;
-  background: radial-gradient(circle at 82% 12%, rgba(0, 185, 214, 0.1), transparent 24%),
-    linear-gradient(180deg, #0a1c2f, #06111e);
+  background: #04101d;
   color: #f7fbff;
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Helvetica Neue', sans-serif;
   z-index: 100;
   -webkit-overflow-scrolling: touch;
+
+  /* Palette */
+  --cyan: #28d8df;
+  --cyan-soft: #72f2f7;
+  --cyan-glow: rgba(40, 216, 223, 0.35);
+  --ink: #04101d;
+  --ink-2: #081426;
+  --text: #f7fbff;
+  --text-muted: #7f98a7;
+  --text-soft: #b5c7d6;
+  --line: rgba(255, 255, 255, 0.07);
+
+  /* Type scale (responsive via clamp) */
+  --fs-display:   clamp(30px, 6vw, 56px);     /* hero slogan */
+  --fs-h1:        clamp(22px, 3.6vw, 36px);   /* big section H2 */
+  --fs-h2:        clamp(20px, 3vw, 30px);     /* manifesto, final */
+  --fs-h3:        clamp(16px, 1.9vw, 20px);   /* founder name, app title */
+  --fs-body:      clamp(14px, 1.3vw, 16px);   /* subtitle, bio, note */
+  --fs-body-sm:   clamp(13px, 1.2vw, 14.5px); /* app text, note */
+  --fs-caption:   clamp(12px, 1.1vw, 13px);   /* contact, misc */
+  --fs-overline:  11px;                       /* ALL CAPS labels */
+
+  /* Weights */
+  --fw-regular: 400;
+  --fw-medium: 500;
+  --fw-semibold: 600;
+  --fw-bold: 700;
+  --fw-black: 800;
+
+  /* Line-height */
+  --lh-tight: 1.05;
+  --lh-snug: 1.15;
+  --lh-normal: 1.4;
+  --lh-relaxed: 1.55;
+
+  /* Spacing scale (8pt base) */
+  --sp-1: 4px;
+  --sp-2: 8px;
+  --sp-3: 12px;
+  --sp-4: 16px;
+  --sp-5: 20px;
+  --sp-6: 24px;
+  --sp-8: 32px;
+  --sp-10: 40px;
+  --sp-12: 48px;
+  --sp-16: 64px;
+
+  /* Section rythm */
+  --sect-pad-y:   clamp(44px, 6vw, 88px);
+  --sect-pad-x:   clamp(22px, 5vw, 56px);
+  --sect-gap:     clamp(16px, 2.5vw, 28px);
+  --page-max:     1200px;
+
+  /* Radii */
+  --r-sm: 10px;
+  --r-md: 16px;
+  --r-lg: 22px;
+  --r-pill: 999px;
 }
+
+/* ---------- Ambient : un seul grand voile lumineux turquoise diffus en haut ---------- */
+.vuvio-landing__ambient {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background:
+    radial-gradient(ellipse 120% 70% at 50% -10%, rgba(40, 216, 223, 0.18), transparent 60%),
+    radial-gradient(ellipse 100% 60% at 50% 110%, rgba(40, 216, 223, 0.08), transparent 60%);
+}
+
+.vuvio-landing > *:not(.vuvio-landing__ambient) { position: relative; z-index: 1; }
 
 /* ---------- Topbar ---------- */
 .vuvio-landing__topbar {
@@ -19,25 +95,39 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 14px clamp(20px, 4vw, 48px);
+  padding: 16px clamp(18px, 4vw, 48px);
   backdrop-filter: blur(14px);
   -webkit-backdrop-filter: blur(14px);
-  background: linear-gradient(180deg, rgba(6, 17, 30, 0.72), rgba(6, 17, 30, 0.1));
-  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  background: linear-gradient(180deg, rgba(4, 16, 29, 0.72), rgba(4, 16, 29, 0));
 }
 
 .vuvio-landing__wordmark {
-  font-size: 16px;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 18px;
   font-weight: 800;
-  letter-spacing: -0.02em;
-  color: #1ed6e5;
+  letter-spacing: -0.03em;
+  color: var(--cyan);
+  line-height: 1;
+}
+
+.vuvio-landing__wordmark img {
+  height: 56px;
+  width: auto;
+  display: block;
+}
+
+@media (max-width: 480px) {
+  .vuvio-landing__wordmark { font-size: 16px; gap: 8px; }
+  .vuvio-landing__wordmark img { height: 44px; }
 }
 
 .vuvio-landing__lang {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
-  color: #8aabb8;
+  gap: 6px;
+  color: var(--text-muted);
   font-size: 12px;
   font-weight: 600;
   letter-spacing: 0.08em;
@@ -54,173 +144,158 @@
   transition: color 160ms ease;
 }
 
-.vuvio-landing__lang-btn:hover {
-  color: #c7e3eb;
-}
+.vuvio-landing__lang-btn:hover { color: #c7e3eb; }
+.vuvio-landing__lang-btn.is-active { color: var(--cyan); }
+.vuvio-landing__lang-sep { opacity: 0.35; }
 
-.vuvio-landing__lang-btn.is-active {
-  color: #1ed6e5;
-}
-
-.vuvio-landing__lang-sep {
-  opacity: 0.4;
-}
-
-/* ---------- Hero ---------- */
+/* ---------- Hero : demi-globe en haut, copy en dessous ---------- */
 .vuvio-landing__hero {
-  display: grid;
-  grid-template-columns: 1.1fr 0.9fr;
-  min-height: min(76vh, 700px);
-}
-
-.vuvio-landing__copy {
-  padding: 40px clamp(24px, 5vw, 60px);
+  position: relative;
   display: flex;
   flex-direction: column;
-  justify-content: center;
+  align-items: stretch;
+  padding: 0 0 var(--sect-pad-y);
+  overflow: hidden;
 }
 
+/* Demi-globe horizontal, non transparent, bottom coupé */
+.vuvio-landing__hero-globe {
+  position: relative;
+  width: 100%;
+  height: clamp(170px, 28vw, 340px);
+  overflow: hidden;
+  pointer-events: none;
+  margin-bottom: clamp(20px, 3vw, 44px);
+}
+
+.vuvio-landing__hero-globe img {
+  position: absolute;
+  left: 50%;
+  bottom: 0;
+  width: min(1600px, 112%);
+  transform: translateX(-50%) translateY(50%);
+  display: block;
+}
+
+.vuvio-landing__hero-globe::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 80px;
+  background: linear-gradient(180deg, transparent, var(--ink));
+  pointer-events: none;
+}
+
+.vuvio-landing__hero-inner {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  max-width: 680px;
+  margin: 0 auto;
+  padding: 0 var(--sect-pad-x);
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: clamp(14px, 2vw, 22px);
+}
+
+/* Eyebrow + pulse dot */
 .vuvio-landing__eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
   font-size: 11px;
   letter-spacing: 0.22em;
   text-transform: uppercase;
-  color: #8aabb8;
-  margin-bottom: 10px;
-  font-weight: 600;
-}
-
-.vuvio-landing__title {
-  margin: 0;
-  font-size: clamp(38px, 4.6vw, 58px);
-  line-height: 1.08;
-  letter-spacing: -0.05em;
-  font-weight: 800;
-  max-width: 700px;
-  color: #f7fbff;
-}
-
-.vuvio-landing__accent-text {
-  color: #1ed6e5;
-}
-
-.vuvio-landing__accent {
-  height: 3px;
-  width: 160px;
-  background: #1ed6e5;
-  margin: 20px 0;
-  opacity: 0.9;
-}
-
-.vuvio-landing__subtitle {
-  margin: 0 0 20px;
-  color: #b5c7d6;
-  font-size: clamp(14px, 1.25vw, 16px);
-  line-height: 1.5;
-  max-width: 540px;
-}
-
-.vuvio-landing__waitlist {
-  max-width: 530px;
-  margin-bottom: 21px;
-}
-
-.vuvio-landing__waitlist-eyebrow {
-  margin: 0 0 7px;
-  color: #1ed6e5;
-  font-size: 10px;
+  color: var(--cyan);
   font-weight: 700;
-  letter-spacing: 0.2em;
+  padding: 6px 12px 6px 10px;
+  border: 1px solid rgba(40, 216, 223, 0.25);
+  border-radius: 999px;
+  background: rgba(40, 216, 223, 0.06);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
 }
 
-.vuvio-landing__waitlist-title {
-  margin: 0 0 5px;
-  color: #f7fbff;
-  font-size: clamp(18px, 1.8vw, 23px);
-  line-height: 1.22;
-  letter-spacing: -0.025em;
+.vuvio-landing__live-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--cyan);
+  box-shadow: 0 0 10px rgba(40, 216, 223, 0.55);
+  animation: vuvio-pulse 1800ms ease-in-out infinite;
+  flex-shrink: 0;
 }
 
-.vuvio-landing__waitlist-subtitle {
-  margin: 0 0 13px;
-  color: #b5c7d6;
-  font-size: 13px;
-  line-height: 1.45;
+@keyframes vuvio-pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.4; transform: scale(0.85); }
 }
 
-.vuvio-landing__waitlist-form {
+.vuvio-landing__hero-title {
+  margin: 0;
+  font-size: var(--fs-display);
+  line-height: var(--lh-tight);
+  letter-spacing: -0.045em;
+  font-weight: var(--fw-black);
+  color: var(--text);
+  max-width: 14ch;
+}
+
+.vuvio-landing__hero-accent {
+  color: var(--cyan);
+  text-shadow: 0 0 40px rgba(40, 216, 223, 0.35);
+}
+
+.vuvio-landing__hero-subtitle {
+  margin: 0;
+  color: var(--text-soft);
+  font-size: var(--fs-body);
+  line-height: var(--lh-relaxed);
+  max-width: 42ch;
+  font-weight: var(--fw-regular);
+}
+
+/* ---------- Form : inline, sans conteneur ---------- */
+.vuvio-landing__form {
+  margin-top: 12px;
   display: flex;
   align-items: stretch;
-  gap: 9px;
+  gap: 10px;
+  width: 100%;
+  max-width: 520px;
 }
 
-.vuvio-landing__waitlist-form input[type="email"] {
+.vuvio-landing__form input[type="email"] {
   min-width: 0;
   flex: 1;
-  padding: 12px 17px;
-  border: 1px solid rgba(181, 199, 214, 0.28);
+  padding: 14px 20px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.055);
-  color: #f7fbff;
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text);
   font: inherit;
-  font-size: 14px;
+  font-size: 15px;
   transition: border-color 180ms ease, background 180ms ease;
 }
 
-.vuvio-landing__waitlist-form input[type="email"]::placeholder { color: #8aabb8; }
-.vuvio-landing__waitlist-form input[type="email"]:hover { background: rgba(255, 255, 255, 0.08); }
-.vuvio-landing__waitlist-form input[type="email"]:focus-visible,
+.vuvio-landing__form input[type="email"]::placeholder { color: var(--text-muted); }
+.vuvio-landing__form input[type="email"]:hover { background: rgba(255, 255, 255, 0.07); }
+.vuvio-landing__form input[type="email"]:focus {
+  outline: none;
+  border-color: rgba(40, 216, 223, 0.5);
+  background: rgba(40, 216, 223, 0.04);
+}
+
+.vuvio-landing__form input[type="email"]:focus-visible,
 .vuvio-landing button:focus-visible,
 .vuvio-landing a:focus-visible {
-  outline: 2px solid #72f2f7;
+  outline: 2px solid var(--cyan-soft);
   outline-offset: 3px;
 }
 
-.vuvio-landing__waitlist-form .vuvio-landing__cta {
-  flex: none;
-  justify-content: center;
-  min-height: 46px;
-  box-shadow: none;
-}
-
-.vuvio-landing__cta:disabled {
-  opacity: 0.65;
-  cursor: wait;
-  transform: none;
-}
-
-.vuvio-landing__spinner {
-  width: 17px;
-  height: 17px;
-  border: 2px solid rgba(4, 18, 30, 0.35);
-  border-top-color: #04121e;
-  border-radius: 50%;
-  animation: vuvio-landing-spin 700ms linear infinite;
-}
-
-@keyframes vuvio-landing-spin { to { transform: rotate(360deg); } }
-
-.vuvio-landing__challenge { margin-top: 11px; max-width: 300px; }
-.vuvio-landing__form-message { min-height: 0; margin: 8px 0 0; color: #72f2f7; font-size: 13px; line-height: 1.4; }
-.vuvio-landing__form-message:empty { display: none; }
-.vuvio-landing__form-message.is-error { color: #ffb9bd; }
-.vuvio-landing__waitlist-note,
-.vuvio-landing__privacy-note { margin: 7px 0 0; color: #8aabb8; font-size: 11px; line-height: 1.45; }
-.vuvio-landing__privacy-note a { color: #b5c7d6; text-underline-offset: 3px; }
-.vuvio-landing__remove,
-.vuvio-landing__beta-link {
-  border: 0;
-  background: none;
-  color: #9fdbe1;
-  padding: 0;
-  font: inherit;
-  font-size: 12px;
-  cursor: pointer;
-  text-align: left;
-  transition: color 160ms ease;
-}
-.vuvio-landing__remove { margin-top: 8px; text-decoration: underline; text-underline-offset: 3px; }
-.vuvio-landing__beta-link:hover,
-.vuvio-landing__remove:hover { color: #1ed6e5; }
 .vuvio-landing__honeypot,
 .vuvio-landing__sr-only {
   position: absolute;
@@ -231,301 +306,632 @@
   white-space: nowrap;
 }
 
-.vuvio-landing__cta-row {
-  display: flex;
-  align-items: center;
-  gap: 18px;
-  flex-wrap: wrap;
+/* ---------- Turnstile : caché par défaut, affiché après interaction ---------- */
+.vuvio-landing__challenge {
+  margin: 0;
+  max-width: 300px;
+  max-height: 0;
+  opacity: 0;
+  overflow: hidden;
+  pointer-events: none;
+  transition: max-height 260ms ease, opacity 260ms ease, margin 260ms ease;
 }
 
+.vuvio-landing__challenge.is-visible {
+  max-height: 80px;
+  opacity: 1;
+  margin-top: 4px;
+  pointer-events: auto;
+}
+
+/* ---------- Form feedback + notes ---------- */
+.vuvio-landing__form-message {
+  margin: 0;
+  color: var(--cyan-soft);
+  font-size: 13.5px;
+  line-height: 1.45;
+}
+.vuvio-landing__form-message:empty { display: none; }
+.vuvio-landing__form-message.is-error { color: #ffb9bd; }
+
+.vuvio-landing__hero-note {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 12.5px;
+  line-height: 1.5;
+}
+
+/* ---------- Text links (unifiés) : plus de violet HTML par défaut ---------- */
+.vuvio-landing__text-link,
+.vuvio-landing a {
+  background: none;
+  border: 0;
+  padding: 0;
+  font: inherit;
+  cursor: pointer;
+  color: var(--cyan);
+  text-decoration: none;
+  transition: color 160ms ease;
+}
+
+.vuvio-landing__text-link:hover,
+.vuvio-landing a:hover { color: var(--cyan-soft); }
+
+.vuvio-landing__text-link--muted {
+  color: #b5c7d6;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.vuvio-landing__text-link--muted:hover { color: var(--cyan-soft); }
+
+.vuvio-landing__beta-link {
+  margin-top: -4px;
+  color: var(--text-muted);
+  font-size: 13.5px;
+  text-align: left;
+  letter-spacing: 0.01em;
+}
+
+.vuvio-landing__beta-link:hover { color: var(--cyan); }
+
+.vuvio-landing__beta-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  align-self: flex-start;
+  margin-top: 4px;
+  padding: 12px 22px;
+  border: 1px solid var(--cyan);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--cyan);
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  cursor: pointer;
+  transition: background 180ms ease, color 180ms ease, transform 180ms ease, box-shadow 180ms ease;
+}
+
+.vuvio-landing__beta-btn:hover {
+  background: var(--cyan);
+  color: var(--ink);
+  transform: translateY(-1px);
+  box-shadow: 0 10px 28px rgba(40, 216, 223, 0.28);
+}
+
+.vuvio-landing__beta-btn:active { transform: translateY(0); }
+.vuvio-landing__beta-btn span { transition: transform 180ms ease; }
+.vuvio-landing__beta-btn:hover span { transform: translateX(3px); }
+
+/* ---------- CTA button ---------- */
 .vuvio-landing__cta {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 10px;
-  padding: 12px 25px;
+  padding: 14px 26px;
   border: 0;
   border-radius: 999px;
-  background: #1ed6e5;
-  color: #04121e;
+  background: var(--cyan);
+  color: var(--ink);
   font-family: inherit;
-  font-size: 14px;
+  font-size: 14.5px;
   font-weight: 700;
   cursor: pointer;
-  letter-spacing: 0.01em;
+  letter-spacing: 0.005em;
   transition: transform 180ms ease, box-shadow 180ms ease, background 180ms ease;
-  box-shadow: 0 10px 30px rgba(30, 214, 229, 0.3);
+  box-shadow: 0 10px 34px rgba(40, 216, 223, 0.3);
 }
 
 .vuvio-landing__cta:hover {
   transform: translateY(-1px);
-  box-shadow: 0 14px 38px rgba(30, 214, 229, 0.42);
+  box-shadow: 0 14px 40px rgba(40, 216, 223, 0.42);
   background: #3ee3f0;
 }
 
-.vuvio-landing__cta:active {
-  transform: translateY(0);
+.vuvio-landing__cta:active { transform: translateY(0); }
+.vuvio-landing__cta:disabled { opacity: 0.6; cursor: wait; transform: none; }
+.vuvio-landing__cta span { font-size: 16px; transition: transform 180ms ease; }
+.vuvio-landing__cta:hover span { transform: translateX(3px); }
+
+.vuvio-landing__cta--large { padding: 17px 34px; font-size: 15.5px; }
+
+.vuvio-landing__spinner {
+  width: 17px;
+  height: 17px;
+  border: 2px solid rgba(4, 16, 29, 0.35);
+  border-top-color: var(--ink);
+  border-radius: 50%;
+  animation: vuvio-landing-spin 700ms linear infinite;
 }
 
-.vuvio-landing__cta span {
-  font-size: 16px;
-  transition: transform 180ms ease;
+@keyframes vuvio-landing-spin { to { transform: rotate(360deg); } }
+
+/* ---------- H2 générique ---------- */
+.vuvio-landing__h2 {
+  margin: 0 0 var(--sect-gap);
+  font-size: var(--fs-h1);
+  line-height: var(--lh-snug);
+  letter-spacing: -0.035em;
+  font-weight: var(--fw-black);
+  color: var(--text);
+  max-width: 20ch;
 }
 
-.vuvio-landing__cta:hover span {
-  transform: translateX(3px);
+/* ==========================================================================
+   Manifesto — court, fort, aéré
+   ========================================================================== */
+.vuvio-landing__manifesto {
+  padding: var(--sect-pad-y) var(--sect-pad-x);
+  max-width: 820px;
+  margin: 0 auto;
+  text-align: center;
 }
 
-.vuvio-landing__cta--large {
-  padding: 15px 30px;
-  font-size: 15px;
+.vuvio-landing__manifesto-line {
+  margin: 0;
+  font-size: var(--fs-h2);
+  line-height: var(--lh-snug);
+  letter-spacing: -0.03em;
+  font-weight: var(--fw-bold);
+  max-width: 22ch;
+  margin-inline: auto;
 }
 
-.vuvio-landing__scroll {
-  color: #8aabb8;
-  text-decoration: none;
-  font-size: 12px;
-  letter-spacing: 0.04em;
-  transition: color 160ms ease;
+.vuvio-landing__manifesto-line--muted {
+  color: rgba(181, 199, 214, 0.5);
+  margin-bottom: var(--sp-3);
 }
 
-.vuvio-landing__scroll:hover {
-  color: #c7e3eb;
+.vuvio-landing__manifesto-line--accent {
+  color: var(--cyan);
+  text-shadow: 0 0 40px rgba(40, 216, 223, 0.35);
 }
 
-.vuvio-landing__visual {
+/* ==========================================================================
+   Experiences — immersives, plein cadre, dégradé bottom
+   ========================================================================== */
+.vuvio-landing__experiences {
+  padding: var(--sect-pad-y) var(--sect-pad-x);
+  max-width: var(--page-max);
+  margin: 0 auto;
+}
+
+.vuvio-landing__exp-stack {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(10px, 1.6vw, 18px);
+}
+
+.vuvio-landing__exp-figure {
+  margin: 0;
   position: relative;
+  border-radius: var(--r-lg);
   overflow: hidden;
+  aspect-ratio: 16 / 11;
+  background: var(--ink-2);
 }
 
-.vuvio-landing__visual img {
-  position: absolute;
-  inset: 0;
+.vuvio-landing__exp-figure img {
   width: 100%;
   height: 100%;
-  object-fit: contain;
-  object-position: center;
+  object-fit: cover;
+  display: block;
+  transition: transform 700ms ease;
 }
 
-/* ---------- Info Sections ---------- */
-.vuvio-landing__sections {
-  padding: clamp(56px, 8vw, 96px) clamp(24px, 5vw, 60px);
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: clamp(22px, 3vw, 40px);
+.vuvio-landing__exp-figure:hover img { transform: scale(1.03); }
+
+.vuvio-landing__exp-figure::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    180deg,
+    rgba(4, 16, 29, 0) 45%,
+    rgba(4, 16, 29, 0.35) 70%,
+    rgba(4, 16, 29, 0.85) 100%
+  );
+  pointer-events: none;
+}
+
+.vuvio-landing__exp-figure figcaption {
+  position: absolute;
+  left: clamp(18px, 2.6vw, 28px);
+  right: clamp(18px, 2.6vw, 28px);
+  bottom: clamp(16px, 2.2vw, 26px);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  z-index: 1;
+}
+
+.vuvio-landing__exp-tag {
+  font-size: var(--fs-overline);
+  font-weight: var(--fw-bold);
+  letter-spacing: 0.22em;
+  color: var(--cyan);
+  text-shadow: 0 0 12px rgba(4, 16, 29, 0.55);
+}
+
+.vuvio-landing__exp-title {
+  font-size: var(--fs-h2);
+  line-height: var(--lh-snug);
+  letter-spacing: -0.025em;
+  font-weight: var(--fw-black);
+  color: var(--text);
+  text-shadow: 0 2px 20px rgba(4, 16, 29, 0.4);
+}
+
+.vuvio-landing__exp-note {
+  margin: clamp(22px, 3vw, 36px) auto 0;
+  max-width: 48ch;
+  color: var(--text-muted);
+  font-size: var(--fs-body-sm);
+  line-height: var(--lh-relaxed);
+  text-align: center;
+}
+
+/* Desktop : 3 colonnes égales, aspect portrait */
+@media (min-width: 900px) {
+  .vuvio-landing__exp-stack {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: clamp(16px, 2vw, 24px);
+  }
+  .vuvio-landing__exp-figure {
+    aspect-ratio: 4 / 5;
+  }
+  .vuvio-landing__exp-figure::after {
+    background: linear-gradient(
+      180deg,
+      rgba(4, 16, 29, 0) 50%,
+      rgba(4, 16, 29, 0.4) 75%,
+      rgba(4, 16, 29, 0.9) 100%
+    );
+  }
+}
+
+/* ==========================================================================
+   L'app — mobile carousel snap, desktop row 3
+   ========================================================================== */
+.vuvio-landing__app {
+  padding: var(--sect-pad-y) 0;
   max-width: 1400px;
   margin: 0 auto;
 }
 
-.vuvio-landing__section {
+.vuvio-landing__app > .vuvio-landing__h2 {
+  padding: 0 var(--sect-pad-x);
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.vuvio-landing__app-row {
+  display: flex;
+  gap: clamp(20px, 3vw, 32px);
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  scroll-padding-inline: var(--sect-pad-x);
+  padding: 4px var(--sect-pad-x) clamp(16px, 2vw, 24px);
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+
+.vuvio-landing__app-row::-webkit-scrollbar { display: none; }
+
+.vuvio-landing__app-item {
+  flex: 0 0 min(62vw, 240px);
+  scroll-snap-align: center;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  align-items: center;
+  gap: clamp(14px, 1.8vw, 20px);
 }
 
-.vuvio-landing__section-eyebrow {
-  font-size: 11px;
+.vuvio-landing__app-screen {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 9 / 19.5;
+  border-radius: var(--r-lg);
+  overflow: hidden;
+  background: var(--ink-2);
+  box-shadow:
+    0 20px 48px rgba(0, 0, 0, 0.45),
+    0 0 0 1px rgba(255, 255, 255, 0.04);
+}
+
+.vuvio-landing__app-screen img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  display: block;
+}
+
+.vuvio-landing__app-copy {
+  padding: 0 var(--sp-1);
+  text-align: center;
+  width: 100%;
+}
+
+.vuvio-landing__app-tag {
+  display: inline-block;
+  font-size: var(--fs-overline);
+  font-weight: var(--fw-bold);
   letter-spacing: 0.22em;
-  color: #1ed6e5;
-  font-weight: 700;
+  color: var(--cyan);
+  margin-bottom: var(--sp-2);
 }
 
-.vuvio-landing__section-title {
-  margin: 0;
-  font-size: clamp(20px, 1.7vw, 24px);
-  line-height: 1.15;
+.vuvio-landing__app-title {
+  margin: 0 0 var(--sp-1);
+  font-size: var(--fs-h3);
+  font-weight: var(--fw-bold);
+  color: var(--text);
   letter-spacing: -0.02em;
-  font-weight: 700;
-  color: #f7fbff;
+  line-height: var(--lh-snug);
 }
 
-.vuvio-landing__section-body {
+.vuvio-landing__app-text {
+  margin: 0 auto;
+  max-width: 24ch;
+  color: var(--text-soft);
+  font-size: var(--fs-body-sm);
+  line-height: var(--lh-normal);
+}
+
+.vuvio-landing__app-dots {
+  display: flex;
+  justify-content: center;
+  gap: var(--sp-2);
+  margin-top: clamp(8px, 1.2vw, 14px);
+  padding: 0 var(--sect-pad-x);
+}
+
+.vuvio-landing__app-dot {
+  width: 7px;
+  height: 7px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.18);
+  cursor: pointer;
+  transition: background 200ms ease, transform 200ms ease, width 200ms ease;
+}
+
+.vuvio-landing__app-dot:hover { background: rgba(255, 255, 255, 0.32); }
+
+.vuvio-landing__app-dot.is-active {
+  background: var(--cyan);
+  width: 22px;
+  border-radius: 999px;
+  box-shadow: 0 0 10px rgba(40, 216, 223, 0.45);
+}
+
+.vuvio-landing__app-demo {
+  margin: clamp(14px, 2vw, 22px) var(--sect-pad-x) 0;
+  color: var(--text-muted);
+  font-size: var(--fs-caption);
+  letter-spacing: 0.02em;
+  text-align: center;
+}
+
+/* Desktop : 3 colonnes centrées, pas de scroll */
+@media (min-width: 900px) {
+  .vuvio-landing__app-row {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 260px));
+    justify-content: center;
+    gap: clamp(28px, 3vw, 48px);
+    overflow: visible;
+    padding: 4px var(--sect-pad-x) 0;
+  }
+  .vuvio-landing__app-item {
+    flex: initial;
+    width: 100%;
+  }
+  .vuvio-landing__app-dots { display: none; }
+}
+
+/* ==========================================================================
+   Founders — portraits doublés, éditorial, pas de card
+   ========================================================================== */
+.vuvio-landing__founders {
+  padding: clamp(32px, 5vw, 80px) clamp(22px, 5vw, 64px);
+  max-width: 1100px;
+  margin: 0 auto;
+  text-align: center;
+}
+
+.vuvio-landing__founders-head {
+  max-width: 580px;
+  margin: 0 auto;
+}
+
+.vuvio-landing__founders-head .vuvio-landing__h2 {
+  margin: 0 auto 16px;
+  max-width: none;
+}
+
+.vuvio-landing__founders-intro {
   margin: 0;
-  color: #b5c7d6;
+  color: var(--text-soft);
+  font-size: clamp(15px, 1.4vw, 17px);
+  line-height: 1.55;
+}
+
+.vuvio-landing__founders-grid {
+  margin-top: clamp(24px, 4vw, 48px);
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: clamp(28px, 4vw, 48px);
+  text-align: center;
+}
+
+@media (min-width: 720px) {
+  .vuvio-landing__founders-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: clamp(32px, 4vw, 56px);
+  }
+}
+
+.vuvio-landing__founder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+}
+
+.vuvio-landing__founder-portrait {
+  width: clamp(200px, 36vw, 240px);
+  height: clamp(200px, 36vw, 240px);
+  border-radius: 50%;
+  overflow: hidden;
+  background: var(--ink-2);
+  box-shadow: 0 0 0 1px rgba(40, 216, 223, 0.18), 0 15px 40px rgba(0, 0, 0, 0.35), 0 0 60px rgba(40, 216, 223, 0.12);
+}
+
+.vuvio-landing__founder-portrait img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.vuvio-landing__founder-name {
+  margin: 8px 0 0;
+  font-size: clamp(16px, 1.8vw, 20px);
+  font-weight: 700;
+  color: var(--text);
+  letter-spacing: -0.02em;
+}
+
+.vuvio-landing__founder-role {
+  margin: 0;
+  color: var(--cyan);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+
+.vuvio-landing__founder-bio {
+  margin: 8px 0 0;
+  max-width: 36ch;
+  color: var(--text-soft);
   font-size: 14px;
   line-height: 1.55;
 }
 
-/* ---------- Features Grid ---------- */
-.vuvio-landing__features {
-  padding: clamp(52px, 7vw, 88px) clamp(24px, 5vw, 60px);
-  max-width: 1400px;
-  margin: 0 auto;
-  border-top: 1px solid rgba(255, 255, 255, 0.05);
-}
-
-.vuvio-landing__features-title {
-  margin: 0 0 clamp(24px, 3vw, 38px);
-  font-size: clamp(25px, 2.5vw, 34px);
-  line-height: 1.1;
-  letter-spacing: -0.03em;
-  font-weight: 800;
-  color: #f7fbff;
-}
-
-.vuvio-landing__features-grid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 16px;
-}
-
-.vuvio-landing__feature {
-  padding: 19px 18px;
-  border-radius: 18px;
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  transition: background 200ms ease, border-color 200ms ease, transform 200ms ease;
-}
-
-.vuvio-landing__feature:hover {
-  background: rgba(30, 214, 229, 0.05);
-  border-color: rgba(30, 214, 229, 0.25);
-  transform: translateY(-2px);
-}
-
-.vuvio-landing__feature-num {
-  font-size: 12px;
-  font-weight: 700;
-  letter-spacing: 0.14em;
-  color: #1ed6e5;
-  margin-bottom: 10px;
-}
-
-.vuvio-landing__feature-title {
-  margin: 0 0 10px;
-  font-size: 15px;
-  font-weight: 700;
-  color: #f7fbff;
-  letter-spacing: -0.01em;
-}
-
-.vuvio-landing__feature-body {
-  margin: 0;
-  color: #9fb5c3;
-  font-size: 13px;
-  line-height: 1.5;
-}
-
-/* ---------- Final CTA ---------- */
+/* ==========================================================================
+   Final CTA — phrase forte, bouton, contact
+   ========================================================================== */
 .vuvio-landing__final {
-  padding: clamp(56px, 8vw, 96px) clamp(24px, 5vw, 60px);
+  padding: clamp(36px, 5vw, 80px) clamp(22px, 5vw, 64px) clamp(32px, 4vw, 56px);
   text-align: center;
-  border-top: 1px solid rgba(255, 255, 255, 0.05);
-  background: radial-gradient(circle at 50% 100%, rgba(30, 214, 229, 0.08), transparent 60%);
-}
-
-.vuvio-landing__final-inner {
-  max-width: 720px;
-  margin: 0 auto;
+  background: radial-gradient(ellipse 100% 70% at 50% 100%, rgba(40, 216, 223, 0.14), transparent 65%);
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 24px;
+  gap: clamp(16px, 2vw, 22px);
 }
 
 .vuvio-landing__final-title {
   margin: 0;
-  font-size: clamp(28px, 4vw, 46px);
-  line-height: 1.05;
+  font-size: clamp(24px, 5vw, 44px);
+  line-height: 1.08;
   letter-spacing: -0.04em;
   font-weight: 800;
-  color: #1ed6e5;
+  color: var(--text);
+  max-width: 14ch;
 }
 
 .vuvio-landing__contact {
+  margin-top: clamp(20px, 3vw, 32px);
+  padding-top: clamp(24px, 3vw, 32px);
+  border-top: 1px solid var(--line);
+  width: 100%;
+  max-width: 480px;
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 8px;
-  margin-top: 8px;
 }
 
 .vuvio-landing__contact-label {
-  color: #8aabb8;
-  font-size: 13px;
-  letter-spacing: 0.02em;
+  color: var(--text-muted);
+  font-size: 13.5px;
 }
 
 .vuvio-landing__contact-email {
-  color: #1ed6e5;
-  font-size: 15px;
+  color: var(--cyan);
+  font-size: 16px;
   font-weight: 700;
-  letter-spacing: -0.01em;
+  letter-spacing: -0.005em;
   text-decoration: none;
-  border-bottom: 1px solid rgba(30, 214, 229, 0.4);
+  border-bottom: 1px solid rgba(40, 216, 223, 0.35);
   padding-bottom: 2px;
-  transition: color 160ms ease, border-color 160ms ease;
 }
 
-.vuvio-landing__contact-email:hover {
-  color: #3ee3f0;
-  border-color: rgba(62, 227, 240, 0.8);
-}
-
-/* ---------- Footer ---------- */
+/* ==========================================================================
+   Footer
+   ========================================================================== */
 .vuvio-landing__footer {
-  padding: 20px clamp(24px, 5vw, 60px);
+  padding: 24px clamp(20px, 5vw, 60px) 36px;
   color: #3a7a88;
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.14em;
   text-align: center;
-  border-top: 1px solid rgba(255, 255, 255, 0.04);
 }
 
+/* ==========================================================================
+   Unsubscribe route (préservé)
+   ========================================================================== */
 .vuvio-landing__unsubscribe { display: grid; place-items: center; padding: 24px; box-sizing: border-box; }
 .vuvio-landing__unsubscribe > div { max-width: 480px; }
 .vuvio-landing__unsubscribe h1 { font-size: clamp(28px, 5vw, 42px); letter-spacing: -.04em; }
-.vuvio-landing__unsubscribe p:not(.vuvio-landing__waitlist-eyebrow) { color: #b5c7d6; line-height: 1.5; }
-.vuvio-landing__unsubscribe a { display: block; margin-top: 22px; color: #1ed6e5; }
+.vuvio-landing__unsubscribe p { color: var(--text-soft); line-height: 1.5; }
+.vuvio-landing__unsubscribe a { display: block; margin-top: 22px; color: var(--cyan); }
 
-/* ---------- Responsive ---------- */
-@media (max-width: 960px) {
-  .vuvio-landing__sections {
-    grid-template-columns: 1fr;
-    gap: 28px;
+/* ==========================================================================
+   Mobile tweaks
+   ========================================================================== */
+@media (max-width: 480px) {
+  .vuvio-landing__hero-inner { gap: 16px; }
+  .vuvio-landing__hero-title { font-size: clamp(26px, 7vw, 36px); }
+  .vuvio-landing__hero-globe { height: clamp(160px, 46vw, 220px); }
+  .vuvio-landing__hero-globe img { width: 140%; }
+  .vuvio-landing__form {
+    flex-direction: column;
   }
-  .vuvio-landing__features-grid {
-    grid-template-columns: repeat(2, 1fr);
+  .vuvio-landing__form input[type="email"],
+  .vuvio-landing__form .vuvio-landing__cta {
+    width: 100%;
   }
+  .vuvio-landing__form .vuvio-landing__cta {
+    min-height: 48px;
+  }
+  .vuvio-landing__manifesto { padding-top: 28px; padding-bottom: 28px; }
+  .vuvio-landing__experiences { padding-top: 24px; padding-bottom: 24px; }
+  .vuvio-landing__app { padding-top: 24px; padding-bottom: 20px; }
+  .vuvio-landing__founders { padding-top: 28px; padding-bottom: 28px; }
+  .vuvio-landing__final { padding-top: 32px; padding-bottom: 28px; }
+  .vuvio-landing__hero-globe { margin-bottom: 8px; }
 }
 
-@media (max-width: 780px) {
-  .vuvio-landing__hero {
-    grid-template-columns: 1fr;
-    grid-template-rows: auto auto;
-    min-height: auto;
+/* ==========================================================================
+   Reduce motion
+   ========================================================================== */
+@media (prefers-reduced-motion: reduce) {
+  .vuvio-landing__exp-figure img,
+  .vuvio-landing__challenge,
+  .vuvio-landing__cta,
+  .vuvio-landing__cta span {
+    transition: none;
   }
-  .vuvio-landing__copy {
-    padding: clamp(26px, 6vw, 42px) clamp(20px, 5vw, 34px);
-  }
-  .vuvio-landing__title {
-    font-size: clamp(31px, 8.5vw, 44px);
-  }
-  .vuvio-landing__accent {
-    margin: 16px 0;
-  }
-  .vuvio-landing__subtitle {
-    margin-bottom: 20px;
-  }
-  .vuvio-landing__visual {
-    aspect-ratio: 662 / 730;
-  }
-  .vuvio-landing__visual img {
-    object-fit: cover;
-  }
-  .vuvio-landing__cta-row {
-    gap: 16px;
-  }
-}
-
-@media (max-width: 430px) {
-  .vuvio-landing__waitlist-form { flex-direction: column; }
-  .vuvio-landing__waitlist-form input[type="email"] { min-height: 46px; box-sizing: border-box; }
-  .vuvio-landing__waitlist-form .vuvio-landing__cta { width: 100%; }
-}
-
-@media (max-width: 540px) {
-  .vuvio-landing__features-grid {
-    grid-template-columns: 1fr;
-  }
+  .vuvio-landing__exp-figure:hover img { transform: none; }
 }

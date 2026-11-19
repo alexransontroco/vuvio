@@ -449,30 +449,30 @@ function buildCollection(streams) {
 
 function styleNativeGlobe(map) {
   const colors = {
-    space: '#020310',
-    oceanDeep: '#061A33',
-    oceanShallow: '#0D3C5D',
-    land: '#102D49',
-    natural: '#174456',
-    mountain: '#3A6076',
-    boundary: '#568AA8',
-    atmosphere: '#16497A',
-    road: '#3C6888',
-    minorRoad: '#24465F',
-    label: '#C9DDED',
-    labelDim: '#91ADC2',
+    space: '#0B1020',
+    oceanDeep: '#0B1020',
+    oceanShallow: '#111B30',
+    land: '#1A2036',
+    natural: '#202943',
+    mountain: '#303B55',
+    boundary: '#53647F',
+    atmosphere: '#235A84',
+    road: '#4B82A9',
+    minorRoad: '#2E5774',
+    label: '#D8EBF8',
+    labelDim: '#9BC2D7',
   };
 
   try {
     try {
       map.setSky?.({
         'sky-color': colors.space,
-        'horizon-color': colors.space,
-        'fog-color': colors.space,
-        'sky-horizon-blend': 0,
-        'horizon-fog-blend': 0,
+        'horizon-color': '#1C2541',
+        'fog-color': '#0B1020',
+        'sky-horizon-blend': 0.08,
+        'horizon-fog-blend': 0.02,
         'fog-ground-blend': 0,
-        'atmosphere-blend': 0,
+        'atmosphere-blend': 0.02,
       });
     } catch { /* sky options vary by MapLibre version */ }
 
@@ -498,11 +498,11 @@ function styleNativeGlobe(map) {
         if (id === 'landcover') {
           map.setPaintProperty(layer.id, 'fill-color', [
             'match', ['get', 'kind'],
-            ['wood', 'forest', 'park', 'nature_reserve', 'national_park'], '#123B4D',
-            ['grass', 'grassland', 'meadow', 'farmland', 'garden', 'orchard', 'golf_course'], '#1B4A5C',
-            ['scrub', 'heath', 'recreation_ground', 'village_green'], '#174153',
-            ['barren', 'desert', 'rock', 'scree'], '#31566D',
-            ['glacier', 'snow'], '#426985',
+            ['wood', 'forest', 'park', 'nature_reserve', 'national_park'], '#18263D',
+            ['grass', 'grassland', 'meadow', 'farmland', 'garden', 'orchard', 'golf_course'], '#202B44',
+            ['scrub', 'heath', 'recreation_ground', 'village_green'], '#1D283F',
+            ['barren', 'desert', 'rock', 'scree'], '#2A3048',
+            ['glacier', 'snow'], '#3A435A',
             colors.natural,
           ]);
           map.setPaintProperty(layer.id, 'fill-opacity', 1);
@@ -511,17 +511,17 @@ function styleNativeGlobe(map) {
         if (id === 'park_national_park' || id === 'park_nature_reserve' || id === 'landuse') {
           map.setPaintProperty(layer.id, 'fill-color', [
             'match', ['get', 'kind'],
-            ['residential', 'retail'], '#143550',
-            ['commercial', 'industrial', 'institutional', 'school', 'university', 'airport'], '#1A405A',
-            ['quarry', 'mine', 'landfill'], '#315166',
-            ['park', 'nature_reserve', 'national_park', 'recreation_ground'], '#123B4D',
+            ['residential', 'retail'], '#1C293F',
+            ['commercial', 'industrial', 'institutional', 'school', 'university', 'airport'], '#202C45',
+            ['quarry', 'mine', 'landfill'], '#2A3048',
+            ['park', 'nature_reserve', 'national_park', 'recreation_ground'], '#18263D',
             colors.natural,
           ]);
           map.setPaintProperty(layer.id, 'fill-opacity', 0.94);
           return;
         }
         if (id === 'landuse_residential') {
-          map.setPaintProperty(layer.id, 'fill-color', '#143550');
+          map.setPaintProperty(layer.id, 'fill-color', '#1C293F');
           map.setPaintProperty(layer.id, 'fill-opacity', 0.82);
           return;
         }
@@ -533,7 +533,7 @@ function styleNativeGlobe(map) {
         }
         if (type === 'line' && (id.includes('admin') || id.includes('boundary') || id.includes('border') || sourceLayer.includes('boundary'))) {
           map.setPaintProperty(layer.id, 'line-color', colors.boundary);
-          map.setPaintProperty(layer.id, 'line-opacity', 0.52);
+          map.setPaintProperty(layer.id, 'line-opacity', 0.58);
           map.setPaintProperty(layer.id, 'line-width', ['interpolate', ['linear'], ['zoom'], 0, 0.35, 4, 0.5, 9, 0.72, 13, 0.9]);
           return;
         }
@@ -581,6 +581,52 @@ function styleNativeGlobe(map) {
           'fill-opacity': 1,
         },
       }, firstFill?.id);
+    }
+
+    if (map.getSource('protomaps') && !map.getLayer('vuvio-native-city-glow')) {
+      const largeCityFilter = [
+        'all',
+        ['==', ['get', 'kind'], 'locality'],
+        ['==', ['get', 'kind_detail'], 'city'],
+        ['>=', ['get', 'population_rank'], 13],
+      ];
+
+      map.addLayer({
+        id: 'vuvio-native-city-glow',
+        type: 'circle',
+        source: 'protomaps',
+        'source-layer': 'places',
+        minzoom: 1,
+        filter: largeCityFilter,
+        paint: {
+          'circle-color': '#D98A43',
+          'circle-radius': [
+            'interpolate', ['linear'], ['zoom'],
+            1, ['interpolate', ['linear'], ['get', 'population_rank'], 13, 5.5, 17, 7],
+            7, ['interpolate', ['linear'], ['get', 'population_rank'], 13, 7, 17, 9],
+          ],
+          'circle-blur': 0.9,
+          'circle-opacity': 0.3,
+        },
+      });
+
+      map.addLayer({
+        id: 'vuvio-native-city-light-core',
+        type: 'circle',
+        source: 'protomaps',
+        'source-layer': 'places',
+        minzoom: 1,
+        filter: largeCityFilter,
+        paint: {
+          'circle-color': '#EAB976',
+          'circle-radius': [
+            'interpolate', ['linear'], ['zoom'],
+            1, ['interpolate', ['linear'], ['get', 'population_rank'], 13, 1.4, 17, 1.8],
+            7, ['interpolate', ['linear'], ['get', 'population_rank'], 13, 1.8, 17, 2.4],
+          ],
+          'circle-opacity': 0.78,
+        },
+      });
     }
 
     if (!map.getContainer().querySelector('.maplibregl-ctrl-attrib')) {

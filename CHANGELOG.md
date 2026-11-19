@@ -6,6 +6,93 @@ Historique des sessions de travail, du plus récent au plus ancien.
 
 ---
 
+## 2026-11-18 — Landing page : refonte minimaliste v3 (hero sans visuel, éditorial)
+
+Refonte en profondeur pour une landing plus simple, plus belle, plus immersive. Philosophie : enrichir le contenu, simplifier le design.
+
+**Hero radicalement simplifié :**
+- Suppression complète du globe + mockup téléphone (desktop ET mobile).
+- Suppression de l'eyebrow « VUVIO · LIVE POV » (logo déjà dans le header).
+- Suppression du conteneur rectangulaire de la waitlist + des doublons « ARRIVE BIENTÔT » / « Soyez parmi les premiers ».
+- Form inline (email + bouton cyan « Me prévenir »), beta transformé en lien secondaire discret, lien Politique de confidentialité stylisé (plus de violet HTML par défaut via reset `.vuvio-landing a`).
+- Turnstile caché par défaut, animé en entrée (max-height + opacity) dès focus/saisie — logique inchangée.
+- Fond : bleu nuit uni + un seul voile radial cyan en haut (plus d'étoiles ni phone-glow).
+
+**Manifeste :** 2 lignes seulement, 2e ligne en cyan + glow.
+
+**Expériences — éditoriales plein cadre :**
+- Images grandes, dégradé bottom qui fond le titre dans le visuel.
+- Plus de bordures, plus de badge Live, plus de body texte.
+- Note centrée sous les 3 : ces univers sont des exemples, pas des limitations.
+
+**L'app Vuvio :**
+- Nouveaux screenshots retravaillés : `/assets/landing/screens/live-cuisine.jpg`, `globe.jpg`, `live-moto.jpg`.
+- Plus de cadre téléphone épais — juste un radius 22px + ombre.
+- Mobile : carousel horizontal scroll-snap (items 78vw). Desktop : grid 3 colonnes.
+- Mention discrète « Visuels de démonstration du produit ».
+
+**Fondateurs :**
+- Portraits doublés (~200–240px), ronds, cyan glow léger.
+- Suppression des tags compétences.
+- Bios plus longues (produit/tech vs marketing/stratégie/partenariats).
+- Composition éditoriale centrée, plus de conteneur card.
+
+**CTA final :**
+- Nouvelle phrase : « Le monde, vu de l'intérieur. »
+- Bouton : « Être informé du lancement » (scroll vers hero form).
+- Contact hello@vuvio.app conservé.
+
+**Préservé intégralement :** waitlist Firestore, Resend, Turnstile, honeypot, unsubscribe, routes FR/EN.
+
+Refonte landing : hero recentré autour d'un globe immersif (plus de téléphone mockup), slogan long retenu, les screenshots app déplacés en section produit en carousel horizontal.
+
+**Modifié :**
+- `src/routes/LandingPage.jsx` : nouveau hero `.vuvio-landing__hero-globe` (image globe + glow radial, sans cadre téléphone). Paths section app : `/pitch-assets/live-cuisine.png`, `/pitch-assets/globevuvio.png`, `/pitch-assets/live-guide-montagne.png` (remplace les `/assets/landing/screens/*` cassés).
+- `src/styles/pages/landing.css` : design spatial maintenu, grille éditoriale `.vuvio-landing__exp-row` alternant, `.vuvio-landing__app-rail` scroll-snap horizontal.
+
+**Hero allégé mobile-first :**
+- Slogan court : "Des passions, des métiers, des expériences — en direct."
+- Subtitle : "Découvrez le monde à travers ceux qui le vivent."
+- Eyebrow avec dot "live" pulsant.
+- Globe immersif (plus de cadre téléphone) à droite desktop / au-dessus mobile.
+- Formulaire waitlist (Turnstile + honeypot + unsubscribe) intact.
+
+**Nouvelles sections :**
+- Manifeste : "Le live d'aujourd'hui filme la personne. Vuvio filme ce qu'elle voit."
+- Expériences : 3 cartes (Outdoor/Métiers/Territoires) avec badge Live turquoise.
+- L'app Vuvio : 3 phone mockups (Watch/Globe/Explore).
+- Fondateurs : Alexandre + Cécilia Ranson (portrait + bio + tags).
+- CTA final : "Le monde se découvre mieux de l'intérieur."
+
+**Éléments conservés :**
+- Système waitlist complet (Turnstile, submit, honeypot, unsubscribe).
+- Toggle langue FR/EN avec LanguageContext.
+- Lien bêta → /intro-preview.
+- Lien privacy policy.
+
+**Validé :**
+- Build Vite OK (2m 28s, exit 0).
+- Compilation propre, pas d'erreurs.
+- Pas testé visuellement dans le navigateur (impossible depuis CLI).
+
+---
+
+## 2026-11-18 — Suppression PasswordGate pour accès public
+
+Le component PasswordGate qui protégeait vuvio.app avec un mot de passe a été supprimé.
+
+**Supprimé :**
+- `src/components/PasswordGate.jsx` : component de protection par mot de passe
+
+**Modifié :**
+- `src/main.jsx` : import et utilisation de PasswordGate enlevés
+
+**Résultat :**
+- App accessible publiquement sans authentification sur vuvio.app
+- Frontend compile sans erreurs
+
+---
+
 ## 2026-11-18 — Vuvio-Lab : environnement expérimental isolé
 
 Mise en place d'une worktree parallèle pour prototyper sans risquer la prod.

@@ -1,4 +1,4 @@
-import { Bike, Briefcase, CalendarPlus, Camera, ChevronDown, ChevronLeft, Compass, Footprints, Globe2, HandHelping, ImagePlus, Lightbulb, Mountain, MoreHorizontal, Pencil, Plane, Play, Radio, Tv2, UserRound, Users, UtensilsCrossed, Video, Waves, X } from 'lucide-react';
+import { Bike, Briefcase, CalendarPlus, Camera, ChevronDown, ChevronLeft, Compass, Eye, Footprints, Globe2, GraduationCap, HandHelping, ImagePlus, Lightbulb, Mountain, MoreHorizontal, Pencil, Plane, Play, Radio, Tv2, UserRound, Users, UtensilsCrossed, Video, Waves, X } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { NavLink, useLocation, useNavigate } from 'react-router-dom';
@@ -213,16 +213,29 @@ function StartLiveFlow({
   hasPreviousSetup,
   savedDestinations, onSaveDestination, onRemoveDestination,
 }) {
+  const { t } = useTranslation();
   const videoRef = useRef(null);
   const streamRef = useRef(null);
   const launchedRef = useRef(false);
+  const typeHintTimerRef = useRef(null);
   const [cameraState, setCameraState] = useState('pending');
   const [privacyOpen, setPrivacyOpen] = useState(false);
   const [moreOptionsOpen, setMoreOptionsOpen] = useState(false);
   const [showFullCategories, setShowFullCategories] = useState(false);
+  const [liveTypeHint, setLiveTypeHint] = useState(null); // null | 'join' | 'workshop'
   // Multistream destinations — stream keys are session-only (never persisted)
   const [destSheet, setDestSheet] = useState(null); // null | 'instagram' | 'youtube' | 'custom'
   const [sessionDests, setSessionDests] = useState({}); // { [provider]: { url, streamKey, id?, enabled } }
+
+  const showLiveTypeHint = (which) => {
+    setLiveTypeHint(which);
+    if (typeHintTimerRef.current) clearTimeout(typeHintTimerRef.current);
+    typeHintTimerRef.current = setTimeout(() => setLiveTypeHint(null), 3200);
+  };
+
+  useEffect(() => () => {
+    if (typeHintTimerRef.current) clearTimeout(typeHintTimerRef.current);
+  }, []);
 
   useEffect(() => {
     let active = true;
@@ -393,6 +406,58 @@ function StartLiveFlow({
                 </div>
               </div>
             ))}
+          </div>
+        )}
+      </div>
+
+      {/* Live type (preview) */}
+      <div className="start-live-type-group">
+        <label className="start-live-label">{t('create.liveType.label')}</label>
+        <div className="start-live-types">
+          <button
+            type="button"
+            className="start-live-type is-active"
+            aria-pressed="true"
+          >
+            <span className="start-live-type__icon start-live-type__icon--cyan">
+              <Eye size={16} strokeWidth={1.8} />
+            </span>
+            <span className="start-live-type__name">{t('create.liveType.watchOnly')}</span>
+          </button>
+          <button
+            type="button"
+            className="start-live-type is-coming"
+            aria-pressed="false"
+            aria-disabled="true"
+            onClick={() => showLiveTypeHint('join')}
+            onMouseEnter={() => showLiveTypeHint('join')}
+            onFocus={() => showLiveTypeHint('join')}
+          >
+            <span className="start-live-type__icon start-live-type__icon--green">
+              <Users size={16} strokeWidth={1.8} />
+            </span>
+            <span className="start-live-type__name">{t('create.liveType.openToJoin')}</span>
+            <span className="start-live-type__badge">{t('create.liveType.soon')}</span>
+          </button>
+          <button
+            type="button"
+            className="start-live-type is-coming"
+            aria-pressed="false"
+            aria-disabled="true"
+            onClick={() => showLiveTypeHint('workshop')}
+            onMouseEnter={() => showLiveTypeHint('workshop')}
+            onFocus={() => showLiveTypeHint('workshop')}
+          >
+            <span className="start-live-type__icon start-live-type__icon--purple">
+              <GraduationCap size={16} strokeWidth={1.8} />
+            </span>
+            <span className="start-live-type__name">{t('create.liveType.workshop')}</span>
+            <span className="start-live-type__badge">{t('create.liveType.soon')}</span>
+          </button>
+        </div>
+        {liveTypeHint && (
+          <div className={`start-live-type-hint start-live-type-hint--${liveTypeHint}`} role="status">
+            {t(`create.liveType.hint.${liveTypeHint}`)}
           </div>
         )}
       </div>
