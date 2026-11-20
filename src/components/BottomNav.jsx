@@ -117,6 +117,7 @@ function StartLiveFlow({
   const [privacyOpen, setPrivacyOpen] = useState(false);
   const [moreOptionsOpen, setMoreOptionsOpen] = useState(false);
   const [showFullCategories, setShowFullCategories] = useState(false);
+  const [showWorkshopNotice, setShowWorkshopNotice] = useState(false);
   // Multistream destinations — stream keys are session-only (never persisted)
   const [destSheet, setDestSheet] = useState(null); // null | 'instagram' | 'youtube' | 'custom'
   const [sessionDests, setSessionDests] = useState({}); // { [provider]: { url, streamKey, id?, enabled } }
@@ -232,6 +233,21 @@ function StartLiveFlow({
             maxLength={120}
           />
         </div>
+      </div>
+
+      <div role="group" aria-labelledby="start-live-type-label">
+        <span id="start-live-type-label" className="start-live-label">Live type</span>
+        <div className="start-live-cats">
+          <button type="button" className="start-live-cat is-active" aria-pressed="true" onClick={() => setShowWorkshopNotice(false)}>
+            <Tv2 size={17} aria-hidden="true" />
+            <span>Watch Only</span>
+          </button>
+          <button type="button" className="start-live-cat" onClick={() => setShowWorkshopNotice(true)}>
+            <UserRound size={17} aria-hidden="true" />
+            <span>Workshop</span>
+          </button>
+        </div>
+        <div role="status">{showWorkshopNotice && 'Workshops are coming soon.'}</div>
       </div>
 
       {/* Category */}
