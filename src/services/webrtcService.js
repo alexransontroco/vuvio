@@ -211,7 +211,7 @@ async function startRtmpRelayIngest(relayUrl, liveInputId, ingestUrl, streamKey,
   if (videoTrack) {
     videoTransceiverRef = pc.addTransceiver(videoTrack, {
       direction: 'sendonly',
-      sendEncodings: [{ maxBitrate: 2_000_000, scaleResolutionDownBy: 1 }],
+      sendEncodings: [{ maxBitrate: 5_000_000, scaleResolutionDownBy: 1 }],
       streams: [fixedStream],
     });
   }
@@ -251,10 +251,10 @@ async function startRtmpRelayIngest(relayUrl, liveInputId, ingestUrl, streamKey,
   if (videoSender) {
     const params = videoSender.getParameters();
     if (params.encodings?.length) {
-      params.encodings[0].maxBitrate = 1_500_000;
+      params.encodings[0].maxBitrate = 4_500_000;
       params.encodings[0].scaleResolutionDownBy = 1;
       await videoSender.setParameters(params).catch(() => {});
-      console.log('[relay] forced maxBitrate=1.5Mbps scaleResolutionDownBy=1 on video sender');
+      console.log('[relay] forced maxBitrate=4.5Mbps scaleResolutionDownBy=1 on video sender');
     }
   }
 
@@ -306,9 +306,9 @@ async function startRtmpRelayIngest(relayUrl, liveInputId, ingestUrl, streamKey,
             const params = sender.getParameters();
             if (params.encodings?.length > 0) {
               params.encodings[0].scaleResolutionDownBy = 1.0;
-              params.encodings[0].maxBitrate = 3_000_000;
+              params.encodings[0].maxBitrate = 5_000_000;
               sender.setParameters(params).then(() =>
-                console.log('[relay] locked video sender — scaleResolutionDownBy=1 maxBitrate=3Mbps'),
+                console.log('[relay] locked video sender — scaleResolutionDownBy=1 maxBitrate=5Mbps'),
               ).catch((e) => console.warn('[relay] setParameters failed:', e?.message));
             } else {
               console.warn('[relay] no encodings on connected — cannot lock resolution');
@@ -808,7 +808,7 @@ export async function startRtmpRelayBroadcast(liveId, userId, existingStream = n
     if (existingStream?.getTracks?.().length) {
       localStream = existingStream;
     } else {
-      localStream = await requestVuvioMediaStream({ video: { width: 1280, height: 720 }, audio: true });
+      localStream = await requestVuvioMediaStream({ video: { width: { ideal: 1920 }, height: { ideal: 1080 }, frameRate: { ideal: 30, max: 30 } }, audio: true });
     }
     await startRtmpRelayIngest(relayUrl, liveId, ingestUrl, streamKey, localStream);
     return localStream;
