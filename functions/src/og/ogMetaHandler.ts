@@ -32,6 +32,7 @@ type ShareableLive = Partial<StreamDocument> & {
   viewers?: string | number;
   viewerLabel?: string | number;
   image?: string;
+  privacy?: string;
   thumbnailUrl?: string;
   coverImageUrl?: string;
   cloudflareUid?: string;
@@ -296,7 +297,7 @@ export async function ogMetaHandler(req: Request, res: Response, streamId: strin
   let image = DEFAULT_IMAGE;
   const stream = await getShareableLive(streamId);
 
-  if (stream) {
+  if (stream && stream.visibility !== 'private' && stream.visibility !== 'followers' && stream.privacy !== 'Private' && stream.privacy !== 'Followers') {
     title = buildTitle(stream, title);
     description = isRecap ? buildRecapDescription(stream) : buildDescription(stream);
     image = buildImage(stream);
@@ -316,7 +317,7 @@ export async function ogImageHandler(req: Request, res: Response, streamId: stri
   let image = DEFAULT_IMAGE;
   const stream = await getShareableLive(streamId);
 
-  if (stream) {
+  if (stream && stream.visibility !== 'private' && stream.visibility !== 'followers' && stream.privacy !== 'Private' && stream.privacy !== 'Followers') {
     image = buildImage(stream);
   }
 
