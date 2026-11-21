@@ -11,7 +11,17 @@ import { initPushNotificationRouting } from './platform/notifications.js';
 
 function ShareLiveRedirect() {
   const { liveId } = useParams();
-  return <Navigate to={`/watch?live=${encodeURIComponent(liveId)}&mode=view`} replace />;
+  const location = useLocation();
+  return <Navigate to={`/watch?live=${encodeURIComponent(liveId)}&mode=view${location.search ? `&${location.search.slice(1)}` : ''}`} replace />;
+}
+
+function PublicLiveRoute() {
+  const { liveId } = useParams();
+  const { user, authLoading } = useAuth();
+  const location = useLocation();
+  if (authLoading) return null;
+  if (!user) return <Navigate to={`/watch?live=${encodeURIComponent(liveId)}&mode=view${location.search ? `&${location.search.slice(1)}` : ''}`} replace />;
+  return <Lazy component={LivePage} />;
 }
 import ProtectedRoute, { PublicOnlyRoute } from './components/ProtectedRoute.jsx';
 import { useAuth } from './context/AuthContext.jsx';
@@ -197,9 +207,9 @@ export default function App() {
       {/* ── App shell with bottom nav ── */}
       <Route element={<AppShell />}>
         <Route path="/home" element={<Navigate to="/watch" replace />} />
-        <Route path="/watch/:liveId" element={<Navigate to="/watch" replace />} />
+        <Route path="/watch/:liveId" element={<ShareLiveRedirect />} />
         <Route path="/share/live/:liveId" element={<ShareLiveRedirect />} />
-        <Route path="/live/:liveId" element={<ProtectedRoute requireOnboarding={false}><Lazy component={LivePage} /></ProtectedRoute>} />
+        <Route path="/live/:liveId" element={<PublicLiveRoute />} />
         <Route path="/discover" element={<Navigate to="/watch" replace />} />
         <Route path="/discover/:categorySlug" element={<Lazy component={DiscoverCategoryPage} />} />
 

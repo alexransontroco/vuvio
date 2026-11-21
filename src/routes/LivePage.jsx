@@ -1,4 +1,4 @@
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { useCallback, useEffect, useState } from 'react';
 import { useAuth } from '../context/AuthContext.jsx';
 import { getCreatedLives, subscribeToCreatedLives } from '../services/createdLiveService.js';
@@ -7,6 +7,7 @@ import { CreatorLiveSession } from './WatchPage.jsx';
 export default function LivePage() {
   const { liveId } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const { user } = useAuth();
   const [createdLives, setCreatedLives] = useState([]);
   const [loaded, setLoaded] = useState(false);
@@ -36,9 +37,9 @@ export default function LivePage() {
     if (endingLiveId === liveId) return;
 
     if (!live || live.creatorUid !== user.uid || live.status !== 'live') {
-      navigate('/watch', { replace: true });
+      navigate(`/watch?live=${encodeURIComponent(liveId)}&mode=view${location.search ? `&${location.search.slice(1)}` : ''}`, { replace: true });
     }
-  }, [loaded, user, liveId, createdLives, endingLiveId, navigate]);
+  }, [loaded, user, liveId, createdLives, endingLiveId, navigate, location.search]);
 
   const live = createdLives.find((l) => l.id === liveId);
 
