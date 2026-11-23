@@ -55,7 +55,24 @@ const DOMAIN_META = {
 
 const PRIORITY_ORDER = ['root', 'strategy', 'business', 'growth', 'streaming', 'backend', 'analytics', 'gear', 'products', 'globe', 'i18n', 'ops', 'archive'];
 
+const STATIC_HTML_DOCS = [
+  {
+    id: 'Vuvio_App_Wireflow.html',
+    path: 'Vuvio_App_Wireflow.html',
+    domain: 'root',
+    isIndex: false,
+    title: 'App Wireflow',
+    status: 'Current',
+    readSignal: null,
+    description: 'Interactive app navigation wireflow — all screens and transitions.',
+    headings: [],
+    wordCount: 0,
+    htmlSrc: '/Vuvio_App_Wireflow.html',
+  },
+];
+
 const DOC_ROLES = {
+  'Vuvio_App_Wireflow.html': { en: 'Interactive wireflow', fr: 'Wireflow interactif' },
   'README.md': { en: 'Project entry point', fr: 'Point d\'entrée projet' },
   'ADMIN.md': { en: 'Open tasks and decisions', fr: 'Tâches et arbitrages' },
   'CHANGELOG.md': { en: 'Session history', fr: 'Historique des sessions' },
@@ -531,7 +548,7 @@ function parseAdminTasks(markdown) {
 }
 
 function makeDocs() {
-  return Object.entries(docModules).map(([modulePath, content]) => {
+  const mdDocs = Object.entries(docModules).map(([modulePath, content]) => {
     const path = normalizePath(modulePath);
     const domain = getDomain(path);
     const isIndex = path.endsWith('/README.md') || ['README.md', 'AGENTS.md', 'journal.architecture.md'].includes(path);
@@ -548,7 +565,8 @@ function makeDocs() {
       headings: [...content.matchAll(/^#{2,3}\s+(.+)$/gm)].map((match) => stripMarkdown(match[1])).slice(0, 8),
       wordCount: content.trim().split(/\s+/).filter(Boolean).length,
     };
-  }).sort((a, b) => {
+  });
+  return [...mdDocs, ...STATIC_HTML_DOCS].sort((a, b) => {
     const domainDelta = PRIORITY_ORDER.indexOf(a.domain) - PRIORITY_ORDER.indexOf(b.domain);
     if (domainDelta !== 0) return domainDelta;
     if (a.isIndex !== b.isIndex) return a.isIndex ? -1 : 1;
@@ -567,31 +585,26 @@ function resolveDocHref(currentPath, href) {
   const cleanHref = decodeURIComponent(href).split('#')[0].split('?')[0];
   if (!cleanHref) return null;
 
-  let candidate = cleanHref.startsWith('/')
-    ? cleanHref.replace(/^\/+/, '')
-    : cleanHref;
-
-  if (candidate.startsWith('./')) candidate = candidate.slice(2);
-
-  if (cleanHref.startsWith('../') || cleanHref.startsWith('./')) {
-    const base = currentPath.includes('/') ? currentPath.split('/').slice(0, -1) : [];
-    const parts = [...base, ...cleanHref.split('/')];
-    const resolved = [];
-    parts.forEach((part) => {
-      if (!part || part === '.') return;
-      if (part === '..') {
-        resolved.pop();
-        return;
-      }
-      resolved.push(part);
-    });
-    candidate = resolved.join('/');
+  if (cleanHref.startsWith('/')) {
+    const candidate = cleanHref.replace(/^\/+/, '');
+    return candidate || null;
   }
+
+  // Resolve all relative paths (with or without ./ prefix) against current doc's directory
+  const base = currentPath.includes('/') ? currentPath.split('/').slice(0, -1) : [];
+  const parts = [...base, ...cleanHref.split('/')];
+  const resolved = [];
+  parts.forEach((part) => {
+    if (!part || part === '.') return;
+    if (part === '..') { resolved.pop(); return; }
+    resolved.push(part);
+  });
+  let candidate = resolved.join('/');
 
   if (candidate.endsWith('/')) candidate += 'README.md';
   if (!candidate.endsWith('.md') && candidate.startsWith('docs/')) candidate = `${candidate}/README.md`;
 
-  return candidate;
+  return candidate || null;
 }
 
 function parseChangelog(markdown) {
@@ -1260,11 +1273,19 @@ export default function AdminDocsPage() {
           </div>
         ) : null}
 
-        <article
-          className="admin-docs-md"
-          onClick={handleMarkdownClick}
-          dangerouslySetInnerHTML={{ __html: rendered }}
-        />
+        {selectedDoc.htmlSrc ? (
+          <iframe
+            src={selectedDoc.htmlSrc}
+            title={selectedTitle}
+            style={{ width: '100%', height: '72vh', border: 'none', borderRadius: 8, background: '#fff' }}
+          />
+        ) : (
+          <article
+            className="admin-docs-md"
+            onClick={handleMarkdownClick}
+            dangerouslySetInnerHTML={{ __html: rendered }}
+          />
+        )}
       </main>
     </section>
   );
