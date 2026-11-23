@@ -53,6 +53,7 @@ before(async () => {
       status: 'live',
       visibility,
       privacy,
+      title: `${visibility} preview title`,
       ...(visibility === 'public' ? { publicSafe: true } : {}),
       hlsManifestUrl: 'https://customer-example.cloudflarestream.com/example/manifest/video.m3u8',
       ...(visibility === 'public' ? {} : { streamKey: 'fake-ingest-key' }),
@@ -63,6 +64,45 @@ before(async () => {
   await seed('activeLives', 'legacy-public', {
     id: 'legacy-public', creatorUid: 'creator', status: 'ended', privacy: 'Everyone', streamKey: '',
   });
+  await seed('streams', 'security-og-followers', {
+    id: 'security-og-followers', creatorId: 'creator', status: 'completed', visibility: 'followers',
+    title: 'Followers only preview title', description: 'Followers only preview description',
+    hlsManifestUrl: 'https://customer-example.cloudflarestream.com/followers/manifest/video.m3u8',
+  });
+  await seed('streams', 'security-og-public', {
+    id: 'security-og-public', creatorId: 'creator', status: 'live', visibility: 'public',
+    title: 'Public preview title', description: 'Public preview description',
+  });
+});
+
+test('Open Graph previews hide Followers streams and retain public streams', { skip }, async () => {
+  const { ogMetaHandler } = await import('../functions/lib/og/ogMetaHandler.js');
+  const render = async (id) => {
+    let html = '';
+    const response = {
+      set() { return this; },
+      status() { return this; },
+      end(body) { html = body.toString(); return this; },
+    };
+    await ogMetaHandler({ query: {} }, response, id);
+    return html;
+  };
+  const followers = await render('security-og-followers');
+  assert.equal(followers.includes('Followers only preview title'), false);
+  assert.equal(followers.includes('Followers only preview description'), false);
+  assert.equal(followers.includes('customer-example.cloudflarestream.com'), false);
+  const privatePreview = await render('security-private');
+  assert.equal(privatePreview.includes('private preview title'), false);
+  const publicPreview = await render('security-og-public');
+  assert.equal(publicPreview.includes('Public preview title'), true);
+});
+
+test('public stream API refuses Followers streams', { skip }, async () => {
+  const { getStream } = await import('../functions/lib/streams/getStream.js');
+  await assert.rejects(() => getStream({}, { json() {} }, 'security-og-followers'), { code: 'not_found' });
+  let payload = null;
+  await getStream({}, { json(value) { payload = value; } }, 'security-og-public');
+  assert.equal(payload?.stream?.title, 'Public preview title');
 });
 
 test('anonymous viewer can read a public live', { skip }, async () => {
