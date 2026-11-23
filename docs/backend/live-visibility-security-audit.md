@@ -3,7 +3,7 @@ Read before coding: Sécurité des lives publics, privés et réservés aux abon
 
 # Audit de sécurité des lives — 21 novembre 2026
 
-Périmètre : branche `fix/creator-acquisition-mvp`, PR #2. Audit du code et des règles locales, puis vérification sur l'émulateur Firestore avec le projet fictif `demo-vuvio-security`. Aucun accès aux données de production, déploiement ou appel à un live Cloudflare réel. La landing page et les branches expérimentales restent hors périmètre.
+Périmètre : branche `fix/creator-acquisition-mvp`, PR #2. Audit du code et des règles locales, vérification sur l'émulateur Firestore avec le projet fictif `demo-vuvio-security`, puis inventaire ciblé en lecture seule de Firebase et Cloudflare. Aucun déploiement ni changement des ressources de production. La landing page et les branches expérimentales restent hors périmètre.
 
 ## Conclusion
 
@@ -20,6 +20,8 @@ Périmètre : branche `fix/creator-acquisition-mvp`, PR #2. Audit du code et des
 ### Validation locale de cette correction
 
 L'émulateur Firestore valide **16/16 scénarios** : lecture et création publiques, refus Private/Followers, refus des sous-collections privées, refus de la liste brute et des écritures anonymes/étrangères, gestion par le propriétaire, rejet des clés d'ingest, des champs inconnus et d'une adresse administrateur non vérifiée. Le scénario de migration confirme qu'un ancien document public contenant un champ d'ingest reste inaccessible, devient lisible après un assainissement **simulé uniquement sur l'émulateur**, puis redevient inaccessible après restauration de sa sauvegarde fictive ; le document privé reste inaccessible. Les tests Functions valident **4/4 politiques** de visibilité, de propriété et d'administration ; les **3/3 tests de liens** passent. Les builds frontend et Functions passent sous Node 22. Aucun test sur un live Cloudflare réel ou navigateur Instagram n'a été effectué. Ces résultats ne remplacent pas une validation de bout en bout après migration.
+
+Après synchronisation avec `main` au commit `2bd97bb` (configuration des secrets Functions), les **16/16 tests Firestore**, **4/4 tests Functions** et **3/3 tests de liens** passent de nouveau ; les deux builds réussissent. Cette synchronisation ne modifie pas la décision de blocage : la revue et la migration contrôlée des anciens lives, puis les essais réels, restent nécessaires avant activation.
 
 ### Inventaire Firebase en lecture seule — 23 novembre 2026
 
