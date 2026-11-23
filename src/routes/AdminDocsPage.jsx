@@ -82,6 +82,7 @@ const DOC_ROLES = {
   'docs/README.md': { en: 'Technical docs index', fr: 'Index des docs techniques' },
   'docs/vuvio-complete-overview.md': { en: 'Complete product reference', fr: 'Référence produit complète' },
   'docs/vuvio-reference-produit-non-technique.md': { en: 'Non-technical product reference', fr: 'Référence produit non technique' },
+  'docs/business/previsionnel-2027-2029.md': { en: 'Financial forecast 2027–2029', fr: 'Prévisionnel financier 2027–2029' },
 };
 
 const COPY = {
@@ -1259,6 +1260,34 @@ export default function AdminDocsPage() {
           </div>
           <span>{formatStatus(selectedDoc.status, lang)}</span>
         </div>
+
+        {selectedDoc.path === 'docs/business/previsionnel-2027-2029.md' && (
+          <div style={{ marginTop: 16, marginBottom: 16 }}>
+            {import.meta.env.VITE_FINANCIAL_FORECAST_URL ? (
+              <button
+                type="button"
+                onClick={() => window.open(import.meta.env.VITE_FINANCIAL_FORECAST_URL, '_blank')}
+                style={{
+                  padding: '10px 16px',
+                  borderRadius: 8,
+                  background: '#35e3dc',
+                  color: '#0a0e1a',
+                  border: 'none',
+                  fontWeight: 600,
+                  fontSize: 14,
+                  cursor: 'pointer',
+                  fontFamily: 'inherit',
+                }}
+              >
+                📊 {lang === 'fr' ? 'Ouvrir le prévisionnel' : 'Open financial forecast'}
+              </button>
+            ) : (
+              <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.4)' }}>
+                {lang === 'fr' ? 'Lien du prévisionnel à configurer' : 'Financial forecast URL not configured'}
+              </span>
+            )}
+          </div>
+        )}
 
         {selectedDoc.readSignal ? (
           <div className="admin-docs-reader__signal">
