@@ -1,5 +1,5 @@
 import Hls from 'hls.js';
-import { Backpack, BatteryWarning, Bell, CalendarClock, Camera, Check, ChevronLeft, ChevronRight, ChevronUp, Clock, Eye, Flag, Flashlight, Lock, MapPin, MessageCircle, Mic, MicOff, Monitor, Play, RotateCcw, Search, Send, Settings, Share2, ShieldBan, Square, Star, Trash2, UnlockKeyhole, UserPlus, UserRound, UsersRound, Volume2, VolumeX, WifiOff, X } from 'lucide-react';
+import { Backpack, BatteryWarning, Bell, CalendarClock, Camera, Check, ChevronLeft, ChevronRight, ChevronUp, Clock, Eye, Flag, Flashlight, Lock, MapPin, MessageCircle, Mic, MicOff, Monitor, Pause, Play, RotateCcw, Search, Send, Settings, Share2, ShieldBan, Square, Star, Trash2, UnlockKeyhole, UserPlus, UserRound, UsersRound, Volume2, VolumeX, WifiOff, X } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link, Navigate, useNavigate, useParams, useSearchParams } from 'react-router-dom';
@@ -20,7 +20,9 @@ import { mapStreams } from '../data/mapStreams.js';
 import { streams, upcomingStreams } from '../data/mockStreams.js';
 import { getCreatedLives, getCreatedLiveStream, registerCreatedLiveStream, subscribeToCreatedLives, publishLivePing, updateCreatedLive } from '../services/createdLiveService.js';
 import { getLiveDestinations, clearLiveDestinations, createCloudflareOutput, deleteCloudflareOutput } from '../services/streamDestinationsService.js';
-import { startBroadcast, stopBroadcast, watchBroadcast, closePeer, getLocalStream, getRemoteStream, startRtmpRelayBroadcast, stopRtmpRelayBroadcast, stopRtmpRelayBroadcastSync, startWhipConnection, startWhepViewer, stopWhepViewer } from '../services/webrtcService.js';
+import { startBroadcast, stopBroadcast, watchBroadcast, closePeer, getLocalStream, getRemoteStream, startRtmpRelayBroadcast, stopRtmpRelayBroadcast, stopRtmpRelayBroadcastSync, startWhipConnection, startWhepViewer, stopWhepViewer, pauseWhipTracks, resumeWhipTracks } from '../services/webrtcService.js';
+import PauseLiveSheet from '../components/live/PauseLiveSheet.jsx';
+import '../styles/components/live-pause.css';
 import { collection, doc, onSnapshot, query, where, getDocs, getDoc, addDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { getDownloadURL, ref as storageRef, uploadString } from 'firebase/storage';
 import { db, storage } from '../firebase.js';
@@ -40,6 +42,8 @@ import { streamCreator, streamDescription, streamLocation, streamTitle } from '.
 const SWIPE_THRESHOLD = 58;
 const WHEEL_THRESHOLD = 36;
 const WHEEL_IDLE_MS = 350;
+
+const PAUSE_RESUME_ENABLED = import.meta.env.VITE_PAUSE_RESUME_ENABLED === 'true';
 
 const streamLocations = new Map(streams.map((stream) => [stream.id, stream.map]));
 const mapStreamById = new Map(mapStreams.map((stream) => [stream.id, stream]));
@@ -1356,6 +1360,13 @@ function CreatorLiveSession({ live, onEndingChange }) {
   const [liveQuestions, setLiveQuestions] = useState([]);
   const [newQCount, setNewQCount] = useState(0);
   const seenQIdsRef = useRef(new Set());
+  // ── Pause / Resume state (feature-flagged) ────────────────────────────
+  const [pauseSheetOpen, setPauseSheetOpen] = useState(false);
+  const [liveStatus, setLiveStatus] = useState('live'); // 'live' | 'paused'
+  const [pauseStartedAt, setPauseStartedAt] = useState(null);
+  const [pauseExpectedMinutes, setPauseExpectedMinutes] = useState(null);
+  const [pauseCount, setPauseCount] = useState(0);
+  const [totalPausedMs, setTotalPausedMs] = useState(0);
   const hideTimer = useRef(null);
   const longPressTimer = useRef(null);
   const lastCenterTapRef = useRef({ time: 0, x: 0, y: 0 });
@@ -1945,7 +1956,52 @@ function CreatorLiveSession({ live, onEndingChange }) {
     lastCenterTapRef.current = { time: now, x, y };
   };
 
+  const pauseLive = async (expectedMinutes) => {
+    setPauseSheetOpen(false);
+    pauseWhipTracks();
+    const now = new Date();
+    setPauseStartedAt(now);
+    setPauseExpectedMinutes(expectedMinutes);
+    setPauseCount((c) => c + 1);
+    setLiveStatus('paused');
+    try {
+      await updateDoc(doc(db, 'activeLives', live.id), {
+        liveStatus: 'paused',
+        pauseStartedAt: serverTimestamp(),
+        pauseExpectedEndAt: expectedMinutes
+          ? new Date(Date.now() + expectedMinutes * 60 * 1000)
+          : null,
+        updatedAt: serverTimestamp(),
+      });
+    } catch (err) {
+      console.warn('[pauseLive] Firestore update failed:', err.message);
+    }
+  };
+
+  const resumeLive = async () => {
+    const pausedMs = pauseStartedAt ? Date.now() - pauseStartedAt.getTime() : 0;
+    setTotalPausedMs((t) => t + pausedMs);
+    setPauseStartedAt(null);
+    setPauseExpectedMinutes(null);
+    resumeWhipTracks();
+    setLiveStatus('live');
+    try {
+      await updateDoc(doc(db, 'activeLives', live.id), {
+        liveStatus: 'live',
+        pauseStartedAt: null,
+        pauseExpectedEndAt: null,
+        updatedAt: serverTimestamp(),
+      });
+    } catch (err) {
+      console.warn('[resumeLive] Firestore update failed:', err.message);
+    }
+  };
+
   const endLive = async () => {
+    if (liveStatus === 'paused') {
+      resumeWhipTracks();
+      setLiveStatus('live');
+    }
     setConfirmEnd(false);
     setPhase('ending');
     onEndingChange?.(true, live.id);
@@ -2025,10 +2081,15 @@ function CreatorLiveSession({ live, onEndingChange }) {
         console.log('[endLive] Using state counts - comments:', commentsCount, 'stars:', stars);
       }
 
+      const finalPausedMs = totalPausedMs + (pauseStartedAt ? Date.now() - pauseStartedAt.getTime() : 0);
       const stats = {
         status: 'ended',
+        liveStatus: 'ended',
         endedAt: serverTimestamp(),
         durationSeconds: elapsed,
+        broadcastDurationSeconds: Math.max(0, elapsed - Math.round(finalPausedMs / 1000)),
+        totalPausedSeconds: Math.round(finalPausedMs / 1000),
+        pauseCount,
         totalUniqueViewers: viewerCount,
         peakViewerCount: peakViewers,
         commentCount: commentCount,
@@ -2252,6 +2313,11 @@ function CreatorLiveSession({ live, onEndingChange }) {
         <button type="button" className={micMuted ? 'is-active' : ''} onClick={() => { setMicMuted((value) => !value); revealControls(); }}>{micMuted ? <MicOff size={19} strokeWidth={1.8} /> : <Mic size={19} strokeWidth={1.8} />}<span>Microphone</span></button>
         <button type="button" className={flashOn ? 'is-active' : ''} onClick={() => { setFlashOn((value) => !value); revealControls(); }}><Flashlight size={19} strokeWidth={1.8} /><span>Flash</span></button>
         <button type="button" onClick={() => setLocked(true)}><Lock size={19} strokeWidth={1.8} /><span>Screen Lock</span></button>
+        {PAUSE_RESUME_ENABLED ? (
+          <button type="button" onClick={(e) => { e.stopPropagation(); setPauseSheetOpen(true); revealControls(); }}>
+            <Pause size={19} strokeWidth={1.8} /><span>Pause</span>
+          </button>
+        ) : null}
         <button type="button" onClick={revealControls}><Settings size={19} strokeWidth={1.8} /><span>Settings</span></button>
         <button type="button" className="is-end" onClick={() => setConfirmEnd(true)}><Square size={16} fill="currentColor" strokeWidth={1.6} /><span>End Live</span></button>
       </div>
@@ -2292,7 +2358,117 @@ function CreatorLiveSession({ live, onEndingChange }) {
           }}
         />
       ) : null}
+      {PAUSE_RESUME_ENABLED && pauseSheetOpen ? (
+        <PauseLiveSheet
+          onPause={pauseLive}
+          onCancel={() => setPauseSheetOpen(false)}
+        />
+      ) : null}
+      {PAUSE_RESUME_ENABLED && liveStatus === 'paused' ? (
+        <CreatorPauseView
+          pauseStartedAt={pauseStartedAt}
+          pauseExpectedMinutes={pauseExpectedMinutes}
+          viewerCount={viewerCount}
+          onResume={resumeLive}
+          onChangeDuration={() => { /* future: allow editing duration */ }}
+          onEndLive={() => setConfirmEnd(true)}
+        />
+      ) : null}
     </section>
+  );
+}
+
+function CreatorPauseView({ pauseStartedAt, pauseExpectedMinutes, viewerCount, onResume, onEndLive }) {
+  const [elapsed, setElapsed] = useState(0);
+
+  useEffect(() => {
+    const start = pauseStartedAt ? pauseStartedAt.getTime() : Date.now();
+    const tick = () => setElapsed(Math.floor((Date.now() - start) / 1000));
+    tick();
+    const id = setInterval(tick, 1000);
+    return () => clearInterval(id);
+  }, [pauseStartedAt]);
+
+  const formatDuration = (secs) => {
+    const m = Math.floor(secs / 60);
+    const s = secs % 60;
+    return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+  };
+
+  const remainingSecs = pauseExpectedMinutes
+    ? Math.max(0, pauseExpectedMinutes * 60 - elapsed)
+    : null;
+
+  return (
+    <div className="creator-pause-screen">
+      <div className="creator-pause-content">
+        <span className="creator-pause-badge">
+          <Pause size={11} strokeWidth={2.2} />
+          LIVE EN PAUSE
+        </span>
+        <span className="creator-pause-elapsed">{formatDuration(elapsed)}</span>
+        <span className="creator-pause-elapsed-label">Durée de la pause</span>
+        {remainingSecs !== null ? (
+          <span className="creator-pause-countdown">
+            Retour prévu dans <strong>{formatDuration(remainingSecs)}</strong>
+          </span>
+        ) : (
+          <span className="creator-pause-countdown">Durée indéterminée · max 30 min</span>
+        )}
+        <span className="creator-pause-viewers">
+          <Eye size={12} strokeWidth={1.8} />
+          {viewerCount} spectateur{viewerCount > 1 ? 's' : ''} en attente
+        </span>
+      </div>
+      <div className="creator-pause-actions">
+        <button type="button" className="creator-pause-btn-resume" onClick={onResume}>
+          <Play size={18} fill="currentColor" strokeWidth={0} />
+          Reprendre le live
+        </button>
+        <div className="creator-pause-secondary">
+          <button type="button" className="creator-pause-btn-secondary creator-pause-btn-end" onClick={onEndLive}>
+            Terminer
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ViewerPauseOverlay({ pauseExpectedEndAt }) {
+  const [remaining, setRemaining] = useState(() => {
+    if (!pauseExpectedEndAt) return null;
+    return Math.max(0, Math.floor((pauseExpectedEndAt.getTime() - Date.now()) / 1000));
+  });
+
+  useEffect(() => {
+    if (!pauseExpectedEndAt) return;
+    const tick = () => setRemaining(Math.max(0, Math.floor((pauseExpectedEndAt.getTime() - Date.now()) / 1000)));
+    tick();
+    const id = setInterval(tick, 1000);
+    return () => clearInterval(id);
+  }, [pauseExpectedEndAt]);
+
+  const formatCountdown = (secs) => {
+    const m = Math.floor(secs / 60);
+    const s = secs % 60;
+    return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+  };
+
+  return (
+    <div className="viewer-pause-overlay">
+      <span className="viewer-pause-icon">
+        <Pause size={22} strokeWidth={2} />
+      </span>
+      <p className="viewer-pause-title">Live en pause</p>
+      <p className="viewer-pause-subtitle">Le créateur revient bientôt.</p>
+      {remaining !== null && (
+        <div className="viewer-pause-countdown">
+          <span>Retour prévu dans</span>
+          <span className="viewer-pause-countdown-timer">{formatCountdown(remaining)}</span>
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -2313,6 +2489,10 @@ function LiveViewer({ liveId, creatorMode = false }) {
   const [remoteVideoEl, setRemoteVideoEl] = useState(null);
   const [whepFailed, setWhepFailed] = useState(false);
   const [debugInfo, setDebugInfo] = useState({});
+  const [isLivePaused, setIsLivePaused] = useState(false);
+  const [pauseExpectedEndAt, setPauseExpectedEndAt] = useState(null);
+  const [isReconnecting, setIsReconnecting] = useState(false);
+  const wasLivePausedRef = useRef(false);
   const localVideoRef = useRef(null);
   const remoteVideoRef = useRef(null);
   // Stable ref callback — must not change on re-renders, otherwise React calls it with null
@@ -2742,6 +2922,7 @@ function LiveViewer({ liveId, creatorMode = false }) {
 
           if (data.status === 'ended' || data.status === 'completed' || data.status === 'cancelled') {
             console.log('[live-ended] broadcast watcher: status =', data.status, '— triggering ended screen');
+            setIsLivePaused(false);
             setEndedLiveSnap((prev) => prev ?? live);
             setBroadcastEnded(true);
             setRemoteStream(null);
@@ -2749,6 +2930,21 @@ function LiveViewer({ liveId, creatorMode = false }) {
               webrtcCallRef.current.close();
             }
             closePeer();
+          }
+
+          if (PAUSE_RESUME_ENABLED) {
+            const paused = data.liveStatus === 'paused';
+            setIsLivePaused(paused);
+            if (paused) {
+              setPauseExpectedEndAt(data.pauseExpectedEndAt?.toDate?.() ?? null);
+            } else {
+              setPauseExpectedEndAt(null);
+              if (wasLivePausedRef.current) {
+                setIsReconnecting(true);
+                setTimeout(() => setIsReconnecting(false), 3000);
+              }
+            }
+            wasLivePausedRef.current = paused;
           }
         }
       } catch (err) {
@@ -3826,7 +4022,14 @@ function LiveViewer({ liveId, creatorMode = false }) {
                         playsInline
                         style={isDragging ? { transform: `scale(1.03) translateY(${dragY * 0.1}px)` } : undefined}
                       />
-                      {!remoteStream ? (
+                      {PAUSE_RESUME_ENABLED && isLivePaused ? (
+                        <ViewerPauseOverlay pauseExpectedEndAt={pauseExpectedEndAt} />
+                      ) : PAUSE_RESUME_ENABLED && isReconnecting ? (
+                        <div className="viewer-reconnecting-overlay">
+                          <span className="viewer-reconnecting-spinner" aria-hidden="true" />
+                          <span className="viewer-reconnecting-label">Reconnexion au live…</span>
+                        </div>
+                      ) : !remoteStream ? (
                         <div className="live-slide__connecting">
                           {watchStatus === 'error' ? null : <i aria-hidden="true" />}
                           <span>

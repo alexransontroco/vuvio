@@ -48,6 +48,16 @@ const REQUESTED_LIVE_ZOOM = 4.2;
 const PING_COLOR = '#ff8a1f';
 const PING_TTL_MS = 12000;
 const PULSE_INTERVAL = 480;
+const DEVICE_CAPABILITIES = (() => {
+  if (typeof window === 'undefined') return { touch: false, lowPower: false, coarsePointer: false };
+  const coarsePointer = window.matchMedia?.('(pointer: coarse)').matches ?? false;
+  const touchPoints = navigator.maxTouchPoints ?? 0;
+  const touch = coarsePointer || touchPoints > 0;
+  const cores = navigator.hardwareConcurrency ?? 0;
+  const memory = navigator.deviceMemory ?? 0;
+  return { touch, touchPoints, lowPower: touch || (cores > 0 && cores <= 6) || (memory > 0 && memory <= 4), coarsePointer };
+})();
+const IS_LOW_POWER_DEVICE = DEVICE_CAPABILITIES.lowPower;
 
 const statusColor = [
   'case',
@@ -818,6 +828,7 @@ export default function GlobeTest8({ streams, onboarding = false, onOnboardingLi
   const dvMarkersRef = useRef({});
   const htmlMarkersRef = useRef({});
   const liveStreamsRef = useRef([]);
+  const pendingLiveStreamsRef = useRef(null);
   const lastClusterSignatureRef = useRef('');
   const handleClickRef = useRef(null);
   const selectedIdRef = useRef(null);
@@ -835,12 +846,21 @@ export default function GlobeTest8({ streams, onboarding = false, onOnboardingLi
   const [pingRefreshTick, setPingRefreshTick] = useState(0);
   const [mapError, setMapError] = useState('');
   const [isMapLoaded, setIsMapLoaded] = useState(false);
-  const [fpsHud, setFpsHud] = useState({ fps: 0, zoom: 0, tiles: 0, mem: 0 });
+  const [fpsHud, setFpsHud] = useState({ fps: 0, mapFps: 0, avgFrame: 0, maxGap: 0, zoom: 0, tiles: 0, mem: 0 });
   const [now, setNow] = useState(() => Date.now());
   const [remindedIds, setRemindedIds] = useState(() => new Set());
   const lastHaloZoomRef = useRef(-1);
   const fpsBufRef = useRef([]);
-  const fpsEnabled = searchParams.get('fps') === '1' || searchParams.get('fps') === 'true';
+  const mapFrameBufRef = useRef([]);
+  const clusterRunsRef = useRef(0);
+  const clusterUpdatesRef = useRef(0);
+  const clusterCostRef = useRef({ last: 0, max: 0, query: 0, loop: 0, candidates: 0, visible: 0 });
+  const sourceUpdatesRef = useRef(0);
+  const sourceUpdatesDeferredRef = useRef(0);
+  const reactRendersRef = useRef(0);
+  reactRendersRef.current += 1;
+  const diagnosticsEnabled = searchParams.get('fps') === '1' || searchParams.get('fps') === 'true' || searchParams.get('diag') === '1';
+  const fpsEnabled = diagnosticsEnabled;
   const cLabels = useMemo(() => makeCountdownLabels(t), [t]);
 
   useEffect(() => {
@@ -980,7 +1000,25 @@ export default function GlobeTest8({ streams, onboarding = false, onOnboardingLi
     });
 
     mapRef.current = map;
+    if (import.meta.env.DEV && diagnosticsEnabled) window.__vuvioGlobe8Map = map;
+    const onMapRender = () => {
+      const now = performance.now();
+      const samples = mapFrameBufRef.current;
+      samples.push(now);
+      if (samples.length > 90) samples.shift();
+    };
+    const onZoomStartForDiagnostics = () => {
+      mapFrameBufRef.current = [];
+      clusterCostRef.current = { ...clusterCostRef.current, max: 0 };
+    };
+    map.on('render', onMapRender);
+    map.on('zoomstart', onZoomStartForDiagnostics);
     const globeSurface = containerRef.current.closest('.test-old-globe');
+    const globeScreen = containerRef.current.closest('.test-globe-screen--test8');
+    const beginZoomVisuals = () => globeScreen?.classList.add('is-zooming');
+    const endZoomVisuals = () => globeScreen?.classList.remove('is-zooming');
+    map.on('zoomstart', beginZoomVisuals);
+    map.on('zoomend', endZoomVisuals);
     const hideStarfieldOnZoom = () => globeSurface?.classList.add('is-zoomed');
     const syncStarfieldAfterZoom = () => {
       globeSurface?.classList.toggle('is-zoomed', map.getZoom() > INITIAL_ZOOM + 0.05);
@@ -1025,9 +1063,7 @@ export default function GlobeTest8({ streams, onboarding = false, onOnboardingLi
       pauseUntilRef.current = Number.POSITIVE_INFINITY;
     };
     const resumeInteraction = () => {
-      pauseUntilRef.current = 0;
-      const center = map.getCenter();
-      map.jumpTo({ center: [center.lng + 0.0001, center.lat] });
+      pauseUntilRef.current = Date.now() + 1200;
     };
 
     map.getCanvas().addEventListener('pointerdown', pauseInteraction);
@@ -1057,8 +1093,8 @@ export default function GlobeTest8({ streams, onboarding = false, onOnboardingLi
     }, 150);
 
     const revealOnRender = () => {
-      if (map.loaded() && map.getCanvas()?.width > 0 && map.getCanvas()?.height > 0) {
-        map.once('idle', () => setIsMapLoaded(true));
+      if (map.isStyleLoaded() && map.getCanvas()?.width > 0 && map.getCanvas()?.height > 0) {
+        setIsMapLoaded(true);
         map.off('render', revealOnRender);
       }
     };
@@ -1082,7 +1118,7 @@ export default function GlobeTest8({ streams, onboarding = false, onOnboardingLi
         map.setProjection({ type: 'globe' });
         resizeMap();
         if (variant === 'maplibre-custom') setIsMapLoaded(true);
-        map.once('idle', () => setIsMapLoaded(true));
+        if (map.getCanvas()?.width > 0 && map.getCanvas()?.height > 0) setIsMapLoaded(true);
         brightenBaseGlobe(
           map,
           !onboarding && variant === 'current',
@@ -1369,10 +1405,14 @@ export default function GlobeTest8({ streams, onboarding = false, onOnboardingLi
       map.off('zoomstart', pauseInteraction);
       map.off('dragend', resumeInteraction);
       map.off('zoomend', resumeInteraction);
+      map.off('zoomstart', beginZoomVisuals);
+      map.off('zoomend', endZoomVisuals);
       map.off('zoomstart', hideStarfieldOnZoom);
       map.off('zoomend', syncStarfieldAfterZoom);
       window.removeEventListener('resize', resizeHaloCanvas);
       map.off('render', revealOnRender);
+      map.off('render', onMapRender);
+      map.off('zoomstart', onZoomStartForDiagnostics);
       map.off('style.load', revealNativeGlobe);
       if (initializeMap) map.off('load', initializeMap);
       resizeObserver.disconnect();
@@ -1380,11 +1420,15 @@ export default function GlobeTest8({ streams, onboarding = false, onOnboardingLi
       if (animationRef.current) cancelAnimationFrame(animationRef.current);
       for (const marker of Object.values(dvMarkersRef.current)) marker.remove();
       dvMarkersRef.current = {};
-      for (const marker of Object.values(htmlMarkersRef.current)) marker.remove();
+      for (const marker of Object.values(htmlMarkersRef.current)) {
+        window.clearTimeout(marker._vuvioRemovalTimer);
+        marker.remove();
+      }
       htmlMarkersRef.current = {};
       if (haloCanvasRef.current?.parentNode) haloCanvasRef.current.parentNode.removeChild(haloCanvasRef.current);
       document.getElementById('vuvio-globe-svg-filters')?.remove();
       map.remove();
+      if (window.__vuvioGlobe8Map === map) delete window.__vuvioGlobe8Map;
       mapRef.current = null;
     };
   }, []);
@@ -1394,10 +1438,29 @@ export default function GlobeTest8({ streams, onboarding = false, onOnboardingLi
   useEffect(() => {
     const map = mapRef.current;
     if (!map) return undefined;
-    const update = () => map.getSource('vuvio-test-lives')?.setData(liveStreamsCollection);
+    const apply = () => {
+      const source = map.getSource('vuvio-test-lives');
+      if (!source) return;
+      const nextCollection = pendingLiveStreamsRef.current ?? liveStreamsCollection;
+      pendingLiveStreamsRef.current = null;
+      source.setData(nextCollection);
+      sourceUpdatesRef.current += 1;
+    };
+    const update = () => {
+      if (map.isMoving()) {
+        pendingLiveStreamsRef.current = liveStreamsCollection;
+        sourceUpdatesDeferredRef.current += 1;
+        map.once('moveend', apply);
+        return;
+      }
+      apply();
+    };
     if (map.getSource('vuvio-test-lives')) update();
     else map.once('load', update);
-    return () => map.off('load', update);
+    return () => {
+      map.off('load', update);
+      map.off('moveend', apply);
+    };
   }, [liveStreamsCollection]);
 
   useEffect(() => {
@@ -1479,6 +1542,7 @@ export default function GlobeTest8({ streams, onboarding = false, onOnboardingLi
     if (!map) return undefined;
 
     const computeClusters = () => {
+      clusterRunsRef.current += 1;
       if (!map.getLayer('vuvio-test-cluster-anchor') || !map.getLayer('vuvio-test-point-anchor')) return;
       if (!map.isSourceLoaded('vuvio-test-lives')) return;
       const center = map.getCenter();
@@ -1494,12 +1558,15 @@ export default function GlobeTest8({ streams, onboarding = false, onOnboardingLi
       const canvas = map.getCanvas();
       const width = canvas.clientWidth;
       const height = canvas.clientHeight;
+      const queryStartedAt = performance.now();
       const sourceFeatures = map.querySourceFeatures('vuvio-test-lives');
+      const queryDuration = performance.now() - queryStartedAt;
       const targetZoom = Math.floor(zoom);
       const tileZooms = [...new Set(sourceFeatures.map((feature) => feature._z))];
       tileZooms.sort((a, b) => Math.abs(a - targetZoom) - Math.abs(b - targetZoom));
       const features = sourceFeatures.filter((feature) => feature._z === tileZooms[0]);
 
+      const loopStartedAt = performance.now();
       for (const feature of features) {
         const clusterId = feature.properties?.cluster_id;
         const isCluster = feature.properties?.point_count != null;
@@ -1536,31 +1603,51 @@ export default function GlobeTest8({ streams, onboarding = false, onOnboardingLi
           if (stream) next.push(stream);
         }
       }
+      clusterCostRef.current = {
+        ...clusterCostRef.current,
+        query: queryDuration,
+        loop: performance.now() - loopStartedAt,
+        candidates: features.length,
+        visible: next.length,
+      };
 
       const nextSignature = next.map((item) => `${item.id}:${item.count ?? 1}:${item.coordinates.join(',')}`).sort().join(';');
       if (nextSignature === lastClusterSignatureRef.current) return;
       lastClusterSignatureRef.current = nextSignature;
+      clusterUpdatesRef.current += 1;
       setDisplayedStreams(next);
     };
 
     let clusterRaf = 0;
+    let clusterTimer = 0;
     const scheduleClusters = () => {
-      if (clusterRaf) return;
-      clusterRaf = requestAnimationFrame(() => {
-        clusterRaf = 0;
-        computeClusters();
-      });
+      if (map.isMoving() || clusterRaf) return;
+      window.clearTimeout(clusterTimer);
+      clusterTimer = window.setTimeout(() => {
+        clusterTimer = 0;
+        if (map.isMoving()) return;
+        clusterRaf = requestAnimationFrame(() => {
+          clusterRaf = 0;
+          if (map.isMoving()) return;
+          const startedAt = performance.now();
+          computeClusters();
+          const duration = performance.now() - startedAt;
+          clusterCostRef.current = { ...clusterCostRef.current, last: duration, max: Math.max(clusterCostRef.current.max, duration) };
+        });
+      }, 40);
+    };
+    const onSourceData = (event) => {
+      if (event.sourceId === 'vuvio-test-lives' && event.isSourceLoaded) scheduleClusters();
     };
 
     lastClusterSignatureRef.current = '';
     scheduleClusters();
-    map.on('render', scheduleClusters);
-    map.on('sourcedata', scheduleClusters);
+    map.on('sourcedata', onSourceData);
     map.on('moveend', scheduleClusters);
     return () => {
+      window.clearTimeout(clusterTimer);
       cancelAnimationFrame(clusterRaf);
-      map.off('render', scheduleClusters);
-      map.off('sourcedata', scheduleClusters);
+      map.off('sourcedata', onSourceData);
       map.off('moveend', scheduleClusters);
     };
   }, [liveStreams]);
@@ -1572,6 +1659,7 @@ export default function GlobeTest8({ streams, onboarding = false, onOnboardingLi
     let cullRafPending = false;
     const cullVisCache = new WeakMap();
     const cullBackfaceMarkers = () => {
+      if (map.isMoving()) return;
       if (cullRafPending) return;
       cullRafPending = true;
       requestAnimationFrame(() => {
@@ -1624,21 +1712,43 @@ export default function GlobeTest8({ streams, onboarding = false, onOnboardingLi
       const currentIds = new Set(displayedStreams.map((s) => s.id));
       for (const [id, marker] of Object.entries(htmlMarkersRef.current)) {
         if (!currentIds.has(id)) {
-          marker.remove();
-          delete htmlMarkersRef.current[id];
+          const element = marker.getElement();
+          if (!marker._vuvioRemovalTimer) {
+            element.classList.add('gt8-marker--leaving');
+            element.style.pointerEvents = 'none';
+            marker._vuvioRemovalTimer = window.setTimeout(() => {
+              if (htmlMarkersRef.current[id] !== marker) return;
+              marker.remove();
+              delete htmlMarkersRef.current[id];
+            }, 140);
+          }
         }
       }
       for (const stream of displayedStreams) {
         const existing = htmlMarkersRef.current[stream.id];
         if (existing) {
-          existing.getElement()._vuvioStream = stream;
-          existing.setLngLat(stream.coordinates);
+          const element = existing.getElement();
+          if (existing._vuvioRemovalTimer) {
+            window.clearTimeout(existing._vuvioRemovalTimer);
+            existing._vuvioRemovalTimer = null;
+            element.classList.remove('gt8-marker--leaving');
+            element.style.pointerEvents = '';
+          }
+          element._vuvioStream = stream;
+          const previousCoordinates = existing._vuvioCoordinates;
+          if (!previousCoordinates || previousCoordinates[0] !== stream.coordinates[0] || previousCoordinates[1] !== stream.coordinates[1]) {
+            existing.setLngLat(stream.coordinates);
+            existing._vuvioCoordinates = stream.coordinates.slice();
+          }
           continue;
         }
         const el = buildMarkerElement(stream);
+        el.classList.add('gt8-marker--entering');
+        el.addEventListener('animationend', () => el.classList.remove('gt8-marker--entering'), { once: true });
         htmlMarkersRef.current[stream.id] = new maplibregl.Marker({ element: el, anchor: 'center' })
           .setLngLat(stream.coordinates)
           .addTo(map);
+        htmlMarkersRef.current[stream.id]._vuvioCoordinates = stream.coordinates.slice();
       }
       cullBackfaceMarkers();
     };
@@ -1646,9 +1756,11 @@ export default function GlobeTest8({ streams, onboarding = false, onOnboardingLi
     sync();
     map.on('move', cullBackfaceMarkers);
     map.on('zoom', cullBackfaceMarkers);
+    map.on('moveend', cullBackfaceMarkers);
     return () => {
       map.off('move', cullBackfaceMarkers);
       map.off('zoom', cullBackfaceMarkers);
+      map.off('moveend', cullBackfaceMarkers);
     };
   }, [buildMarkerElement, displayedStreams]);
 
@@ -1705,7 +1817,7 @@ export default function GlobeTest8({ streams, onboarding = false, onOnboardingLi
     let lastRotationTime = performance.now();
     let lastPulseTime = 0;
     let lastHaloTime = 0;
-    const HALO_INTERVAL_MS = 50; // ~20fps cap — halo is subtle, 20fps is plenty
+    const HALO_INTERVAL_MS = IS_LOW_POWER_DEVICE ? 180 : 50;
     const initialCenter = map.getCenter();
     let lastRotationLng = initialCenter.lng;
     let lastRotationLat = initialCenter.lat;
@@ -1752,7 +1864,7 @@ export default function GlobeTest8({ streams, onboarding = false, onOnboardingLi
       // Skip pulse animations when zoomed in — markers barely visible, save CPU/GPU.
       // Also skip when a live is selected (focused view) or during user drag/zoom
       // (pulse paint updates trigger map re-renders, making drag feel sluggish).
-      if (zoom < 3 && !selectedId && !isInteracting && time - lastPulseTime >= PULSE_INTERVAL) {
+      if (!IS_LOW_POWER_DEVICE && zoom < 3 && !selectedId && !isInteracting && time - lastPulseTime >= PULSE_INTERVAL) {
         lastPulseTime = time;
         const clock = (time % 2400) / 2400;
         if (!layerPresence.ready) refreshLayerPresence();
@@ -1787,7 +1899,7 @@ export default function GlobeTest8({ streams, onboarding = false, onOnboardingLi
         }
       }
 
-      if (Date.now() <= pauseUntilRef.current || selectedId || isZoomed) {
+      if (IS_LOW_POWER_DEVICE || Date.now() <= pauseUntilRef.current || selectedId || isZoomed) {
         lastRotationTime = time;
         const center = map.getCenter();
         lastRotationLng = center.lng;
@@ -1807,7 +1919,7 @@ export default function GlobeTest8({ streams, onboarding = false, onOnboardingLi
       // we also drop to ~10fps (every 100ms) — the halo barely moves and the
       // GPU budget belongs to the map.
       const haloCanvas = haloCanvasRef.current;
-      const haloBudget = isInteracting ? 100 : HALO_INTERVAL_MS;
+      const haloBudget = IS_LOW_POWER_DEVICE ? 250 : isInteracting ? 100 : HALO_INTERVAL_MS;
       if (haloCanvas && zoom < 3.0 && time - lastHaloTime >= haloBudget) {
         lastHaloTime = time;
         lastHaloZoomRef.current = zoom;
@@ -1855,7 +1967,12 @@ export default function GlobeTest8({ streams, onboarding = false, onOnboardingLi
         }
         const mem = performance.memory?.usedJSHeapSize
           ? Math.round(performance.memory.usedJSHeapSize / 1048576) : 0;
-        setFpsHud({ fps, zoom, tiles, mem });
+        const mapSamples = mapFrameBufRef.current;
+        const gaps = mapSamples.slice(1).map((sample, index) => sample - mapSamples[index]);
+        const avgFrame = gaps.length ? Math.round(gaps.reduce((sum, gap) => sum + gap, 0) / gaps.length) : 0;
+        const maxGap = gaps.length ? Math.round(Math.max(...gaps)) : 0;
+        const mapFps = avgFrame ? Math.round(1000 / avgFrame) : 0;
+        setFpsHud({ fps, mapFps, avgFrame, maxGap, zoom, tiles, mem });
       }
       raf = requestAnimationFrame(tick);
     };
@@ -1925,8 +2042,8 @@ export default function GlobeTest8({ streams, onboarding = false, onOnboardingLi
     if (!map) return;
     map.easeTo({
       zoom: Math.max(map.getMinZoom(), Math.min(map.getMaxZoom(), map.getZoom() + delta)),
-      duration: 620,
-      easing: (t) => 1 - Math.pow(1 - t, 3),
+      duration: 520,
+      easing: (t) => t * t * (3 - 2 * t),
       essential: true,
     });
     pauseUntilRef.current = Date.now() + 1200;
@@ -1953,7 +2070,7 @@ export default function GlobeTest8({ streams, onboarding = false, onOnboardingLi
 
   return (
     <section
-      className={`screen test-globe-screen test-globe-screen--maplibre test-globe-screen--actual test-globe-screen--${variant}${onboarding ? ' test-globe-screen--onboarding' : ''}`}
+      className={`screen test-globe-screen test-globe-screen--maplibre test-globe-screen--actual test-globe-screen--test8 test-globe-screen--${variant}${onboarding ? ' test-globe-screen--onboarding' : ''}`}
       data-sheet-state={sheetState}
       aria-label="Current Vuvio globe"
     >
@@ -1979,7 +2096,7 @@ export default function GlobeTest8({ streams, onboarding = false, onOnboardingLi
           </div>
         )}
 
-        {fpsEnabled && (
+        {diagnosticsEnabled && (
           <div
             role="status"
             style={{
@@ -2000,9 +2117,19 @@ export default function GlobeTest8({ streams, onboarding = false, onOnboardingLi
               textAlign: 'left',
             }}
           >
-            <div>FPS <b style={{ color: '#fff' }}>{fpsHud.fps}</b></div>
+            <div>Pointer <b style={{ color: '#fff' }}>{DEVICE_CAPABILITIES.coarsePointer ? 'coarse' : 'fine'}</b></div>
+            <div>Touch <b style={{ color: '#fff' }}>{DEVICE_CAPABILITIES.touch ? `yes (${DEVICE_CAPABILITIES.touchPoints})` : 'no'}</b></div>
+            <div>Device <b style={{ color: '#fff' }}>{DEVICE_CAPABILITIES.lowPower ? 'reduced load' : 'full effects'}</b></div>
+            <div>RAF / map <b style={{ color: '#fff' }}>{fpsHud.fps} / {fpsHud.mapFps}</b></div>
+            <div>Map gap avg / max <b style={{ color: '#fff' }}>{fpsHud.avgFrame} / {fpsHud.maxGap} ms</b></div>
             <div>Zoom <b style={{ color: '#fff' }}>{fpsHud.zoom.toFixed(2)}</b></div>
             <div>Tiles <b style={{ color: '#fff' }}>{fpsHud.tiles}</b></div>
+            <div>Clusters / changes <b style={{ color: '#fff' }}>{clusterRunsRef.current} / {clusterUpdatesRef.current}</b></div>
+            <div>Cluster cost last / max <b style={{ color: '#fff' }}>{clusterCostRef.current.last.toFixed(1)} / {clusterCostRef.current.max.toFixed(1)} ms</b></div>
+            <div>Query / loop <b style={{ color: '#fff' }}>{clusterCostRef.current.query.toFixed(1)} / {clusterCostRef.current.loop.toFixed(1)} ms</b></div>
+            <div>Cluster candidates / visible <b style={{ color: '#fff' }}>{clusterCostRef.current.candidates} / {clusterCostRef.current.visible}</b></div>
+            <div>Source updates / deferred <b style={{ color: '#fff' }}>{sourceUpdatesRef.current} / {sourceUpdatesDeferredRef.current}</b></div>
+            <div>React renders <b style={{ color: '#fff' }}>{reactRendersRef.current}</b></div>
             {fpsHud.mem > 0 && <div>Heap <b style={{ color: '#fff' }}>{fpsHud.mem}MB</b></div>}
           </div>
         )}

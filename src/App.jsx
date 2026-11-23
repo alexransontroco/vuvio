@@ -103,7 +103,8 @@ function AdminRoute({ children }) {
     || user?.email?.endsWith('@vuvio.app')
     || user?.email === 'alexandre.ranson@gmail.com'
     || user?.email === 'doug.benchetrit@gmail.com'
-    || user?.email === 'cecilia.ranson@outlook.com';
+    || user?.email === 'cecilia.ranson@outlook.com'
+    || user?.email === 'christophe.ranson@gmail.com';
 
   if (authLoading && !isLocalDev) return null;
   if (!user && !isLocalDev) return <Navigate to="/login" state={{ returnTo: location.pathname }} replace />;

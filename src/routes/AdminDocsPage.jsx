@@ -26,6 +26,7 @@ import { useMemo, useState, useEffect } from 'react';
 import { Navigate } from 'react-router-dom';
 import { db } from '../firebase.js';
 import { useAuth } from '../context/AuthContext.jsx';
+import FinancialForecastViewer from '../components/admin/FinancialForecastViewer.jsx';
 
 const docModules = import.meta.glob([
   '../../README.md',
@@ -1145,7 +1146,7 @@ export default function AdminDocsPage() {
   const [showArchive, setShowArchive] = useState(false);
   const [selectedId, setSelectedId] = useState(() => docs.find((doc) => doc.path === 'ADMIN.md')?.id || docs[0]?.id);
 
-  const isAdmin = isLocalDev || user?.email?.endsWith('@vuvio.app') || user?.email === 'alexandre.ranson@gmail.com' || user?.email === 'doug.benchetrit@gmail.com' || user?.email === 'cecilia.ranson@outlook.com';
+  const isAdmin = isLocalDev || user?.email?.endsWith('@vuvio.app') || user?.email === 'alexandre.ranson@gmail.com' || user?.email === 'doug.benchetrit@gmail.com' || user?.email === 'cecilia.ranson@outlook.com' || user?.email === 'christophe.ranson@gmail.com';
 
   const domains = useMemo(() => {
     const counts = docs.reduce((acc, doc) => {
@@ -1262,31 +1263,7 @@ export default function AdminDocsPage() {
         </div>
 
         {selectedDoc.path === 'docs/business/previsionnel-2027-2029.md' && (
-          <div style={{ marginTop: 16, marginBottom: 16 }}>
-            {import.meta.env.VITE_FINANCIAL_FORECAST_URL ? (
-              <button
-                type="button"
-                onClick={() => window.open(import.meta.env.VITE_FINANCIAL_FORECAST_URL, '_blank')}
-                style={{
-                  padding: '10px 16px',
-                  borderRadius: 8,
-                  background: '#35e3dc',
-                  color: '#0a0e1a',
-                  border: 'none',
-                  fontWeight: 600,
-                  fontSize: 14,
-                  cursor: 'pointer',
-                  fontFamily: 'inherit',
-                }}
-              >
-                📊 {lang === 'fr' ? 'Ouvrir le prévisionnel' : 'Open financial forecast'}
-              </button>
-            ) : (
-              <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.4)' }}>
-                {lang === 'fr' ? 'Lien du prévisionnel à configurer' : 'Financial forecast URL not configured'}
-              </span>
-            )}
-          </div>
+          <FinancialForecastViewer url={import.meta.env.VITE_FINANCIAL_FORECAST_URL} lang={lang} />
         )}
 
         {selectedDoc.readSignal ? (

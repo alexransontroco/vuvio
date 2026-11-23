@@ -1,6 +1,6 @@
 # Vuvio — Infrastructure vidéo, relay et hébergement
 
-**Dernière mise à jour : septembre 2026**
+**Dernière mise à jour : 2026-11-23**
 
 ## 1. Situation actuelle
 
@@ -409,3 +409,54 @@ Migrer Firebase vers OVH
 Migrer Cloudflare vers Mux
 Construire une infrastructure multi-relay
 ```
+
+---
+
+## 13. Résultats du test E2E — 2026-11-23
+
+### Pipeline validé de bout en bout
+
+```text
+Navigateur (localhost:5176, ?forceRelay=1&relayLocal=1)
+   ↓ WebRTC VP8
+relay local (https://localhost:8787)
+   ↓ FFmpeg H.264/AAC
+Cloudflare Stream RTMPS
+   ↓ recording.mode: automatic
+Vidéo créée (state: ready, durée 948s)
+   ↓
+replayUrl écrite dans Firestore
+   ↓
+LiveRecap affiche le player HLS
+```
+
+### Résultats mesurés
+
+| Métrique | Valeur |
+|---|---|
+| Connexion relay | `[relay] negotiatedVideoCodec=video/VP8` ✓ |
+| Cloudflare recording | `state: live-inprogress` → `state: ready` ✓ |
+| Délai post-arrêt | ~40s entre fin du live et `state: ready` |
+| replayUrl Firestore | Écrite par `getReplayStatus` au premier poll ✓ |
+| Player HLS | Lecture fonctionnelle dans `LiveRecapPageSimple` ✓ |
+
+### Paramètres utilisés pour le test
+
+- `?forceRelay=1` : skip WHIP, va directement au relay
+- `?relayLocal=1` : relay URL = `https://localhost:8787`
+- Les deux flags sont persistés en `sessionStorage` et survivent à la navigation
+
+### Ce qui reste pour la production
+
+Le relay local ne suffit que pour le développement. Pour que n'importe quel utilisateur puisse obtenir un replay :
+
+1. **Déployer le relay sur un VPS** (Hetzner CX22 ~4€/mois ou OVHcloud)
+2. **Setter `RTMPS_RELAY_URL`** dans les secrets Cloud Run — le backend retourne alors les credentials RTMPS automatiquement
+3. **Supprimer `?relayLocal=1`** des URLs de test — le relay public devient la valeur par défaut
+4. **Supprimer `?forceRelay=1`** une fois WHIP retiré du path primaire (ou le garder comme override de debug)
+
+### Optimisations futures (non prioritaires)
+
+- **Faible latence** : remplacer le relay par un relay SRT ou RTMPS direct depuis le navigateur si un SDK natif est disponible
+- **Coût** : un seul VPS peut gérer plusieurs lives simultanés tant que la bande passante FFmpeg (≈2 Mbps/live) ne sature pas
+- **Fiabilité** : ajouter un healthcheck et un restart automatique (`pm2` ou `systemd`) sur le VPS relay

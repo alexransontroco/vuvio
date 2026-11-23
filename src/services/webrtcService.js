@@ -392,6 +392,27 @@ export async function startWhipConnection(stream, whipUrl, whipKey) {
   console.log('[INGEST] WHIP connected — Cloudflare is receiving the stream');
 }
 
+// Pause: disable all sender tracks without closing the WHIP connection.
+// Cloudflare records silence/black (one continuous segment — no new recording created).
+export function pauseWhipTracks() {
+  if (!whipPeerConnection) return false;
+  whipPeerConnection.getSenders().forEach((sender) => {
+    if (sender.track) sender.track.enabled = false;
+  });
+  console.log('[WHIP] tracks paused (enabled=false)');
+  return true;
+}
+
+// Resume: re-enable all sender tracks on the existing WHIP connection.
+export function resumeWhipTracks() {
+  if (!whipPeerConnection) return false;
+  whipPeerConnection.getSenders().forEach((sender) => {
+    if (sender.track) sender.track.enabled = true;
+  });
+  console.log('[WHIP] tracks resumed (enabled=true)');
+  return true;
+}
+
 export async function startBroadcast(liveId, userId, existingStream = null, whipUrl = null, whipKey = null) {
   try {
     console.log('[webrtcService] Starting broadcast for live:', liveId);

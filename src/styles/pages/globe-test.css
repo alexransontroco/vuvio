@@ -1088,6 +1088,31 @@
   animation-delay: var(--gt2-delay, 0s);
 }
 
+.test-globe-screen--test8.is-zooming .gt2-marker__bubble,
+.test-globe-screen--test8.is-zooming .gt2-marker__dot,
+.test-globe-screen--test8.is-zooming .gt2-marker--entering,
+.test-globe-screen--test8.is-zooming .gt2-marker--leaving {
+  animation-play-state: paused;
+}
+
+.test-globe-screen--test8 .gt2-marker--entering {
+  animation: gt8-marker-enter 140ms ease-out both;
+}
+
+.test-globe-screen--test8 .gt2-marker--leaving {
+  animation: gt8-marker-leave 140ms ease-in both;
+}
+
+@keyframes gt8-marker-enter {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes gt8-marker-leave {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+
 @keyframes gt2-bubble-pulse {
   0%, 100% {
     box-shadow: 0 0 0 0px rgba(40, 216, 223, 0), 0 0 10px rgba(40, 216, 223, 0.28);
