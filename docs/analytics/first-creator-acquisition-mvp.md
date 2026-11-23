@@ -40,21 +40,21 @@ Ces mesures ne donnent **pas encore** un entonnoir fiable par créateur. `ref` t
 
 Le backend contient demande de génération, statut et traitement de highlights à partir des replays ; la page récapitulative possède une bande de highlights. L'onglet Highlights du profil annonce encore « bientôt ». La génération réelle dépend de la disponibilité d'un enregistrement Cloudflare et de sa piste audio ; la chaîne active d'ingest doit être testée avant toute promesse de clip. Le futur partage Instagram peut réutiliser le clip et `shareService` sans reconstruire la génération. Sources : `functions/src/highlights/`, `functions/src/videoProcessing/processVideoAnalysisJob.ts`, `src/components/live-recap/LiveHighlights.jsx`, `src/routes/ProfilePage.jsx`.
 
-## Corrections effectuées
+## Corrections de la phase 2 initiale
 
 1. Redirection publique des liens directs vers le lecteur avec ID conservé ; les créateurs propriétaires gardent la diffusion.
 2. Conservation des paramètres d'acquisition dans les liens web, les liens natifs et le HTML Open Graph. Le paramètre `ref` peut être ajouté explicitement à `getLiveShareUrl`.
 3. Pour un lien direct vers un live absent, non démarré ou restreint, message explicite et retour vers Watch ; un live terminé conserve son écran de fin.
 4. Upcoming ne prétend plus qu'un programme est en direct uniquement parce que son heure est passée. Image de repli corrigée, texte du marque-page local clarifié. La liste programmée est chargée une fois à l'ouverture ; son actualisation automatique lors du démarrage reste à développer.
-5. Les aperçus OG masquent les données des lives signalés privés ou réservés aux abonnés. Pas de changement à Cloudflare Stream, Firebase Auth, règles Firestore ou système analytics.
+5. Les aperçus OG masquent les données des lives signalés privés ou réservés aux abonnés. À cette étape initiale, Cloudflare Stream, Firebase Auth, les règles Firestore et le système analytics n'avaient pas été modifiés. La restriction Public Only ultérieure est documentée dans `docs/backend/live-visibility-security-audit.md`.
 
 ## Vérification de cette branche
 
-La branche `fix/creator-acquisition-mvp` a reçu `main` au commit `38b6372` par merge `d1d27bf` ; les fichiers de landing sont identiques à ceux de `origin/main`. Le worktree expérimental et ses modifications locales n'ont pas été modifiés.
+La branche `fix/creator-acquisition-mvp` a ensuite reçu le `main` du commit `fc8e210`, qui conserve les changements récents de landing et de qualité vidéo. Le worktree expérimental et ses modifications locales n'ont pas été modifiés.
 
 Trois tests Node ciblés (`test/liveLinks.test.mjs`) passent : URL sans et avec `ref`, conservation de `ref` et des UTM dans les liens natifs et récapitulatifs, rejet d'un hôte étranger. `npm run build` et `npm --prefix functions run build` passent dans le worktree isolé avec les dépendances locales existantes. Le build frontend signale seulement des références d'images non résolues et des avertissements de taille/partition des bundles. `git diff --check` passe. Les routes React, l'authentification, HLS et les cartes Upcoming ont été vérifiées dans le code ; aucun navigateur automatisé ou environnement Firebase de test n'était disponible pour une validation de bout en bout.
 
-Restent à tester sur appareils et comptes réels : visiteur Instagram/Safari/Android/desktop, visiteur connecté, propriétaire en diffusion, live terminé, aperçu Meta/WhatsApp/Instagram, autoplay et diffusion multi-spectateur. Un aperçu Instagram ne peut pas être déclaré validé par la seule lecture des balises OG. Le problème de confidentialité des lives privés exige une intervention distincte sur les règles Firestore avant usage de ces modes.
+Restent à tester sur appareils et comptes réels : visiteur Instagram/Safari/Android/desktop, visiteur connecté, propriétaire en diffusion, live terminé, aperçu Meta/WhatsApp/Instagram, autoplay et diffusion multi-spectateur. Un aperçu Instagram ne peut pas être déclaré validé par la seule lecture des balises OG. Les corrections Public Only sont préparées mais non déployées ; les modes privés restent hors MVP jusqu'à une protection Firestore et Cloudflare complète.
 
 ## Phase 3 — plan à valider, non implémenté
 

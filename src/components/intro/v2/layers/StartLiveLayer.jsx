@@ -7,19 +7,12 @@ import {
 } from 'lucide-react';
 import { BIKING_LIVE } from '../introLives.js';
 import IntroBottomNav from './IntroBottomNav.jsx';
+import { useIntroCopy } from '../introCopy.js';
 
 const EASE = [0.22, 1, 0.36, 1];
-const CATEGORIES = [
-  { Icon: Footprints, label: 'Walking' },
-  { Icon: UtensilsCrossed, label: 'Cooking' },
-  { Icon: Briefcase, label: 'Work' },
-  { Icon: Mountain, label: 'Hiking' },
-  { Icon: Bike, label: 'Cycling', active: true },
-  { Icon: Waves, label: 'Surfing' },
-  { Icon: Plane, label: 'Flying' },
-  { Icon: MoreHorizontal, label: 'More' },
-];
+const CATEGORIES = [Footprints, UtensilsCrossed, Briefcase, Mountain, Bike, Waves, Plane, MoreHorizontal];
 export default function StartLiveLayer({ phase, reducedMotion, autoLaunch, onLaunch }) {
+  const t = useIntroCopy();
   const [launching, setLaunching] = useState(false);
   const launchTimerRef = useRef(null);
   const triggerLaunch = useCallback(() => {
@@ -61,45 +54,45 @@ export default function StartLiveLayer({ phase, reducedMotion, autoLaunch, onLau
           >
             <div className="create-sheet__header">
               <span className="introv2-start__header-icon"><ChevronLeft size={18} /></span>
-              <strong>Start a live</strong>
+              <strong>{t.start.title}</strong>
               <span className="introv2-start__header-icon"><X size={17} /></span>
             </div>
             <div className="start-live-flow">
               <div className="start-live-preview">
                 <video src={BIKING_LIVE.video} poster={BIKING_LIVE.poster} autoPlay muted playsInline loop preload="auto" />
-                <span className="start-live-preview__label">Preview</span>
+                <span className="start-live-preview__label">{t.start.preview}</span>
               </div>
               <div>
-                <span className="start-live-label">What are you doing?</span>
+                <span className="start-live-label">{t.start.activity}</span>
                 <div className="start-live-input-wrap">
                   <Pencil size={15} strokeWidth={1.8} className="start-live-input-icon" />
-                  <div className="start-live-input introv2-start__input-value">Riding a forest trail</div>
+                  <div className="start-live-input introv2-start__input-value">{t.start.activityValue}</div>
                 </div>
               </div>
               <div>
-                <span className="start-live-label">Choose a category</span>
+                <span className="start-live-label">{t.start.category}</span>
                 <div className="start-live-cats">
-                  {CATEGORIES.map(({ Icon, label, active }) => (
-                    <div key={label} className={'start-live-cat' + (active ? ' is-active' : '')}>
+                  {CATEGORIES.map((Icon, i) => (
+                    <div key={i} className={'start-live-cat' + (i === 4 ? ' is-active' : '')}>
                       <Icon size={18} strokeWidth={1.6} />
-                      <span>{label}</span>
+                      <span>{t.start.categories[i]}</span>
                     </div>
                   ))}
                 </div>
               </div>
               <div className="start-live-broadcast">
-                <span className="start-live-label">Broadcast to</span>
+                <span className="start-live-label">{t.start.broadcast}</span>
                 <div className="start-live-broadcast__list">
                   <div className="start-live-dest start-live-dest--vuvio">
                     <span className="start-live-dest__dot start-live-dest__dot--on" />
                     <span className="start-live-dest__name">Vuvio</span>
-                    <span className="start-live-dest__badge">Always on</span>
+                    <span className="start-live-dest__badge">{t.start.alwaysOn}</span>
                   </div>
                 </div>
               </div>
               <div className="introv2-start__go-wrap">
                 <button type="button" className="start-live-go introv2-start__go" onClick={triggerLaunch} disabled={launching}>
-                  <Radio size={18} strokeWidth={2} /> Go Live
+                  <Radio size={18} strokeWidth={2} /> {t.start.goLive}
                 </button>
                 {autoLaunch && !reducedMotion && !launching && (
                   <motion.span
@@ -113,8 +106,8 @@ export default function StartLiveLayer({ phase, reducedMotion, autoLaunch, onLau
                   </motion.span>
                 )}
               </div>
-              <p className="introv2-start__guidelines">By going live you agree to our <span>Community Guidelines</span></p>
-              <div className="introv2-start__quick"><Globe2 size={14} /> Everyone <ChevronDown size={12} /></div>
+              <p className="introv2-start__guidelines">{t.start.guidelines} <span>{t.start.communityGuidelines}</span></p>
+              <div className="introv2-start__quick"><Globe2 size={14} /> {t.start.everyone} <ChevronDown size={12} /></div>
             </div>
           </motion.div>
           <IntroBottomNav createActive />
@@ -133,7 +126,7 @@ export default function StartLiveLayer({ phase, reducedMotion, autoLaunch, onLau
                 transition={{ duration: reducedMotion ? 0.3 : 1.05, ease: EASE }}
               >
                 <Radio size={24} strokeWidth={2} />
-                Go Live
+                {t.start.goLive}
               </motion.div>
             </motion.div>
           )}

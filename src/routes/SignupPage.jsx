@@ -66,7 +66,7 @@ export default function SignupPage() {
     const result = await signUp(email.trim(), password, displayName.trim());
     setSubmitting(false);
     if (result.success) {
-      navigate(returnTo, { replace: true });
+      navigate('/onboarding', { replace: true, state: { returnTo } });
     } else {
       setError(result.error);
     }
@@ -89,7 +89,7 @@ export default function SignupPage() {
       // For desktop popup flow, result is user object
       if (result?.uid) {
         console.log('[SignupPage] Google Sign-In successful');
-        navigate(returnTo || '/watch', { replace: true });
+        navigate('/onboarding', { replace: true, state: { returnTo: returnTo || '/watch' } });
       }
     } catch (err) {
       const message = await new Promise((resolve) => {

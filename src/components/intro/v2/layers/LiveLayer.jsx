@@ -4,6 +4,7 @@ import { Heart, MessageCircle, Gift, Share2, Backpack, MapPin, MousePointer2, Us
 import { BIKING_LIVE, CHEF_LIVE, FIREFIGHTER_LIVE } from '../introLives.js';
 import WatchMiniGlobe from '../../../WatchMiniGlobe.jsx';
 import IntroBottomNav from './IntroBottomNav.jsx';
+import { useIntroCopy } from '../introCopy.js';
 
 const EASE = [0.22, 1, 0.36, 1];
 
@@ -26,10 +27,14 @@ const CHEF_GLOBE_STREAM = { coordinates: [CHEF_LIVE.lng, CHEF_LIVE.lat], city: '
 
 // LiveLayer is visible during live AND equipment (so Live stays behind the sheet)
 export default function LiveLayer({ phase, reducedMotion, selectedLive, autoOpenGlobe, onOpenGlobe, autoCreate, onCreatePress, onCreate }) {
+  const t = useIntroCopy();
   const visible = phase === 'live' || phase === 'equipment' || phase === 'returnlive' || phase === 'globelive' || phase === 'startlive';
   const chatVisible = phase === 'live' || phase === 'returnlive' || phase === 'globelive';
   const activeLive = phase === 'startlive' ? BIKING_LIVE : phase === 'globelive' ? selectedLive ?? FIREFIGHTER_LIVE : CHEF_LIVE;
+  const creatorName = phase === 'startlive' ? t.start.bikingName : activeLive.name;
+  const location = phase === 'startlive' ? t.start.bikingLocation : activeLive.location;
   const chatScript = activeLive.id === 'firefighter' ? FIREFIGHTER_CHAT : activeLive.id === 'chef' ? CHEF_CHAT : OTHER_CHAT;
+  const chatCopy = activeLive.id === 'firefighter' ? t.live.firefighterChat : activeLive.id === 'chef' ? t.live.chefChat : t.live.otherChat;
   const globeStream = useMemo(() => ({ coordinates: [activeLive.lng, activeLive.lat], city: activeLive.label }), [activeLive]);
 
   const [chatCount, setChatCount] = useState(0);
@@ -103,15 +108,15 @@ export default function LiveLayer({ phase, reducedMotion, selectedLive, autoOpen
             exit={{ opacity: 0 }}
             transition={{ duration: 0.55, ease: EASE, delay: 0.15 }}
           >
-            <div className="introv2-live__avatar">{activeLive.name[0]}</div>
+            <div className="introv2-live__avatar">{creatorName[0]}</div>
             <div className="introv2-live__creator-meta">
-              <div className="introv2-live__creator-name">{activeLive.name}</div>
+              <div className="introv2-live__creator-name">{creatorName}</div>
               <div className="introv2-live__creator-sub">
                 <span className="introv2-live__live-dot" />
                 LIVE · {activeLive.viewers}
               </div>
             </div>
-            <button type="button" className="introv2-live__follow">Follow</button>
+            <button type="button" className="introv2-live__follow">{t.live.follow}</button>
           </motion.div>
 
           {/* Location pill */}
@@ -123,7 +128,7 @@ export default function LiveLayer({ phase, reducedMotion, selectedLive, autoOpen
             transition={{ duration: 0.5, ease: EASE, delay: 0.3 }}
           >
             <MapPin size={11} strokeWidth={2} />
-            {activeLive.location}
+            {location}
           </motion.div>
 
           {phase === 'returnlive' && (
@@ -133,7 +138,7 @@ export default function LiveLayer({ phase, reducedMotion, selectedLive, autoOpen
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: reducedMotion ? 0 : 1.3, duration: 0.35, ease: EASE }}
               aria-hidden="true"
-            >View on globe</motion.span>
+            >{t.live.viewOnGlobe}</motion.span>
           )}
           {phase === 'returnlive' && (
             <motion.button
@@ -143,7 +148,7 @@ export default function LiveLayer({ phase, reducedMotion, selectedLive, autoOpen
               initial={{ opacity: 0, scale: 0.8 }}
               animate={{ opacity: 1, scale: globePressed ? 0.86 : 1 }}
               transition={{ duration: globePressed ? 0.15 : reducedMotion ? 0.2 : 0.45, ease: EASE }}
-              aria-label="Open this live on the globe"
+              aria-label={t.live.openOnGlobe}
             >
               <span className="introv2-live__mini-dir introv2-live__mini-dir--n">N</span>
               <span className="introv2-live__mini-dir introv2-live__mini-dir--e">E</span>
@@ -173,7 +178,7 @@ export default function LiveLayer({ phase, reducedMotion, selectedLive, autoOpen
               >
                 <span className="introv2-live__bubble-initial" style={{ background: m.color }}>{m.initial}</span>
                 <span className="introv2-live__bubble-text">
-                  <strong>{m.name}</strong> {m.text}
+                  <strong>{m.name}</strong> {chatCopy[i]}
                 </span>
               </motion.div>
             ))}
@@ -217,7 +222,7 @@ export default function LiveLayer({ phase, reducedMotion, selectedLive, autoOpen
             exit={{ opacity: 0, y: 8 }}
             transition={{ duration: 0.55, ease: EASE, delay: 0.35 }}
           >
-            Ask a question…
+            {t.live.question}
           </motion.div>
           {phase === 'globelive' && showCreateCue && (
             <motion.div
@@ -227,7 +232,7 @@ export default function LiveLayer({ phase, reducedMotion, selectedLive, autoOpen
               transition={{ duration: reducedMotion ? 0.2 : 0.35, ease: EASE }}
               aria-hidden="true"
             >
-              Start a live <span>↓</span>
+              {t.live.start} <span>↓</span>
             </motion.div>
           )}
           {phase === 'globelive' && (

@@ -994,17 +994,11 @@
      padding-bottom aligns the dot center (52+18+3.5=73.5px) with the element
      center (147/2=73.5px) so the dot anchors to the globe surface. */
   padding-bottom: 70px;
-  will-change: transform;
   pointer-events: all;
   -webkit-tap-highlight-color: transparent;
   -webkit-touch-callout: none;
   user-select: none;
   outline: none;
-  animation: gt2-marker-in 260ms ease-out both;
-}
-@keyframes gt2-marker-in {
-  from { opacity: 0; }
-  to   { opacity: 1; }
 }
 .gt2-marker:focus,
 .gt2-marker:focus-visible,
@@ -1027,6 +1021,14 @@
   display: flex;
   align-items: center;
   justify-content: center;
+}
+
+/* Mobile: drop the outer glow box-shadow — 150+ markers × GPU blur was the
+   biggest paint-cost item. Keep the subtle 1px ring for definition. */
+@media (pointer: coarse) {
+  .gt2-marker__bubble {
+    box-shadow: 0 0 0 1px rgba(40, 216, 223, 0.12);
+  }
 }
 
 .gt2-marker--avatar .gt2-marker__bubble {
@@ -1376,4 +1378,24 @@ html:has(.gt2-space-globe) {
   inset: 0;
   transform: translateY(2%);
   pointer-events: auto;
+}
+
+/* GT6 — dual-globe crossfade stack. Two <Globe> instances are stacked with
+ * independent opacity; a RAF loop syncs the inactive camera to the active one
+ * so the two sphere projections stay pixel-identical during the fade.
+ * Transition duration ~450ms is tuned to feel seamless at 60fps. */
+.gt2-globe-stack {
+  position: absolute;
+  inset: 0;
+}
+.gt2-globe-slot {
+  position: absolute;
+  inset: 0;
+  transition: opacity 450ms cubic-bezier(0.4, 0, 0.2, 1);
+  will-change: opacity;
+}
+/* Tint the raster tile canvas so street/building colors blend with the
+ * cinematic cyan+midnight palette of the globe-texture layer. */
+.gt2-globe-slot--vector canvas {
+  filter: var(--tile-filter, none);
 }

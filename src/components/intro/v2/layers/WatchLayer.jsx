@@ -2,11 +2,13 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { Search, Flame } from 'lucide-react';
 import BrandMark from '../../../BrandMark.jsx';
 import IntroBottomNav from './IntroBottomNav.jsx';
+import { useIntroCopy } from '../introCopy.js';
 
 const EASE = [0.22, 1, 0.36, 1];
 
 // Watch layer appears during 'watch' phase, fades (partial) during 'live' to blend transition
 export default function WatchLayer({ phase, reducedMotion }) {
+  const t = useIntroCopy();
   const visible = phase === 'watch';
   // When we move to live, the Watch chrome quickly fades but spotlight ring on card may remain briefly
   return (
@@ -32,7 +34,7 @@ export default function WatchLayer({ phase, reducedMotion }) {
           >
             <div className="introv2-watch__header-left">
               <BrandMark size={22} useLegacy withCircle={false} />
-              <span className="introv2-watch__header-title">Watch</span>
+              <span className="introv2-watch__header-title">{t.nav.watch}</span>
             </div>
             <div className="introv2-watch__header-right">
               <Search size={18} strokeWidth={2} />
@@ -47,12 +49,12 @@ export default function WatchLayer({ phase, reducedMotion }) {
             exit={{ opacity: 0 }}
             transition={{ duration: 0.55, ease: EASE, delay: 0.2 }}
           >
-            {['All', 'Cooking', 'Riding', 'Hiking', 'Travel'].map((c, i) => (
+            {t.watch.categories.map((c, i) => (
               <span
-                key={c}
-                className={'introv2-watch__cat' + (c === 'Cooking' ? ' introv2-watch__cat--active' : '')}
+                key={i}
+                className={'introv2-watch__cat' + (i === 1 ? ' introv2-watch__cat--active' : '')}
               >
-                {c === 'Cooking' && <Flame size={11} strokeWidth={2} style={{ marginRight: 4 }} />}
+                {i === 1 && <Flame size={11} strokeWidth={2} style={{ marginRight: 4 }} />}
                 {c}
               </span>
             ))}
@@ -80,8 +82,8 @@ export default function WatchLayer({ phase, reducedMotion }) {
               <span className="introv2-watch__live-dot" />
               LIVE
             </span>
-            <span className="introv2-watch__title">Busy Friday — behind the pass</span>
-            <span className="introv2-watch__viewers">3,210 watching</span>
+            <span className="introv2-watch__title">{t.watch.title}</span>
+            <span className="introv2-watch__viewers">{t.watch.watching}</span>
           </motion.div>
 
           {/* Simulated "tap" pulse on the card at the end of watch phase */}

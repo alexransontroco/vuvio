@@ -78,8 +78,8 @@ function buildCollection(streams) {
 function tweakDarkStyle(map) {
   try {
     map.setSky?.({
-      'sky-color': '#060d16',
-      'horizon-color': '#1a3350',
+      'sky-color': '#0f1e33',
+      'horizon-color': '#2d5a96',
       'fog-color': '#28D8DF',
       'sky-horizon-blend': 0.4,
       'horizon-fog-blend': 0.6,
@@ -92,20 +92,20 @@ function tweakDarkStyle(map) {
     map.getStyle().layers?.forEach((layer) => {
       const id = layer.id.toLowerCase();
       if (layer.type === 'background') {
-        map.setPaintProperty(layer.id, 'background-color', '#060d16');
+        map.setPaintProperty(layer.id, 'background-color', '#0f1e33');
       }
       if (layer.type === 'fill' && id.includes('water')) {
-        map.setPaintProperty(layer.id, 'fill-color', '#0d2440');
+        map.setPaintProperty(layer.id, 'fill-color', '#1a3f6a');
       }
       if (layer.type === 'line' && id.includes('water')) {
-        map.setPaintProperty(layer.id, 'line-color', '#164766');
+        map.setPaintProperty(layer.id, 'line-color', '#3d7ea8');
       }
       if (layer.type === 'fill' && (id.includes('park') || id.includes('green') || id.includes('wood'))) {
-        map.setPaintProperty(layer.id, 'fill-color', '#102824');
+        map.setPaintProperty(layer.id, 'fill-color', '#1e4a40');
       }
       if (layer.type === 'line' && (id.includes('road') || id.includes('street') || id.includes('highway'))) {
-        map.setPaintProperty(layer.id, 'line-color', '#2a3a4e');
-        map.setPaintProperty(layer.id, 'line-opacity', 0.65);
+        map.setPaintProperty(layer.id, 'line-color', '#4d6a92');
+        map.setPaintProperty(layer.id, 'line-opacity', 1);
       }
     });
   } catch { /* style shape varies */ }
@@ -161,18 +161,37 @@ export default function GlobeTest5() {
   const starRafRef = useRef(null);
   const altitudeRef = useRef(PHASES[0].altitude);
   const fpsBufRef = useRef([]);
+  const selectedIdRef = useRef(null);
+  const layerRef = useRef('globe');
+  const transitioningRef = useRef(false);
 
   const [dims, setDims] = useState({ w: 0, h: 0 });
   const [layer, setLayer] = useState('globe'); // 'globe' | 'map'
   const [mapReady, setMapReady] = useState(false);
   const [currentPhase, setCurrentPhase] = useState('A');
   const [selectedId, setSelectedId] = useState(null);
+  const [isFlashing, setIsFlashing] = useState(false);
   const [diag, setDiag] = useState({ zoom: 0, tiles: 0, fps: 0, mem: 0 });
+
+  /* Fire a brief dark-flash overlay that peaks exactly during the layer swap.
+   * The human eye can't resolve detail behind a near-opaque flash, so the swap
+   * feels invisible. Returns a promise that resolves when the flash is done.
+   * Timeline: 0ms flash-in (260ms) → 260ms swap → 260ms flash-out → 520ms end. */
+  const flashSwap = (doSwap) => {
+    setIsFlashing(true);
+    window.setTimeout(() => {
+      doSwap();
+      window.setTimeout(() => setIsFlashing(false), 60);
+    }, 260);
+  };
 
   const debugEnabled = searchParams.get('debug') === '1' || searchParams.get('debug') === 'true';
 
   const liveCollection = useMemo(() => buildCollection(MOCK_LIVES), []);
   const selectedLive = useMemo(() => MOCK_LIVES.find((s) => s.id === selectedId) ?? null, [selectedId]);
+
+  useEffect(() => { selectedIdRef.current = selectedId; }, [selectedId]);
+  useEffect(() => { layerRef.current = layer; }, [layer]);
 
   /* ── Measure container ─────────────────────────────────────────── */
   useLayoutEffect(() => {
@@ -314,6 +333,39 @@ export default function GlobeTest5() {
       map.on('mouseenter', 'vuvio-lives-core', () => { map.getCanvas().style.cursor = 'pointer'; });
       map.on('mouseleave', 'vuvio-lives-core', () => { map.getCanvas().style.cursor = ''; });
 
+      // Auto-swap back to globe when user zooms out below the handoff zoom.
+      // Guarded by layerRef (only when on map) and transitioningRef (no re-trigger during swap).
+      map.on('zoom', () => {
+        if (layerRef.current !== 'map') return;
+        if (transitioningRef.current) return;
+        const z = map.getZoom();
+        if (z >= MAP_HANDOFF_ZOOM) return;
+
+        transitioningRef.current = true;
+        const center = map.getCenter();
+
+        // Pre-position globe at handoff altitude (scale match) so crossfade is seamless
+        globeRef.current?.pointOfView(
+          { lat: center.lat, lng: center.lng, altitude: GLOBE_HANDOFF_ALTITUDE },
+          0,
+        );
+        altitudeRef.current = GLOBE_HANDOFF_ALTITUDE;
+        setSelectedId(null);
+
+        // Flash masks the swap; then continue zoom-out on globe
+        flashSwap(() => {
+          setLayer('globe');
+          window.setTimeout(() => {
+            globeRef.current?.pointOfView(
+              { lat: center.lat, lng: center.lng, altitude: 0.75 },
+              1100,
+            );
+            altitudeRef.current = 0.75;
+            transitioningRef.current = false;
+          }, 60);
+        });
+      });
+
       setDiag((d) => ({ ...d, loadMs: Math.round(performance.now() - loadStart) }));
       setMapReady(true);
     });
@@ -397,68 +449,77 @@ export default function GlobeTest5() {
 
     if (phase.layer === 'map' && layer === 'globe') {
       // ─── DIVE: globe → map ──────────────────────────────────────
+      // Overlap: globe keeps zooming while map fades in and continues the zoom.
+      // Crossfade = 650ms (CSS). We start the layer swap at 400ms so both layers
+      // are visible together from 400–1050ms, hiding the texture/model boundary.
       const map = ensureMap();
-      // Globe zooms all the way to handoff altitude at target
       globeRef.current?.pointOfView(
         { lat: phase.center[1], lng: phase.center[0], altitude: GLOBE_HANDOFF_ALTITUDE },
-        900,
+        1100,
       );
       altitudeRef.current = GLOBE_HANDOFF_ALTITUDE;
 
       const prepareMap = () => {
-        // Position map at handoff zoom, ready to continue the zoom-in
+        // Pre-position map at handoff zoom so when it fades in, scale already matches
         map.jumpTo({ center: phase.center, zoom: MAP_HANDOFF_ZOOM });
       };
       if (map.loaded()) prepareMap();
       else map.once('load', prepareMap);
 
-      // At globe's bottom, swap and let map continue the zoom
+      // Swap at 400ms — flash overlay masks the moment of the layer swap
       window.setTimeout(() => {
-        setLayer('map');
-        const m = mapRef.current;
-        if (!m) return;
-        const continueZoom = () => {
-          m.easeTo({
-            center: phase.center,
-            zoom: phase.mapZoom,
-            duration: 1100,
-            essential: true,
-          });
-        };
-        if (m.loaded()) continueZoom();
-        else m.once('load', continueZoom);
-      }, 900);
+        flashSwap(() => {
+          setLayer('map');
+          const m = mapRef.current;
+          if (!m) return;
+          const continueZoom = () => {
+            m.easeTo({
+              center: phase.center,
+              zoom: phase.mapZoom,
+              duration: 1300,
+              essential: true,
+            });
+          };
+          if (m.loaded()) continueZoom();
+          else m.once('load', continueZoom);
+        });
+      }, 400);
       return;
     }
 
     if (phase.layer === 'globe' && layer === 'map') {
       // ─── RISE: map → globe ─────────────────────────────────────
+      // Block the auto zoom-out listener while we drive this transition
+      transitioningRef.current = true;
       const map = mapRef.current;
       if (map) {
         map.easeTo({
           center: phase.center,
           zoom: MAP_HANDOFF_ZOOM,
-          duration: 850,
+          duration: 1100,
           essential: true,
         });
       }
 
-      // Pre-position globe at handoff altitude so swap is invisible
+      // Pre-position globe at handoff altitude so when it fades in, scale matches
       globeRef.current?.pointOfView(
         { lat: phase.center[1], lng: phase.center[0], altitude: GLOBE_HANDOFF_ALTITUDE },
         0,
       );
       altitudeRef.current = GLOBE_HANDOFF_ALTITUDE;
 
+      // Swap at 400ms — flash overlay masks the moment of the layer swap
       window.setTimeout(() => {
-        setLayer('globe');
-        // Continue zoom-out on globe to final phase altitude
-        globeRef.current?.pointOfView(
-          { lat: phase.center[1], lng: phase.center[0], altitude: phase.altitude },
-          1100,
-        );
-        altitudeRef.current = phase.altitude;
-      }, 850);
+        flashSwap(() => {
+          setLayer('globe');
+          globeRef.current?.pointOfView(
+            { lat: phase.center[1], lng: phase.center[0], altitude: phase.altitude },
+            1300,
+          );
+          altitudeRef.current = phase.altitude;
+          window.setTimeout(() => { transitioningRef.current = false; }, 1400);
+        });
+      }, 400);
     }
   };
 
@@ -498,18 +559,36 @@ export default function GlobeTest5() {
   }, [layer]);
 
   /* ── Globe HTML marker element factory ────────────────────────── */
+  /* Same visual as prod /globe (GlobeTest2): avatar bubble + stem + anchored dot */
   const makeGlobeMarker = (d) => {
     const el = document.createElement('div');
-    el.className = 'globe5-marker';
-    el.style.setProperty('--c', d.familyColor || '#28D8DF');
-    el.innerHTML = `<i></i><span>${d.name}</span>`;
+    el.className = 'gt2-marker gt2-marker--avatar';
+    el.dataset.streamId = d.id;
+    el.style.setProperty('--marker-color', d.familyColor || '#28d8df');
+    const imgSrc = d.image || '';
+    el.innerHTML = imgSrc
+      ? `<div class="gt2-marker__bubble"><img src="${imgSrc}" alt="" loading="lazy" /></div><div class="gt2-marker__stem"></div><div class="gt2-marker__dot"></div>`
+      : `<div class="gt2-marker__bubble"><span class="gt2-marker__initial">${(d.name || '?')[0].toUpperCase()}</span></div><div class="gt2-marker__stem"></div><div class="gt2-marker__dot"></div>`;
     el.addEventListener('click', () => {
-      setSelectedId(d.id);
-      // Seamless dive: globe zooms into marker, then hand off to map at matching scale
+      const INTERMEDIATE_ALTITUDE = 0.4;
+      const alreadySelected = selectedIdRef.current === d.id;
+
+      if (!alreadySelected) {
+        // ── First click: zoom in on the globe only, stay on the globe layer ──
+        setSelectedId(d.id);
+        globeRef.current?.pointOfView(
+          { lat: d.coordinates[1], lng: d.coordinates[0], altitude: INTERMEDIATE_ALTITUDE },
+          1000,
+        );
+        altitudeRef.current = INTERMEDIATE_ALTITUDE;
+        return;
+      }
+
+      // ── Second click (same marker already selected): dive into the map layer ──
       const map = ensureMap();
       globeRef.current?.pointOfView(
         { lat: d.coordinates[1], lng: d.coordinates[0], altitude: GLOBE_HANDOFF_ALTITUDE },
-        900,
+        1100,
       );
       altitudeRef.current = GLOBE_HANDOFF_ALTITUDE;
 
@@ -519,14 +598,16 @@ export default function GlobeTest5() {
       if (map.loaded()) prepare(); else map.once('load', prepare);
 
       window.setTimeout(() => {
-        setLayer('map');
-        const m = mapRef.current;
-        if (!m) return;
-        const go = () => {
-          m.easeTo({ center: d.coordinates, zoom: 15.8, duration: 1100, essential: true });
-        };
-        if (m.loaded()) go(); else m.once('load', go);
-      }, 900);
+        flashSwap(() => {
+          setLayer('map');
+          const m = mapRef.current;
+          if (!m) return;
+          const go = () => {
+            m.easeTo({ center: d.coordinates, zoom: 15.8, duration: 1200, essential: true });
+          };
+          if (m.loaded()) go(); else m.once('load', go);
+        });
+      }, 400);
     });
     return el;
   };
@@ -566,8 +647,8 @@ export default function GlobeTest5() {
               backgroundColor="rgba(0,0,0,0)"
               globeImageUrl="/assets/globe/earth-night-threeglobe-4k.jpg"
               showAtmosphere={true}
-              atmosphereColor="rgba(40,216,223,0.18)"
-              atmosphereAltitude={0.11}
+              atmosphereColor="#5aa8ff"
+              atmosphereAltitude={0.22}
               showGraticules={false}
               htmlElementsData={MOCK_LIVES}
               htmlAltitude={0.01}
@@ -575,6 +656,16 @@ export default function GlobeTest5() {
               htmlLng={(d) => d.coordinates[0]}
               htmlElement={makeGlobeMarker}
               rendererConfig={{ antialias: true, powerPreference: 'high-performance' }}
+              onGlobeReady={() => {
+                const g = globeRef.current;
+                if (!g) return;
+                const scene = g.scene?.();
+                if (!scene) return;
+                scene.traverse((obj) => {
+                  if (obj.isAmbientLight) obj.intensity = 6.5;
+                  if (obj.isDirectionalLight) obj.intensity = 3.2;
+                });
+              }}
             />
           )}
         </div>
@@ -584,6 +675,12 @@ export default function GlobeTest5() {
           ref={mapContainerRef}
           className={`globe5__layer globe5__layer--map${showMap ? ' is-visible' : ''}${mapReady ? ' is-ready' : ''}`}
           style={{ pointerEvents: showMap ? 'auto' : 'none' }}
+        />
+
+        {/* Dark flash overlay — masks the layer swap moment */}
+        <div
+          className={`globe5__flash${isFlashing ? ' is-active' : ''}`}
+          aria-hidden="true"
         />
 
         {/* Phase pills */}
@@ -601,20 +698,20 @@ export default function GlobeTest5() {
           ))}
         </div>
 
-        {/* Controls */}
-        <div className="globe5__controls" aria-label="Map controls">
+        {/* Controls — same style as prod /globe */}
+        <div className="test-old-globe__controls" aria-label="Map controls">
           {showGlobe ? (
             <>
-              <button type="button" onClick={() => zoomGlobe('in')} aria-label="Zoom in"><Plus size={18} /></button>
-              <button type="button" onClick={() => zoomGlobe('out')} aria-label="Zoom out"><Minus size={18} /></button>
+              <button type="button" onClick={() => zoomGlobe('in')} aria-label="Zoom in"><Plus size={19} /></button>
+              <button type="button" onClick={() => zoomGlobe('out')} aria-label="Zoom out"><Minus size={19} /></button>
             </>
           ) : (
             <>
-              <button type="button" onClick={() => zoomMap(1)} aria-label="Zoom in"><Plus size={18} /></button>
-              <button type="button" onClick={() => zoomMap(-1)} aria-label="Zoom out"><Minus size={18} /></button>
+              <button type="button" onClick={() => zoomMap(1)} aria-label="Zoom in"><Plus size={19} /></button>
+              <button type="button" onClick={() => zoomMap(-1)} aria-label="Zoom out"><Minus size={19} /></button>
             </>
           )}
-          <button type="button" onClick={recenter} aria-label="Recenter"><LocateFixed size={18} /></button>
+          <button type="button" onClick={recenter} aria-label="Recenter"><LocateFixed size={19} /></button>
         </div>
 
         <div className="globe5__hint">
@@ -633,26 +730,27 @@ export default function GlobeTest5() {
         )}
 
         {selectedLive ? (
-          <aside className="globe5__card" aria-label={`Live from ${selectedLive.name}`}>
-            <button type="button" className="globe5__card-close" onClick={() => setSelectedId(null)} aria-label="Close">
+          <aside className="test-globe-card" aria-label={`Live from ${selectedLive.name}`} style={{ zIndex: 20 }}>
+            <button type="button" className="test-globe-card__close" onClick={() => setSelectedId(null)} aria-label="Close">
               <X size={14} strokeWidth={2} />
             </button>
             <img src={selectedLive.image} alt="" loading="lazy" />
-            <div className="globe5__card-body">
-              <span className="globe5__card-tag" style={{ '--c': selectedLive.familyColor }}>
-                <i />{selectedLive.subcategory}
-              </span>
-              <h3>{selectedLive.experienceTitle}</h3>
-              <p>{selectedLive.name} · {selectedLive.city}, {selectedLive.country}</p>
-              <strong>{selectedLive.viewers} viewers</strong>
-              <div className="globe5__card-actions">
+            <div className="test-globe-card__body">
+              <div className="test-globe-card__info">
+                <span className="test-globe-card__tag" style={{ '--experience-color': selectedLive.familyColor }}>
+                  <i />{selectedLive.subcategory}
+                </span>
+                <h2>{selectedLive.experienceTitle}</h2>
+                <p>{selectedLive.name} · {selectedLive.city}, {selectedLive.country}</p>
+                <strong>{selectedLive.viewers} viewers</strong>
+              </div>
+              <div className="test-globe-card__actions">
                 <button
                   type="button"
-                  className="globe5__card-watch"
+                  className="test-globe-card__watch"
                   onClick={() => navigate(`/watch?live=${encodeURIComponent(selectedLive.id)}`)}
                 >
-                  <Play size={13} fill="currentColor" strokeWidth={1.8} />
-                  Watch
+                  <Play size={13} fill="currentColor" strokeWidth={1.8} />Watch
                 </button>
               </div>
             </div>

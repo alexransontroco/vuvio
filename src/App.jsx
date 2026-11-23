@@ -41,10 +41,12 @@ const HelpPage            = lazy(() => import('./routes/HelpPage.jsx'));
 const InternalStreamAdminPage = lazy(() => import('./routes/InternalStreamAdminPage.jsx'));
 const CurrentGlobePage    = lazy(() => import('./routes/CurrentGlobePage.jsx'));
 const GlobeTest2Page      = lazy(() => import('./routes/GlobeTest2Page.jsx'));
-const GlobeTest3Page      = lazy(() => import('./routes/GlobeTest3Page.jsx'));
 const GlobeTest4Page      = lazy(() => import('./routes/GlobeTest4Page.jsx'));
 const GlobeTest5Page      = lazy(() => import('./routes/GlobeTest5Page.jsx'));
 const GlobeTest6Page      = lazy(() => import('./routes/GlobeTest6Page.jsx'));
+const GlobeTest7Page      = lazy(() => import('./routes/GlobeTest7Page.jsx'));
+const GlobeTest8Page      = lazy(() => import('./routes/GlobeTest8Page.jsx'));
+const GlobeCesiumPage     = lazy(() => import('./routes/GlobeCesiumPage.jsx'));
 const LoginPage           = lazy(() => import('./routes/LoginPage.jsx'));
 const LiveRecapPage       = lazy(() => import('./routes/LiveRecapPageSimple.jsx'));
 const LiveSummaryPage     = lazy(() => import('./routes/LiveSummaryPage.jsx'));
@@ -222,10 +224,12 @@ export default function App() {
         <Route path="/globe-current" element={<Lazy component={CurrentGlobePage} />} />
         <Route path="/map-current"   element={<Lazy component={CurrentGlobePage} />} />
         <Route path="/globe-test-2"  element={<Lazy component={GlobeTest2Page} />} />
-        <Route path="/globe-test-3"  element={<Lazy component={GlobeTest3Page} />} />
         <Route path="/globe-test-4"  element={<Lazy component={GlobeTest4Page} />} />
         <Route path="/globe-test-5"  element={<Lazy component={GlobeTest5Page} />} />
         <Route path="/globe-test-6"  element={<Lazy component={GlobeTest6Page} />} />
+        <Route path="/globe-test-7"  element={<Lazy component={GlobeTest7Page} />} />
+        <Route path="/globe-test-8"  element={<Lazy component={GlobeTest8Page} />} />
+        <Route path="/globe-cesium"  element={<Lazy component={GlobeCesiumPage} />} />
         <Route path="/terms"       element={<Lazy component={TermsPage} />} />
         <Route path="/privacy"    element={<Lazy component={PrivacyPage} />} />
         <Route path="/guidelines" element={<Lazy component={CommunityGuidelinesPage} />} />
