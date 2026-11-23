@@ -18,7 +18,7 @@ import { LivePresenceOverlay } from '../components/social/LivePresenceOverlay.js
 import { lives } from '../data/lives.js';
 import { mapStreams } from '../data/mapStreams.js';
 import { streams, upcomingStreams } from '../data/mockStreams.js';
-import { getCreatedLives, getCreatedLiveStream, registerCreatedLiveStream, subscribeToCreatedLives, publishLivePing, updateCreatedLive } from '../services/createdLiveService.js';
+import { getCreatedLives, getCreatedLiveStream, registerCreatedLiveStream, subscribeToCreatedLives, publishLivePing, updateCreatedLive, waitForCreatedLiveSaved } from '../services/createdLiveService.js';
 import { getLiveDestinations, clearLiveDestinations, createCloudflareOutput, deleteCloudflareOutput } from '../services/streamDestinationsService.js';
 import { startBroadcast, stopBroadcast, watchBroadcast, closePeer, getLocalStream, getRemoteStream, startRtmpRelayBroadcast, stopRtmpRelayBroadcast, stopRtmpRelayBroadcastSync, startWhipConnection, startWhepViewer, stopWhepViewer } from '../services/webrtcService.js';
 import { collection, doc, onSnapshot, query, where, getDocs, getDoc, addDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
@@ -1560,6 +1560,7 @@ function CreatorLiveSession({ live, onEndingChange }) {
       let capturedWhepUrl = live.whepUrl || null;
       try {
         // ── Step 1: Create Cloudflare live input ──
+        if (!(await waitForCreatedLiveSaved(live.id))) throw new Error('Live could not be saved');
         // Always call the backend — never reuse webRTCUrl/streamKey cached in Firestore,
         // as those credentials may point to a deleted live input.
         try {
@@ -3620,8 +3621,6 @@ function LiveViewer({ liveId, creatorMode = false }) {
     const text = chatDraft.trim();
     const targetLiveId = activeLiveId || liveId;
     if (!text || !targetLiveId || !user?.uid) return;
-    const sentAt = Date.now();
-
     chatInputRef.current?.blur();
     pointerStart.current = null;
     setIsDragging(false);
@@ -3643,15 +3642,6 @@ function LiveViewer({ liveId, creatorMode = false }) {
 
     try {
       const commentsRef = collection(db, `activeLives/${targetLiveId}/comments`);
-      const latestComment = {
-        id: `${targetLiveId}-${sentAt}`,
-        text,
-        userId: user.uid,
-        userDisplayName: user.displayName || 'Anonymous',
-        userPhotoURL: user.photoURL || null,
-        avatar: '👤',
-        timestamp: new Date().toISOString(),
-      };
       const liveStartMs = live.liveStartedAt?.toMillis?.() ?? (live.liveStartedAt?.seconds != null ? live.liveStartedAt.seconds * 1000 : null);
       const liveElapsedSeconds = liveStartMs ? Math.max(0, Math.round((Date.now() - liveStartMs) / 1000)) : null;
       await addDoc(commentsRef, {
@@ -3661,11 +3651,6 @@ function LiveViewer({ liveId, creatorMode = false }) {
         userPhotoURL: user.photoURL || null,
         timestamp: serverTimestamp(),
         ...(liveElapsedSeconds != null ? { liveElapsedSeconds } : {}),
-      });
-      await updateDoc(doc(db, 'activeLives', targetLiveId), {
-        latestComment,
-        latestCommentAt: serverTimestamp(),
-        updatedAt: serverTimestamp(),
       });
     } catch (err) {
       console.error('[LiveViewer] Failed to save comment:', err);

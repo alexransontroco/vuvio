@@ -3,9 +3,16 @@ import type { Response } from 'express';
 import { authenticateUser } from '../middleware/authenticateUser.js';
 import { ApiError } from '../shared/errors.js';
 import { getCloudflareEnv } from '../config/env.js';
+import { db } from '../shared/firestore.js';
+import { requireLiveCreator, requirePublicActiveLive } from '../shared/validation.js';
 
 export async function createUploadUrl(req: Request, res: Response, streamId: string) {
-  await authenticateUser(req);
+  const user = await authenticateUser(req);
+  const snap = await db.collection('activeLives').doc(streamId).get();
+  if (!snap.exists) throw new ApiError('not_found', 'Live not found');
+  const live = snap.data() ?? {};
+  requireLiveCreator(live, user.uid);
+  requirePublicActiveLive(live);
 
   const { accountId, apiToken, customerCode } = getCloudflareEnv();
   if (!accountId || !apiToken) throw new ApiError('server_error', 'Cloudflare not configured');

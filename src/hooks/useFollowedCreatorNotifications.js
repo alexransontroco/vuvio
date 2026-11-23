@@ -15,6 +15,7 @@ export function useFollowedCreatorNotifications(userProfile) {
 
     const q = query(
       collection(db, 'activeLives'),
+      where('publicSafe', '==', true),
       where('status', '==', 'live')
     );
 
@@ -23,6 +24,7 @@ export function useFollowedCreatorNotifications(userProfile) {
 
       snapshot.docChanges().forEach((change) => {
         const live = change.doc.data();
+        if (live.status !== 'live') return;
         console.log('[Notifications] Change type:', change.type, 'Live:', live.id, 'Creator UID:', live.creatorUid);
 
         if (change.type === 'added') {

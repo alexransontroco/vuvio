@@ -165,9 +165,11 @@ export default function ScheduleLiveSheet({ existingLive, onClose, onScheduled, 
                   key={v.id}
                   type="button"
                   className={`schedule-sheet__chip${visibility === v.id ? ' is-active' : ''}`}
+                  disabled={v.id !== 'public'}
+                  title={v.id !== 'public' ? 'Temporarily unavailable' : undefined}
                   onClick={() => setVisibility(v.id)}
                 >
-                  {v.label}
+                  {v.label}{v.id !== 'public' ? ' · Soon' : ''}
                 </button>
               ))}
             </div>

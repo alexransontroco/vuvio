@@ -407,9 +407,11 @@ function StartLiveFlow({
                   key={opt}
                   type="button"
                   className={draft.privacy === opt ? 'is-active' : ''}
+                  disabled={opt !== 'Everyone'}
+                  title={opt !== 'Everyone' ? 'Temporarily unavailable' : undefined}
                   onClick={() => { onUpdateDraft('privacy', opt); setPrivacyOpen(false); }}
                 >
-                  {opt}
+                  {opt}{opt !== 'Everyone' ? ' · Soon' : ''}
                 </button>
               ))}
             </div>
@@ -643,9 +645,11 @@ function ScheduleLiveFlow({ draft, onUpdateDraft, onSchedule, status, error }) {
             key={opt}
             type="button"
             className={`schedule-live-privacy${draft.privacy === opt ? ' is-active' : ''}`}
+            disabled={opt !== 'Everyone'}
+            title={opt !== 'Everyone' ? 'Temporarily unavailable' : undefined}
             onClick={() => onUpdateDraft('privacy', opt)}
           >
-            {opt}
+            {opt}{opt !== 'Everyone' ? ' · Soon' : ''}
           </button>
         ))}
       </div>

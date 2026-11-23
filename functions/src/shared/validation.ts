@@ -49,7 +49,23 @@ export function parseVisibility(value: unknown): StreamVisibility {
   if (typeof value !== 'string' || !visibilities.has(value as StreamVisibility)) {
     throw new ApiError('bad_request', 'visibility is invalid');
   }
+  if (value !== 'public') throw new ApiError('bad_request', 'Only public lives are available');
   return value as StreamVisibility;
+}
+
+export function requirePublicActiveLive(live: Record<string, unknown>) {
+  if (live.publicSafe !== true || live.visibility !== 'public' || live.privacy !== 'Everyone') {
+    throw new ApiError('not_found', 'Live not found');
+  }
+}
+
+export function requireLiveCreator(live: Record<string, unknown>, uid: string) {
+  if (live.creatorUid !== uid) throw new ApiError('forbidden', 'Only the creator can manage this live');
+}
+
+export function isDiagnosticAdminToken(token: { admin?: boolean; email?: string; email_verified?: boolean }) {
+  return token.admin === true || token.email_verified === true
+    && (token.email === 'alexandre.ranson@gmail.com' || token.email?.endsWith('@vuvio.app') === true);
 }
 
 export function parseApproximateLocation(input: Record<string, unknown>) {

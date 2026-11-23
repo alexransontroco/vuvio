@@ -20,6 +20,7 @@ export async function activateScheduledStream(req: Request, res: Response, strea
   if (!snap.exists) throw new ApiError('not_found', 'Stream not found');
   const stream = snap.data() as StreamDocument;
   if (stream.creatorId !== user.uid) throw new ApiError('forbidden', 'Only the creator can activate this stream');
+  if (stream.visibility !== 'public') throw new ApiError('forbidden', 'Only public lives can be activated');
   const conflict = assertStatus(stream.status, ['scheduled'], 'Activate');
   if (conflict) throw new ApiError('conflict', conflict);
 

@@ -4,7 +4,7 @@ import { authenticateUser } from '../middleware/authenticateUser.js';
 import { db } from '../shared/firestore.js';
 import { createCloudflareClient } from './cloudflareClient.js';
 import { ApiError } from '../shared/errors.js';
-import { asRecord, stringField } from '../shared/validation.js';
+import { asRecord, stringField, requirePublicActiveLive } from '../shared/validation.js';
 
 async function assertOwnsLiveInput(uid: string, liveInputId: string) {
   const snap = await db
@@ -30,7 +30,8 @@ export async function createLiveOutputHandler(req: Request, res: Response, liveI
   const provider = stringField(body, 'provider', { max: 32 }) ?? 'custom';
   const name = stringField(body, 'name', { max: 80 }) ?? provider;
 
-  await assertOwnsLiveInput(user.uid, liveInputId);
+  const live = await assertOwnsLiveInput(user.uid, liveInputId);
+  requirePublicActiveLive(live.data());
 
   const client = createCloudflareClient();
   const output = await client.createLiveOutput(liveInputId, url, streamKey);

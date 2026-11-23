@@ -6,14 +6,18 @@ const project = process.env.GCLOUD_PROJECT || 'demo-vuvio-security';
 const root = `http://${host}/v1/projects/${project}/databases/(default)/documents`;
 const skip = !host;
 
-function token(uid) {
+function token(uid, claims = {}) {
   const encode = (value) => Buffer.from(JSON.stringify(value)).toString('base64url');
   const now = Math.floor(Date.now() / 1000);
-  return `${encode({ alg: 'none', typ: 'JWT' })}.${encode({ aud: project, iss: `https://securetoken.google.com/${project}`, sub: uid, user_id: uid, iat: now, exp: now + 3600, firebase: { sign_in_provider: 'password' } })}.`;
+  return `${encode({ alg: 'none', typ: 'JWT' })}.${encode({ aud: project, iss: `https://securetoken.google.com/${project}`, sub: uid, user_id: uid, iat: now, exp: now + 3600, firebase: { sign_in_provider: 'password' }, ...claims })}.`;
 }
 
 function fields(values) {
-  return Object.fromEntries(Object.entries(values).map(([key, value]) => [key, typeof value === 'string' ? { stringValue: value } : { arrayValue: { values: value.map((item) => ({ stringValue: item })) } }]));
+  return Object.fromEntries(Object.entries(values).map(([key, value]) => [key,
+    typeof value === 'string' ? { stringValue: value }
+      : typeof value === 'boolean' ? { booleanValue: value }
+        : { arrayValue: { values: value.map((item) => ({ stringValue: item })) } },
+  ]));
 }
 
 async function seed(collection, id, values) {
@@ -33,6 +37,10 @@ async function read(id, uid) {
 
 before(async () => {
   if (skip) return;
+  assert.match(host, /^(127\.0\.0\.1|localhost):\d+$/);
+  assert.match(project, /^demo-/);
+  const cleared = await fetch(`http://${host}/emulator/v1/projects/${project}/databases/(default)/documents`, { method: 'DELETE' });
+  assert.equal(cleared.status, 200);
   await seed('users', 'follower', { uid: 'follower', followedCreators: ['creator'] });
   for (const [id, visibility, privacy] of [
     ['security-public', 'public', 'Everyone'],
@@ -45,14 +53,19 @@ before(async () => {
       status: 'live',
       visibility,
       privacy,
+      ...(visibility === 'public' ? { publicSafe: true } : {}),
       hlsManifestUrl: 'https://customer-example.cloudflarestream.com/example/manifest/video.m3u8',
-      streamKey: 'fake-ingest-key',
+      ...(visibility === 'public' ? {} : { streamKey: 'fake-ingest-key' }),
     });
   }
+  await seed('activeLives/security-private/comments', 'private-comment', { text: 'confidential' });
+  await seed('activeLives/security-private/watchers', 'private-watcher', { sdpAnswer: 'confidential' });
 });
 
 test('anonymous viewer can read a public live', { skip }, async () => {
-  assert.equal((await read('security-public')).status, 200);
+  const response = await read('security-public');
+  assert.equal(response.status, 200);
+  assert.equal(JSON.stringify(await response.json()).includes('streamKey'), false);
 });
 
 test('anonymous and unrelated users cannot read a private live', { skip }, async () => {
@@ -60,17 +73,46 @@ test('anonymous and unrelated users cannot read a private live', { skip }, async
   assert.equal((await read('security-private', 'outsider')).status, 403);
 });
 
+test('unverified email cannot impersonate an administrator', { skip }, async () => {
+  const response = await fetch(`${root}/activeLives/security-private`, {
+    headers: { Authorization: `Bearer ${token('outsider', { email: 'fake@vuvio.app', email_verified: false })}` },
+  });
+  assert.equal(response.status, 403);
+});
+
 test('creator can read their private live', { skip }, async () => {
   assert.equal((await read('security-private', 'creator')).status, 200);
 });
 
-test('only a follower can read a followers-only live', { skip }, async () => {
-  assert.equal((await read('security-followers', 'follower')).status, 200);
+test('followers-only lives are unavailable during the public-only MVP', { skip }, async () => {
+  assert.equal((await read('security-followers', 'follower')).status, 403);
   assert.equal((await read('security-followers', 'outsider')).status, 403);
+});
+
+test('private live comments and signaling are not readable anonymously', { skip }, async () => {
+  assert.equal((await fetch(`${root}/activeLives/security-private/comments/private-comment`)).status, 403);
+  assert.equal((await fetch(`${root}/activeLives/security-private/watchers/private-watcher`)).status, 403);
 });
 
 test('anonymous collection list cannot expose restricted live metadata', { skip }, async () => {
   assert.equal((await fetch(`${root}/activeLives`)).status, 403);
+});
+
+test('anonymous public feed query returns only approved lives', { skip }, async () => {
+  const response = await fetch(`http://${host}/v1/projects/${project}/databases/(default)/documents:runQuery`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ structuredQuery: {
+      from: [{ collectionId: 'activeLives' }],
+      where: { compositeFilter: { op: 'AND', filters: [
+        { fieldFilter: { field: { fieldPath: 'publicSafe' }, op: 'EQUAL', value: { booleanValue: true } } },
+        { fieldFilter: { field: { fieldPath: 'status' }, op: 'EQUAL', value: { stringValue: 'live' } } },
+      ] } },
+    } }),
+  });
+  assert.equal(response.status, 200);
+  const rows = await response.json();
+  assert.deepEqual(rows.flatMap((row) => row.document ? [row.document.name.split('/').at(-1)] : []), ['security-public']);
 });
 
 test('anonymous client cannot modify a live document', { skip }, async () => {
@@ -78,6 +120,58 @@ test('anonymous client cannot modify a live document', { skip }, async () => {
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ fields: fields({ title: 'unauthorized change' }) }),
+  });
+  assert.equal(response.status, 403);
+});
+
+test('another authenticated user cannot modify the creator live', { skip }, async () => {
+  const response = await fetch(`${root}/activeLives/security-public?updateMask.fieldPaths=title`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token('outsider')}` },
+    body: JSON.stringify({ fields: fields({ title: 'unauthorized change' }) }),
+  });
+  assert.equal(response.status, 403);
+});
+
+test('creator can update their public live', { skip }, async () => {
+  const response = await fetch(`${root}/activeLives/security-public?updateMask.fieldPaths=title`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token('creator')}` },
+    body: JSON.stringify({ fields: fields({ title: 'Public update' }) }),
+  });
+  assert.equal(response.status, 200);
+});
+
+test('creator can create a public live without ingest secrets', { skip }, async () => {
+  const response = await fetch(`${root}/activeLives/new-public-live`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token('creator')}` },
+    body: JSON.stringify({ fields: fields({ id: 'new-public-live', creatorUid: 'creator', status: 'live', publicSafe: true, visibility: 'public', privacy: 'Everyone', title: 'Public live' }) }),
+  });
+  assert.equal(response.status, 200);
+  assert.equal((await read('new-public-live')).status, 200);
+});
+
+test('clients cannot create private lives or public documents with ingest keys', { skip }, async () => {
+  for (const [id, visibility, privacy, extra] of [
+    ['blocked-private', 'private', 'Private', {}],
+    ['blocked-followers', 'followers', 'Followers', {}],
+    ['blocked-secret', 'public', 'Everyone', { streamKey: 'fake-ingest-key' }],
+  ]) {
+    const response = await fetch(`${root}/activeLives/${id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token('creator')}` },
+      body: JSON.stringify({ fields: fields({ id, creatorUid: 'creator', status: 'live', publicSafe: true, visibility, privacy, ...extra }) }),
+    });
+    assert.equal(response.status, 403, id);
+  }
+});
+
+test('creator cannot add an unapproved field to a public live', { skip }, async () => {
+  const response = await fetch(`${root}/activeLives/security-public?updateMask.fieldPaths=internalSecret`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token('creator')}` },
+    body: JSON.stringify({ fields: fields({ internalSecret: 'fake-secret' }) }),
   });
   assert.equal(response.status, 403);
 });

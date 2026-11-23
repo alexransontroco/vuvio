@@ -7,9 +7,34 @@ Périmètre : branche `fix/creator-acquisition-mvp`, PR #2. Audit du code et des
 
 ## Conclusion
 
-**Les modes Private et Followers ne sont pas sécurisés.** Un identifiant de live connu permet de lire les métadonnées et les URLs de lecture dans `activeLives`. Les entrées Cloudflare Live sont configurées avec `requireSignedURLs: false`, y compris lors de `ensureRecordingEnabled`. Le filtrage React et l'aperçu Open Graph générique de la PR ne protègent ni la base ni la vidéo. Le MVP public continue de fonctionner sans inscription et doit rester ainsi.
+**Les modes Private et Followers ne sont pas sécurisés en production.** Un identifiant de live connu permet de lire les métadonnées et les URLs de lecture dans `activeLives` avec les règles actuellement déployées. Les entrées Cloudflare Live sont configurées avec `requireSignedURLs: false`, y compris lors de `ensureRecordingEnabled`. La décision produit du MVP est désormais **Public Only**. Les corrections ci-dessous sont présentes dans la branche et testées localement ; aucun déploiement ni traitement des ressources existantes n'a été effectué.
 
-## Accès observés
+## Correction Public Only préparée dans la branche
+
+- Start Live et Schedule affichent Private/Followers comme temporairement indisponibles. `parseVisibility` rejette explicitement ces valeurs côté API avant la création d'un input Cloudflare ; activation et démarrage d'anciens programmes non publics sont aussi refusés.
+- Les nouveaux `activeLives` publics portent `publicSafe: true`, `visibility: public`, `privacy: Everyone`. Le client ne copie plus `streamKey` ni `webRTCUrl` dans Firestore ou dans son cache local. Les règles refusent les clés d'ingest et les champs ajoutés hors liste approuvée dans les créations et modifications ; elles réservent les écritures du document au propriétaire. Les spectateurs conservent leurs sous-collections de chat et de signalisation pour les lives publics. Les lectures des sous-collections privées sont refusées.
+- Les requêtes publiques Watch, Map, notifications et profils filtrent `publicSafe == true` ; deux index de collection sont déclarés. Les requêtes du créateur par `creatorUid` et les lectures d'administration restent distinctes. Les anciens documents sans marqueur restent inaccessibles publiquement **jusqu'à une migration explicite**.
+- `createLiveInputHandler` exige un document public approuvé appartenant à l'appelant avant toute opération Cloudflare et ne crée plus de document de secours. Les endpoints de lecture stream/gear/replay refusent les ressources non publiques ; la création d'URL d'upload replay vérifie le propriétaire et le statut public. Les diagnostics Cloudflare, qui exposaient sans authentification toutes les clés d'input et permettaient de créer un input test, exigent désormais un compte administrateur avec claim `admin` ou email autorisé **vérifié**. Le même durcissement s'applique aux lectures Firestore réservées à l'administration. Les sorties multistream ne peuvent plus être ajoutées à un live non public.
+- Les aperçus Open Graph ne reprennent les données que des `streams` publics ou des `activeLives` publics approuvés. Les liens d'un live non public conservent une présentation générique. La vérification de propriété des highlights accepte le champ `creatorUid` utilisé par les lives du client. Les URLs HLS publiques et `requireSignedURLs: false` restent inchangés pour les lives publics.
+
+### Validation locale de cette correction
+
+L'émulateur Firestore valide **14/14 scénarios** : lecture et création publiques, refus Private/Followers, refus des sous-collections privées, refus de la liste brute et des écritures anonymes/étrangères, gestion par le propriétaire, rejet des clés d'ingest, des champs inconnus et d'une adresse administrateur non vérifiée. Les tests Functions valident **4/4 politiques** de visibilité, de propriété et d'administration ; les **3/3 tests de liens** passent. L'inventaire en lecture seule a été essayé sur les documents fictifs de l'émulateur. Les builds frontend et Functions passent sous Node 22. Aucun test sur un CDN Cloudflare réel, un navigateur Instagram ou une base de production n'a été effectué. Ces résultats ne remplacent pas une validation de bout en bout après migration.
+
+### Inventaire et ordre de mise en service — aucune étape exécutée en production
+
+1. En environnement autorisé, exécuter `node functions/scripts/auditLiveVisibility.mjs --project=<id>` avec un compte Admin SDK dédié. Ce script est en lecture seule, signale les ID, les variantes de visibilité, la présence de secrets, d'inputs, de replays et de couvertures ; il ne sort aucune clé. Vérifier le projet et le volume de documents avant l'exécution. Les valeurs à traiter incluent `private`, `followers`, `followers-only`, `Private`, `Followers`, l'absence de visibilité et tout autre libellé inattendu.
+2. Établir la liste des inputs Cloudflare, replays, highlights et couvertures liés aux documents non publics. Examiner les usages, la diffusion active et les liens déjà partagés. Vérifier séparément l'accès CDN avec l'ID seul. Les URLs non signées des ressources existantes restent potentiellement accessibles même lorsque Firestore les masque. Réserver toute restriction Cloudflare, révocation ou rotation de clé à une intervention validée avec plan d'impact et possibilité de retour arrière ; ne supprimer aucun live ni enregistrement automatiquement.
+3. Avant de rendre les nouvelles règles actives, assainir les documents publics existants : supprimer les champs de secret, confirmer `visibility: public` et `privacy: Everyone`, puis poser `publicSafe: true` **uniquement** sur ces documents. Ne jamais convertir une valeur privée ou ambiguë en public. Contrôler aussi tous les documents déjà marqués `publicSafe: true` : les anciennes règles autorisent actuellement leur falsification. Prévoir une vérification de concurrence entre inventaire et bascule.
+4. Tester sur un environnement de préproduction la compilation, les index, les règles, les Functions et le frontend ensemble. Vérifier la lecture anonyme d'un ancien et d'un nouveau live public, la programmation/activation, HLS multi-spectateurs, chat/P2P, OG, replay et le retour créateur. Déployer ensuite seulement dans un ordre coordonné ; publier les règles avant l'assainissement couperait les anciens lives publics.
+
+### Risques résiduels
+
+- Le marqueur `publicSafe` garantit la requête publique seulement si l'inventaire préalable et tous les écrivains Admin SDK le posent exclusivement sur des documents assainis. Les règles ne filtrent ni les champs ni les résultats et ne s'appliquent pas à l'Admin SDK. Une validation des données existantes est obligatoire.
+- `storage.rules` permet encore la lecture publique des `live-covers`; un lien de couverture non publique déjà connu peut rester accessible. Les protéger via une règle Storage consultant Firestore nécessiterait un accès interservices, des lectures facturées et des essais pour les miniatures Upcoming. Aucun changement Storage non testé n'a été appliqué.
+- Les inputs et enregistrements Cloudflare préexistants avec `requireSignedURLs: false` restent accessibles selon leurs réglages Cloudflare. Le code de cette branche empêche d'en créer de nouveaux en mode non public, sans révoquer les anciens. Les clés d'ingest déjà lisibles doivent être considérées compromises jusqu'à inventaire puis rotation/révocation validée.
+
+## Accès observés avant correction
 
 | Surface | Comportement actuel et preuve |
 | --- | --- |
@@ -24,9 +49,9 @@ Périmètre : branche `fix/creator-acquisition-mvp`, PR #2. Audit du code et des
 
 Les champs de visibilité ne sont pas normalisés : `streams` utilise `visibility` (`public`, `private`, `followers`), tandis que le live client utilise surtout `privacy` (`Everyone`, `Private`, `Followers`). Les lives plus anciens ou créés par le chemin Cloudflare de secours peuvent manquer de champ canonique. Une règle nouvelle basée sur un seul de ces champs bloquerait des lives publics ou laisserait des exceptions. Les abonnements sont enregistrés dans `users/{uid}.followedCreators`, modifiables par l'utilisateur concerné ; aucun modèle d'invitation explicite pour Private n'est présent.
 
-## Test Firestore reproductible
+## Preuve initiale avant correction
 
-`test/liveVisibility.emulator.test.mjs` crée trois documents fictifs (public, privé, abonnés) et un profil d'abonné. Exécuter avec l'émulateur Firestore d'un projet `demo-...` et `FIRESTORE_EMULATOR_HOST` défini. Le test exprime la politique attendue, pas le comportement actuel. L'essai sur les règles de cette branche donne **2 réussites et 4 échecs attendus** :
+Le premier essai sur les anciennes règles donnait **2 réussites et 4 échecs**, reproduisant les accès indus. `test/liveVisibility.emulator.test.mjs` a ensuite été adapté à la décision Public Only et passe maintenant entièrement. Exécuter la version actuelle avec un projet d'émulateur `demo-...` :
 
 ```bash
 firebase emulators:start --only firestore --project demo-vuvio-security --config firebase.security-emulator.json
@@ -38,7 +63,7 @@ FIRESTORE_EMULATOR_HOST=127.0.0.1:8185 GCLOUD_PROJECT=demo-vuvio-security node -
 | Anonyme → public | Autorisé | Autorisé |
 | Anonyme/non autorisé → Private | Refusé | Autorisé |
 | Créateur → Private | Autorisé | Autorisé |
-| Abonné → Followers, non abonné refusé | Autorisé/refusé | Tous autorisés |
+| Abonné → Followers, non abonné refusé | Refusés dans le MVP Public Only | Tous autorisés avant correction |
 | Liste anonyme mélangeant les visibilités | Refusée | Autorisée |
 | Modification anonyme d'un live | Refusée | Autorisée |
 
@@ -46,9 +71,9 @@ Le test manuel complémentaire confirme que les réponses anonymes incluent les 
 
 Validation complémentaire : `npm run build` (frontend) et `npm --prefix functions run build` réussissent avec Node 22 ; les trois tests de liens publics de `test/liveLinks.test.mjs` réussissent. Le build Vite signale des ressources absentes au moment de la compilation et des avertissements de taille de bundles, sans échec. Aucun test vidéo réel ni test d'aperçu sur un crawler Instagram ou WhatsApp n'a été effectué.
 
-## Plan minimal à faire valider avant implémentation
+## Options archivées de l'audit initial
 
-### Option A — pilotes publics uniquement
+### Option A — pilotes publics uniquement (retenue)
 
 Suspendre les choix Private et Followers dans Start Live et refuser côté Functions leur création ou activation tant que la protection vidéo n'est pas prête. Garder le parcours public, HLS et le partage inchangés. Inventorier les sessions et enregistrements non publics déjà créés, retirer ou sécuriser leurs accès Cloudflare et les secrets exposés avant de déclarer ce mode indisponible. Cette option ne remplit pas encore la table d'accès Private/Followers ; elle évite de créer de nouveaux lives faussement privés pendant les pilotes. Elle exige une décision produit et une migration prudente des sessions existantes.
 

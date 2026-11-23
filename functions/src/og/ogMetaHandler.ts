@@ -185,13 +185,24 @@ function buildImage(stream: ShareableLive): string {
 
 async function getShareableLive(streamId: string): Promise<ShareableLive | null> {
   const streamSnap = await db.collection(collections.streams).doc(streamId).get();
-  if (streamSnap.exists) return enrichCreator(streamSnap.data() as ShareableLive);
+  if (streamSnap.exists) {
+    const stream = streamSnap.data() as ShareableLive;
+    return stream.visibility === 'public' ? enrichCreator(stream) : null;
+  }
 
   const activeLiveSnap = await db.collection('activeLives').doc(streamId).get();
-  if (activeLiveSnap.exists) return enrichCreator(activeLiveSnap.data() as ShareableLive);
+  if (activeLiveSnap.exists) {
+    const stream = activeLiveSnap.data() as ShareableLive & { publicSafe?: boolean };
+    return stream.publicSafe === true && stream.visibility === 'public' && stream.privacy === 'Everyone'
+      ? enrichCreator(stream) : null;
+  }
 
   const createdSnap = await db.collection('activeLives').doc(`created-${streamId}`).get();
-  if (createdSnap.exists) return enrichCreator(createdSnap.data() as ShareableLive);
+  if (createdSnap.exists) {
+    const stream = createdSnap.data() as ShareableLive & { publicSafe?: boolean };
+    return stream.publicSafe === true && stream.visibility === 'public' && stream.privacy === 'Everyone'
+      ? enrichCreator(stream) : null;
+  }
 
   if (mockShareLives[streamId]) return mockShareLives[streamId];
 
@@ -297,7 +308,7 @@ export async function ogMetaHandler(req: Request, res: Response, streamId: strin
   let image = DEFAULT_IMAGE;
   const stream = await getShareableLive(streamId);
 
-  if (stream && stream.visibility !== 'private' && stream.visibility !== 'followers' && stream.privacy !== 'Private' && stream.privacy !== 'Followers') {
+  if (stream) {
     title = buildTitle(stream, title);
     description = isRecap ? buildRecapDescription(stream) : buildDescription(stream);
     image = buildImage(stream);
@@ -317,7 +328,7 @@ export async function ogImageHandler(req: Request, res: Response, streamId: stri
   let image = DEFAULT_IMAGE;
   const stream = await getShareableLive(streamId);
 
-  if (stream && stream.visibility !== 'private' && stream.visibility !== 'followers' && stream.privacy !== 'Private' && stream.privacy !== 'Followers') {
+  if (stream) {
     image = buildImage(stream);
   }
 

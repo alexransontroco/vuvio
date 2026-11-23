@@ -5,7 +5,7 @@ import { authenticateUser } from '../middleware/authenticateUser.js';
 import { db } from '../shared/firestore.js';
 import { createLiveInput, createCloudflareClient } from './cloudflareClient.js';
 import { ApiError } from '../shared/errors.js';
-import { asRecord, stringField } from '../shared/validation.js';
+import { asRecord, stringField, requireLiveCreator, requirePublicActiveLive } from '../shared/validation.js';
 
 const RTMPS_RELAY_URL = process.env.RTMPS_RELAY_URL || '';
 
@@ -30,6 +30,10 @@ export async function createLiveInputHandler(req: Request, res: Response) {
 
     // Detect stale Cloudflare UID in Firestore and warn — we always create fresh credentials
     const existingDoc = await liveRef.get().catch(() => null);
+    if (!existingDoc?.exists) throw new ApiError('not_found', 'Live not found');
+    const existingLive = existingDoc.data() as Record<string, unknown>;
+    requireLiveCreator(existingLive, user.uid);
+    requirePublicActiveLive(existingLive);
     const existingCfUid = existingDoc?.exists
       ? ((existingDoc.data() as Record<string, unknown>)?.cloudflareLiveInputId as string | undefined) ?? null
       : null;
@@ -80,21 +84,7 @@ export async function createLiveInputHandler(req: Request, res: Response) {
       updatedAt: FieldValue.serverTimestamp(),
     };
 
-    await liveRef.update(cloudflareFields).catch(async (err) => {
-      if (err.code === 5) {
-        await liveRef.set({
-          id: streamId,
-          title,
-          creatorId: user.uid,
-          creatorUid: user.uid,
-          ...cloudflareFields,
-          status: 'preparing',
-          createdAt: new Date(),
-        }, { merge: true });
-      } else {
-        throw err;
-      }
-    });
+    await liveRef.update(cloudflareFields);
 
     const hasRelay = Boolean(RTMPS_RELAY_URL && input.ingestUrl && input.streamKey);
     console.log(`[CLOUDFLARE] relay check — relayUrl: ${RTMPS_RELAY_URL || 'none'} | rtmpsIngestUrl: ${input.ingestUrl ?? 'none'} | rtmpsStreamKey present: ${!!input.streamKey}`);
