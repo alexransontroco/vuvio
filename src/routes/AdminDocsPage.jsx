@@ -1,6 +1,9 @@
 import {
   Archive,
   BarChart3,
+  BriefcaseBusiness,
+  Lightbulb,
+  TrendingUp,
   BookOpen,
   Box,
   CheckCircle2,
@@ -35,6 +38,9 @@ const docModules = import.meta.glob([
 ], { query: '?raw', import: 'default', eager: true });
 
 const DOMAIN_META = {
+  strategy: { label: { en: 'Strategy', fr: 'Stratégie' }, icon: Lightbulb, accent: '#b7a6ff' },
+  business: { label: { en: 'Business', fr: 'Business' }, icon: BriefcaseBusiness, accent: '#e5b56a' },
+  growth: { label: { en: 'Growth & Marketing', fr: 'Croissance & Marketing' }, icon: TrendingUp, accent: '#77d4a1' },
   root: { label: { en: 'Command Center', fr: 'Centre de Commande' }, icon: Layers3, accent: '#35e3dc' },
   backend: { label: { en: 'Backend', fr: 'Backend' }, icon: Server, accent: '#6dd7ff' },
   streaming: { label: { en: 'Streaming', fr: 'Streaming' }, icon: Radio, accent: '#35e3dc' },
@@ -47,7 +53,7 @@ const DOMAIN_META = {
   archive: { label: { en: 'Archive', fr: 'Archives' }, icon: Archive, accent: '#94a3b8' },
 };
 
-const PRIORITY_ORDER = ['root', 'streaming', 'backend', 'analytics', 'gear', 'products', 'globe', 'i18n', 'ops', 'archive'];
+const PRIORITY_ORDER = ['root', 'strategy', 'business', 'growth', 'streaming', 'backend', 'analytics', 'gear', 'products', 'globe', 'i18n', 'ops', 'archive'];
 
 const DOC_ROLES = {
   'README.md': { en: 'Project entry point', fr: 'Point d\'entrée projet' },
