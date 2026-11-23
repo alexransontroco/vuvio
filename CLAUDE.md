@@ -39,18 +39,20 @@ vite build && firebase deploy --only hosting:vuvio-bf328
 
 Ne déployer QUE depuis `main`. Jamais depuis `dev` ni `experimental`.
 
-## Workflow Git — 3 branches
+## Workflow Git — 3 branches (RÈGLES IMPÉRATIVES)
 
-- **`main`** → production, stable, toujours déployable
-- **`dev`** → travail quotidien, intégration des features
-- **`experimental`** → labos, PoCs, features instables
+- **`dev`** → développement quotidien par défaut. Toute nouvelle session démarre ici sauf demande contraire.
+- **`main`** → version stable. **AUCUNE fusion dev→main sans autorisation explicite de l'utilisateur.** Ne jamais merger, rebaser, cherry-pick ou pousser sur main sans un "oui" clair.
+- **`experimental`** → développement des fonctionnalités expérimentales (worktree Vuvio-Lab).
+- **Aucun déploiement production sans autorisation explicite** ("deploy", "ship", "push en prod"). Ne jamais lancer `firebase deploy` de manière autonome.
 
 Détail complet dans [docs/GIT-WORKFLOW.md](docs/GIT-WORKFLOW.md).
 
 Raccourcis :
 - Nouvelle feature → `git checkout dev && git checkout -b feat/<slug>`
-- Promotion `dev` → `main` : `git checkout main && git merge --ff-only dev`
+- Promotion `dev` → `main` : `git checkout main && git merge --ff-only dev` **(uniquement après "oui" explicite)**
 - Ne jamais `git push --force` sur `main`
+- Ne jamais `git checkout main && git merge dev` de manière autonome — toujours demander
 
 ## Fin de session
 

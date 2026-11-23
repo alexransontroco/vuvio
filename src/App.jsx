@@ -11,7 +11,17 @@ import { initPushNotificationRouting } from './platform/notifications.js';
 
 function ShareLiveRedirect() {
   const { liveId } = useParams();
-  return <Navigate to={`/watch?live=${encodeURIComponent(liveId)}&mode=view`} replace />;
+  const location = useLocation();
+  return <Navigate to={`/watch?live=${encodeURIComponent(liveId)}&mode=view${location.search ? `&${location.search.slice(1)}` : ''}`} replace />;
+}
+
+function PublicLiveRoute() {
+  const { liveId } = useParams();
+  const { user, authLoading } = useAuth();
+  const location = useLocation();
+  if (authLoading) return null;
+  if (!user) return <Navigate to={`/watch?live=${encodeURIComponent(liveId)}&mode=view${location.search ? `&${location.search.slice(1)}` : ''}`} replace />;
+  return <Lazy component={LivePage} />;
 }
 import ProtectedRoute, { PublicOnlyRoute } from './components/ProtectedRoute.jsx';
 import { useAuth } from './context/AuthContext.jsx';
@@ -31,10 +41,12 @@ const HelpPage            = lazy(() => import('./routes/HelpPage.jsx'));
 const InternalStreamAdminPage = lazy(() => import('./routes/InternalStreamAdminPage.jsx'));
 const CurrentGlobePage    = lazy(() => import('./routes/CurrentGlobePage.jsx'));
 const GlobeTest2Page      = lazy(() => import('./routes/GlobeTest2Page.jsx'));
-const GlobeTest3Page      = lazy(() => import('./routes/GlobeTest3Page.jsx'));
 const GlobeTest4Page      = lazy(() => import('./routes/GlobeTest4Page.jsx'));
 const GlobeTest5Page      = lazy(() => import('./routes/GlobeTest5Page.jsx'));
 const GlobeTest6Page      = lazy(() => import('./routes/GlobeTest6Page.jsx'));
+const GlobeTest7Page      = lazy(() => import('./routes/GlobeTest7Page.jsx'));
+const GlobeTest8Page      = lazy(() => import('./routes/GlobeTest8Page.jsx'));
+const GlobeCesiumPage     = lazy(() => import('./routes/GlobeCesiumPage.jsx'));
 const LoginPage           = lazy(() => import('./routes/LoginPage.jsx'));
 const LiveRecapPage       = lazy(() => import('./routes/LiveRecapPageSimple.jsx'));
 const LiveSummaryPage     = lazy(() => import('./routes/LiveSummaryPage.jsx'));
@@ -197,9 +209,9 @@ export default function App() {
       {/* ── App shell with bottom nav ── */}
       <Route element={<AppShell />}>
         <Route path="/home" element={<Navigate to="/watch" replace />} />
-        <Route path="/watch/:liveId" element={<Navigate to="/watch" replace />} />
+        <Route path="/watch/:liveId" element={<ShareLiveRedirect />} />
         <Route path="/share/live/:liveId" element={<ShareLiveRedirect />} />
-        <Route path="/live/:liveId" element={<ProtectedRoute requireOnboarding={false}><Lazy component={LivePage} /></ProtectedRoute>} />
+        <Route path="/live/:liveId" element={<PublicLiveRoute />} />
         <Route path="/discover" element={<Navigate to="/watch" replace />} />
         <Route path="/discover/:categorySlug" element={<Lazy component={DiscoverCategoryPage} />} />
 
@@ -212,10 +224,12 @@ export default function App() {
         <Route path="/globe-current" element={<Lazy component={CurrentGlobePage} />} />
         <Route path="/map-current"   element={<Lazy component={CurrentGlobePage} />} />
         <Route path="/globe-test-2"  element={<Lazy component={GlobeTest2Page} />} />
-        <Route path="/globe-test-3"  element={<Lazy component={GlobeTest3Page} />} />
         <Route path="/globe-test-4"  element={<Lazy component={GlobeTest4Page} />} />
         <Route path="/globe-test-5"  element={<Lazy component={GlobeTest5Page} />} />
         <Route path="/globe-test-6"  element={<Lazy component={GlobeTest6Page} />} />
+        <Route path="/globe-test-7"  element={<Lazy component={GlobeTest7Page} />} />
+        <Route path="/globe-test-8"  element={<Lazy component={GlobeTest8Page} />} />
+        <Route path="/globe-cesium"  element={<Lazy component={GlobeCesiumPage} />} />
         <Route path="/terms"       element={<Lazy component={TermsPage} />} />
         <Route path="/privacy"    element={<Lazy component={PrivacyPage} />} />
         <Route path="/guidelines" element={<Lazy component={CommunityGuidelinesPage} />} />

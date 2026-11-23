@@ -13,6 +13,7 @@ import StartLiveLayer from './layers/StartLiveLayer.jsx';
 import EnterLayer from './layers/EnterLayer.jsx';
 import NarrationPill from './layers/NarrationPill.jsx';
 import { FIREFIGHTER_LIVE } from './introLives.js';
+import { useIntroCopy } from './introCopy.js';
 
 // V2 phases. Each drives:
 //  - Pov layer layout preset (via className suffix)
@@ -21,18 +22,19 @@ import { FIREFIGHTER_LIVE } from './introLives.js';
 //  - Duration before auto-advance
 const PHASES = [
   { id: 'welcome',   duration: 12000, caption: null },
-  { id: 'watch',     duration: 4200,  caption: 'Discover real experiences.' },
-  { id: 'live',      duration: 4000,  caption: 'Be there. Ask questions.' },
-  { id: 'equipment', duration: 5200,  caption: 'Discover their gear.' },
+  { id: 'watch',     duration: 4200,  caption: 'watch' },
+  { id: 'live',      duration: 4000,  caption: 'live' },
+  { id: 'equipment', duration: 5200,  caption: 'equipment' },
   { id: 'returnlive', duration: 3800, fallbackDuration: 4800, caption: null },
   { id: 'globechef', duration: 5600, fallbackDuration: 7000, caption: null },
-  { id: 'globe',     duration: 6200, fallbackDuration: 7500, caption: 'Explore the world, live.' },
+  { id: 'globe',     duration: 6200, fallbackDuration: 7500, caption: 'globe' },
   { id: 'globelive', duration: 7600, fallbackDuration: 8500, caption: null },
   { id: 'startlive', duration: 6000, fallbackDuration: 12000, caption: null },
   { id: 'enter',     duration: 5200,  caption: null },
 ];
 
 export default function IntroOrchestratorV2({ initialPhase, autoAdvance = false }) {
+  const t = useIntroCopy();
   const navigate = useNavigate();
   const prefersReducedMotion = useReducedMotion();
   const reduced = prefersReducedMotion === true;
@@ -147,7 +149,7 @@ export default function IntroOrchestratorV2({ initialPhase, autoAdvance = false 
   }, [goNext, goBack, skipToEnter]);
 
   return (
-    <div className="introv2-root" data-phase={phaseId} role="dialog" aria-label="Vuvio intro V2">
+    <div className="introv2-root" data-phase={phaseId} role="dialog" aria-label={t.dialog}>
       <audio ref={scoreRef} src="/intro/vuviointromusic.mp3" loop preload="auto" />
       <div className="introv2-phone-stage">
         <div className="introv2-stage">
@@ -219,7 +221,7 @@ export default function IntroOrchestratorV2({ initialPhase, autoAdvance = false 
           />
 
           {/* Narration pill */}
-          <NarrationPill text={currentPhase.caption} phaseId={phaseId} />
+          <NarrationPill text={t.captions[currentPhase.caption] ?? null} phaseId={phaseId} />
 
           {/* Exit reveal mask */}
           {exiting && (
@@ -242,7 +244,7 @@ export default function IntroOrchestratorV2({ initialPhase, autoAdvance = false 
                         <div
                           key={`${p.id}-${index}`}
                           className={'introv2-progress__segment-fill' + (i === index ? ' introv2-progress__segment-fill--active' : '')}
-                          style={{ transform: `scaleX(${i < index ? 1 : 0})`, animationDuration: `${p.duration}ms` }}
+                          style={{ transform: `scaleX(${i < index ? 1 : 0})`, animationDuration: `${p.fallbackDuration ?? p.duration}ms` }}
                         />
                       </div>
                     );
@@ -253,9 +255,9 @@ export default function IntroOrchestratorV2({ initialPhase, autoAdvance = false 
                     type="button"
                     className="introv2-btn"
                     onClick={skipToEnter}
-                    aria-label="Skip intro"
+                    aria-label={t.skip}
                   >
-                    Skip
+                    {t.skip}
                     <X size={14} strokeWidth={2} />
                   </button>
                 )}
@@ -267,19 +269,19 @@ export default function IntroOrchestratorV2({ initialPhase, autoAdvance = false 
                   className="introv2-nav__btn"
                   onClick={goBack}
                   disabled={index === 0}
-                  aria-label="Previous"
+                  aria-label={t.previous}
                 >
                   <ChevronLeft size={16} strokeWidth={2} />
-                  Back
+                  {t.back}
                 </button>
                 {!isLast && (
                   <button
                     type="button"
                     className="introv2-nav__btn"
                     onClick={goNext}
-                    aria-label="Next"
+                    aria-label={t.next}
                   >
-                    Next
+                    {t.next}
                     <ChevronRight size={16} strokeWidth={2} />
                   </button>
                 )}

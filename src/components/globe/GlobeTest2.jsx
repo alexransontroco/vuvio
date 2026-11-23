@@ -109,7 +109,7 @@ function buildClusteredStreams(streams, expandedClusterId, precision = 20) {
 
 // ── Stars + shooting stars on 2D canvas overlay ─────────────────────────────
 
-function drawStars(canvas, ctx, time, altitude) {
+function drawStars(canvas, ctx, time, altitude, isCoarse) {
   const dpr = window.devicePixelRatio || 1;
   const w = canvas.width / dpr;
   const h = canvas.height / dpr;
@@ -123,9 +123,32 @@ function drawStars(canvas, ctx, time, altitude) {
   ctx.clearRect(0, 0, w, h);
   if (!drawEnabled) return;
 
-  const t = time * 0.001;
   const exclusion = globeRadius * 1.08;
-  const starCount = Math.max(180, Math.floor((w * h) / 8000));
+  // Capped star count — raw (w*h) scaling pushed 4K displays past 500 arcs/frame.
+  const starCount = isCoarse
+    ? Math.min(160, Math.max(90, Math.floor((w * h) / 16000)))
+    : Math.min(240, Math.max(180, Math.floor((w * h) / 12000)));
+
+  // Mobile: no twinkle, no shooting stars, no cross-glint — just static dots.
+  // Per-frame cost drops ~10x (no sin() calls, no gradients, single fill color).
+  if (isCoarse) {
+    ctx.fillStyle = 'rgba(230, 240, 255, 0.55)';
+    for (let i = 0; i < starCount; i += 1) {
+      const seed = i * 97.37;
+      const x = (Math.sin(seed * 12.9898) * 43758.5453) % 1;
+      const y = (Math.sin((seed + 19.19) * 78.233) * 24634.6345) % 1;
+      const px = Math.abs(x) * w;
+      const py = Math.abs(y) * h;
+      if (Math.hypot(px - cx, py - cy) < exclusion) continue;
+      const size = 0.35 + Math.abs(Math.sin(seed * 0.17)) * 0.9;
+      ctx.beginPath();
+      ctx.arc(px, py, size, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    return;
+  }
+
+  const t = time * 0.001;
 
   for (let i = 0; i < starCount; i += 1) {
     const seed = i * 97.37;
@@ -228,6 +251,24 @@ function drawStars(canvas, ctx, time, altitude) {
   }
 }
 
+// Isolated 1Hz ticker — keeps the parent GlobeTest2 from re-rendering every
+// second (which would re-create ringsData array + inline arrow accessors,
+// forcing react-globe.gl to rebuild the ring mesh).
+function LiveCountdown({ startsAt, labels }) {
+  const [now, setNow] = useState(() => new Date());
+  useEffect(() => {
+    const t = setInterval(() => setNow(new Date()), 1000);
+    return () => clearInterval(t);
+  }, []);
+  const cd = getCountdownState(startsAt, now, labels);
+  return (
+    <div className="gt2-card__countdown">
+      <span className="gt2-card__countdown-label">{cd.label}</span>
+      {cd.value && <strong className="gt2-card__countdown-value">{cd.value}</strong>}
+    </div>
+  );
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 
 export default function GlobeTest2() {
@@ -245,6 +286,7 @@ export default function GlobeTest2() {
   const handleClickRef = useRef(null);
   const altitudeRef = useRef(2.8);
   const clusterPrecisionRef = useRef(20);
+  const hasSelectionRef = useRef(false);
   const requestedLiveId = searchParams.get('live');
   const [povSettled, setPovSettled] = useState(!requestedLiveId);
   const [globeReady, setGlobeReady] = useState(false);
@@ -252,9 +294,8 @@ export default function GlobeTest2() {
 
   const { user } = useAuth();
   const { t } = useTranslation();
-  const cLabels = makeCountdownLabels(t);
+  const cLabels = useMemo(() => makeCountdownLabels(t), [t]);
   const [createdLives, setCreatedLives] = useState([]);
-  const [now, setNow] = useState(() => new Date());
   const [remindedIds, setRemindedIds] = useState(new Set());
   const [selectedStream, setSelectedStream] = useState(null);
   const [selectedCluster, setSelectedCluster] = useState(null);
@@ -272,11 +313,6 @@ export default function GlobeTest2() {
     getCreatedLives().then(setCreatedLives).catch(() => setCreatedLives([]));
   }, []);
   useEffect(() => subscribeToCreatedLives(setCreatedLives), []);
-
-  useEffect(() => {
-    const t = setInterval(() => setNow(new Date()), 1000);
-    return () => clearInterval(t);
-  }, []);
 
   useEffect(() => {
     if (user?.uid) getRemindedStreamIds(user.uid).then((ids) => setRemindedIds(new Set(ids))).catch(() => {});
@@ -337,6 +373,29 @@ export default function GlobeTest2() {
   // instead of filtering the array. Prevents CSS2DRenderer from rebuilding 150+
   // DOM nodes mid-animation on deselect (which caused dezoom lag).
   const displayedStreams = liveStreams;
+
+  // Stable identity for react-globe.gl props — fresh arrays or inline arrow
+  // functions each render force three.js to rebuild the ring/html layers.
+  const htmlData = useMemo(
+    () => (isClosingSelection ? [] : displayedStreams),
+    [isClosingSelection, displayedStreams],
+  );
+  const ringsData = useMemo(
+    () => (selectedStream && !isClosingSelection ? [selectedStream] : []),
+    [selectedStream, isClosingSelection],
+  );
+  const coordLat = useCallback((d) => (d.displayCoordinates || d.coordinates)[1], []);
+  const coordLng = useCallback((d) => (d.displayCoordinates || d.coordinates)[0], []);
+  const ringColor = useCallback(() => 'rgba(40,216,223,0.55)', []);
+  const rendererConfig = useMemo(
+    () => ({ antialias: false, powerPreference: 'high-performance' }),
+    [],
+  );
+  const globeImageUrl = '/assets/globe/earth-night-threeglobe-4k.jpg';
+  const isCoarsePointer = useMemo(() => (
+    typeof window !== 'undefined'
+      && window.matchMedia?.('(pointer: coarse)').matches
+  ), []);
 
   const streamCounts = useMemo(() => {
     const byFamily = { all: 0, air: 0, earth: 0, water: 0 };
@@ -399,15 +458,16 @@ export default function GlobeTest2() {
         const scene2 = globe.scene?.();
         const rend = globe.renderer?.();
         if (!scene2 || !rend) return;
-        const maxAniso = rend.capabilities.getMaxAnisotropy();
+        const isCoarse = window.matchMedia?.('(pointer: coarse)').matches;
+        // Cap aniso at 4 on mobile (GPUs report 16 but it's expensive at DPR 1.5).
+        const aniso = Math.min(rend.capabilities.getMaxAnisotropy(), isCoarse ? 4 : 16);
         scene2.traverse((obj) => {
           if (!obj.isMesh || !obj.material?.map) return;
           const map = obj.material.map;
           // Trilinear filtering — sharpest standard mipmap mode
           map.minFilter = THREE.LinearMipmapLinearFilter;
           map.magFilter = THREE.LinearFilter;
-          // Max anisotropy — reduces blur on oblique angles
-          map.anisotropy = maxAniso;
+          map.anisotropy = aniso;
           // Correct color space for Three.js r152+ (0.152+)
           map.colorSpace = THREE.SRGBColorSpace;
           map.generateMipmaps = true;
@@ -502,6 +562,12 @@ export default function GlobeTest2() {
     if (controls) controls.autoRotate = !userInteractedRef.current && !selectedStream && !selectedCluster && !expandedClusterId;
   }, [selectedStream, selectedCluster, expandedClusterId]);
 
+  // Pin precision to finest (1) whenever something is selected/requested so
+  // `buildClusteredStreams` doesn't rebuild the marker DOM mid zoom-in tween.
+  useEffect(() => {
+    hasSelectionRef.current = !!(requestedLiveId || selectedStream || selectedCluster || expandedClusterId);
+  }, [requestedLiveId, selectedStream, selectedCluster, expandedClusterId]);
+
   useEffect(() => {
     if (!requestedLiveId) return;
     if (ignoredRequestedLiveRef.current === requestedLiveId) return;
@@ -531,6 +597,9 @@ export default function GlobeTest2() {
     navigatedToLiveRef.current = requestedLiveId;
     const controls = globe.controls?.();
     if (controls) controls.autoRotate = false;
+    // Pause starfield 2D canvas during the whole deep-link zoom sequence —
+    // ~180 arcs/frame compete with the camera tween on low-end devices.
+    pauseStarsRef.current = true;
     // Snap to target at a far altitude, instant (hidden under opacity 0).
     globe.pointOfView({ lat: coords[1], lng: coords[0], altitude: 2.8 }, 0);
     // Reveal the globe on the next frame once the snap has been applied.
@@ -546,6 +615,7 @@ export default function GlobeTest2() {
       g.pointOfView({ lat: coords[1], lng: coords[0], altitude: 0.55 }, 900);
     }, 350);
     setTimeout(() => setSelectedStream(target), 1300);
+    setTimeout(() => { pauseStarsRef.current = false; }, 1400);
   }, [globeReady, allLiveStreams, liveStreams, requestedLiveId]);
 
   useEffect(() => {
@@ -577,7 +647,9 @@ export default function GlobeTest2() {
       const controls = globeRef.current?.controls?.();
       if (controls) controls.autoRotate = false;
       const coords = obj.displayCoordinates || obj.coordinates;
+      pauseStarsRef.current = true;
       globeRef.current?.pointOfView({ lat: coords[1] - 5, lng: coords[0], altitude: 0.5 }, 500);
+      setTimeout(() => { pauseStarsRef.current = false; }, 550);
       return;
     }
 
@@ -587,7 +659,10 @@ export default function GlobeTest2() {
     const currentAlt = globeRef.current?.pointOfView?.()?.altitude ?? 2.3;
     const altitude = isDouble ? 0.4 : Math.min(1.2, currentAlt);
     const coords = obj.displayCoordinates || obj.coordinates;
-    globeRef.current?.pointOfView({ lat: coords[1], lng: coords[0], altitude }, isDouble ? 500 : 700);
+    const tweenMs = isDouble ? 500 : 700;
+    pauseStarsRef.current = true;
+    globeRef.current?.pointOfView({ lat: coords[1], lng: coords[0], altitude }, tweenMs);
+    setTimeout(() => { pauseStarsRef.current = false; }, tweenMs + 50);
     const controls = globeRef.current?.controls?.();
     if (controls) controls.autoRotate = false;
   }, []);
@@ -648,8 +723,20 @@ export default function GlobeTest2() {
     let pendingPrecision = clusterPrecisionRef.current;
     let stableSince = performance.now();
     let lastAlt = altitudeRef.current;
+    const isCoarse = window.matchMedia?.('(pointer: coarse)').matches;
+    // Throttle the starfield to ~30fps on every device — the twinkle period
+    // is long enough that 30fps is visually identical to 60fps, and it halves
+    // our main-thread canvas cost so three.js keeps the full 60fps budget.
+    let lastStarsDraw = 0;
+    const STARS_INTERVAL = 33; // ms (~30fps)
 
     const animate = (now) => {
+      // Tab hidden: keep the loop alive cheaply but skip all work.
+      if (document.visibilityState === 'hidden') {
+        animFrameRef.current = requestAnimationFrame(animate);
+        return;
+      }
+
       const altitude = globeRef.current?.pointOfView?.()?.altitude ?? 2.3;
       altitudeRef.current = altitude;
 
@@ -658,7 +745,7 @@ export default function GlobeTest2() {
         stableSince = now;
       }
 
-      const target = getClusterPrecision(altitude);
+      const target = hasSelectionRef.current ? 1 : getClusterPrecision(altitude);
       if (target !== pendingPrecision) pendingPrecision = target;
 
       if (
@@ -671,11 +758,12 @@ export default function GlobeTest2() {
 
       // Skip the heavy canvas-2D starfield while a close tween is running —
       // drawing ~180 arcs every frame competes with the camera animation.
-      if (!pauseStarsRef.current) {
+      if (!pauseStarsRef.current && now - lastStarsDraw >= STARS_INTERVAL) {
+        lastStarsDraw = now;
         const starsCanvas = starsCanvasRef.current;
         if (starsCanvas) {
           const ctx = starsCanvas.getContext('2d');
-          drawStars(starsCanvas, ctx, now, altitude);
+          drawStars(starsCanvas, ctx, now, altitude, isCoarse);
         }
       }
 
@@ -781,25 +869,25 @@ export default function GlobeTest2() {
         animateIn={false}
         onGlobeReady={() => setGlobeReady(true)}
         backgroundColor="rgba(0,0,0,0)"
-        globeImageUrl="/assets/globe/earth-night-threeglobe-4k.jpg"
-        showAtmosphere={true}
+        globeImageUrl={globeImageUrl}
+        showAtmosphere={!isCoarsePointer}
         atmosphereColor="rgba(40,216,223,0.15)"
         atmosphereAltitude={0.09}
         showGraticules={false}
-        htmlElementsData={isClosingSelection ? [] : displayedStreams}
+        htmlElementsData={htmlData}
         htmlElement={htmlElement}
         htmlAltitude={0.01}
-        htmlLat={(d) => (d.displayCoordinates || d.coordinates)[1]}
-        htmlLng={(d) => (d.displayCoordinates || d.coordinates)[0]}
-        ringsData={selectedStream && !isClosingSelection ? [selectedStream] : []}
-        ringColor={() => 'rgba(40,216,223,0.55)'}
+        htmlLat={coordLat}
+        htmlLng={coordLng}
+        ringsData={ringsData}
+        ringColor={ringColor}
         ringMaxRadius={1.5}
         ringPropagationSpeed={0.8}
         ringRepeatPeriod={2200}
         ringAltitude={0.01}
-        ringLat={(d) => (d.displayCoordinates || d.coordinates)[1]}
-        ringLng={(d) => (d.displayCoordinates || d.coordinates)[0]}
-        rendererConfig={{ antialias: false, powerPreference: 'high-performance' }}
+        ringLat={coordLat}
+        ringLng={coordLng}
+        rendererConfig={rendererConfig}
       />
       )}
       </div>
@@ -854,15 +942,9 @@ export default function GlobeTest2() {
               </span>
               <h2>{selectedStream.experienceTitle || selectedStream.name}</h2>
               <p>{selectedStream.name} · {selectedStream.city}, {selectedStream.country}</p>
-              {selectedStream.status === 'upcoming' ? (() => {
-                const cd = getCountdownState(selectedStream.startsAt, now, cLabels);
-                return (
-                  <div className="gt2-card__countdown">
-                    <span className="gt2-card__countdown-label">{cd.label}</span>
-                    {cd.value && <strong className="gt2-card__countdown-value">{cd.value}</strong>}
-                  </div>
-                );
-              })() : <strong>{selectedStream.viewers} viewers</strong>}
+              {selectedStream.status === 'upcoming'
+                ? <LiveCountdown startsAt={selectedStream.startsAt} labels={cLabels} />
+                : <strong>{selectedStream.viewers} viewers</strong>}
             </div>
             <div className="test-globe-card__actions">
               {selectedStream.status === 'upcoming' ? (

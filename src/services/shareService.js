@@ -16,9 +16,10 @@ import { shareVuvioContent } from '../platform/sharing.js';
 
 const toPublicId = (id) => (id ?? 'demo').replace(/^created-/, '');
 
-export const getLiveShareUrl = (liveId) => {
+export const getLiveShareUrl = (liveId, ref = '') => {
   const id = toPublicId(liveId);
-  return `https://vuvio.app/share/live/${encodeURIComponent(id)}`;
+  const creatorRef = /^[a-zA-Z0-9._-]{1,80}$/.test(ref) ? `?ref=${encodeURIComponent(ref)}` : '';
+  return `https://vuvio.app/share/live/${encodeURIComponent(id)}${creatorRef}`;
 };
 
 export const buildShareText = (live) => {
