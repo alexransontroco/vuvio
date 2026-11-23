@@ -97,6 +97,22 @@ test('private live comments and signaling are not readable anonymously', { skip 
   assert.equal((await fetch(`${root}/activeLives/security-private/watchers/private-watcher`)).status, 403);
 });
 
+test('public live comments and anonymous P2P signaling remain available', { skip }, async () => {
+  const comment = await fetch(`${root}/activeLives/security-public/comments/public-comment`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token('viewer')}` },
+    body: JSON.stringify({ fields: fields({ text: 'Hello', userId: 'viewer', userDisplayName: 'Viewer', userPhotoURL: '', timestamp: 'now' }) }),
+  });
+  assert.equal(comment.status, 200);
+  assert.equal((await fetch(`${root}/activeLives/security-public/comments/public-comment`)).status, 200);
+  const watcher = await fetch(`${root}/activeLives/security-public/watchers/public-watcher`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ fields: fields({ sdpAnswer: 'fake-answer', watcherUid: 'anonymous-session' }) }),
+  });
+  assert.equal(watcher.status, 200);
+});
+
 test('anonymous collection list cannot expose restricted live metadata', { skip }, async () => {
   assert.equal((await fetch(`${root}/activeLives`)).status, 403);
 });
@@ -128,6 +144,10 @@ test('legacy public live becomes readable only after an explicit sanitized backf
   assert.equal(response.status, 200);
   assert.equal(JSON.stringify(await response.json()).includes('streamKey'), false);
   assert.equal((await read('security-private')).status, 403);
+  await seed('activeLives', 'legacy-public', {
+    id: 'legacy-public', creatorUid: 'creator', status: 'ended', privacy: 'Everyone', streamKey: '',
+  });
+  assert.equal((await read('legacy-public')).status, 403);
 });
 
 test('anonymous client cannot modify a live document', { skip }, async () => {
