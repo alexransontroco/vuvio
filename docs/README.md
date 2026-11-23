@@ -1,6 +1,6 @@
 # Vuvio Docs
 
-This folder contains technical references and historical implementation notes.
+This folder contains strategic, commercial and technical references, plus historical implementation notes.
 
 For current project context, start with:
 
@@ -36,6 +36,9 @@ Use these status values as a convention:
 
 The domain is inferred from the folder:
 
+- `docs/strategy/` → Strategy
+- `docs/business/` → Business
+- `docs/growth/` → Growth & Marketing
 - `docs/globe/` → Globe
 - `docs/backend/` → Backend
 - `docs/streaming/` → Streaming
@@ -55,6 +58,14 @@ Command Center files should each have a clear role:
 - `AGENTS.md` — critical rules for coding agents.
 - `journal.architecture.md` — product and architecture journal.
 - `Vuvio_Inspirations_Strava_Polarsteps.md` — product inspiration notes.
+
+## Strategy, Business & Growth
+
+- [strategy/](strategy/) — positioning, personas / JTBD, decisions and assumptions.
+- [business/](business/) — business model, workshop monetization, unit economics.
+- [growth/](growth/) — go-to-market, creator acquisition and marketing experiments.
+
+These are strategy documents, not automatically implemented features or validated market findings. The existing [monetization.md](monetization.md) remains the in-depth Equipment affiliate strategy, and [analytics/first-creator-acquisition-mvp.md](analytics/first-creator-acquisition-mvp.md) remains the source for technical acquisition limitations.
 
 ## Domain Guides
 
