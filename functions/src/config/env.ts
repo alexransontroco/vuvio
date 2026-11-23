@@ -5,19 +5,16 @@ export const cloudflareApiToken = defineSecret('CLOUDFLARE_API_TOKEN');
 export const cloudflareWebhookSecret = defineSecret('CLOUDFLARE_WEBHOOK_SECRET');
 export const cloudflareCustomerCode = defineSecret('CLOUDFLARE_CUSTOMER_CODE');
 export const openaiApiKey = defineSecret('OPENAI_API_KEY');
-export const meteredApiKey = defineSecret('METERED_API_KEY');
-export const meteredAppName = defineSecret('METERED_APP_NAME');
+
+// Metered / Amazon-PA / Awin : secrets non provisionnés en prod.
+// Les getters correspondants lisent uniquement process.env et renvoient '' si absent.
+// Les handlers (turnCredentialsHandler, affiliateRoutes) tolèrent les valeurs vides (fallback "not configured" / undefined provider).
 
 // Icecat API Configuration
 export const icecatUsername = defineSecret('ICECAT_USERNAME');
 // ICECAT_PASSWORD is the account password used for Basic Auth.
 // Falls back to ICECAT_API_KEY for backward compatibility.
 export const icecatPassword = defineSecret('ICECAT_PASSWORD');
-export const amazonPaAccessKey = defineSecret('AMAZON_PA_ACCESS_KEY');
-export const amazonPaSecretKey = defineSecret('AMAZON_PA_SECRET_KEY');
-export const amazonAssociateTagFr = defineSecret('AMAZON_ASSOCIATE_TAG_FR');
-export const awinApiKey = defineSecret('AMAZON_AWIN_API_KEY');
-export const awinPublisherId = defineSecret('AWIN_PUBLISHER_ID');
 export const ebayClientId = defineSecret('EBAY_CLIENT_ID');
 export const ebayClientSecret = defineSecret('EBAY_CLIENT_SECRET');
 export const icecatLanguage = process.env.ICECAT_LANGUAGE || 'en';
@@ -47,8 +44,8 @@ export function getCloudflareEnv() {
 
 export function getMeteredEnv() {
   return {
-    apiKey: sv(meteredApiKey, 'METERED_API_KEY'),
-    appName: sv(meteredAppName, 'METERED_APP_NAME'),
+    apiKey: process.env.METERED_API_KEY || '',
+    appName: process.env.METERED_APP_NAME || '',
   };
 }
 
@@ -62,11 +59,11 @@ export function getOpenAIEnv() {
 
 export function getAffiliateEnv() {
   return {
-    amazonAccessKey: sv(amazonPaAccessKey, 'AMAZON_PA_ACCESS_KEY'),
-    amazonSecretKey: sv(amazonPaSecretKey, 'AMAZON_PA_SECRET_KEY'),
-    amazonAssociateTagFr: sv(amazonAssociateTagFr, 'AMAZON_ASSOCIATE_TAG_FR'),
-    awinApiKey: sv(awinApiKey, 'AMAZON_AWIN_API_KEY'),
-    awinPublisherId: sv(awinPublisherId, 'AWIN_PUBLISHER_ID'),
+    amazonAccessKey: process.env.AMAZON_PA_ACCESS_KEY || '',
+    amazonSecretKey: process.env.AMAZON_PA_SECRET_KEY || '',
+    amazonAssociateTagFr: process.env.AMAZON_ASSOCIATE_TAG_FR || '',
+    awinApiKey: process.env.AMAZON_AWIN_API_KEY || '',
+    awinPublisherId: process.env.AWIN_PUBLISHER_ID || '',
   };
 }
 
