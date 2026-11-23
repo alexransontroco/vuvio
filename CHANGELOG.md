@@ -6,6 +6,36 @@ Historique des sessions de travail, du plus récent au plus ancien.
 
 ---
 
+## 2026-11-23 — Deploy functions:api (OG attribution) + alignement secrets
+
+Déploiement de la fonction `api` seule après le hosting rollup. Le CLI bloquait sur un prompt interactif pour `METERED_API_KEY` (secret jamais provisionné).
+
+**Diagnostic**
+- 7 secrets référencés dans le code source mais **absents de Secret Manager** et non bindés au `api` déployé : `METERED_API_KEY`, `METERED_APP_NAME`, `AMAZON_PA_ACCESS_KEY`, `AMAZON_PA_SECRET_KEY`, `AMAZON_ASSOCIATE_TAG_FR`, `AMAZON_AWIN_API_KEY`, `AWIN_PUBLISHER_ID`.
+- Les handlers consommateurs (`turnCredentialsHandler`, `affiliateRoutes`) gèrent déjà le mode non configuré : 404 `not_configured` pour TURN, `provider: undefined` pour Amazon/Awin dans le resolver affiliate.
+- L'OG attribution (ogMetaHandler) n'utilise aucun secret → la dépendance au prompt était un faux blocage.
+
+**Fix (minimal, sans toucher aux secrets existants)**
+- `functions/src/config/env.ts` : retrait des 7 `defineSecret()` inutilisés en prod, `getMeteredEnv()` et `getAffiliateEnv()` lisent désormais `process.env.*` directement (API publique inchangée).
+- `functions/src/index.ts` : `secrets:[]` du `api` aligné sur les 9 secrets réellement bindés (`CLOUDFLARE_*`, `OPENAI_API_KEY`, `ICECAT_*`, `EBAY_*`).
+- Déployé via `firebase deploy --only functions:api` → `Successful update operation`.
+- Vérif post-deploy : les 9 bindings (clés + versions) sont strictement identiques à l'état pré-deploy. Aucun secret créé, aucun secret modifié.
+
+**Smoke tests prod**
+- `GET /share/live/demo` → 200
+- `GET /share/live/demo?ref=creator123` → `og:url` contient `?ref=creator123` ✓ (attribution OK)
+- `GET /share/live/demo?utm_source=twitter&utm_campaign=launch` → `og:url` préserve les deux params ✓
+- `GET /api/turn-credentials` → 401 (unauthenticated, comportement inchangé ; les callers authentifiés recevront 404 `not_configured` comme avant)
+- `GET /api/streams/live` → 200 (route existante non affectée)
+
+**TODO follow-up**
+- Si TURN Metered doit être activé un jour : créer `METERED_API_KEY` + `METERED_APP_NAME` dans Secret Manager puis rebinder le `api`.
+- Idem si Amazon-PA ou Awin : créer les 5 secrets manquants.
+
+Fichiers : `functions/src/config/env.ts`, `functions/src/index.ts`.
+
+---
+
 ## 2026-11-23 — Perf globes (test 2 + test 8) + fix recap viewers
 
 **Globe principal `/globe` (GlobeTest2.jsx)** — rotation/drag devenaient lents sur retina.
