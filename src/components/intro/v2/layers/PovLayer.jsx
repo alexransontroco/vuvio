@@ -1,5 +1,6 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { BIKING_LIVE, CHEF_LIVE, FIREFIGHTER_LIVE } from '../introLives.js';
+import { MOCK_VIDEO_URLS, MOCK_THUMBNAILS } from '../../../../data/mockVideoUrls.js';
 
 // Phase layouts — the POV container morphs between these shapes.
 // framer-motion `layout` prop animates the geometry when className swaps.
@@ -20,7 +21,7 @@ const PHASE_CLASSES = {
 export default function PovLayer({ phase, videoRef, reducedMotion, soundEnabled, fireAudioEnding, selectedLive }) {
   const className = PHASE_CLASSES[phase] || PHASE_CLASSES.welcome;
   const pianoRef = useRef(null);
-  const motoRef = useRef(null);
+  const cockpitRef = useRef(null);
   const alpineRef = useRef(null);
   const wingsuitRef = useRef(null);
   const fireStartedAtRef = useRef(null);
@@ -87,15 +88,15 @@ export default function PovLayer({ phase, videoRef, reducedMotion, soundEnabled,
 
   useEffect(() => {
     const piano = pianoRef.current;
-    const moto = motoRef.current;
+    const cockpit = cockpitRef.current;
     const alpine = alpineRef.current;
     const wingsuit = wingsuitRef.current;
-    if (!piano || !moto || !alpine || !wingsuit) return undefined;
+    if (!piano || !cockpit || !alpine || !wingsuit) return undefined;
 
     if (phase !== 'welcome' || reducedMotion) {
       setOpeningStage('main');
       piano.pause();
-      moto.pause();
+      cockpit.pause();
       alpine.pause();
       wingsuit.pause();
       return undefined;
@@ -103,16 +104,16 @@ export default function PovLayer({ phase, videoRef, reducedMotion, soundEnabled,
 
     setOpeningStage('full');
     piano.currentTime = 0;
-    moto.currentTime = 0;
+    cockpit.currentTime = 0;
     alpine.currentTime = 0;
     wingsuit.currentTime = 0;
     piano.playbackRate = 1;
-    moto.playbackRate = 0.78;
+    cockpit.playbackRate = 0.78;
     piano.play().catch(() => {});
 
     const splitTimer = setTimeout(() => {
       setOpeningStage('split');
-      moto.play().catch(() => {});
+      cockpit.play().catch(() => {});
     }, 3000);
     const quadTimer = setTimeout(() => {
       setOpeningStage('quad');
@@ -169,16 +170,16 @@ export default function PovLayer({ phase, videoRef, reducedMotion, soundEnabled,
       {(phase === 'equipment' || phase === 'globe') && <video src={FIREFIGHTER_LIVE.video} preload="auto" muted playsInline style={{ display: 'none' }} />}
       <div className={`introv2-opening introv2-opening--${openingStage}`} aria-hidden="true">
         <div className="introv2-opening__first introv2-opening__first--piano">
-          <video ref={pianoRef} src="/pov/used/pov-piano-dubai.mp4" poster="/pov/used/pov-piano-dubai.jpg" muted playsInline preload="auto" disablePictureInPicture />
+          <video ref={pianoRef} src="/pov/used/pov-piano-dubai.mp4" poster="/intro/pov-piano-dubai.jpg" muted playsInline preload="auto" disablePictureInPicture />
         </div>
         <div className="introv2-opening__second">
-          <video ref={motoRef} src="/pov/used/pov-moto-opening.mp4" muted playsInline preload="auto" disablePictureInPicture />
+          <video ref={cockpitRef} src={MOCK_VIDEO_URLS.f16Cockpit} poster={MOCK_THUMBNAILS.f16Cockpit} muted playsInline preload="auto" disablePictureInPicture />
         </div>
         <div className="introv2-opening__third">
-          <video ref={alpineRef} src="/pov/used/pov-alpine-ridge.mp4" poster="/pov/used/pov-alpine-ridge.jpg" muted playsInline preload="auto" disablePictureInPicture />
+          <video ref={alpineRef} src="/pov/used/pov-alpine-ridge.mp4" poster="/intro/pov-alpine-ridge.jpg" muted playsInline preload="auto" disablePictureInPicture />
         </div>
         <div className="introv2-opening__fourth">
-          <video ref={wingsuitRef} src="/pov/used/pov-wingsuit.mp4" poster="/pov/used/pov-wingsuit.jpg" muted playsInline preload="auto" disablePictureInPicture />
+          <video ref={wingsuitRef} src="/pov/used/pov-wingsuit.mp4" poster="/intro/pov-wingsuit.jpg" muted playsInline preload="auto" disablePictureInPicture />
         </div>
       </div>
     </>

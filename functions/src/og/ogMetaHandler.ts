@@ -278,9 +278,18 @@ async function renderShareImage(sourceUrl: string): Promise<Buffer> {
 }
 
 export async function ogMetaHandler(req: Request, res: Response, streamId: string, isRecap = false) {
-  const destUrl = isRecap ? `${APP_URL}/live/${streamId}/recap` : `${APP_URL}/watch?live=${streamId}`;
-  const shareUrl = isRecap ? `${APP_URL}/share/live/${streamId}/recap` : `${APP_URL}/share/live/${streamId}`;
-  const shareImageUrl = `${shareUrl}/image?v=vuvio-logo`;
+  const encodedId = encodeURIComponent(streamId);
+  const attribution = new URLSearchParams();
+  for (const key of ['ref', 'utm_source', 'utm_medium', 'utm_campaign']) {
+    const value = req.query[key];
+    if (typeof value === 'string' && /^[a-zA-Z0-9._-]{1,80}$/.test(value)) attribution.set(key, value);
+  }
+  const suffix = attribution.size ? `?${attribution.toString()}` : '';
+  const destUrl = isRecap
+    ? `${APP_URL}/live/${encodedId}/recap${suffix}`
+    : `${APP_URL}/watch?live=${encodedId}&mode=view${suffix ? `&${attribution.toString()}` : ''}`;
+  const shareUrl = `${APP_URL}/share/live/${encodedId}${isRecap ? '/recap' : ''}${suffix}`;
+  const shareImageUrl = `${APP_URL}/share/live/${encodedId}${isRecap ? '/recap' : ''}/image?v=vuvio-logo`;
 
   let title = isRecap ? 'Watch the replay on Vuvio' : 'Watch live on Vuvio';
   let description = isRecap ? 'Replay available on Vuvio' : 'POV live streaming — join the experience.';

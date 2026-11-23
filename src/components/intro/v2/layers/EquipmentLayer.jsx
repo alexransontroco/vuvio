@@ -1,15 +1,13 @@
 import { AnimatePresence, motion } from 'framer-motion';
 import { Camera, ChefHat, Shirt } from 'lucide-react';
+import { useIntroCopy } from '../introCopy.js';
 
 const EASE = [0.22, 1, 0.36, 1];
 
-const ITEMS = [
-  { Icon: Camera, name: 'GoPro Hero 13', sub: 'POV camera' },
-  { Icon: Shirt, name: 'Chest mount', sub: 'Hands-free streaming' },
-  { Icon: ChefHat, name: 'Chef kit', sub: 'Friday service' },
-];
+const ICONS = [Camera, Shirt, ChefHat];
 
 export default function EquipmentLayer({ visible, reducedMotion }) {
+  const t = useIntroCopy();
   return (
     <AnimatePresence>
       {visible && (
@@ -30,13 +28,13 @@ export default function EquipmentLayer({ visible, reducedMotion }) {
           >
             <div className="introv2-equip__grabber" />
             <div className="introv2-equip__header">
-              <h3>Creator gear</h3>
-              <span>3 items</span>
+              <h3>{t.equipment.title}</h3>
+              <span>{t.equipment.count}</span>
             </div>
             <ul className="introv2-equip__list">
-              {ITEMS.map((item, i) => (
+              {ICONS.map((Icon, i) => (
                 <motion.li
-                  key={item.name}
+                  key={i}
                   className="introv2-equip__item"
                   initial={{ opacity: 0, x: -14 }}
                   animate={{ opacity: 1, x: 0 }}
@@ -47,13 +45,13 @@ export default function EquipmentLayer({ visible, reducedMotion }) {
                   }}
                 >
                   <div className="introv2-equip__icon">
-                    <item.Icon size={18} strokeWidth={1.8} />
+                    <Icon size={18} strokeWidth={1.8} />
                   </div>
                   <div className="introv2-equip__meta">
-                    <div className="introv2-equip__name">{item.name}</div>
-                    <div className="introv2-equip__sub">{item.sub}</div>
+                    <div className="introv2-equip__name">{t.equipment.items[i].name}</div>
+                    <div className="introv2-equip__sub">{t.equipment.items[i].sub}</div>
                   </div>
-                  <button type="button" className="introv2-equip__link">View</button>
+                  <button type="button" className="introv2-equip__link">{t.equipment.view}</button>
                 </motion.li>
               ))}
             </ul>

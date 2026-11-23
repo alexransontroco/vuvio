@@ -1,9 +1,11 @@
 import { AnimatePresence, motion } from 'framer-motion';
 import BrandMark from '../../../BrandMark.jsx';
+import { useIntroCopy } from '../introCopy.js';
 
 const EASE = [0.22, 1, 0.36, 1];
 
 export default function WelcomeLayer({ visible, reducedMotion }) {
+  const t = useIntroCopy();
   return (
     <AnimatePresence>
       {visible && (
@@ -38,16 +40,16 @@ export default function WelcomeLayer({ visible, reducedMotion }) {
             exit={{ opacity: 0, y: -6 }}
             transition={{ delay: 0.5, duration: 1.2, times: [0, 0.6, 1], ease: EASE }}
           >
-            See the world through their eyes.
+            {t.tagline}
           </motion.p>
 
           <div className="introv2-welcome__activity-wrap">
             {[
-              { text: 'Live · Piano Dubai POV', delay: 0.25, duration: 2.45 },
-              { text: 'Live · Road POV', delay: 3.05, duration: 2.85 },
-              { text: 'Live · Alpine ridge POV', delay: 6.4, duration: 1.8 },
-              { text: 'Live · Wingsuit POV', delay: 8.3, duration: 1.8 },
-              { text: 'Live · Moody Rooster', delay: 9.5, duration: 2.3 },
+              { text: t.activities[0], delay: 0.25, duration: 2.45 },
+              { text: t.activities[1], delay: 3.05, duration: 2.85 },
+              { text: t.activities[2], delay: 6.4, duration: 1.8 },
+              { text: t.activities[3], delay: 8.3, duration: 1.8 },
+              { text: t.activities[4], delay: 9.5, duration: 2.3 },
             ].map((label) => (
               <motion.span
                 key={label.text}

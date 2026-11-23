@@ -6,6 +6,74 @@ Historique des sessions de travail, du plus récent au plus ancien.
 
 ---
 
+## 2026-11-23 — Perf globes (test 2 + test 8) + fix recap viewers
+
+**Globe principal `/globe` (GlobeTest2.jsx)** — rotation/drag devenaient lents sur retina.
+- Starfield canvas 2D cappé à ~30fps sur tous devices (était 60fps desktop, 30fps mobile) — twinkle period assez lent pour que ce soit visuellement identique, mais libère ~50% de temps main-thread pour le tween three.js.
+- Guard `document.visibilityState === 'hidden'` en tête du RAF loop : plus de 240 arcs/frame dessinés quand l'onglet est en arrière-plan.
+- Compteur d'étoiles cappé (160 mobile / 240 desktop, diviseur relâché à `/12000`) — sur écran 4K le calcul `(w*h)/8000` pouvait dépasser 500 arcs/frame.
+
+**Globe test 8 (GlobeTest8.jsx, prototype MapLibre)**
+- Rotation idle : `ACTUAL_ROTATION_INTERVAL` 96ms → 160ms (de ~10 `map.jumpTo`/sec à ~6) — chaque jumpTo force un re-render tiles+markers.
+- Cache de présence des layers pulse (6 `map.getLayer` par frame éliminés, rafraîchi uniquement sur `styledata`).
+- Pulse paint et halo suspendus pendant le drag/zoom utilisateur (`pauseUntilRef`) + skip complet quand un live est sélectionné.
+- Visibility-hidden : early return dans le RAF.
+- Halo throttle 33ms → 50ms (20fps), 100ms (10fps) pendant interaction.
+- Fix stars dans le coin haut-gauche sur retina : `drawAtmosphericHalo` divisait par `window.devicePixelRatio` alors que le canvas est sizé en `haloDpr=1` → stars confinées dans un quadrant. Lecture directe de `canvas.clientWidth/clientHeight`.
+- Starfield GlobeTest8 : starCount cappé à 220, diviseur `/18000` → `/24000`.
+- `setNow` 1s pausé quand l'onglet est caché (plus de re-render React à chaque seconde idle).
+
+**Recap live (LiveRecapPageSimple.jsx)** — "Total viewers" affichait toujours le peak.
+- `WatchPage.jsx:2032` écrit le champ `totalUniqueViewers` à Firestore, mais le recap lisait `totalViewerCount` → fallback systématique sur `peakCount`.
+- Fix lecture : `totalUniqueViewers` d'abord, puis anciens noms, puis peak. Peak : fallback ajouté sur `peakConcurrentViewers` (utilisé par `LiveSummaryStats`).
+- Note : durant un live, `viewerCount` dans `WatchPage` reste un mock (`+1..7 toutes les 7.6s`). Le recap affiche donc maintenant ce que le mock a atteint — vrai tracking WHEP/HLS à faire séparément si besoin.
+
+Fichiers : `src/components/globe/GlobeTest2.jsx`, `src/components/globe/GlobeTest8.jsx`, `src/routes/GlobeTest8Page.jsx` (untracked), `src/routes/LiveRecapPageSimple.jsx`.
+
+---
+
+## 2026-11-21 — 1080p30 capture + fix creator live links + landing waitlist copy
+
+- **Capture bump** : WebRTC publishing passé à 1080p30, bitrates vidéo/audio relevés dans `webrtcService.js` (commit `fbfcd51`). Objectif : premier contact visuel qualité "broadcast" sur les tests internes.
+- **Creator link edge cases** (commits `9780cb4`, `a0c4670`) : preservation des liens de live après fin de session + sauvegarde locale d'upcoming lives + audit MVP acquisition (`docs/analytics/first-creator-acquisition-mvp.md`, untracked). Tests sur gaps d'accès aux lives privés (`9036a0a`).
+- **Landing copy** : clarification du signup "launch notification" (commit `38b6372`).
+
+Détail : voir memory `project_landing_waitlist_deploy.md`.
+
+---
+
+## 2026-11-20 — Workshop preview option in Start Live
+
+Commit `d46907a` : option "Workshop preview" ajoutée au flow Start Live côté creator — permet de tester le mode Workshop sans partir en live réel. Feature flag `VITE_WORKSHOP_ENABLED` toujours gating.
+
+Détail : voir memory `project_workshop_feature.md`.
+
+---
+
+## 2026-11-20 — Fix flicker zoom-in sur /globe (GlobeTest2)
+
+Zoom vers un live (deep link `/globe?live=X` ou clic marker) faisait clignoter tous les markers. 3 causes cumulées :
+
+1. **Animation `gt2-marker-in 260ms`** sur chaque `.gt2-marker` → chaque changement d'identité de `htmlElementsData` faisait pop 50-150 markers simultanément. Supprimée du CSS (le fade-in du container `.gt2-globe-offset` couvre déjà la révélation initiale).
+2. **Rebuild de clusters en fin de tween** : quand l'altitude passait < 0.5, la précision tombait de 20 → 1, les clés de cluster changeaient, `expandedClusterId` devenait invalide → double rebuild complet des markers. Fix : nouveau `hasSelectionRef` qui verrouille `clusterPrecision = 1` dès qu'un live/cluster est sélectionné/demandé/étendu, donc les markers sont construits une seule fois à la précision finale avant le début du zoom.
+3. **Starfield canvas 2D (~180 arcs/frame)** continuait de dessiner pendant le zoom-in (seul le `recenter` zoom-out le pausait). `pauseStarsRef` maintenant activé aussi pendant la séquence deep-link et les clics marker/cluster.
+
+Fichiers : `src/components/globe/GlobeTest2.jsx`, `src/styles/pages/globe-test.css`.
+
+---
+
+## 2026-11-19 — Redeploy prod : bouton "Accéder à la bêta" restauré sur la landing
+
+Le bundle prod servait un état antérieur au commit `398b6ee` (redesign landing), sans le bouton "Accéder à la bêta" : les clés i18n `betaLink` étaient présentes mais le JSX du bouton + `enterApp` étaient absents du bundle déployé.
+
+Diagnostic : prod deploy daté 17:11, redesign commité à 18:11. Le bundle prod contenait déjà le reste du redesign (manifesto, experiences, founders) donc provenait d'un build local depuis un WIP non commité — le bouton s'était évaporé entre ce WIP et le commit final.
+
+Fix : `npx vite build && firebase deploy --only hosting:vuvio-bf328` depuis `main` (398b6ee). Vérifié post-deploy : nouveau bundle `LandingPage-BxtW_122.js` contient `beta-btn`, "Accéder à la bêta", `intro-preview`.
+
+Retour sur `dev` après le deploy.
+
+---
+
 ## 2026-11-19 — Réorganisation Git (3 branches) + transfert POV/landing experimental → main
 
 Grand nettoyage du dépôt pour simplifier le workflow quotidien.
@@ -50,6 +118,39 @@ Grand nettoyage du dépôt pour simplifier le workflow quotidien.
 - `experimental` : déjà sync (`c1aa6cd`).
 
 Aucun déploiement production effectué.
+
+---
+
+## 2026-11-19 — Restore waitlist signup on landing
+
+Commit `cd1fd7d` : réintroduction du signup waitlist sur la landing (était partiellement retiré lors du redesign). Détail : memory `project_landing_waitlist_deploy.md`.
+
+---
+
+## 2026-11-18 — PasswordGate retiré + polish globe test 6
+
+- **PasswordGate** (commit `5c75303`) : suppression du composant `PasswordGate.jsx` + son import dans `main.jsx`. L'app n'est plus derrière mot de passe. Détail : memory `project_password_gate_removed.md`.
+- **Globe test 6 styling polish** (commit `3e5c881`) : ajustements CSS après le pivot Stadia.
+- **Vuvio-Lab bootstrap** (commits `2ea7614`, `8b9ee01`) : worktree `~/Desktop/Vuvio-Lab` sur branche `experimental`, port 5174, émulateurs Firebase, 3 couches anti-deploy prod. Détail : memory `project_vuvio_lab_worktree.md`.
+
+---
+
+## 2026-11-17–18 — Phase 4 Realtime SFU PoC (Cloudflare Realtime)
+
+Multiples commits sur `phase-4-realtime-poc` (`ba457de`, `d3535db`, `30cfc4e`, `6389db6`, `ba91c83`, `674e6b2`, `63f997c`) : implémentation réelle de l'API CF Realtime (session creation, SDP negotiation, track pub/sub), hardened Firestore rules, Cloud Functions, frontend `RTCPeerConnection`. Alignement endpoints officiels `rtc.live.cloudflare.com`. Checklist de validation pré-test (CF App Secret, emulator, room-level access, HTTPS local).
+
+Détail complet : memory `project_phase4_realtime_poc.md` + `project_phase4_realtime_validation.md`.
+
+Branche ensuite mergée dans `experimental` (`c1aa6cd`) puis archivée sous `backup/pre-reorg-2026-11-16/phase-4-realtime-poc`.
+
+---
+
+## 2026-11-14 — Globe Test 6 : fade crossfade + auto-switch texture↔tiles
+
+- **Fade crossfade** (commit `0504a54`) : transition opacity entre couche globe react-globe.gl et couche tuiles MapLibre, évite le flash sombre entre les deux.
+- **Auto-switch sur altitude** (commit `b4aa613`) : hysteresis thresholds (0.4 / 0.65) qui bascule automatiquement entre texture et tiles selon le zoom — pas de toggle manuel nécessaire.
+
+Détail : memory `project_globe_test6.md`.
 
 ---
 

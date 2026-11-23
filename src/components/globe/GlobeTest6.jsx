@@ -236,7 +236,17 @@ function drawStars(canvas, ctx, time, altitude) {
 // OpenMapTiles rendering), free on localhost without a key, keyed for prod.
 // Attribution © OSM, © Stadia Maps, © OpenMapTiles stays mandatory.
 const STADIA_TILES_HOST = 'https://tiles.stadiamaps.com';
-const STADIA_STYLE = 'alidade_smooth_dark';
+// Preset list surfaced in the diag panel so the user can preview live without
+// a rebuild. Each entry: { id = Stadia style slug, label, tint CSS filter }.
+// The tint filter lets us coherence-match the globe's cyan/midnight palette.
+const STADIA_PRESETS = [
+  { id: 'alidade_smooth_dark',     label: 'Smooth Dark',    filter: 'brightness(1.0) contrast(1.0) saturate(1.0)' },
+  { id: 'alidade_satellite',       label: 'Satellite',      filter: 'brightness(0.85) contrast(1.05) saturate(1.1)' },
+  { id: 'stamen_toner_background', label: 'Toner (bold)',   filter: 'brightness(0.8) contrast(1.15) saturate(0.8) hue-rotate(195deg)' },
+  { id: 'stamen_terrain_background', label: 'Terrain',      filter: 'brightness(0.72) contrast(1.1) saturate(0.85) hue-rotate(185deg)' },
+  { id: 'outdoors',                label: 'Outdoors',       filter: 'brightness(0.7) contrast(1.15) saturate(0.6) hue-rotate(180deg)' },
+  { id: 'osm_bright',              label: 'OSM Bright',     filter: 'brightness(0.55) contrast(1.2) saturate(0.7) hue-rotate(200deg)' },
+];
 // VITE_CARTO_API_KEY kept as the env var name for backwards compat with the
 // previously configured .env entry; used here as the Stadia Maps API key for
 // production domains. On localhost the key is not required.
@@ -253,12 +263,12 @@ const TILES_RETINA = (() => {
   return (window.devicePixelRatio || 1) > 1.25;
 })();
 
-function buildCartoTileUrl(x, y, z) {
+function buildCartoTileUrl(x, y, z, style) {
   // react-globe.gl passes (x, y, level) matching the standard XYZ scheme.
   if (z < TILES_MIN_ZOOM || z > TILES_MAX_ZOOM) return null;
   const suffix = TILES_RETINA ? '@2x.png' : '.png';
   const key = TILES_API_KEY ? `?api_key=${encodeURIComponent(TILES_API_KEY)}` : '';
-  return `${STADIA_TILES_HOST}/tiles/${STADIA_STYLE}/${z}/${x}/${y}${suffix}${key}`;
+  return `${STADIA_TILES_HOST}/tiles/${style}/${z}/${x}/${y}${suffix}${key}`;
 }
 
 // Diagnostic helper — masks the API key so it never appears in logs or DOM.
@@ -343,6 +353,8 @@ export default function GlobeTest6() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const globeRef = useRef();
+  const globeRefB = useRef();
+  const tileModeRef = useRef('original');
   const containerRef = useRef();
   const starsCanvasRef = useRef(null);
   const pauseStarsRef = useRef(false);
@@ -362,48 +374,72 @@ export default function GlobeTest6() {
   // GT6 — diag + tile mode. 'original' = Three.js globeImageUrl (prod baseline);
   // 'carto' = Stadia Dark Matter raster tiles via react-globe.gl's native engine.
   const [tileMode, setTileMode] = useState('original');
+  const [tileStyle, setTileStyle] = useState(STADIA_PRESETS[0].id);
   const [diagVisible, setDiagVisible] = useState(true);
   const [fpsState, setFpsState] = useState({ fps: 0, zoom: 0, altitude: 2.8, tiles: 0, state: 'idle' });
   const tilesLoadedRef = useRef(0);
   const fpsBufRef = useRef([]);
   const fpsLastSampleRef = useRef(0);
 
-  // GT6 — transition de la texture globe aux tuiles (ou l'inverse).
-  // `transitioning` cache le globe pendant l'échange ; `pendingMode` est le
-  // mode cible pendant l'étape noire. Le fade dure plus longtemps dans le sens
-  // original→vector pour laisser le temps aux premières tuiles de charger.
-  const [transitioning, setTransitioning] = useState(false);
-  const transitionTimerRef = useRef(null);
-  // Hystérésis auto-switch : au-dessus de 0.65 on reste en texture monde,
-  // en-dessous de 0.4 on bascule en tuiles. Entre les deux : état courant.
+  // GT6 — dual-globe crossfade. Both <Globe> instances stay mounted; we fade
+  // one in while fading the other out. Same geometry + synced camera → the
+  // transition is pixel-seamless because only the texture layer differs.
   const autoSideRef = useRef('far');
+  useEffect(() => { tileModeRef.current = tileMode; }, [tileMode]);
   const requestTileMode = useCallback((next) => {
-    setTileMode((current) => {
-      if (current === next) return current;
-      setTransitioning(true);
-      if (transitionTimerRef.current) clearTimeout(transitionTimerRef.current);
-      const fadeOutMs = 350;
-      // Going original → vector needs more headroom for the first wave of
-      // tile fetches ; vector → original is immediate (texture is cached).
-      const loadMs = next === 'carto' ? 500 : 0;
-      transitionTimerRef.current = setTimeout(() => {
-        setTileMode(next);
-        transitionTimerRef.current = setTimeout(() => {
-          setTransitioning(false);
-          transitionTimerRef.current = null;
-        }, loadMs);
-      }, fadeOutMs);
-      return current;
-    });
+    setTileMode(next);
   }, []);
-  // Override manuel via boutons : aligne autoSideRef sur le choix user pour
-  // que l'auto reprenne proprement au prochain crossing du seuil.
   const setTileModeManual = useCallback((next) => {
     autoSideRef.current = next === 'carto' ? 'near' : 'far';
     requestTileMode(next);
   }, [requestTileMode]);
-  useEffect(() => () => {
-    if (transitionTimerRef.current) clearTimeout(transitionTimerRef.current);
+
+  // Resolves to the currently interactive globe (the one the user sees + drives
+  // via OrbitControls). Programmatic pov/controls calls must hit this one;
+  // the RAF sync below forces the other globe to follow pixel-identically.
+  const getActiveGlobe = () => (tileModeRef.current === 'original' ? globeRef.current : globeRefB.current);
+
+  // Counter of in-flight programmatic tweens. While > 0 the RAF sync skips its
+  // overwrite — otherwise its `pointOfView(..., 0)` would cancel the other
+  // globe's own tween every frame, snapping the camera and killing the fly-to.
+  const isAnimatingRef = useRef(0);
+  // Tween the SAME pov on both globes in parallel with equal duration. Keeps
+  // their cameras in lockstep during fly-tos without needing the RAF puppet
+  // sync (which conflicts with mid-flight auto-switch of tileMode).
+  const bothPov = useCallback((pov, ms = 0) => {
+    if (ms > 0) isAnimatingRef.current += 1;
+    globeRef.current?.pointOfView?.(pov, ms);
+    globeRefB.current?.pointOfView?.(pov, ms);
+    if (ms > 0) {
+      setTimeout(() => {
+        isAnimatingRef.current = Math.max(0, isAnimatingRef.current - 1);
+      }, ms + 60);
+    }
+  }, []);
+
+  // Pause the inactive globe's internal render loop so we don't waste GPU on
+  // two WebGL contexts. Both resume for the 500ms crossfade (the incoming one
+  // must draw fresh frames during its fade-in), then the outgoing one pauses.
+  useEffect(() => {
+    globeRef.current?.resumeAnimation?.();
+    globeRefB.current?.resumeAnimation?.();
+    const t = setTimeout(() => {
+      if (tileMode === 'original') globeRefB.current?.pauseAnimation?.();
+      else globeRef.current?.pauseAnimation?.();
+    }, 520);
+    return () => clearTimeout(t);
+  }, [tileMode]);
+
+  // Initial pause: Globe B starts hidden. Fires after mount + 400ms setup delay
+  // so the renderer exists. Also pause the 2D stars canvas work while the
+  // inactive globe renders are catching up (tiny but adds up).
+  useEffect(() => {
+    const t = setTimeout(() => {
+      if (tileMode === 'original') globeRefB.current?.pauseAnimation?.();
+      else globeRef.current?.pauseAnimation?.();
+    }, 800);
+    return () => clearTimeout(t);
+    // Intentionally empty deps — one-shot after mount.
   }, []);
 
   const { user } = useAuth();
@@ -658,7 +694,7 @@ export default function GlobeTest6() {
   }, []);
 
   useEffect(() => {
-    const controls = globeRef.current?.controls?.();
+    const controls = getActiveGlobe()?.controls?.();
     if (controls) controls.autoRotate = !userInteractedRef.current && !selectedStream && !selectedCluster && !expandedClusterId;
   }, [selectedStream, selectedCluster, expandedClusterId]);
 
@@ -692,7 +728,7 @@ export default function GlobeTest6() {
     const controls = globe.controls?.();
     if (controls) controls.autoRotate = false;
     // Snap to target at a far altitude, instant (hidden under opacity 0).
-    globe.pointOfView({ lat: coords[1], lng: coords[0], altitude: 2.8 }, 0);
+    bothPov({ lat: coords[1], lng: coords[0], altitude: 2.8 }, 0);
     // Reveal the globe on the next frame once the snap has been applied.
     requestAnimationFrame(() => {
       requestAnimationFrame(() => setPovSettled(true));
@@ -701,9 +737,7 @@ export default function GlobeTest6() {
     // (altitude only — no pan). Defer setSelectedStream until the end so
     // ringsData/markers don't disturb the camera tween.
     setTimeout(() => {
-      const g = globeRef.current;
-      if (!g) return;
-      g.pointOfView({ lat: coords[1], lng: coords[0], altitude: 0.55 }, 900);
+      bothPov({ lat: coords[1], lng: coords[0], altitude: 0.55 }, 900);
     }, 350);
     setTimeout(() => setSelectedStream(target), 1300);
   }, [globeReady, allLiveStreams, liveStreams, requestedLiveId]);
@@ -721,45 +755,51 @@ export default function GlobeTest6() {
     const isDouble = now - lastClickTimeRef.current < 300;
     lastClickTimeRef.current = now;
 
-    // Brief tap feedback: expanding ring on the clicked marker
-    const tappedEl = document.querySelector(`.gt2-marker[data-stream-id="${obj.id}"]`);
-    if (tappedEl) {
+    // Brief tap feedback: expanding ring on the clicked marker (both globes).
+    const tappedEls = document.querySelectorAll(`.gt2-marker[data-stream-id="${obj.id}"]`);
+    tappedEls.forEach((tappedEl) => {
       tappedEl.classList.remove('is-tapped');
       void tappedEl.offsetWidth;
       tappedEl.classList.add('is-tapped');
       setTimeout(() => tappedEl.classList.remove('is-tapped'), 450);
-    }
+    });
 
     if (obj.type === 'cluster') {
       userInteractedRef.current = true;
       setSelectedStream(null);
       setSelectedCluster(obj);
-      const controls = globeRef.current?.controls?.();
+      const controls = getActiveGlobe()?.controls?.();
       if (controls) controls.autoRotate = false;
       const coords = obj.displayCoordinates || obj.coordinates;
-      globeRef.current?.pointOfView({ lat: coords[1] - 5, lng: coords[0], altitude: 0.5 }, 500);
+      bothPov({ lat: coords[1] - 5, lng: coords[0], altitude: 0.5 }, 500);
       return;
     }
 
     userInteractedRef.current = true;
     setSelectedCluster(null);
     setSelectedStream(obj);
-    const currentAlt = globeRef.current?.pointOfView?.()?.altitude ?? 2.3;
-    const altitude = isDouble ? 0.4 : Math.min(1.2, currentAlt);
+    const currentAlt = getActiveGlobe()?.pointOfView?.()?.altitude ?? 2.3;
+    // First click: ease to intermediate altitude (stay on globe layer).
+    // Repeat clicks within 300ms: progressively dive — halve altitude each tap
+    // with a floor of 0.015 (close enough to read street names at zoom 17-18).
+    const altitude = isDouble
+      ? Math.max(0.015, currentAlt * 0.45)
+      : Math.min(1.2, currentAlt);
     const coords = obj.displayCoordinates || obj.coordinates;
-    globeRef.current?.pointOfView({ lat: coords[1], lng: coords[0], altitude }, isDouble ? 500 : 700);
-    const controls = globeRef.current?.controls?.();
+    bothPov({ lat: coords[1], lng: coords[0], altitude }, isDouble ? 500 : 700);
+    const controls = getActiveGlobe()?.controls?.();
     if (controls) controls.autoRotate = false;
-  }, []);
+  }, [bothPov]);
 
   handleClickRef.current = handleObjectClick;
 
   useEffect(() => {
     document.querySelectorAll('.gt2-marker.is-selected').forEach((el) => el.classList.remove('is-selected'));
     if (!selectedStream?.id) return;
+    // Dual-globe stack: markers exist in both canvases' CSS2DRenderer subtrees.
     const apply = () => {
-      const el = document.querySelector(`.gt2-marker[data-stream-id="${selectedStream.id}"]`);
-      if (el) el.classList.add('is-selected');
+      document.querySelectorAll(`.gt2-marker[data-stream-id="${selectedStream.id}"]`)
+        .forEach((el) => el.classList.add('is-selected'));
     };
     apply();
     const t = setTimeout(apply, 400);
@@ -810,7 +850,20 @@ export default function GlobeTest6() {
     let lastAlt = altitudeRef.current;
 
     const animate = (now) => {
-      const altitude = globeRef.current?.pointOfView?.()?.altitude ?? 2.3;
+      // Dual-globe sync: whichever globe currently receives user interaction
+      // (OrbitControls drag/zoom) drives the camera; the other follows via
+      // instant `pointOfView(pov, 0)`. SKIPPED during programmatic tweens
+      // because both globes already run the same fly-to via bothPov() and the
+      // sync would cancel the inactive globe's own tween every frame.
+      const mode = tileModeRef.current;
+      const activeGlobe = mode === 'original' ? globeRef.current : globeRefB.current;
+      const otherGlobe  = mode === 'original' ? globeRefB.current : globeRef.current;
+      const pov = activeGlobe?.pointOfView?.();
+      if (isAnimatingRef.current === 0 && pov && otherGlobe?.pointOfView) {
+        otherGlobe.pointOfView({ lat: pov.lat, lng: pov.lng, altitude: pov.altitude }, 0);
+      }
+
+      const altitude = pov?.altitude ?? 2.3;
       altitudeRef.current = altitude;
 
       if (Math.abs(altitude - lastAlt) > 0.002) {
@@ -819,8 +872,8 @@ export default function GlobeTest6() {
       }
 
       // Auto-switch texture ↔ tuiles avec hystérésis. Le crossing déclenche
-      // la transition fade existante — pas de boucle car requestTileMode
-      // no-op si on est déjà dans le mode cible.
+      // le crossfade CSS — pas de boucle car requestTileMode no-op si on est
+      // déjà dans le mode cible.
       const nextSide = altitude < 0.4 ? 'near' : altitude > 0.65 ? 'far' : autoSideRef.current;
       if (nextSide !== autoSideRef.current) {
         autoSideRef.current = nextSide;
@@ -901,16 +954,16 @@ export default function GlobeTest6() {
   }, []);
 
   const zoomBy = (factor) => {
-    const pov = globeRef.current?.pointOfView();
+    const pov = getActiveGlobe()?.pointOfView();
     if (!pov) return;
-    globeRef.current.pointOfView({ ...pov, altitude: Math.max(0.3, Math.min(5, pov.altitude * factor)) }, 400);
+    bothPov({ ...pov, altitude: Math.max(0.3, Math.min(5, pov.altitude * factor)) }, 400);
   };
 
   const recenter = () => {
     userInteractedRef.current = false;
     pauseStarsRef.current = true;
     // Shorter tween for a snappier dismiss.
-    globeRef.current?.pointOfView({ lat: 10, lng: 14, altitude: 2.8 }, 500);
+    bothPov({ lat: 10, lng: 14, altitude: 2.8 }, 500);
     // Hide ring + fade card instantly (ring is three.js material — animated
     // propagation competes with the camera tween on the GPU).
     setIsClosingSelection(true);
@@ -926,7 +979,7 @@ export default function GlobeTest6() {
         nextParams.delete('live');
         setSearchParams(nextParams, { replace: true });
       }
-      const controls = globeRef.current?.controls?.();
+      const controls = getActiveGlobe()?.controls?.();
       if (controls) controls.autoRotate = true;
     }, 520);
   };
@@ -937,7 +990,13 @@ export default function GlobeTest6() {
   // over-counts (react-globe.gl may call the builder for cached tiles) and
   // under-counts errors (a cached tile returns a URL but never reaches the
   // network). Actual accounting now happens via PerformanceObserver below.
-  const cartoTileEngine = useCallback((x, y, z) => buildCartoTileUrl(x, y, z), []);
+  // Memoized on tileStyle so switching presets triggers react-globe.gl to
+  // re-init its tile fetcher with the new URL template.
+  const cartoTileEngine = useCallback((x, y, z) => buildCartoTileUrl(x, y, z, tileStyle), [tileStyle]);
+  const tileFilter = useMemo(
+    () => STADIA_PRESETS.find((p) => p.id === tileStyle)?.filter || 'none',
+    [tileStyle],
+  );
 
   // Reset counters when switching modes so numbers reflect the active mode,
   // not accumulated history.
@@ -1009,42 +1068,84 @@ export default function GlobeTest6() {
       <div
         className="gt2-globe-offset"
         style={{
-          opacity: (povSettled && !transitioning) ? 1 : 0,
-          transition: transitioning
-            ? 'opacity 350ms cubic-bezier(0.4, 0, 0.2, 1)'
-            : 'opacity 450ms cubic-bezier(0.4, 0, 0.2, 1)',
+          opacity: povSettled ? 1 : 0,
+          transition: 'opacity 450ms cubic-bezier(0.4, 0, 0.2, 1)',
         }}
       >
       {dims.w > 0 && dims.h > 0 && (
-      <Globe
-        ref={globeRef}
-        width={dims.w}
-        height={dims.h}
-        animateIn={false}
-        onGlobeReady={() => setGlobeReady(true)}
-        backgroundColor="rgba(0,0,0,0)"
-        globeImageUrl={tileMode === 'original' ? '/assets/globe/earth-night-threeglobe-4k.jpg' : null}
-        globeTileEngineUrl={tileMode === 'carto' ? cartoTileEngine : undefined}
-        tilesRendererOpts={tileMode === 'carto' ? { lruCache: { maxSize: 400 } } : undefined}
-        showAtmosphere={true}
-        atmosphereColor="rgba(40,216,223,0.15)"
-        atmosphereAltitude={0.09}
-        showGraticules={false}
-        htmlElementsData={isClosingSelection ? [] : displayedStreams}
-        htmlElement={htmlElement}
-        htmlAltitude={0.01}
-        htmlLat={(d) => (d.displayCoordinates || d.coordinates)[1]}
-        htmlLng={(d) => (d.displayCoordinates || d.coordinates)[0]}
-        ringsData={selectedStream && !isClosingSelection ? [selectedStream] : []}
-        ringColor={() => 'rgba(40,216,223,0.55)'}
-        ringMaxRadius={1.5}
-        ringPropagationSpeed={0.8}
-        ringRepeatPeriod={2200}
-        ringAltitude={0.01}
-        ringLat={(d) => (d.displayCoordinates || d.coordinates)[1]}
-        ringLng={(d) => (d.displayCoordinates || d.coordinates)[0]}
-        rendererConfig={{ antialias: false, powerPreference: 'high-performance' }}
-      />
+      <div className="gt2-globe-stack">
+        <div
+          className="gt2-globe-slot"
+          style={{
+            opacity: tileMode === 'original' ? 1 : 0,
+            pointerEvents: tileMode === 'original' ? 'auto' : 'none',
+          }}
+        >
+          <Globe
+            ref={globeRef}
+            width={dims.w}
+            height={dims.h}
+            animateIn={false}
+            onGlobeReady={() => setGlobeReady(true)}
+            backgroundColor="rgba(0,0,0,0)"
+            globeImageUrl="/assets/globe/earth-night-threeglobe-4k.jpg"
+            showAtmosphere={true}
+            atmosphereColor="rgba(40,216,223,0.15)"
+            atmosphereAltitude={0.09}
+            showGraticules={false}
+            htmlElementsData={isClosingSelection ? [] : displayedStreams}
+            htmlElement={htmlElement}
+            htmlAltitude={0.01}
+            htmlLat={(d) => (d.displayCoordinates || d.coordinates)[1]}
+            htmlLng={(d) => (d.displayCoordinates || d.coordinates)[0]}
+            ringsData={selectedStream && !isClosingSelection ? [selectedStream] : []}
+            ringColor={() => 'rgba(40,216,223,0.55)'}
+            ringMaxRadius={1.5}
+            ringPropagationSpeed={0.8}
+            ringRepeatPeriod={2200}
+            ringAltitude={0.01}
+            ringLat={(d) => (d.displayCoordinates || d.coordinates)[1]}
+            ringLng={(d) => (d.displayCoordinates || d.coordinates)[0]}
+            rendererConfig={{ antialias: false, powerPreference: 'high-performance' }}
+          />
+        </div>
+        <div
+          className="gt2-globe-slot gt2-globe-slot--vector"
+          style={{
+            opacity: tileMode === 'carto' ? 1 : 0,
+            pointerEvents: tileMode === 'carto' ? 'auto' : 'none',
+            '--tile-filter': tileFilter,
+          }}
+        >
+          <Globe
+            ref={globeRefB}
+            width={dims.w}
+            height={dims.h}
+            animateIn={false}
+            backgroundColor="rgba(0,0,0,0)"
+            globeTileEngineUrl={cartoTileEngine}
+            tilesRendererOpts={{ lruCache: { maxSize: 400 } }}
+            showAtmosphere={true}
+            atmosphereColor="rgba(40,216,223,0.15)"
+            atmosphereAltitude={0.09}
+            showGraticules={false}
+            htmlElementsData={isClosingSelection ? [] : displayedStreams}
+            htmlElement={htmlElement}
+            htmlAltitude={0.01}
+            htmlLat={(d) => (d.displayCoordinates || d.coordinates)[1]}
+            htmlLng={(d) => (d.displayCoordinates || d.coordinates)[0]}
+            ringsData={selectedStream && !isClosingSelection ? [selectedStream] : []}
+            ringColor={() => 'rgba(40,216,223,0.55)'}
+            ringMaxRadius={1.5}
+            ringPropagationSpeed={0.8}
+            ringRepeatPeriod={2200}
+            ringAltitude={0.01}
+            ringLat={(d) => (d.displayCoordinates || d.coordinates)[1]}
+            ringLng={(d) => (d.displayCoordinates || d.coordinates)[0]}
+            rendererConfig={{ antialias: false, powerPreference: 'high-performance' }}
+          />
+        </div>
+      </div>
       )}
       </div>
 
@@ -1270,6 +1371,35 @@ export default function GlobeTest6() {
             </button>
           </div>
 
+          {tileMode === 'carto' && (
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 4, marginBottom: 10 }}>
+              {STADIA_PRESETS.map((preset) => {
+                const active = preset.id === tileStyle;
+                return (
+                  <button
+                    key={preset.id}
+                    type="button"
+                    onClick={() => setTileStyle(preset.id)}
+                    style={{
+                      padding: '4px 6px',
+                      background: active ? 'rgba(40,216,223,0.18)' : 'rgba(216,230,242,0.04)',
+                      border: `1px solid ${active ? '#28d8df' : 'rgba(216,230,242,0.14)'}`,
+                      color: active ? '#28d8df' : '#d8e6f2',
+                      borderRadius: 5,
+                      fontSize: 9,
+                      textTransform: 'uppercase',
+                      letterSpacing: 0.3,
+                      cursor: 'pointer',
+                      fontWeight: 500,
+                    }}
+                  >
+                    {preset.label}
+                  </button>
+                );
+              })}
+            </div>
+          )}
+
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '4px 12px', marginBottom: 10 }}>
             <span style={{ color: '#8ea3ba' }}>FPS</span>
             <span style={{
@@ -1304,7 +1434,7 @@ export default function GlobeTest6() {
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
             <button
               type="button"
-              onClick={() => globeRef.current?.pointOfView(GT6_VIEWS.earth, 1200)}
+              onClick={() => bothPov(GT6_VIEWS.earth, 1200)}
               style={{
                 padding: '5px 6px',
                 background: 'rgba(216,230,242,0.06)',
@@ -1320,7 +1450,7 @@ export default function GlobeTest6() {
             </button>
             <button
               type="button"
-              onClick={() => globeRef.current?.pointOfView(GT6_VIEWS.france, 1400)}
+              onClick={() => bothPov(GT6_VIEWS.france, 1400)}
               style={{
                 padding: '5px 6px',
                 background: 'rgba(216,230,242,0.06)',
@@ -1335,7 +1465,7 @@ export default function GlobeTest6() {
             </button>
             <button
               type="button"
-              onClick={() => globeRef.current?.pointOfView(GT6_VIEWS.paris, 1400)}
+              onClick={() => bothPov(GT6_VIEWS.paris, 1400)}
               style={{
                 padding: '5px 6px',
                 background: 'rgba(216,230,242,0.06)',
@@ -1351,7 +1481,7 @@ export default function GlobeTest6() {
             </button>
             <button
               type="button"
-              onClick={() => globeRef.current?.pointOfView(GT6_VIEWS.montmartre, 1600)}
+              onClick={() => bothPov(GT6_VIEWS.montmartre, 1600)}
               style={{
                 padding: '5px 6px',
                 background: 'rgba(216,230,242,0.06)',

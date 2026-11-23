@@ -11,13 +11,13 @@ export function routeFromVuvioUrl(rawUrl) {
     if (url.pathname.startsWith('/share/live/')) {
       const parts = url.pathname.split('/').filter(Boolean);
       const liveId = parts[2];
-      if (liveId && parts[3] === 'recap') return `/live/${encodeURIComponent(liveId)}/recap`;
-      if (liveId) return `/watch?live=${encodeURIComponent(liveId)}&mode=view`;
+      if (liveId && parts[3] === 'recap') return `/live/${encodeURIComponent(liveId)}/recap${url.search}`;
+      if (liveId) return `/watch?live=${encodeURIComponent(liveId)}&mode=view${url.search ? `&${url.search.slice(1)}` : ''}`;
     }
 
     if (/^\/live\/[^/]+$/.test(url.pathname)) {
       const liveId = url.pathname.split('/')[2];
-      return `/watch?live=${encodeURIComponent(liveId)}&mode=view`;
+      return `/watch?live=${encodeURIComponent(liveId)}&mode=view${url.search ? `&${url.search.slice(1)}` : ''}`;
     }
 
     return `${url.pathname}${url.search}${url.hash}` || '/watch';

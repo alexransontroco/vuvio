@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from 'react';
 import { MapPin, MousePointer2, Play, X } from 'lucide-react';
 import { CHEF_LIVE, FIREFIGHTER_LIVE, INTRO_LIVES } from '../introLives.js';
 import IntroBottomNav from './IntroBottomNav.jsx';
+import { useIntroCopy } from '../introCopy.js';
 
 const EASE = [0.22, 1, 0.36, 1];
 const CENTER_LAT = 25 * Math.PI / 180;
@@ -108,6 +109,7 @@ function drawGlobe(canvas, texture, centerLng) {
 }
 
 export default function GlobeLayerCanvas({ phase, visible, preload, reducedMotion, autoSelect, onCloseChef, onSelectLive }) {
+  const t = useIntroCopy();
   const canvasRef = useRef(null);
   const containerRef = useRef(null);
   const textureRef = useRef(null);
@@ -319,7 +321,7 @@ export default function GlobeLayerCanvas({ phase, visible, preload, reducedMotio
           <div className="introv2-globe__stars" />
           {visible && (
             <div className="introv2-globe__tabs" aria-hidden="true">
-              <span className="is-active">Live</span><span>Recent</span><span>Upcoming</span>
+              <span className="is-active">Live</span><span>{t.globe.recent}</span><span>{t.globe.upcoming}</span>
             </div>
           )}
           {phase === 'globechef' && visible && !selectedLive && (
@@ -364,7 +366,7 @@ export default function GlobeLayerCanvas({ phase, visible, preload, reducedMotio
                       if (phase === 'globe' && live.id === FIREFIGHTER_LIVE.id) setZoomed(true);
                       else setSelectedLive(live);
                     }}
-                    aria-label={`Open ${live.label} live cluster with ${live.count} streams`}
+                    aria-label={t.globe.cluster(live.label, live.count)}
                   >
                     {live.marker === 'photo' || live.id === 'firefighter' || live.id === 'piano' || live.id === 'wingsuit'
                       ? <span className="introv2-globe__cluster-thumb"><img src={live.poster} alt="" /></span>
@@ -397,12 +399,12 @@ export default function GlobeLayerCanvas({ phase, visible, preload, reducedMotio
               >
                 <img className="introv2-globe__live-card-poster" src={selectedLive.poster} alt={`${selectedLive.name} POV`} />
                 <div className="introv2-globe__live-card-copy">
-                  <span className="introv2-globe__live-card-category"><span className="introv2-globe__live-card-dot" />{selectedLive.category}</span>
-                  <strong>Live {selectedLive.id === 'firefighter' ? 'Firefighter' : selectedLive.name}</strong>
+                  <span className="introv2-globe__live-card-category"><span className="introv2-globe__live-card-dot" />{t.globe.categories[selectedLive.category] ?? selectedLive.category}</span>
+                  <strong>{t.globe.title(selectedLive.id === 'firefighter' ? (t.globe.categories.Emergency) : selectedLive.name)}</strong>
                   <span className="introv2-globe__live-card-location">{selectedLive.name} · {selectedLive.location}</span>
-                  <span className="introv2-globe__live-card-viewers">{selectedLive.viewers} viewers</span>
-                  <button type="button" className={'introv2-globe__live-card-watch' + (pressingWatch ? ' is-pressed' : '')} onClick={() => setPressingWatch(true)} aria-label={`Watch ${selectedLive.name} live`}>
-                    <Play size={13} fill="currentColor" strokeWidth={0} /> Watch
+                  <span className="introv2-globe__live-card-viewers">{t.globe.viewers(selectedLive.viewers)}</span>
+                  <button type="button" className={'introv2-globe__live-card-watch' + (pressingWatch ? ' is-pressed' : '')} onClick={() => setPressingWatch(true)} aria-label={t.globe.watchLive(selectedLive.name)}>
+                    <Play size={13} fill="currentColor" strokeWidth={0} /> {t.globe.watch}
                     {phase === 'globe' && <MousePointer2 size={16} strokeWidth={2.4} className="introv2-globe__live-card-cursor" />}
                   </button>
                 </div>
@@ -410,7 +412,7 @@ export default function GlobeLayerCanvas({ phase, visible, preload, reducedMotio
                   setSelectedLive(null);
                   setPressingWatch(false);
                   if (phase === 'globechef') onCloseChef();
-                }} aria-label="Close live preview">
+                }} aria-label={t.globe.close}>
                   <X size={15} strokeWidth={1.7} />
                   {phase === 'globechef' && autoSelect && !reducedMotion && (
                     <motion.span
@@ -427,7 +429,7 @@ export default function GlobeLayerCanvas({ phase, visible, preload, reducedMotio
           {visible && (
             <>
               <div className="introv2-globe__zoom-controls" aria-hidden="true"><span>+</span><span>−</span></div>
-              {!selectedLive && <div className="introv2-globe__filters" aria-hidden="true">☷&nbsp; Filters <span>⌃</span></div>}
+              {!selectedLive && <div className="introv2-globe__filters" aria-hidden="true">☷&nbsp; {t.globe.filters} <span>⌃</span></div>}
               <IntroBottomNav active="Globe" />
             </>
           )}

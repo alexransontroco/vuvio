@@ -1,9 +1,11 @@
 import { AnimatePresence, motion } from 'framer-motion';
 import BrandMark from '../../../BrandMark.jsx';
+import { useIntroCopy } from '../introCopy.js';
 
 const EASE = [0.22, 1, 0.36, 1];
 
 export default function EnterLayer({ visible, onEnter, reducedMotion }) {
+  const t = useIntroCopy();
   return (
     <AnimatePresence>
       {visible && (
@@ -33,7 +35,7 @@ export default function EnterLayer({ visible, onEnter, reducedMotion }) {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.75, duration: 0.9, ease: EASE }}
           >
-            Your world.<br />A new perspective.
+            {t.enter.titleFirst}<br />{t.enter.titleSecond}
           </motion.h2>
           <motion.button
             type="button"
@@ -45,7 +47,7 @@ export default function EnterLayer({ visible, onEnter, reducedMotion }) {
             whileHover={reducedMotion ? undefined : { scale: 1.03 }}
             whileTap={reducedMotion ? undefined : { scale: 0.97 }}
           >
-            Enter Vuvio
+            {t.enter.button}
           </motion.button>
         </motion.div>
       )}

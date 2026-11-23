@@ -194,7 +194,7 @@
   content: '';
   position: absolute;
   inset: -24px;
-  background: url('/pov/used/pov-piano-dubai.jpg') center / cover;
+  background: url('/intro/pov-piano-dubai.jpg') center / cover;
   filter: blur(20px) brightness(0.58);
   transform: scale(1.08);
 }

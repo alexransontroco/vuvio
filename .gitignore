@@ -74,6 +74,13 @@ public/assets/firefighter-goproraw.mp4
 *.avi
 *.mkv
 *.webm
+!public/pov/used/chef-pov.mp4
+!public/pov/used/pov-firefighter.mp4
+!public/pov/used/pov-piano-dubai.mp4
+!public/pov/used/pov-alpine-ridge.mp4
+!public/pov/used/pov-wingsuit.mp4
+!public/pov/used/pov-bike-opening.mp4
+!public/intro/vuviointromusic.mp3
 # Sensitive documents
 certs/
 *.docx

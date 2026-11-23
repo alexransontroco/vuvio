@@ -10,9 +10,10 @@ const COPY = {
     heroTitle: ['Des passions,', 'des métiers,', 'des expériences'],
     heroTitleAccent: '— en direct.',
     heroSubtitle: 'Découvrez le monde à travers ceux qui le vivent.',
+    waitlistIntro: 'Vuvio arrive bientôt. Laissez votre email pour être informé dès son lancement.',
 
     emailLabel: 'Votre adresse email',
-    notify: 'Me prévenir',
+    notify: 'Me prévenir du lancement',
     notifyFinal: 'Être informé du lancement',
     waitlistNote: 'Confirmation immédiate, puis un email au lancement.',
     privacyLink: 'Politique de confidentialité',
@@ -71,9 +72,10 @@ const COPY = {
     heroTitle: ['Passions,', 'crafts,', 'real experiences'],
     heroTitleAccent: '— live.',
     heroSubtitle: 'Discover the world through those who live it.',
+    waitlistIntro: 'Vuvio is coming soon. Leave your email to hear when it launches.',
 
     emailLabel: 'Your email address',
-    notify: 'Notify me',
+    notify: 'Notify me at launch',
     notifyFinal: 'Get notified at launch',
     waitlistNote: 'Instant confirmation, then one email at launch.',
     privacyLink: 'Privacy policy',
@@ -318,6 +320,7 @@ export default function LandingPage() {
           </h1>
 
           <p className="vuvio-landing__hero-subtitle">{t.heroSubtitle}</p>
+          <p className="vuvio-landing__waitlist-intro">{t.waitlistIntro}</p>
 
           <form className="vuvio-landing__form" onSubmit={submitWaitlist} noValidate>
             <label className="vuvio-landing__sr-only" htmlFor="launch-email">{t.emailLabel}</label>

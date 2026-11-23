@@ -581,8 +581,11 @@ export default function LiveRecapPageSimple() {
   const duration = liveData?.durationSeconds || 0;
   const minutes = Math.floor(duration / 60);
   const seconds = duration % 60;
-  const peakCount = liveData?.peakViewerCount ?? 0;
-  const totalCount = liveData?.totalViewerCount ?? liveData?.viewerCount ?? peakCount;
+  const peakCount = liveData?.peakViewerCount ?? liveData?.peakConcurrentViewers ?? 0;
+  const totalCount = liveData?.totalUniqueViewers
+    ?? liveData?.totalViewerCount
+    ?? liveData?.viewerCount
+    ?? peakCount;
   const msgCount = liveData?.commentCount ?? comments.length ?? 0;
   const questionCount = liveData?.questionCount ?? 0;
 
