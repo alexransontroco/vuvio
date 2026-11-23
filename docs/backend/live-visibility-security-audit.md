@@ -19,7 +19,18 @@ Périmètre : branche `fix/creator-acquisition-mvp`, PR #2. Audit du code et des
 
 ### Validation locale de cette correction
 
-L'émulateur Firestore valide **14/14 scénarios** : lecture et création publiques, refus Private/Followers, refus des sous-collections privées, refus de la liste brute et des écritures anonymes/étrangères, gestion par le propriétaire, rejet des clés d'ingest, des champs inconnus et d'une adresse administrateur non vérifiée. Les tests Functions valident **4/4 politiques** de visibilité, de propriété et d'administration ; les **3/3 tests de liens** passent. L'inventaire en lecture seule a été essayé sur les documents fictifs de l'émulateur. Les builds frontend et Functions passent sous Node 22. Aucun test sur un CDN Cloudflare réel, un navigateur Instagram ou une base de production n'a été effectué. Ces résultats ne remplacent pas une validation de bout en bout après migration.
+L'émulateur Firestore valide **15/15 scénarios** : lecture et création publiques, refus Private/Followers, refus des sous-collections privées, refus de la liste brute et des écritures anonymes/étrangères, gestion par le propriétaire, rejet des clés d'ingest, des champs inconnus et d'une adresse administrateur non vérifiée. Le scénario supplémentaire confirme qu'un ancien document public contenant un champ d'ingest reste inaccessible, puis devient lisible après un assainissement **simulé uniquement sur l'émulateur** ; le document privé reste inaccessible. Les tests Functions valident **4/4 politiques** de visibilité, de propriété et d'administration ; les **3/3 tests de liens** passent. Les builds frontend et Functions passent sous Node 22. Aucun test sur un CDN Cloudflare réel ou navigateur Instagram n'a été effectué. Ces résultats ne remplacent pas une validation de bout en bout après migration.
+
+### Inventaire Firebase en lecture seule — 23 novembre 2026
+
+Projet contrôlé : `vuvio-bf328`. Le script n'a exécuté que des lectures Admin SDK ; aucune règle, donnée, entrée Cloudflare ou ressource Storage n'a été modifiée. Les résultats ci-dessous sont agrégés et n'incluent ni clé ni identifiant de live.
+
+| Ensemble | Constat |
+| --- | --- |
+| `activeLives` | 58 documents examinés ; tous `ended`, tous `privacy: Everyone`, aucun `publicSafe`, 51 références à un input Cloudflare. Les 58 portent au moins un **champ** d'ingest, mais aucune **valeur d'identifiant d'ingest non vide** n'a été détectée. La présence d'un champ vide ou nul suffit néanmoins à bloquer la règle de lecture directe et impose son retrait avant un éventuel marquage public. |
+| `streams` | 11 documents examinés ; 2 en visibilité `followers` (1 `scheduled`, 1 `completed`). Un de ces deux documents référence un input Cloudflare. Un document signalé par l'inventaire référence un enregistrement ; son accès CDN n'a pas été vérifié. |
+
+Ces 58 documents `activeLives` sont **des candidats à examiner**, pas un lot automatiquement approuvé pour migration. L'intitulé `Everyone` ne prouve pas à lui seul que tout champ, miniature ou enregistrement peut être rendu public. Les deux documents Followers doivent rester non publics ; le stream terminé avec input Cloudflare doit être vérifié côté CDN avant toute décision de restriction ou de rotation. Aucun projet Vuvio de préproduction distinct n'est configuré dans ce dépôt ni apparu dans la liste des projets accessibles ; seule la simulation sur l'émulateur a été réalisée.
 
 ### Inventaire et ordre de mise en service — aucune étape exécutée en production
 

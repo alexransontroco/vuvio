@@ -15,12 +15,19 @@ function summarize(collection, doc) {
   const data = doc.data();
   const visibility = visibilityOf(data);
   const secretFields = ['streamKey', 'rtmpsStreamKey', 'webRTCUrl', 'ingestUrl', 'rtmpsIngestUrl', 'ingest', 'credentials', 'apiToken'];
+  const hasIngestField = secretFields.some((key) => Object.hasOwn(data, key));
+  const hasUsableIngestCredential = secretFields.some((key) => {
+    const value = data[key];
+    return typeof value === 'string' ? value.trim().length > 0 : value != null;
+  });
   return {
     collection,
     id: doc.id,
     visibility,
+    status: String(data.status ?? 'missing').toLowerCase(),
     publicSafe: data.publicSafe === true,
-    hasIngestSecret: secretFields.some((key) => Object.hasOwn(data, key)),
+    hasIngestField,
+    hasUsableIngestCredential,
     hasCloudflareInput: Boolean(data.cloudflareLiveInputId || data.liveInputId),
     hasRecording: Boolean(data.recordingUid || data.cloudflareVideoId || data.replayUrl),
     hasCover: Boolean(data.coverImageUrl || data.image || data.thumbnailUrl),
@@ -32,7 +39,7 @@ for (const collection of ['activeLives', 'streams']) {
   for (const doc of snapshot.docs) {
     const result = summarize(collection, doc);
     if (result.visibility !== 'public' && result.visibility !== 'everyone'
-      || result.hasIngestSecret || collection === 'activeLives' && !result.publicSafe) {
+      || result.hasIngestField || collection === 'activeLives' && !result.publicSafe) {
       process.stdout.write(`${JSON.stringify(result)}\n`);
     }
   }

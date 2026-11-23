@@ -60,6 +60,9 @@ before(async () => {
   }
   await seed('activeLives/security-private/comments', 'private-comment', { text: 'confidential' });
   await seed('activeLives/security-private/watchers', 'private-watcher', { sdpAnswer: 'confidential' });
+  await seed('activeLives', 'legacy-public', {
+    id: 'legacy-public', creatorUid: 'creator', status: 'ended', privacy: 'Everyone', streamKey: '',
+  });
 });
 
 test('anonymous viewer can read a public live', { skip }, async () => {
@@ -113,6 +116,18 @@ test('anonymous public feed query returns only approved lives', { skip }, async 
   assert.equal(response.status, 200);
   const rows = await response.json();
   assert.deepEqual(rows.flatMap((row) => row.document ? [row.document.name.split('/').at(-1)] : []), ['security-public']);
+});
+
+test('legacy public live becomes readable only after an explicit sanitized backfill', { skip }, async () => {
+  assert.equal((await read('legacy-public')).status, 403);
+  await seed('activeLives', 'legacy-public', {
+    id: 'legacy-public', creatorUid: 'creator', status: 'ended',
+    privacy: 'Everyone', visibility: 'public', publicSafe: true,
+  });
+  const response = await read('legacy-public');
+  assert.equal(response.status, 200);
+  assert.equal(JSON.stringify(await response.json()).includes('streamKey'), false);
+  assert.equal((await read('security-private')).status, 403);
 });
 
 test('anonymous client cannot modify a live document', { skip }, async () => {
