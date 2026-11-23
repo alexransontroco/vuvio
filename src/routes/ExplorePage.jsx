@@ -1064,7 +1064,7 @@ export default function ExplorePage() {
             </ExploreSection>
 
             {upcomingItems.length ? (
-            <ExploreSection title={t('explore.sectionUpcoming')} onSeeAll={() => navigate('/explore/live')}>
+            <ExploreSection title={t('explore.sectionUpcoming')} onSeeAll={() => navigate('/explore/upcoming')}>
                 <div className="ep-upcoming-row">
                   {upcomingItems.map((item) => (
                     <UpcomingCard key={item.id} item={item} onOpen={setOpenUpcoming} onRemind={handleRemind} isReminded={remindedIds.has(item.id)} />
