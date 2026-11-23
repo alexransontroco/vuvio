@@ -6,12 +6,14 @@ export function GearModelInput({
   brand,
   brandId,
   category,
+  initialModelName = '',
+  initialCustomName = '',
   onContinue,
   onBack,
   onCancel,
 }) {
-  const [modelName, setModelName] = useState('');
-  const [customName, setCustomName] = useState('');
+  const [modelName, setModelName] = useState(initialModelName ?? '');
+  const [customName, setCustomName] = useState(initialCustomName ?? '');
 
   const handleContinue = () => {
     // Model name is required

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { ChevronLeft } from 'lucide-react';
 import GearActivityPicker from './GearActivityPicker';
 import { GearCategoryPicker } from './GearCategoryPicker';
@@ -6,7 +7,7 @@ import { GearSubcategoryPicker } from './GearSubcategoryPicker';
 import { GearBrandPicker } from './GearBrandPicker';
 import { GearModelInput } from './GearModelInput';
 import { GearDetailsForm } from './GearDetailsForm';
-import { checkForDuplicate, createUserGearItem } from '../../services/gearService';
+import { checkForDuplicate, createUserGearItem, getActivityById, getBrandById, getCategoryById, getSubcategoryById } from '../../services/gearService';
 import './gear-picker.css';
 
 /**
@@ -18,9 +19,25 @@ export function GearAddWizard({
   userGearItems = [],
   onSave,
   onCancel,
+  initialItem = null,
 }) {
-  const [step, setStep] = useState('activity');
-  const [formData, setFormData] = useState({
+  const [step, setStep] = useState(initialItem ? 'model' : 'activity');
+  const [formData, setFormData] = useState(() => initialItem ? {
+    activityId: initialItem.activityId,
+    activity: getActivityById(initialItem.activityId),
+    categoryId: initialItem.categoryId,
+    category: getCategoryById(initialItem.categoryId),
+    subcategoryId: initialItem.subcategoryId ?? null,
+    subcategory: getSubcategoryById(initialItem.subcategoryId ?? '') ?? null,
+    brandId: initialItem.brandId ?? null,
+    brandName: initialItem.brandName ?? '',
+    modelName: initialItem.modelName ?? '',
+    customName: initialItem.customName ?? null,
+    year: initialItem.year ?? null,
+    imageUrl: initialItem.imageUrl ?? null,
+    productUrl: initialItem.productUrl ?? null,
+    notes: initialItem.notes ?? null,
+  } : {
     activityId: null,
     activity: null,
     categoryId: null,
@@ -98,7 +115,7 @@ export function GearAddWizard({
     }));
 
     // Check for duplicates
-    const duplicate = checkForDuplicate(userGearItems, {
+    const duplicate = checkForDuplicate(userGearItems.filter((item) => item.id !== initialItem?.id), {
       activityId: formData.activityId,
       categoryId: formData.categoryId,
       subcategoryId: formData.subcategoryId,
@@ -224,6 +241,8 @@ export function GearAddWizard({
         brand={formData.brandName}
         brandId={formData.brandId}
         category={formData.category}
+          initialModelName={formData.modelName}
+          initialCustomName={formData.customName}
         onContinue={handleModelInput}
         onBack={handleBack}
         onCancel={onCancel}
@@ -268,17 +287,18 @@ function DuplicateWarningScreen({
   onBack,
   onCancel,
 }) {
+  const { t } = useTranslation();
   return (
-    <section className="gear-picker gear-duplicate-warning" aria-label="Duplicate detected">
+    <section className="gear-picker gear-duplicate-warning" aria-label={t('gearManager.duplicateAria')}>
       <header className="gear-picker__header">
-        <button type="button" className="gear-picker__back" onClick={onBack} aria-label="Back">
+        <button type="button" className="gear-picker__back" onClick={onBack} aria-label={t('gearManager.back')}>
           <ChevronLeft size={20} strokeWidth={1.8} />
         </button>
         <div>
-          <h2>This item already exists</h2>
-          <p>We found a similar item in your gear collection</p>
+          <h2>{t('gearManager.duplicateTitle')}</h2>
+          <p>{t('gearManager.duplicateSubtitle')}</p>
         </div>
-        <button type="button" className="gear-picker__close" onClick={onCancel} aria-label="Cancel">
+        <button type="button" className="gear-picker__close" onClick={onCancel} aria-label={t('gearManager.cancel')}>
           ×
         </button>
       </header>
@@ -286,11 +306,11 @@ function DuplicateWarningScreen({
       <section className="gear-picker__section gear-duplicate-content">
         <div className="gear-duplicate-item">
           <strong>{existingItem.brandName} {existingItem.modelName}</strong>
-          <small>Added {new Date(existingItem.createdAt).toLocaleDateString()}</small>
+          <small>{t('gearManager.addedDate', { date: new Date(existingItem.createdAt).toLocaleDateString() })}</small>
         </div>
 
         <p className="gear-duplicate-message">
-          You already have this equipment in your collection. Would you like to:
+          {t('gearManager.duplicateQuestion')}
         </p>
 
         <div className="gear-duplicate-actions">
@@ -299,14 +319,14 @@ function DuplicateWarningScreen({
             className="gear-picker__continue"
             onClick={() => onUse(existingItem)}
           >
-            Use this existing item
+            {t('gearManager.useExisting')}
           </button>
           <button
             type="button"
             className="gear-picker__add-new"
             onClick={onContinue}
           >
-            Add anyway (different unit)
+            {t('gearManager.duplicateContinue')}
           </button>
         </div>
       </section>

@@ -1,4 +1,5 @@
 import { Trash2, Edit, Link as LinkIcon } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { getCategoryById, getActivityById, formatGearItem } from '../../services/gearService';
 import './gear-item-card.css';
 
@@ -12,6 +13,7 @@ export function GearItemCard({
   onEdit = null,
   onRemove = null,
 }) {
+  const { t } = useTranslation();
   const category = getCategoryById(item.categoryId);
   const activity = getActivityById(item.activityId);
   const displayName = formatGearItem(item);
@@ -22,19 +24,19 @@ export function GearItemCard({
         <div className="gear-item-card__header">
           <h3 className="gear-item-card__title">{displayName}</h3>
           {item.source === 'manual' && (
-            <span className="gear-item-card__badge">Custom</span>
+            <span className="gear-item-card__badge">{t('gearManager.custom')}</span>
           )}
         </div>
 
         <div className="gear-item-card__meta">
           {activity && (
             <span className="gear-item-card__meta-item">
-              <span className="gear-item-card__meta-label">{activity.label}</span>
+            <span className="gear-item-card__meta-label">{t(`gearManager.activities.${activity.id}`, { defaultValue: activity.label })}</span>
             </span>
           )}
           {category && (
             <span className="gear-item-card__meta-item">
-              <span className="gear-item-card__meta-label">{category.label}</span>
+            <span className="gear-item-card__meta-label">{t(`gearManager.categories.${category.id}`, { defaultValue: category.label })}</span>
             </span>
           )}
           {item.year && (
@@ -56,8 +58,8 @@ export function GearItemCard({
             target="_blank"
             rel="noreferrer"
             className="gear-item-card__action gear-item-card__action--link"
-            title="View product"
-            aria-label="View product page"
+            title={t('gearManager.viewProduct')}
+            aria-label={t('gearManager.viewProduct')}
           >
             <LinkIcon size={16} strokeWidth={1.8} />
           </a>
@@ -68,8 +70,8 @@ export function GearItemCard({
             type="button"
             className="gear-item-card__action gear-item-card__action--edit"
             onClick={onEdit}
-            title="Edit"
-            aria-label="Edit gear item"
+            title={t('gearManager.edit')}
+            aria-label={t('gearManager.editGear')}
           >
             <Edit size={16} strokeWidth={1.8} />
           </button>
@@ -80,8 +82,8 @@ export function GearItemCard({
             type="button"
             className="gear-item-card__action gear-item-card__action--remove"
             onClick={onRemove}
-            title="Remove"
-            aria-label="Remove gear item"
+            title={t('gearManager.remove')}
+            aria-label={t('gearManager.removeGear')}
           >
             <Trash2 size={16} strokeWidth={1.8} />
           </button>

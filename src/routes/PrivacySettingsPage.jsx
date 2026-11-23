@@ -59,11 +59,11 @@ function ToggleRow({ label, description, checked, onChange, comingSoon, comingSo
   );
 }
 
-function RadioRow({ label, value, name, checked, onChange }) {
+function RadioRow({ label, value, name, checked, onChange, disabled = false, comingSoonLabel }) {
   return (
-    <label className="settings-radio-row">
-      <span>{label}</span>
-      <input type="radio" name={name} value={value} checked={checked} onChange={onChange} />
+    <label className="settings-radio-row" style={disabled ? { opacity: 0.6 } : undefined}>
+      <span>{label}{disabled && comingSoonLabel ? <ComingSoonBadge label={comingSoonLabel} /> : null}</span>
+      <input type="radio" name={name} value={value} checked={checked} onChange={onChange} disabled={disabled} />
     </label>
   );
 }
@@ -95,7 +95,7 @@ export default function PrivacySettingsPage() {
           <div className="settings-card">
             <SectionHeader icon={Eye} title={t('privacySettings.whoCanSeeProfile')} />
             <RadioRow label={t('privacySettings.everyone')} value="public" name="profileVisibility" checked={true} onChange={() => {}} />
-            <RadioRow label={t('privacySettings.followersOnly')} value="followers" name="profileVisibility" checked={false} onChange={() => {}} />
+            <RadioRow label={t('privacySettings.followersOnly')} value="followers" name="profileVisibility" checked={false} onChange={() => {}} disabled comingSoonLabel={t('privacySettings.comingSoon')} />
             <div style={{ height: 1, background: 'rgba(255,255,255,0.07)', margin: '8px 0' }} />
             <ToggleRow
               label={t('privacySettings.showOnGlobe')}

@@ -19,12 +19,13 @@ export default function ProtectedRoute({ children, requireOnboarding = true }) {
 }
 
 export function PublicOnlyRoute({ children }) {
-  const { user, authLoading } = useAuth();
+  const { user, userProfile, authLoading, profileLoading } = useAuth();
 
   if (authLoading) return null;
 
   if (user) {
-    return <Navigate to="/watch" replace />;
+    if (profileLoading) return null;
+    return <Navigate to={userProfile?.onboardingCompleted === false ? '/onboarding' : '/watch'} replace />;
   }
 
   return children;

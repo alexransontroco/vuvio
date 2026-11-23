@@ -1,12 +1,17 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { ChevronLeft, Plus } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import GearAddWizard from '../components/gear/GearAddWizard';
 import GearItemCard from '../components/gear/GearItemCard';
 import {
-  getActivityById,
   getAllActivities,
+  getCreatorGearItems,
+  saveCreatorGearItem,
+  deleteCreatorGearItem,
 } from '../services/gearService';
+import { useAuth } from '../context/AuthContext.jsx';
 import '../styles/profile-gear-page.css';
 
 /**
@@ -15,12 +20,24 @@ import '../styles/profile-gear-page.css';
  */
 export default function ProfileGearPage() {
   const navigate = useNavigate();
-
-  // TODO: Connect to user auth and fetch from localStorage/Firestore
-  const userId = 'current-user';
+  const { t } = useTranslation();
+  const { user } = useAuth();
+  const userId = user?.uid;
   const [gearItems, setGearItems] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
   const [showWizard, setShowWizard] = useState(false);
   const [editingItemId, setEditingItemId] = useState(null);
+
+  useEffect(() => {
+    let active = true;
+    if (!userId) return () => { active = false; };
+    getCreatorGearItems(userId)
+      .then((items) => { if (active) setGearItems(items); })
+      .catch(() => { if (active) setError(t('gearManager.loadError')); })
+      .finally(() => { if (active) setLoading(false); });
+    return () => { active = false; };
+  }, [userId, t]);
 
   // Group items by activity
   const groupedByActivity = getAllActivities().map((activity) => ({
@@ -35,15 +52,24 @@ export default function ProfileGearPage() {
     setShowWizard(true);
   };
 
-  const handleSaveGear = (newItem) => {
-    // TODO: Save to localStorage or Firestore
-    setGearItems((prev) => {
-      if (editingItemId) {
-        return prev.map((item) => (item.id === editingItemId ? newItem : item));
-      }
-      return [newItem, ...prev];
-    });
-    setShowWizard(false);
+  const handleSaveGear = async (newItem) => {
+    const existing = editingItemId ? gearItems.find((item) => item.id === editingItemId) : null;
+    const item = {
+      ...newItem,
+      id: existing?.id ?? newItem.id,
+      userId,
+      createdAt: existing?.createdAt ?? newItem.createdAt,
+    };
+    try {
+      setError('');
+      await saveCreatorGearItem(item);
+      setGearItems((previous) => existing
+        ? previous.map((current) => current.id === existing.id ? item : current)
+        : [item, ...previous]);
+      setShowWizard(false);
+    } catch {
+      setError(t('gearManager.saveError'));
+    }
   };
 
   const handleEditGear = (item) => {
@@ -51,31 +77,33 @@ export default function ProfileGearPage() {
     setShowWizard(true);
   };
 
-  const handleRemoveGear = (itemId) => {
-    if (
-      window.confirm(
-        'Remove this gear from your collection? This action cannot be undone.'
-      )
-    ) {
-      setGearItems((prev) => prev.filter((item) => item.id !== itemId));
+  const handleRemoveGear = async (itemId) => {
+    if (!window.confirm(t('gearManager.removeConfirm'))) return;
+    try {
+      await deleteCreatorGearItem(itemId);
+      setGearItems((previous) => previous.filter((item) => item.id !== itemId));
+    } catch {
+      setError(t('gearManager.removeError'));
     }
   };
 
   if (showWizard) {
-    return (
+    return createPortal((
       <div className="profile-gear-wizard-container">
+        {error ? <p className="profile-gear-error" role="alert">{error}</p> : null}
         <GearAddWizard
           userId={userId}
           userGearItems={gearItems}
           onSave={handleSaveGear}
           onCancel={() => setShowWizard(false)}
+          initialItem={gearItems.find((item) => item.id === editingItemId) ?? null}
         />
       </div>
-    );
+    ), document.body);
   }
 
   return (
-    <section className="screen-scroll profile-gear-page" aria-label="My Gear">
+    <section className="screen-scroll profile-gear-page" aria-label={t('gearManager.title')}>
       <header className="profile-gear-header">
         <button
           type="button"
@@ -86,29 +114,32 @@ export default function ProfileGearPage() {
           <ChevronLeft size={20} strokeWidth={1.8} />
         </button>
         <div className="profile-gear-header__title">
-          <h1>My Gear</h1>
-          <p>Manage your equipment collection</p>
+          <h1>{t('gearManager.title')}</h1>
+          <p>{t('gearManager.subtitle')}</p>
         </div>
         <button
           type="button"
           onClick={handleAddGear}
           className="profile-gear-header__add"
-          aria-label="Add gear"
+          aria-label={t('gearManager.addGear')}
         >
           <Plus size={20} strokeWidth={1.8} />
         </button>
       </header>
 
-      {activeGroups.length === 0 ? (
+      {error ? <p className="profile-gear-error" role="alert">{error}</p> : null}
+      {loading ? (
+        <section className="profile-gear-empty"><p>{t('gearManager.loading')}</p></section>
+      ) : activeGroups.length === 0 ? (
         <section className="profile-gear-empty">
-          <h2>No gear yet</h2>
-          <p>Start building your gear collection by adding equipment for your activities.</p>
+          <h2>{t('gearManager.emptyTitle')}</h2>
+          <p>{t('gearManager.emptyBody')}</p>
           <button
             type="button"
             onClick={handleAddGear}
             className="profile-gear-empty__button"
           >
-            Add your first gear
+            {t('gearManager.addFirst')}
           </button>
         </section>
       ) : (
@@ -120,18 +151,16 @@ export default function ProfileGearPage() {
             >
               <header className="profile-gear-group__header">
                 <div>
-                  <h2>{activity.label}</h2>
+                  <h2>{t(`gearManager.activities.${activity.id}`, { defaultValue: activity.label })}</h2>
                   <p>
-                    {items.length}
-                    {' '}
-                    {items.length === 1 ? 'item' : 'items'}
+                    {t('gearManager.itemCount', { count: items.length })}
                   </p>
                 </div>
                 <button
                   type="button"
                   onClick={handleAddGear}
                   className="profile-gear-group__add"
-                  aria-label={`Add ${activity.label} gear`}
+                  aria-label={t('gearManager.addActivityGear', { activity: t(`gearManager.activities.${activity.id}`, { defaultValue: activity.label }) })}
                 >
                   <Plus size={16} strokeWidth={1.8} />
                 </button>
@@ -153,12 +182,12 @@ export default function ProfileGearPage() {
       )}
 
       <section className="profile-gear-info">
-        <h3>About your gear collection</h3>
+        <h3>{t('gearManager.aboutTitle')}</h3>
         <ul className="profile-gear-info__list">
-          <li>Your gear is private and only visible to you</li>
-          <li>You can optionally show gear on your public profile</li>
-          <li>When you go live, you can select which gear you're using</li>
-          <li>Add photos and links to product pages for reference</li>
+          <li>{t('gearManager.aboutPrivate')}</li>
+          <li>{t('gearManager.aboutPublic')}</li>
+          <li>{t('gearManager.aboutLive')}</li>
+          <li>{t('gearManager.aboutLinks')}</li>
         </ul>
       </section>
     </section>

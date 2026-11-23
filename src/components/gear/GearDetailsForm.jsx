@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { ChevronLeft, Loader } from 'lucide-react';
 import { searchProducts } from '../../services/productService';
 import { ProductThumbnail } from '../product/ProductThumbnail';
@@ -16,6 +17,7 @@ export function GearDetailsForm({
   onSkip,
   onCancel,
 }) {
+  const { t } = useTranslation();
   const [year, setYear] = useState(initialData.year || '');
   const [imageUrl, setImageUrl] = useState(initialData.imageUrl || '');
   const [productUrl, setProductUrl] = useState(initialData.productUrl || '');
@@ -70,21 +72,21 @@ export function GearDetailsForm({
   const years = Array.from({ length: 50 }, (_, i) => currentYear - i);
 
   return (
-    <section className="gear-picker gear-details-form" aria-label="Add optional details">
+    <section className="gear-picker gear-details-form" aria-label={t('gearManager.detailsAria')}>
       <header className="gear-picker__header">
         <button
           type="button"
           className="gear-picker__back"
           onClick={onSkip}
-          aria-label="Skip details"
+          aria-label={t('gearManager.skipDetails')}
         >
           <ChevronLeft size={20} strokeWidth={1.8} />
         </button>
         <div>
-          <h2>Details (optional)</h2>
-          <p>Add more info about your {category.label}</p>
+          <h2>{t('gearManager.detailsTitle')}</h2>
+          <p>{t('gearManager.detailsSubtitle', { category: t(`gearManager.categories.${category.id}`, { defaultValue: category.label }) })}</p>
         </div>
-        <button type="button" className="gear-picker__close" onClick={onCancel} aria-label="Cancel">
+        <button type="button" className="gear-picker__close" onClick={onCancel} aria-label={t('gearManager.cancel')}>
           ×
         </button>
       </header>
@@ -96,7 +98,7 @@ export function GearDetailsForm({
             {isLoadingProduct ? (
               <div className="gear-details-product-preview__loading">
                 <Loader size={24} className="spinner" />
-                <span>Searching for product image...</span>
+                <span>{t('gearManager.searchingImage')}</span>
               </div>
             ) : suggestedProduct ? (
               <div className="gear-details-product-preview__content">
@@ -113,7 +115,7 @@ export function GearDetailsForm({
                       rel="noreferrer"
                       className="gear-details-product-preview__link"
                     >
-                      View product →
+                      {t('gearManager.viewProduct')} →
                     </a>
                   )}
                 </div>
@@ -123,9 +125,9 @@ export function GearDetailsForm({
         )}
 
         <label>
-          <span className="gear-details-form__label">Year</span>
+          <span className="gear-details-form__label">{t('gearManager.year')}</span>
           <select value={year} onChange={(e) => setYear(e.target.value)}>
-            <option value="">Select year (optional)</option>
+            <option value="">{t('gearManager.selectYear')}</option>
             {years.map((y) => (
               <option key={y} value={y}>
                 {y}
@@ -135,31 +137,31 @@ export function GearDetailsForm({
         </label>
 
         <label>
-          <span className="gear-details-form__label">Image URL</span>
+          <span className="gear-details-form__label">{t('gearManager.imageUrl')}</span>
           <input
             type="url"
             placeholder="https://example.com/image.jpg"
             value={imageUrl}
             onChange={(e) => setImageUrl(e.target.value)}
           />
-          <small>Link to a photo of your gear</small>
+          <small>{t('gearManager.imageUrlHint')}</small>
         </label>
 
         <label>
-          <span className="gear-details-form__label">Product link</span>
+          <span className="gear-details-form__label">{t('gearManager.productLink')}</span>
           <input
             type="url"
             placeholder="https://example.com/product"
             value={productUrl}
             onChange={(e) => setProductUrl(e.target.value)}
           />
-          <small>Link to the official product page</small>
+          <small>{t('gearManager.productLinkHint')}</small>
         </label>
 
         <label>
-          <span className="gear-details-form__label">Notes</span>
+          <span className="gear-details-form__label">{t('gearManager.notes')}</span>
           <textarea
-            placeholder="Any notes about this gear... (condition, customizations, etc.)"
+            placeholder={t('gearManager.notesPlaceholder')}
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
             rows={3}
@@ -172,14 +174,14 @@ export function GearDetailsForm({
             className="gear-picker__skip"
             onClick={onSkip}
           >
-            Skip details
+            {t('gearManager.skipDetails')}
           </button>
           <button
             type="button"
             className="gear-picker__continue is-primary"
             onClick={handleSave}
           >
-            Save and continue
+            {t('gearManager.saveContinue')}
           </button>
         </div>
       </section>

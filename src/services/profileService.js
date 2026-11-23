@@ -304,45 +304,38 @@ export async function saveOwnCreatorProfile(nextProfile) {
     instagramUrl: normalizeInstagram(merged.instagramUrl),
   };
 
+  const firestoreUid = normalized.uid || normalized.id;
+  if (firestoreUid && firestoreUid !== CURRENT_USER_ID) {
+    const { setDoc, doc } = await import('firebase/firestore');
+    const { db } = await import('../firebase.js');
+    const firestoreData = {
+      uid: firestoreUid,
+      id: firestoreUid,
+      displayName: normalized.displayName ?? '',
+      name: normalized.displayName ?? '',
+      bio: normalized.bio ?? '',
+      profession: normalized.profession ?? '',
+      city: normalized.city ?? '',
+      country: normalized.country ?? '',
+      username: normalized.username ?? '',
+      languages: normalized.languages ?? [],
+      categories: normalized.categories ?? [],
+      websiteUrl: normalized.websiteUrl ?? '',
+      instagramUrl: normalized.instagramUrl ?? '',
+      youtubeUrl: normalized.youtubeUrl ?? '',
+      playlists: normalized.playlists ?? [],
+      avatarUrl: normalized.avatarUrl ?? null,
+      coverUrl: normalized.coverUrl ?? null,
+    };
+    await setDoc(doc(db, 'users', firestoreUid), firestoreData, { merge: true });
+  }
+
   if (win) {
     win.localStorage.setItem(STORAGE_KEY, JSON.stringify(normalized));
     win.dispatchEvent(new CustomEvent(PROFILE_UPDATED_EVENT, { detail: normalized }));
   }
 
-  try {
-    const { setDoc, doc } = await import('firebase/firestore');
-    const { db } = await import('../firebase.js');
-    const firestoreUid = normalized.uid || normalized.id;
-    if (firestoreUid && firestoreUid !== CURRENT_USER_ID) {
-      const isDataUrl = (v) => typeof v === 'string' && v.startsWith('data:');
-      // Only send user-editable fields — never send stats (followingCount, liveCount, etc.)
-      // because Firestore rules forbid changing those fields client-side
-      const firestoreData = {
-        uid: firestoreUid,
-        id: firestoreUid,
-        displayName: normalized.displayName ?? '',
-        name: normalized.displayName ?? '',
-        bio: normalized.bio ?? '',
-        profession: normalized.profession ?? '',
-        city: normalized.city ?? '',
-        country: normalized.country ?? '',
-        username: normalized.username ?? '',
-        languages: normalized.languages ?? [],
-        categories: normalized.categories ?? [],
-        websiteUrl: normalized.websiteUrl ?? '',
-        instagramUrl: normalized.instagramUrl ?? '',
-        youtubeUrl: normalized.youtubeUrl ?? '',
-        playlists: normalized.playlists ?? [],
-        avatarUrl: isDataUrl(normalized.avatarUrl) ? null : (normalized.avatarUrl ?? null),
-        coverUrl: isDataUrl(normalized.coverUrl) ? null : (normalized.coverUrl ?? null),
-      };
-      await setDoc(doc(db, 'users', firestoreUid), firestoreData, { merge: true });
-    }
-  } catch (err) {
-    console.error('[profileService] Failed to save profile to Firestore:', err.message);
-  }
-
-  return Promise.resolve(normalized);
+  return normalized;
 }
 
 export function subscribeToOwnProfile(callback) {

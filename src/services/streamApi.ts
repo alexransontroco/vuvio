@@ -1,7 +1,7 @@
 import { auth } from '../firebase.js';
 
 type ApiOptions = {
-  method?: 'GET' | 'POST';
+  method?: 'GET' | 'POST' | 'DELETE';
   body?: unknown;
   authRequired?: boolean;
 };
@@ -84,6 +84,10 @@ export function getScheduledStreams(filters: Record<string, string | number | un
 
 export function getMyScheduledStreams(filters: Record<string, string | number | undefined> = {}) {
   return getScheduledStreams({ ...filters, creator: 'me' });
+}
+
+export function deleteMyAccount() {
+  return apiRequest<{ success: true }>('/users/me', { method: 'DELETE' });
 }
 
 export function cancelScheduledStream(streamId: string) {
