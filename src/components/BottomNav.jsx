@@ -305,53 +305,59 @@ function StartLiveFlow({
             <span className="start-live-dest__badge">Always on</span>
           </div>
 
-          {/* YouTube */}
-          <button
-            type="button"
-            className={`start-live-dest start-live-dest--btn${youtubeReady ? ' start-live-dest--ready' : ''}`}
-            onClick={() => setDestSheet('youtube')}
-          >
-            <span className={`start-live-dest__dot${youtubeReady ? ' start-live-dest__dot--on' : ''}`} />
-            <span className="start-live-dest__name">YouTube</span>
-            {youtubeReady
-              ? <span className="start-live-dest__badge start-live-dest__badge--ready">✓ Ready</span>
-              : <span className="start-live-dest__action">{youtubeSaved ? 'Edit' : 'Add'}</span>}
-          </button>
-
-          {/* Instagram */}
-          <button
-            type="button"
-            className={`start-live-dest start-live-dest--btn${instagramReady ? ' start-live-dest--ready' : ''}`}
-            onClick={() => setDestSheet('instagram')}
-          >
-            <span className={`start-live-dest__dot${instagramReady ? ' start-live-dest__dot--on' : ''}`} />
-            <span className="start-live-dest__name">Instagram</span>
-            {instagramReady
-              ? <span className="start-live-dest__badge start-live-dest__badge--ready">✓ Ready</span>
-              : <span className="start-live-dest__action">{instagramSaved ? 'Edit' : 'Add'}</span>}
-          </button>
-
-          {/* Custom RTMP */}
-          {sessionDests.custom?.streamKey ? (
+          {/* YouTube — dev only */}
+          {import.meta.env.DEV && (
             <button
               type="button"
-              className="start-live-dest start-live-dest--btn start-live-dest--ready"
-              onClick={() => setDestSheet('custom')}
+              className={`start-live-dest start-live-dest--btn${youtubeReady ? ' start-live-dest--ready' : ''}`}
+              onClick={() => setDestSheet('youtube')}
             >
-              <span className="start-live-dest__dot start-live-dest__dot--on" />
-              <span className="start-live-dest__name">Custom RTMP</span>
-              <span className="start-live-dest__badge start-live-dest__badge--ready">✓ Ready</span>
+              <span className={`start-live-dest__dot${youtubeReady ? ' start-live-dest__dot--on' : ''}`} />
+              <span className="start-live-dest__name">YouTube</span>
+              {youtubeReady
+                ? <span className="start-live-dest__badge start-live-dest__badge--ready">✓ Ready</span>
+                : <span className="start-live-dest__action">{youtubeSaved ? 'Edit' : 'Add'}</span>}
             </button>
-          ) : (
+          )}
+
+          {/* Instagram — dev only */}
+          {import.meta.env.DEV && (
             <button
               type="button"
-              className="start-live-dest start-live-dest--btn"
-              onClick={() => setDestSheet('custom')}
+              className={`start-live-dest start-live-dest--btn${instagramReady ? ' start-live-dest--ready' : ''}`}
+              onClick={() => setDestSheet('instagram')}
             >
-              <span className="start-live-dest__dot" />
-              <span className="start-live-dest__name">Custom RTMP</span>
-              <span className="start-live-dest__action">Add</span>
+              <span className={`start-live-dest__dot${instagramReady ? ' start-live-dest__dot--on' : ''}`} />
+              <span className="start-live-dest__name">Instagram</span>
+              {instagramReady
+                ? <span className="start-live-dest__badge start-live-dest__badge--ready">✓ Ready</span>
+                : <span className="start-live-dest__action">{instagramSaved ? 'Edit' : 'Add'}</span>}
             </button>
+          )}
+
+          {/* Custom RTMP — dev only */}
+          {import.meta.env.DEV && (
+            sessionDests.custom?.streamKey ? (
+              <button
+                type="button"
+                className="start-live-dest start-live-dest--btn start-live-dest--ready"
+                onClick={() => setDestSheet('custom')}
+              >
+                <span className="start-live-dest__dot start-live-dest__dot--on" />
+                <span className="start-live-dest__name">Custom RTMP</span>
+                <span className="start-live-dest__badge start-live-dest__badge--ready">✓ Ready</span>
+              </button>
+            ) : (
+              <button
+                type="button"
+                className="start-live-dest start-live-dest--btn"
+                onClick={() => setDestSheet('custom')}
+              >
+                <span className="start-live-dest__dot" />
+                <span className="start-live-dest__name">Custom RTMP</span>
+                <span className="start-live-dest__action">Add</span>
+              </button>
+            )
           )}
         </div>
       </div>
