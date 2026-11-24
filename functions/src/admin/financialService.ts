@@ -7,7 +7,7 @@ const SHEET_RANGES = {
   hypotheses: "'Hypothèses'!A1:E100",
   forecast: "'Prévisionnel'!A1:E100",
   costs: "'Coûts unitaires'!A1:E80",
-  cashflow: "'Trésorerie'!A1:J100",
+  cashflow: "'Trésorerie'!A1:K100",
 };
 
 // Uses Application Default Credentials — the Cloud Function's service account

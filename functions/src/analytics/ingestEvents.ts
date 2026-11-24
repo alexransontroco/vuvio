@@ -7,19 +7,21 @@ import { ApiError } from '../shared/errors.js';
 import { asRecord, stringField } from '../shared/validation.js';
 import { streamRef } from '../streams/streamHelpers.js';
 
-const ADMIN_EMAILS = new Set(['alexandre.ranson@gmail.com']);
-const adminUidCache = new Map<string, boolean>();
+// Emails whose analytics events are silently dropped to avoid polluting stats.
+// Does NOT grant any admin access — only affects ingestion deduplication.
+const INTERNAL_USERS = new Set(['alexandre.ranson@gmail.com']);
+const internalUserCache = new Map<string, boolean>();
 
-async function isAdminUid(userId: string | null): Promise<boolean> {
+async function isInternalUser(userId: string | null): Promise<boolean> {
   if (!userId) return false;
-  if (adminUidCache.has(userId)) return adminUidCache.get(userId)!;
+  if (internalUserCache.has(userId)) return internalUserCache.get(userId)!;
   try {
     const record = await getAuth().getUser(userId);
-    const result = !!record.email && (ADMIN_EMAILS.has(record.email) || record.email.endsWith('@vuvio.app'));
-    adminUidCache.set(userId, result);
+    const result = !!record.email && (INTERNAL_USERS.has(record.email) || record.email.endsWith('@vuvio.app'));
+    internalUserCache.set(userId, result);
     return result;
   } catch {
-    adminUidCache.set(userId, false);
+    internalUserCache.set(userId, false);
     return false;
   }
 }
@@ -490,7 +492,7 @@ async function ingestStreamEvent(event: IncomingAnalyticsEvent): Promise<{ accep
 }
 
 async function ingestEvent(event: IncomingAnalyticsEvent): Promise<{ accepted: boolean; deduped: boolean; error?: string }> {
-  if (await isAdminUid(event.userId)) {
+  if (await isInternalUser(event.userId)) {
     return { accepted: false, deduped: true };
   }
   if (WEBSITE_EVENTS.has(event.eventName)) {
