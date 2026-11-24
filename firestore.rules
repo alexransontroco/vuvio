@@ -71,7 +71,14 @@ service cloud.firestore {
       allow create: if request.auth != null
         && request.resource.data.creatorUid == request.auth.uid
         && request.resource.data.status == 'live';
-      allow update: if true;
+      allow update: if request.auth != null && (
+        // Creator owns their live — can update any field
+        resource.data.creatorUid == request.auth.uid
+        ||
+        // Viewers can only cache the latest comment (denormalized display field)
+        request.resource.data.diff(resource.data).affectedKeys()
+          .hasOnly(['latestComment', 'latestCommentAt', 'updatedAt'])
+      );
       allow delete: if request.auth != null
         && resource.data.creatorUid == request.auth.uid;
 
@@ -270,6 +277,12 @@ service cloud.firestore {
     }
 
     match /visitorActivity/{docId} {
+      allow read: if isAdmin();
+      allow write: if false;
+    }
+
+    // Financial dashboard — written by Cloud Function (admin SDK, bypasses rules)
+    match /adminFinancialData/{docId} {
       allow read: if isAdmin();
       allow write: if false;
     }

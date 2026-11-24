@@ -199,3 +199,5 @@ export const updateTrustScoresScheduled = onSchedule({
 
 import { notifyNewMessage } from './notifications/notifyNewMessage.js';
 export { fanOutCreatorLive, notifyNewFollower, notifyNewMessage };
+
+export { createRealtimeSession, publishRealtimeTrack, subscribeRealtimeTrack, closeRealtimeTrack, closeRealtimeSession } from './realtimeTest/realtimeSFUService.js';

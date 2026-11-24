@@ -69,6 +69,7 @@ const AdminDocsPage       = lazy(() => import('./routes/AdminDocsPage.jsx'));
 const AdminInvestorCrmPage = lazy(() => import('./routes/AdminInvestorCrmPage.jsx'));
 const AdminMarketingPage   = lazy(() => import('./routes/AdminMarketingPage.jsx'));
 const AdminBusinessPage    = lazy(() => import('./routes/AdminBusinessPage.jsx'));
+const AdminRealtimeTestPage = lazy(() => import('./routes/AdminRealtimeTestPage.jsx'));
 const CreatorStatsPage     = lazy(() => import('./routes/CreatorStatsPage.jsx'));
 const PrivacySettingsPage  = lazy(() => import('./routes/PrivacySettingsPage.jsx'));
 const DesktopLayout       = lazy(() => import('./components/desktop/DesktopLayout.jsx'));
@@ -155,6 +156,7 @@ export default function App() {
       <Route path="/admin/investor-crm" element={<AdminRoute><Lazy component={AdminInvestorCrmPage} /></AdminRoute>} />
       <Route path="/admin/marketing" element={<AdminRoute><Lazy component={AdminMarketingPage} /></AdminRoute>} />
       <Route path="/admin/analytics" element={<AdminRoute><Lazy component={AnalyticsPage} /></AdminRoute>} />
+      <Route path="/admin/realtime-test" element={<AdminRoute><Lazy component={AdminRealtimeTestPage} /></AdminRoute>} />
 
       {/* ── Auth pages (redirect if already logged in) ── */}
       <Route
