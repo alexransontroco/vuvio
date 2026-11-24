@@ -238,7 +238,9 @@ service cloud.firestore {
     function isAdmin() {
       return request.auth != null && (
         request.auth.token.email == 'alexandre.ranson@gmail.com' ||
-        request.auth.token.email.matches('.*@vuvio\\.app')
+        request.auth.token.email == 'doug.benchetrit@gmail.com' ||
+        request.auth.token.email == 'cecilia.ranson@outlook.com' ||
+        request.auth.token.email == 'christophe.ranson@gmail.com'
       );
     }
 

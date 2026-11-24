@@ -26,6 +26,7 @@ import { useMemo, useState, useEffect } from 'react';
 import { Navigate } from 'react-router-dom';
 import { db } from '../firebase.js';
 import { useAuth } from '../context/AuthContext.jsx';
+import { isAdminEmail } from '../constants/adminEmails.js';
 import FinancialForecastViewer from '../components/admin/FinancialForecastViewer.jsx';
 
 const docModules = import.meta.glob([
@@ -1146,7 +1147,7 @@ export default function AdminDocsPage() {
   const [showArchive, setShowArchive] = useState(false);
   const [selectedId, setSelectedId] = useState(() => docs.find((doc) => doc.path === 'ADMIN.md')?.id || docs[0]?.id);
 
-  const isAdmin = isLocalDev || user?.email?.endsWith('@vuvio.app') || user?.email === 'alexandre.ranson@gmail.com' || user?.email === 'doug.benchetrit@gmail.com' || user?.email === 'cecilia.ranson@outlook.com' || user?.email === 'christophe.ranson@gmail.com';
+  const isAdmin = isLocalDev || isAdminEmail(user?.email);
 
   const domains = useMemo(() => {
     const counts = docs.reduce((acc, doc) => {

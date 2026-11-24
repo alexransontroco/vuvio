@@ -26,6 +26,7 @@ import { getMessagePreferences, updateMessagePreferences } from '../services/mes
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../context/AuthContext.jsx';
+import { isAdminEmail } from '../constants/adminEmails.js';
 import { useTheme } from '../context/ThemeContext.jsx';
 import { useLanguage } from '../context/LanguageContext.jsx';
 import { LiveActivityPrivacySettings } from '../components/social/LiveActivityPrivacySettings.jsx';
@@ -116,12 +117,7 @@ export default function SettingsPage() {
   const [showLanguageSheet, setShowLanguageSheet] = useState(false);
   const userEmail = user?.email ?? '';
   const isLocalDev = import.meta.env.DEV || ['localhost', '127.0.0.1'].includes(window.location.hostname);
-  const isAdmin = isLocalDev
-    || userEmail.endsWith('@vuvio.app')
-    || userEmail === 'alexandre.ranson@gmail.com'
-    || userEmail === 'doug.benchetrit@gmail.com'
-    || userEmail === 'cecilia.ranson@outlook.com'
-    || userEmail === 'christophe.ranson@gmail.com';
+  const isAdmin = isLocalDev || isAdminEmail(userEmail);
 
   const languageLabel = mode === 'auto'
     ? `${t(language === 'fr' ? 'settings.language.optionFr' : 'settings.language.optionEn')} · ${t('settings.language.autoBadge')}`

@@ -25,6 +25,7 @@ function PublicLiveRoute() {
 }
 import ProtectedRoute, { PublicOnlyRoute } from './components/ProtectedRoute.jsx';
 import { useAuth } from './context/AuthContext.jsx';
+import { isAdminEmail } from './constants/adminEmails.js';
 
 const ConversationPage    = lazy(() => import('./routes/ConversationPage.jsx'));
 const WatchPage           = lazy(() => import('./routes/WatchPage.jsx'));
@@ -67,6 +68,7 @@ const AnalyticsPage       = lazy(() => import('./routes/AnalyticsPage.jsx'));
 const AdminDocsPage       = lazy(() => import('./routes/AdminDocsPage.jsx'));
 const AdminInvestorCrmPage = lazy(() => import('./routes/AdminInvestorCrmPage.jsx'));
 const AdminMarketingPage   = lazy(() => import('./routes/AdminMarketingPage.jsx'));
+const AdminBusinessPage    = lazy(() => import('./routes/AdminBusinessPage.jsx'));
 const CreatorStatsPage     = lazy(() => import('./routes/CreatorStatsPage.jsx'));
 const PrivacySettingsPage  = lazy(() => import('./routes/PrivacySettingsPage.jsx'));
 const DesktopLayout       = lazy(() => import('./components/desktop/DesktopLayout.jsx'));
@@ -100,12 +102,7 @@ function AdminRoute({ children }) {
   const location = useLocation();
   const hostname = typeof window !== 'undefined' ? window.location.hostname : '';
   const isLocalDev = import.meta.env.DEV || ['localhost', '127.0.0.1'].includes(hostname);
-  const isAdmin = isLocalDev
-    || user?.email?.endsWith('@vuvio.app')
-    || user?.email === 'alexandre.ranson@gmail.com'
-    || user?.email === 'doug.benchetrit@gmail.com'
-    || user?.email === 'cecilia.ranson@outlook.com'
-    || user?.email === 'christophe.ranson@gmail.com';
+  const isAdmin = isLocalDev || isAdminEmail(user?.email);
 
   if (authLoading && !isLocalDev) return null;
   if (!user && !isLocalDev) return <Navigate to="/login" state={{ returnTo: location.pathname }} replace />;
@@ -154,6 +151,7 @@ export default function App() {
       <Route path="/desktop" element={<Lazy component={DesktopLayout} />} />
       <Route path="/admin" element={<Navigate to="/admin/docs" replace />} />
       <Route path="/admin/docs" element={<AdminRoute><Lazy component={AdminDocsPage} /></AdminRoute>} />
+      <Route path="/admin/business" element={<AdminRoute><Lazy component={AdminBusinessPage} /></AdminRoute>} />
       <Route path="/admin/investor-crm" element={<AdminRoute><Lazy component={AdminInvestorCrmPage} /></AdminRoute>} />
       <Route path="/admin/marketing" element={<AdminRoute><Lazy component={AdminMarketingPage} /></AdminRoute>} />
       <Route path="/admin/analytics" element={<AdminRoute><Lazy component={AnalyticsPage} /></AdminRoute>} />
