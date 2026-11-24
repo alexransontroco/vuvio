@@ -49,6 +49,11 @@ Commit `51d5dc71119dff90ca576ed263a7e290c21ecd59` (`fix(app): repair audited nav
 
 Les collisions de chemins ci-dessus sont des recouvrements, pas des conflits de merge confirmés ; le graphe actuel a une base commune `cb6c87e`. La stratégie de réconciliation reste à approuver et exécuter ultérieurement.
 
+**Suite de tests automatisés à réparer**
+- Frontend : `package.json` ne déclare aucun script `test` et `vitest`/`jsdom` ne sont pas installés. Les tests existants importent aussi `@testing-library/react`; ajouter les dépendances de test adaptées puis un script Vitest explicite avant de pouvoir les exécuter.
+- Functions : `functions/package.json` lance `node --test "lib/test/**/*.test.js"`, mais `functions/tsconfig.json` limite `rootDir` à `src` et n’inclut pas `test/`. Le test source `functions/test/validation.test.js` importe `../src/shared/validation.js`, alors que le fichier réel est `validation.ts` ; l’exécution directe échoue avec `ERR_MODULE_NOT_FOUND`. Inclure/compil­er les tests dans une sortie dédiée et faire pointer leurs imports vers les modules compilés, puis aligner les scripts `test` et `test:build` sur les fichiers générés réellement produits.
+- Validation observée sur la branche réconciliée avec Node 20.20.2 : `npm run build` passe ; l’exécution directe de `node --test functions/test/validation.test.js` échoue au chargement de `validation.js`, avant les assertions. Aucun test automatisé n’est donc déclaré vert par cette réconciliation.
+
 **Compatibilité Node / macOS Catalina**
 - Sur macOS 10.15.8 Catalina, `/usr/local/bin/node` a échoué au chargement avec `dyld: Symbol not found` car le binaire était construit pour macOS 13.5.
 - Les contrôles ont fonctionné avec le Node 20.20.2 de NVM situé sous `~/.nvm/versions/node/`. Sur Catalina, utiliser un binaire Node explicitement compatible avec macOS 10.15 ou exécuter le build dans un environnement récent ; ne pas confondre cette panne de runtime avec un échec applicatif.
