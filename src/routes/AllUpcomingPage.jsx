@@ -213,7 +213,7 @@ export default function AllUpcomingPage() {
       </div>
 
       {filtered.length ? (
-        <div className="ep-upcoming-row" style={{ padding: '0 16px 80px', flexWrap: 'wrap', display: 'flex', gap: 12 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 12, padding: '0 16px 80px' }}>
           {filtered.map((item) => (
             <UpcomingCard
               key={item.id}
