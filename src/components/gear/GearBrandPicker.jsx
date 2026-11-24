@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { ChevronLeft, ChevronRight, Search } from 'lucide-react';
 import { searchBrands, getPopularBrands } from '../../services/gearService';
 import './gear-picker.css';
@@ -11,6 +12,7 @@ export function GearBrandPicker({
   onBack,
   onCancel,
 }) {
+  const { t } = useTranslation();
   const [searchQuery, setSearchQuery] = useState('');
   const [focusedIndex, setFocusedIndex] = useState(-1);
   const popularBrands = getPopularBrands(categoryId, 6);
@@ -18,20 +20,15 @@ export function GearBrandPicker({
 
   const hasSearchQuery = searchQuery.length > 0;
   const brandsToShow = hasSearchQuery ? searchResults : popularBrands;
-  const emptyMessage =
-    searchQuery.length > 0
-      ? `No brands found for "${searchQuery}"`
-      : 'Popular brands...';
-
   return (
-    <section className="gear-picker gear-brand-picker" aria-label="Select brand">
+    <section className="gear-picker gear-brand-picker" aria-label={t('gearManager.selectBrand')}>
       <header className="gear-picker__header">
-        <button type="button" className="gear-picker__back" onClick={onBack} aria-label="Back">
+        <button type="button" className="gear-picker__back" onClick={onBack} aria-label={t('gearManager.back')}>
           <ChevronLeft size={20} strokeWidth={1.8} />
         </button>
         <div>
-          <h2>Choose a brand</h2>
-          <p>Find the manufacturer of your {category.label}</p>
+          <h2>{t('gearManager.brandTitle')}</h2>
+          <p>{t('gearManager.brandSubtitle', { category: t(`gearManager.categories.${category.id}`, { defaultValue: category.label }) })}</p>
         </div>
         <button type="button" className="gear-picker__close" onClick={onCancel} aria-label="Cancel">
           ×
@@ -43,7 +40,7 @@ export function GearBrandPicker({
           <Search size={16} />
           <input
             type="text"
-            placeholder={`Search ${category.label} brands...`}
+            placeholder={t('gearManager.searchBrands', { category: t(`gearManager.categories.${category.id}`, { defaultValue: category.label }) })}
             value={searchQuery}
             onChange={(e) => {
               setSearchQuery(e.target.value);
@@ -73,7 +70,7 @@ export function GearBrandPicker({
               type="button"
               className="gear-picker__search-clear"
               onClick={() => setSearchQuery('')}
-              aria-label="Clear search"
+              aria-label={t('gearManager.clearSearch')}
             >
               ×
             </button>
@@ -121,13 +118,13 @@ export function GearBrandPicker({
           </div>
         ) : hasSearchQuery ? (
           <div className="gear-picker__empty">
-            <p>No brands found for "{searchQuery}"</p>
+            <p>{t('gearManager.noBrands', { query: searchQuery })}</p>
             <button
               type="button"
               className="gear-picker__add-manual"
               onClick={() => onManual(searchQuery)}
             >
-              Add "{searchQuery}" manually
+              {t('gearManager.addBrandManually', { query: searchQuery })}
             </button>
           </div>
         ) : null}
@@ -135,10 +132,10 @@ export function GearBrandPicker({
 
       <footer className="gear-picker__footer">
         <button type="button" className="gear-picker__other" onClick={() => onManual('')}>
-          Other
+          {t('gearManager.other')}
         </button>
         <button type="button" className="gear-picker__unknown" onClick={() => onManual('')}>
-          I don't know
+          {t('gearManager.unknown')}
         </button>
       </footer>
     </section>

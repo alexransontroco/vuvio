@@ -2029,6 +2029,16 @@
   margin: 0 auto;
 }
 
+.settings-account-feedback {
+  margin: 0 0 16px;
+  padding: 12px 14px;
+  border: 1px solid rgba(43, 217, 200, 0.22);
+  border-radius: 10px;
+  color: var(--vuvio-text-primary);
+  background: rgba(43, 217, 200, 0.08);
+  font-size: 13px;
+}
+
 .settings-group {
   display: grid;
   gap: 8px;
@@ -2441,6 +2451,30 @@
 .settings-confirm-modal__actions {
   display: flex;
   gap: 10px;
+}
+
+.settings-confirm-modal__password {
+  display: grid;
+  gap: 6px;
+  margin: 16px 0;
+  color: var(--vuvio-text-primary);
+  font-size: 13px;
+  text-align: left;
+}
+
+.settings-confirm-modal__password input {
+  width: 100%;
+  min-height: 42px;
+  padding: 10px 12px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 8px;
+  color: var(--vuvio-text-primary);
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.settings-confirm-modal__error {
+  color: #ff9c9c;
+  font-size: 13px;
 }
 
 .settings-confirm-modal__cancel,

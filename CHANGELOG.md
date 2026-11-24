@@ -6,6 +6,58 @@ Historique des sessions de travail, du plus récent au plus ancien.
 
 ---
 
+## 2026-11-23 — Pause / Resume Live — Étapes A (audit) + B (démo UX)
+
+Implémentation de la fonctionnalité Pause / Resume live en deux étapes : audit technique complet + démo UX isolée derrière un feature flag.
+
+**Audit (Étape A)**
+- Architecture complète auditée : `webrtcService.js`, `WatchPage.jsx` (CreatorLiveSession + LiveViewer), `createdLiveService.js`, `functions/src/streams/getReplayStatus.ts`, `finishStream.ts`.
+- Décision technique : **track-mute** (pas de déconnexion WHIP) → un seul enregistrement Cloudflare continu avec silence/noir pendant la pause. Pas de nouveau segment, pas d'impact sur le replay existant.
+- Limitation documentée : le replay contient les segments de pause (noir/silence). Un post-processing via Cloudflare Clips API serait nécessaire pour un replay propre — reporté à la Phase C.
+
+**Démo UX (Étape B) — feature flag `VITE_PAUSE_RESUME_ENABLED=true` requis**
+- `webrtcService.js` : ajout de `pauseWhipTracks()` / `resumeWhipTracks()` via `sender.track.enabled`.
+- `src/components/live/PauseLiveSheet.jsx` : bottom sheet avec choix de durée (2 / 5 / 10 min / indéterminé).
+- `src/styles/components/live-pause.css` : styles complets (sheet, vue créateur en pause, overlay spectateur, reconnecting).
+- `WatchPage.jsx` :
+  - Bouton **Pause** dans les contrôles créateur (feature-flagged).
+  - `pauseLive()` : mute les tracks, met à jour Firestore (`liveStatus: 'paused'`, `pauseStartedAt`, `pauseExpectedEndAt`).
+  - `resumeLive()` : réactive les tracks, réinitialise Firestore (`liveStatus: 'live'`).
+  - `endLive()` : inclut `broadcastDurationSeconds`, `totalPausedSeconds`, `pauseCount` dans les stats Firestore.
+  - `CreatorPauseView` : écran créateur avec chrono de pause, temps restant, bouton Reprendre, bouton Terminer.
+  - `ViewerPauseOverlay` : overlay spectateur avec compte à rebours si durée annoncée.
+  - Subscription Firestore spectateur : détecte `liveStatus: 'paused'` → affiche l'overlay sans erreur de stream.
+  - État "Reconnexion au live…" affiché 3 s après la reprise.
+- `.env.local` : flag activé localement. `.env.production` : absent → `false` en prod.
+
+**Fichiers modifiés**
+- `src/services/webrtcService.js`
+- `src/routes/WatchPage.jsx`
+- `.env.local`
+
+**Fichiers créés**
+- `src/components/live/PauseLiveSheet.jsx`
+- `src/styles/components/live-pause.css`
+
+**Comportements fonctionnels**
+- UI complète créateur (sheet + vue pause + chrono) ✓
+- UI spectateur (overlay pause + countdown + reconnecting) ✓
+- Firestore `liveStatus` mis à jour à la pause et à la reprise ✓
+- Build prod réussi (exit 0) ✓
+
+**Comportements encore simulés / limitations**
+- Cloudflare enregistre noir/silence pendant la pause (pas de vraie coupure d'enregistrement).
+- Le replay final inclura les segments de pause — pas de post-processing pour l'instant.
+- Pas de test sur appareils réels iOS/Android effectué cette session.
+
+**Étape C (POC technique) — à faire**
+- Tester la vraie interruption/reprise WHIP sur Cloudflare Stream.
+- Vérifier le comportement de l'enregistrement (un segment ou plusieurs ?).
+- Documenter si Cloudflare génère un seul `.mp4` ou plusieurs vidéos pour la même `liveInputId`.
+- Explorer l'API Cloudflare Clips pour découper les segments de pause du replay.
+
+---
+
 ## 2026-11-23 — Deploy functions:api (OG attribution) + alignement secrets
 
 Déploiement de la fonction `api` seule après le hosting rollup. Le CLI bloquait sur un prompt interactif pour `METERED_API_KEY` (secret jamais provisionné).

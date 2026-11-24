@@ -1,6 +1,9 @@
 import {
   Archive,
   BarChart3,
+  BriefcaseBusiness,
+  Lightbulb,
+  TrendingUp,
   BookOpen,
   Box,
   CheckCircle2,
@@ -23,6 +26,7 @@ import { useMemo, useState, useEffect } from 'react';
 import { Navigate } from 'react-router-dom';
 import { db } from '../firebase.js';
 import { useAuth } from '../context/AuthContext.jsx';
+import FinancialForecastViewer from '../components/admin/FinancialForecastViewer.jsx';
 
 const docModules = import.meta.glob([
   '../../README.md',
@@ -35,6 +39,9 @@ const docModules = import.meta.glob([
 ], { query: '?raw', import: 'default', eager: true });
 
 const DOMAIN_META = {
+  strategy: { label: { en: 'Strategy', fr: 'Stratégie' }, icon: Lightbulb, accent: '#b7a6ff' },
+  business: { label: { en: 'Business', fr: 'Business' }, icon: BriefcaseBusiness, accent: '#e5b56a' },
+  growth: { label: { en: 'Growth & Marketing', fr: 'Croissance & Marketing' }, icon: TrendingUp, accent: '#77d4a1' },
   root: { label: { en: 'Command Center', fr: 'Centre de Commande' }, icon: Layers3, accent: '#35e3dc' },
   backend: { label: { en: 'Backend', fr: 'Backend' }, icon: Server, accent: '#6dd7ff' },
   streaming: { label: { en: 'Streaming', fr: 'Streaming' }, icon: Radio, accent: '#35e3dc' },
@@ -47,9 +54,26 @@ const DOMAIN_META = {
   archive: { label: { en: 'Archive', fr: 'Archives' }, icon: Archive, accent: '#94a3b8' },
 };
 
-const PRIORITY_ORDER = ['root', 'streaming', 'backend', 'analytics', 'gear', 'products', 'globe', 'i18n', 'ops', 'archive'];
+const PRIORITY_ORDER = ['root', 'strategy', 'business', 'growth', 'streaming', 'backend', 'analytics', 'gear', 'products', 'globe', 'i18n', 'ops', 'archive'];
+
+const STATIC_HTML_DOCS = [
+  {
+    id: 'Vuvio_App_Wireflow.html',
+    path: 'Vuvio_App_Wireflow.html',
+    domain: 'root',
+    isIndex: false,
+    title: 'App Wireflow',
+    status: 'Current',
+    readSignal: null,
+    description: 'Interactive app navigation wireflow — all screens and transitions.',
+    headings: [],
+    wordCount: 0,
+    htmlSrc: '/Vuvio_App_Wireflow.html',
+  },
+];
 
 const DOC_ROLES = {
+  'Vuvio_App_Wireflow.html': { en: 'Interactive wireflow', fr: 'Wireflow interactif' },
   'README.md': { en: 'Project entry point', fr: 'Point d\'entrée projet' },
   'ADMIN.md': { en: 'Open tasks and decisions', fr: 'Tâches et arbitrages' },
   'CHANGELOG.md': { en: 'Session history', fr: 'Historique des sessions' },
@@ -59,6 +83,7 @@ const DOC_ROLES = {
   'docs/README.md': { en: 'Technical docs index', fr: 'Index des docs techniques' },
   'docs/vuvio-complete-overview.md': { en: 'Complete product reference', fr: 'Référence produit complète' },
   'docs/vuvio-reference-produit-non-technique.md': { en: 'Non-technical product reference', fr: 'Référence produit non technique' },
+  'docs/business/previsionnel-2027-2029.md': { en: 'Financial forecast 2027–2029', fr: 'Prévisionnel financier 2027–2029' },
 };
 
 const COPY = {
@@ -525,7 +550,7 @@ function parseAdminTasks(markdown) {
 }
 
 function makeDocs() {
-  return Object.entries(docModules).map(([modulePath, content]) => {
+  const mdDocs = Object.entries(docModules).map(([modulePath, content]) => {
     const path = normalizePath(modulePath);
     const domain = getDomain(path);
     const isIndex = path.endsWith('/README.md') || ['README.md', 'AGENTS.md', 'journal.architecture.md'].includes(path);
@@ -542,7 +567,8 @@ function makeDocs() {
       headings: [...content.matchAll(/^#{2,3}\s+(.+)$/gm)].map((match) => stripMarkdown(match[1])).slice(0, 8),
       wordCount: content.trim().split(/\s+/).filter(Boolean).length,
     };
-  }).sort((a, b) => {
+  });
+  return [...mdDocs, ...STATIC_HTML_DOCS].sort((a, b) => {
     const domainDelta = PRIORITY_ORDER.indexOf(a.domain) - PRIORITY_ORDER.indexOf(b.domain);
     if (domainDelta !== 0) return domainDelta;
     if (a.isIndex !== b.isIndex) return a.isIndex ? -1 : 1;
@@ -561,31 +587,26 @@ function resolveDocHref(currentPath, href) {
   const cleanHref = decodeURIComponent(href).split('#')[0].split('?')[0];
   if (!cleanHref) return null;
 
-  let candidate = cleanHref.startsWith('/')
-    ? cleanHref.replace(/^\/+/, '')
-    : cleanHref;
-
-  if (candidate.startsWith('./')) candidate = candidate.slice(2);
-
-  if (cleanHref.startsWith('../') || cleanHref.startsWith('./')) {
-    const base = currentPath.includes('/') ? currentPath.split('/').slice(0, -1) : [];
-    const parts = [...base, ...cleanHref.split('/')];
-    const resolved = [];
-    parts.forEach((part) => {
-      if (!part || part === '.') return;
-      if (part === '..') {
-        resolved.pop();
-        return;
-      }
-      resolved.push(part);
-    });
-    candidate = resolved.join('/');
+  if (cleanHref.startsWith('/')) {
+    const candidate = cleanHref.replace(/^\/+/, '');
+    return candidate || null;
   }
+
+  // Resolve all relative paths (with or without ./ prefix) against current doc's directory
+  const base = currentPath.includes('/') ? currentPath.split('/').slice(0, -1) : [];
+  const parts = [...base, ...cleanHref.split('/')];
+  const resolved = [];
+  parts.forEach((part) => {
+    if (!part || part === '.') return;
+    if (part === '..') { resolved.pop(); return; }
+    resolved.push(part);
+  });
+  let candidate = resolved.join('/');
 
   if (candidate.endsWith('/')) candidate += 'README.md';
   if (!candidate.endsWith('.md') && candidate.startsWith('docs/')) candidate = `${candidate}/README.md`;
 
-  return candidate;
+  return candidate || null;
 }
 
 function parseChangelog(markdown) {
@@ -1125,7 +1146,7 @@ export default function AdminDocsPage() {
   const [showArchive, setShowArchive] = useState(false);
   const [selectedId, setSelectedId] = useState(() => docs.find((doc) => doc.path === 'ADMIN.md')?.id || docs[0]?.id);
 
-  const isAdmin = isLocalDev || user?.email?.endsWith('@vuvio.app') || user?.email === 'alexandre.ranson@gmail.com' || user?.email === 'doug.benchetrit@gmail.com' || user?.email === 'cecilia.ranson@outlook.com';
+  const isAdmin = isLocalDev || user?.email?.endsWith('@vuvio.app') || user?.email === 'alexandre.ranson@gmail.com' || user?.email === 'doug.benchetrit@gmail.com' || user?.email === 'cecilia.ranson@outlook.com' || user?.email === 'christophe.ranson@gmail.com';
 
   const domains = useMemo(() => {
     const counts = docs.reduce((acc, doc) => {
@@ -1241,6 +1262,10 @@ export default function AdminDocsPage() {
           <span>{formatStatus(selectedDoc.status, lang)}</span>
         </div>
 
+        {selectedDoc.path === 'docs/business/previsionnel-2027-2029.md' && (
+          <FinancialForecastViewer url={import.meta.env.VITE_FINANCIAL_FORECAST_URL} lang={lang} />
+        )}
+
         {selectedDoc.readSignal ? (
           <div className="admin-docs-reader__signal">
             <CheckCircle2 size={17} strokeWidth={1.9} />
@@ -1254,11 +1279,19 @@ export default function AdminDocsPage() {
           </div>
         ) : null}
 
-        <article
-          className="admin-docs-md"
-          onClick={handleMarkdownClick}
-          dangerouslySetInnerHTML={{ __html: rendered }}
-        />
+        {selectedDoc.htmlSrc ? (
+          <iframe
+            src={selectedDoc.htmlSrc}
+            title={selectedTitle}
+            style={{ width: '100%', height: '72vh', border: 'none', borderRadius: 8, background: '#fff' }}
+          />
+        ) : (
+          <article
+            className="admin-docs-md"
+            onClick={handleMarkdownClick}
+            dangerouslySetInnerHTML={{ __html: rendered }}
+          />
+        )}
       </main>
     </section>
   );

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { getSubcategoriesByCategory } from '../../services/gearService';
 import './gear-picker.css';
@@ -14,6 +14,7 @@ export function GearSubcategoryPicker({
   onBack,
   onCancel,
 }) {
+  const { t } = useTranslation();
   const subcategories = getSubcategoriesByCategory(categoryId);
 
   // If no subcategories, skip this step
@@ -23,16 +24,16 @@ export function GearSubcategoryPicker({
   }
 
   return (
-    <section className="gear-picker gear-subcategory-picker" aria-label="Select subcategory">
+    <section className="gear-picker gear-subcategory-picker" aria-label={t('gearManager.selectSubcategory')}>
       <header className="gear-picker__header">
-        <button type="button" className="gear-picker__back" onClick={onBack} aria-label="Back">
+        <button type="button" className="gear-picker__back" onClick={onBack} aria-label={t('gearManager.back')}>
           <ChevronLeft size={20} strokeWidth={1.8} />
         </button>
         <div>
-          <h2>Narrow it down</h2>
-          <p>Select a type of {category.label}</p>
+          <h2>{t('gearManager.subcategoryTitle')}</h2>
+          <p>{t('gearManager.subcategorySubtitle', { category: t(`gearManager.categories.${category.id}`, { defaultValue: category.label }) })}</p>
         </div>
-        <button type="button" className="gear-picker__close" onClick={onCancel} aria-label="Cancel">
+        <button type="button" className="gear-picker__close" onClick={onCancel} aria-label={t('gearManager.cancel')}>
           ×
         </button>
       </header>
@@ -46,7 +47,7 @@ export function GearSubcategoryPicker({
               className="gear-subcategory-row"
               onClick={() => onSelect(subcategory)}
             >
-              <span className="gear-subcategory-row__label">{subcategory.label}</span>
+              <span className="gear-subcategory-row__label">{t(`gearManager.subcategories.${subcategory.id}`, { defaultValue: subcategory.label })}</span>
               <ChevronRight size={16} strokeWidth={1.8} />
             </button>
           ))}
@@ -55,7 +56,7 @@ export function GearSubcategoryPicker({
 
       <footer className="gear-picker__footer">
         <button type="button" className="gear-picker__skip" onClick={onSkip}>
-          Skip this step
+          {t('gearManager.skipStep')}
         </button>
       </footer>
     </section>

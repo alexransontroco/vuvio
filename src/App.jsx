@@ -31,6 +31,7 @@ const WatchPage           = lazy(() => import('./routes/WatchPage.jsx'));
 const LivePage            = lazy(() => import('./routes/LivePage.jsx'));
 const ExplorePage         = lazy(() => import('./routes/ExplorePage.jsx'));
 const AllLivesPage        = lazy(() => import('./routes/AllLivesPage.jsx'));
+const AllUpcomingPage     = lazy(() => import('./routes/AllUpcomingPage.jsx'));
 const DiscoverFeedPage    = lazy(() => import('./routes/DiscoverFeedPage.jsx'));
 const DiscoverCategoryPage = lazy(() => import('./routes/DiscoverCategoryPage.jsx'));
 const EditProfilePage     = lazy(() => import('./routes/EditProfilePage.jsx'));
@@ -103,7 +104,8 @@ function AdminRoute({ children }) {
     || user?.email?.endsWith('@vuvio.app')
     || user?.email === 'alexandre.ranson@gmail.com'
     || user?.email === 'doug.benchetrit@gmail.com'
-    || user?.email === 'cecilia.ranson@outlook.com';
+    || user?.email === 'cecilia.ranson@outlook.com'
+    || user?.email === 'christophe.ranson@gmail.com';
 
   if (authLoading && !isLocalDev) return null;
   if (!user && !isLocalDev) return <Navigate to="/login" state={{ returnTo: location.pathname }} replace />;
@@ -218,7 +220,8 @@ export default function App() {
         {/* Public */}
         <Route path="/watch"         element={<Lazy component={WatchPage} />} />
         <Route path="/explore"      element={<Lazy component={ExplorePage} />} />
-        <Route path="/explore/live" element={<Lazy component={AllLivesPage} />} />
+        <Route path="/explore/live"     element={<Lazy component={AllLivesPage} />} />
+        <Route path="/explore/upcoming" element={<Lazy component={AllUpcomingPage} />} />
         <Route path="/globe"         element={<Lazy component={GlobeTest2Page} />} />
         <Route path="/map"           element={<Lazy component={GlobeTest2Page} />} />
         <Route path="/globe-current" element={<Lazy component={CurrentGlobePage} />} />

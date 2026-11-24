@@ -16,6 +16,7 @@ import {
   MonitorUp,
   Palette,
   Shield,
+  ShieldCheck,
   Siren,
   Trash2,
   UserRound,
@@ -30,7 +31,7 @@ import { useLanguage } from '../context/LanguageContext.jsx';
 import { LiveActivityPrivacySettings } from '../components/social/LiveActivityPrivacySettings.jsx';
 import LanguageSheet from '../components/LanguageSheet.jsx';
 
-const buildGroups = (t, userEmail, languageLabel) => [
+const buildGroups = (t, userEmail, languageLabel, isAdmin) => [
   {
     id: 'about',
     title: t('settings.groups.about'),
@@ -70,6 +71,13 @@ const buildGroups = (t, userEmail, languageLabel) => [
       { label: t('settings.items.privacyPolicy'), icon: Globe2, to: '/privacy' },
     ],
   },
+  ...(isAdmin ? [{
+    id: 'admin',
+    title: 'Admin',
+    items: [
+      { label: 'Admin console', value: 'Internal tools, docs & analytics', icon: ShieldCheck, to: '/admin' },
+    ],
+  }] : []),
   {
     id: 'security',
     title: t('settings.groups.security'),
@@ -107,6 +115,13 @@ export default function SettingsPage() {
   const [pendingAction, setPendingAction] = useState(null);
   const [showLanguageSheet, setShowLanguageSheet] = useState(false);
   const userEmail = user?.email ?? '';
+  const isLocalDev = import.meta.env.DEV || ['localhost', '127.0.0.1'].includes(window.location.hostname);
+  const isAdmin = isLocalDev
+    || userEmail.endsWith('@vuvio.app')
+    || userEmail === 'alexandre.ranson@gmail.com'
+    || userEmail === 'doug.benchetrit@gmail.com'
+    || userEmail === 'cecilia.ranson@outlook.com'
+    || userEmail === 'christophe.ranson@gmail.com';
 
   const languageLabel = mode === 'auto'
     ? `${t(language === 'fr' ? 'settings.language.optionFr' : 'settings.language.optionEn')} · ${t('settings.language.autoBadge')}`
@@ -230,7 +245,7 @@ export default function SettingsPage() {
           </div>
         </section>
 
-        {buildGroups(t, userEmail, languageLabel).map((group) => (
+        {buildGroups(t, userEmail, languageLabel, isAdmin).map((group) => (
           <section key={group.id} className="settings-group" aria-labelledby={`settings-${group.id}`}>
             <h2 id={`settings-${group.id}`}>{group.title}</h2>
             <div className="settings-card">

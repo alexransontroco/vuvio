@@ -6,6 +6,8 @@ import { useTranslation } from 'react-i18next';
 import { readImageFile, saveOwnCreatorProfile } from '../services/profileService.js';
 import { useAuth } from '../context/AuthContext.jsx';
 import { isValidSpotifyPlaylistUrl } from '../services/spotifyService.js';
+import { ref as storageRef, uploadString, getDownloadURL } from 'firebase/storage';
+import { storage } from '../firebase.js';
 
 const languageOptionValues = ['French', 'English', 'Spanish', 'Italian', 'German', 'Portuguese', 'Arabic', 'Japanese', 'Other'];
 const categoryOptionValues = ['Craft', 'Cooking', 'Agriculture', 'Sport', 'Transport', 'Music', 'Nature', 'Science', 'Education', 'Construction', 'Creation', 'Other'];
@@ -409,6 +411,7 @@ function isValidInstagram(value) {
 }
 
 export default function EditProfilePage() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { user, userProfile, profileLoading, setLocalUserProfile } = useAuth();
 
@@ -438,7 +441,7 @@ export default function EditProfilePage() {
     displayName: form.displayName.trim().length < 2 || form.displayName.trim().length > 50
       ? 'The display name must contain 2 to 50 characters.'
       : '',
-    profession: '',
+    profession: form.profession.trim() ? '' : t('editProfile.professionRequired'),
     websiteUrl: isValidOptionalUrl(form.websiteUrl) ? '' : 'Enter a valid URL.',
     instagramUrl: isValidInstagram(form.instagramUrl) ? '' : 'Enter a valid Instagram handle or URL.',
     youtubeUrl: isValidOptionalUrl(form.youtubeUrl) ? '' : 'Enter a valid URL.',
@@ -471,8 +474,21 @@ export default function EditProfilePage() {
     setSaving(true);
     setSaveError('');
     try {
+      const uploadProfileImage = async (value, field) => {
+        if (!value?.startsWith('data:')) return value;
+        const extension = value.startsWith('data:image/png') ? 'png' : value.startsWith('data:image/webp') ? 'webp' : 'jpg';
+        const ref = storageRef(storage, `users/${user.uid}/profile/${field}.${extension}`);
+        await uploadString(ref, value, 'data_url');
+        return getDownloadURL(ref);
+      };
+      const [avatarUrl, coverUrl] = await Promise.all([
+        uploadProfileImage(form.avatarUrl, 'avatar'),
+        uploadProfileImage(form.coverUrl, 'cover'),
+      ]);
       const updated = await saveOwnCreatorProfile({
         ...form,
+        avatarUrl,
+        coverUrl,
         id: user?.uid || form.id,
         uid: user?.uid || form.uid,
         name: form.displayName,

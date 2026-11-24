@@ -3,6 +3,8 @@ import categories from '../data/gear/categories.json';
 import subcategories from '../data/gear/subcategories.json';
 import brands from '../data/gear/brands.json';
 import mappings from '../data/gear/activityGearMappings.json';
+import { collection, deleteDoc, doc, getDocs, query, serverTimestamp, setDoc, where } from 'firebase/firestore';
+import { db } from '../firebase.js';
 import type {
   GearActivity,
   GearCategory,
@@ -322,4 +324,54 @@ export function createUserGearItem(
     createdAt: now,
     updatedAt: now,
   };
+}
+
+export async function getCreatorGearItems(userId: string): Promise<UserGearItem[]> {
+  const snapshot = await getDocs(query(collection(db, 'creatorEquipment'), where('creatorId', '==', userId)));
+  return snapshot.docs
+    .filter((entry) => Boolean(entry.data().gearActivityId))
+    .map((entry) => {
+      const data = entry.data();
+      return {
+        ...data,
+        id: entry.id,
+        userId,
+        activityId: data.gearActivityId,
+        categoryId: data.gearCategoryId,
+        subcategoryId: data.gearSubcategoryId ?? null,
+        brandId: data.gearBrandId ?? null,
+        brandName: data.brandName ?? data.brand ?? '',
+        modelName: data.modelName ?? data.model ?? '',
+      } as UserGearItem;
+    });
+}
+
+export async function saveCreatorGearItem(item: UserGearItem): Promise<void> {
+  const { userId, ...data } = item;
+  const categoryId = item.categoryId.toLowerCase();
+  const equipmentCategory = ['camera', 'camera-mount', 'lens', 'tripod', 'lighting'].includes(categoryId)
+    ? 'recording'
+    : ['microphone', 'headphones', 'amplifier', 'instrument'].includes(categoryId)
+      ? 'audio'
+      : 'activity';
+  await setDoc(doc(db, 'creatorEquipment', item.id), {
+    ...data,
+    brand: item.brandName || 'Other',
+    model: item.modelName || item.customName || 'Equipment',
+    displayName: [item.brandName, item.modelName || item.customName].filter(Boolean).join(' '),
+    category: equipmentCategory,
+    equipmentType: getCategoryById(item.categoryId)?.label ?? item.categoryId,
+    ownership: 'owned',
+    isPublic: false,
+    gearActivityId: item.activityId,
+    gearCategoryId: item.categoryId,
+    gearSubcategoryId: item.subcategoryId ?? null,
+    gearBrandId: item.brandId ?? null,
+    creatorId: userId,
+    updatedAt: serverTimestamp(),
+  }, { merge: true });
+}
+
+export async function deleteCreatorGearItem(id: string): Promise<void> {
+  await deleteDoc(doc(db, 'creatorEquipment', id));
 }

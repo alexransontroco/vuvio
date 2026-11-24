@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { getSuggestedCategoriesForActivity, getAllCategories } from '../../services/gearService';
 import './gear-picker.css';
@@ -10,6 +10,7 @@ export function GearCategoryPicker({
   onBack,
   onCancel,
 }) {
+  const { t } = useTranslation();
   const suggestedCategories = getSuggestedCategoriesForActivity(activityId);
   const allCategories = getAllCategories();
 
@@ -20,22 +21,22 @@ export function GearCategoryPicker({
   ];
 
   return (
-    <section className="gear-picker gear-category-picker" aria-label="Select equipment category">
+    <section className="gear-picker gear-category-picker" aria-label={t('gearManager.selectCategory')}>
       <header className="gear-picker__header">
-        <button type="button" className="gear-picker__back" onClick={onBack} aria-label="Back">
+        <button type="button" className="gear-picker__back" onClick={onBack} aria-label={t('gearManager.back')}>
           <ChevronLeft size={20} strokeWidth={1.8} />
         </button>
         <div>
-          <h2>Choose equipment type</h2>
-          <p>What are you adding for {activity.label}?</p>
+          <h2>{t('gearManager.categoryTitle')}</h2>
+          <p>{t('gearManager.categorySubtitle', { activity: t(`gearManager.activities.${activity.id}`, { defaultValue: activity.label }) })}</p>
         </div>
-        <button type="button" className="gear-picker__close" onClick={onCancel} aria-label="Cancel">
+        <button type="button" className="gear-picker__close" onClick={onCancel} aria-label={t('gearManager.cancel')}>
           ×
         </button>
       </header>
 
       <section className="gear-picker__section">
-        <h3>Suggested for {activity.label}</h3>
+        <h3>{t('gearManager.suggestedFor', { activity: t(`gearManager.activities.${activity.id}`, { defaultValue: activity.label }) })}</h3>
         <div className="gear-category-grid">
           {suggestedCategories.map((category) => (
             <button
@@ -45,7 +46,7 @@ export function GearCategoryPicker({
               onClick={() => onSelect(category)}
             >
               <span className="gear-category-card__icon">{getCategoryIcon(category.icon)}</span>
-              <span className="gear-category-card__label">{category.label}</span>
+              <span className="gear-category-card__label">{t(`gearManager.categories.${category.id}`, { defaultValue: category.label })}</span>
               <ChevronRight size={16} strokeWidth={1.8} />
             </button>
           ))}
@@ -54,7 +55,7 @@ export function GearCategoryPicker({
 
       {allCategories.length > suggestedCategories.length && (
         <section className="gear-picker__section">
-          <h3>Other equipment</h3>
+          <h3>{t('gearManager.otherEquipment')}</h3>
           <div className="gear-category-grid">
             {allCategories
               .filter((c) => !suggestedCategories.find((s) => s.id === c.id))
@@ -68,7 +69,7 @@ export function GearCategoryPicker({
                   <span className="gear-category-card__icon">
                     {getCategoryIcon(category.icon)}
                   </span>
-                  <span className="gear-category-card__label">{category.label}</span>
+                  <span className="gear-category-card__label">{t(`gearManager.categories.${category.id}`, { defaultValue: category.label })}</span>
                   <ChevronRight size={16} strokeWidth={1.8} />
                 </button>
               ))}

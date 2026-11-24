@@ -41,6 +41,7 @@ import { cancelScheduledStream } from './streams/cancelScheduledStream.js';
 import { updateAllTrustScores } from './users/updateTrustScore.js';
 import { fanOutCreatorLive } from './notifications/fanOutCreatorLive.js';
 import { notifyNewFollower } from './notifications/notifyNewFollower.js';
+import { deleteOwnAccount } from './users/deleteOwnAccount.js';
 
 function pathParts(path = '') {
   return path.replace(/^\/api\/?/, '/').split('/').filter(Boolean);
@@ -85,6 +86,7 @@ export const api = onRequest({
     if (req.method === 'GET' && parts[0] === 'globe' && parts[1] === 'streams') return await listGlobeStreams(req, res);
     if (req.method === 'GET' && parts[0] === 'streams' && parts[2] === 'replay-status') return await getReplayStatus(req, res, parts[1]);
     if (req.method === 'GET' && parts[0] === 'streams' && parts[1]) return await getStream(req, res, parts[1]);
+    if (req.method === 'DELETE' && parts[0] === 'users' && parts[1] === 'me') return await deleteOwnAccount(req, res);
     if (req.method === 'POST' && parts[0] === 'streams' && parts[2] === 'start') return await startStream(req, res, parts[1]);
     if (req.method === 'POST' && parts[0] === 'streams' && parts[2] === 'activate') return await activateScheduledStream(req, res, parts[1]);
     if (req.method === 'POST' && parts[0] === 'streams' && parts[2] === 'cancel') return await cancelScheduledStream(req, res, parts[1]);

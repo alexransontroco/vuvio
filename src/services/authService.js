@@ -9,6 +9,9 @@ import {
   getRedirectResult,
   signOut,
   updateProfile,
+  EmailAuthProvider,
+  reauthenticateWithCredential,
+  reauthenticateWithPopup,
 } from 'firebase/auth';
 import {
   doc,
@@ -251,6 +254,21 @@ export async function signOutUser() {
 
 export async function sendPasswordReset(email) {
   await sendPasswordResetEmail(auth, email);
+}
+
+export async function reauthenticateForAccountDeletion(user, password) {
+  const providers = user?.providerData?.map((provider) => provider.providerId) ?? [];
+  if (providers.includes('password')) {
+    if (!password) throw new Error('Enter your current password to continue.');
+    const credential = EmailAuthProvider.credential(user.email, password);
+    await reauthenticateWithCredential(user, credential);
+    return;
+  }
+  if (providers.includes('google.com')) {
+    await reauthenticateWithPopup(user, new GoogleAuthProvider());
+    return;
+  }
+  throw new Error('This sign-in method cannot confirm account deletion.');
 }
 
 export async function resendEmailVerification() {
