@@ -168,7 +168,7 @@ export default function AdminBusinessPage() {
               </button>
             ))}
           </div>
-          <p className="admin-business-note">Prévisions simulées à partir des hypothèses du business plan.</p>
+          <p className="admin-business-note">Données importées depuis le business plan Google Sheets.</p>
           <div className="admin-business-metrics">
             {highlights.map((row) => (
               <div className="admin-business-metric" key={row[0]}>

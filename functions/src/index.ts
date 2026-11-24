@@ -1,7 +1,7 @@
 import { onRequest } from 'firebase-functions/v2/https';
 import { onSchedule } from 'firebase-functions/v2/scheduler';
 import { sendError, ApiError } from './shared/errors.js';
-import { cloudflareAccountId, cloudflareApiToken, cloudflareCustomerCode, cloudflareWebhookSecret, openaiApiKey, icecatUsername, icecatPassword, ebayClientId, ebayClientSecret, googleSheetsCredentials } from './config/env.js';
+import { cloudflareAccountId, cloudflareApiToken, cloudflareCustomerCode, cloudflareWebhookSecret, openaiApiKey, icecatUsername, icecatPassword, ebayClientId, ebayClientSecret } from './config/env.js';
 import { createStream } from './streams/createStream.js';
 import { createScheduledStream } from './streams/createScheduledStream.js';
 import { startStream } from './streams/startStream.js';
@@ -60,7 +60,7 @@ export const api = onRequest({
   memory: '2GiB',
   // Secrets alignés sur ce qui est bindé au `api` déployé (9 secrets).
   // Metered/Amazon-PA/Awin sont déclarés dans env.ts mais pas provisionnés : les handlers (turnCredentialsHandler, affiliateRoutes) tombent sur un fallback "not configured" via sv() + undefined-guards.
-  secrets: [cloudflareAccountId, cloudflareApiToken, cloudflareWebhookSecret, cloudflareCustomerCode, openaiApiKey, icecatUsername, icecatPassword, ebayClientId, ebayClientSecret, googleSheetsCredentials],
+  secrets: [cloudflareAccountId, cloudflareApiToken, cloudflareWebhookSecret, cloudflareCustomerCode, openaiApiKey, icecatUsername, icecatPassword, ebayClientId, ebayClientSecret],
 }, async (req, res) => {
   sendCors(res);
   if (req.method === 'OPTIONS') {
