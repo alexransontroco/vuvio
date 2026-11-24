@@ -3,11 +3,18 @@ import { analyticsQueue } from '../analyticsQueue';
 import { analyticsSessionManager } from '../analyticsSession';
 import type { AnalyticsEventInput } from '../analyticsTypes';
 
+const { submitEventsMock } = vi.hoisted(() => ({ submitEventsMock: vi.fn() }));
+
+vi.mock('../analyticsClient', () => ({
+  analyticsClient: { submitEvents: submitEventsMock },
+}));
+
 describe('AnalyticsQueue', () => {
   beforeEach(() => {
     localStorage.clear();
     sessionStorage.clear();
     analyticsQueue.clear();
+    submitEventsMock.mockResolvedValue({ success: false, accepted: 0, deduped: 0 });
     vi.useFakeTimers();
   });
 
@@ -151,19 +158,12 @@ describe('AnalyticsQueue', () => {
       analyticsQueue.enqueue(event);
       expect(analyticsQueue.getQueueSize()).toBe(1);
 
-      vi.mock('../analyticsClient', () => ({
-        analyticsClient: {
-          submitEvents: vi.fn().mockResolvedValue({
-            success: true,
-            accepted: 1,
-            deduped: 0,
-          }),
-        },
-      }));
+      submitEventsMock.mockResolvedValue({ success: true, accepted: 1, deduped: 0 });
 
       await analyticsQueue.flush();
 
-      expect(analyticsQueue.getQueueSize()).toBe(1);
+      expect(analyticsQueue.getQueueSize()).toBe(0);
+      expect(localStorage.getItem('vuvio:analytics-queue')).toBeNull();
     });
   });
 

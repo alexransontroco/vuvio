@@ -44,6 +44,7 @@ _asset-inbox/
 .firebase/
 # TypeScript build output (functions)
 functions/lib/
+functions/lib-test/
 
 # Screen recordings at repo root
 Screen_Recording_*.mp4

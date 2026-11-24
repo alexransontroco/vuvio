@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import React from 'react';
 import { render, waitFor } from '@testing-library/react';
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
 const navigateMock = vi.fn();
 const useAuthMock = vi.fn();
@@ -20,7 +20,11 @@ vi.mock('firebase/firestore', () => ({
   query: vi.fn(),
   orderBy: vi.fn(),
   limit: vi.fn(),
+  where: vi.fn(),
   getDocs: (...args) => getDocsMock(...args),
+  getDoc: vi.fn().mockResolvedValue({ exists: () => false, data: () => ({}) }),
+  doc: vi.fn(),
+  getCountFromServer: vi.fn().mockResolvedValue({ data: () => ({ count: 0 }) }),
 }));
 
 vi.mock('../../firebase.js', () => ({
@@ -31,10 +35,13 @@ import AnalyticsPage from '../AnalyticsPage.jsx';
 
 describe('AnalyticsPage', () => {
   beforeEach(() => {
+    vi.stubEnv('DEV', false);
     navigateMock.mockReset();
     useAuthMock.mockReset();
     getDocsMock.mockReset();
   });
+
+  afterEach(() => vi.unstubAllEnvs());
 
   it('redirects non-admin users to watch', async () => {
     useAuthMock.mockReturnValue({
@@ -74,7 +81,7 @@ describe('AnalyticsPage', () => {
     render(<AnalyticsPage />);
 
     await waitFor(() => {
-      expect(getDocsMock).toHaveBeenCalledTimes(3);
+      expect(getDocsMock).toHaveBeenCalledTimes(5);
     });
   });
 });

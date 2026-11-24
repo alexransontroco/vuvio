@@ -1,10 +1,13 @@
-import { describe, it, expect, beforeEach } from 'vitest';
-import { analyticsSessionManager } from '../analyticsSession';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
+
+let analyticsSessionManager;
 
 describe('AnalyticsSessionManager', () => {
-  beforeEach(() => {
+  beforeEach(async () => {
     localStorage.clear();
     sessionStorage.clear();
+    vi.resetModules();
+    ({ analyticsSessionManager } = await import('../analyticsSession'));
   });
 
   describe('getSession', () => {
@@ -29,12 +32,8 @@ describe('AnalyticsSessionManager', () => {
   describe('anonymousId', () => {
     it('should persist anonymousId in localStorage', () => {
       const id1 = analyticsSessionManager.getAnonymousId();
-
-      localStorage.clear();
-      sessionStorage.clear();
-
       const stored = localStorage.getItem('vuvio:anonymous-id');
-      expect(stored).toBeUndefined();
+      expect(stored).toBe(id1);
     });
 
     it('should return same anonymousId for user', () => {
@@ -68,15 +67,12 @@ describe('AnalyticsSessionManager', () => {
       expect(session.userId).toBeNull();
     });
 
-    it('should update timestamp when setting userId', () => {
+    it('should update timestamp when setting userId', async () => {
       const before = analyticsSessionManager.getSession().updatedAt;
-
-      setTimeout(() => {
-        analyticsSessionManager.setUserId('user-123');
-      }, 100);
-
+      await new Promise((resolve) => setTimeout(resolve, 10));
+      analyticsSessionManager.setUserId('user-123');
       const after = analyticsSessionManager.getSession().updatedAt;
-      expect(after).toBeGreaterThanOrEqual(before);
+      expect(after).toBeGreaterThan(before);
     });
   });
 

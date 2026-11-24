@@ -2,6 +2,16 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { StreamViewTracker } from '../streamViewTracker';
 import type { StreamViewTrackerConfig } from '../streamViewTracker';
 
+vi.mock('../analyticsService', () => ({
+  analyticsService: {
+    trackStreamImpression: vi.fn(),
+    trackStreamViewStarted: vi.fn(),
+    trackStreamViewEnded: vi.fn(),
+    trackStreamViewThreshold: vi.fn(),
+    trackStreamSkipped: vi.fn(),
+  },
+}));
+
 describe('StreamViewTracker', () => {
   let tracker: StreamViewTracker;
   const config: StreamViewTrackerConfig = {
@@ -63,7 +73,8 @@ describe('StreamViewTracker', () => {
 
       const secondMetrics = tracker.getMetrics();
 
-      expect(firstMetrics.watchDurationSeconds).toBe(secondMetrics.watchDurationSeconds);
+      expect(firstMetrics.watchDurationSeconds).toBe(1);
+      expect(secondMetrics.watchDurationSeconds).toBe(2);
     });
   });
 

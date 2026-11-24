@@ -17,11 +17,19 @@ Vuvio is a mobile-first POV live streaming app. React 19 / Vite 6 / React Router
 ## Commands
 
 ```bash
+nvm use                    # uses .nvmrc (Node 20.20.2)
+npm ci
+npm test                   # frontend tests
 npm run dev        # Vite dev server
 npm run build      # Production build — run for final validation/deploy, not after every small edit
+npm --prefix functions ci
+npm --prefix functions test
+npm --prefix functions run test:build
 firebase deploy --only hosting          # Deploy frontend
 firebase deploy --only functions        # Deploy backend
 ```
+
+Claude Code and Codex should use the repository Node version before running commands: `nvm use` at the repository root. The frontend and local Functions test tools use Node 20.20.2; the deployed Functions runtime remains controlled separately by `functions/package.json` and `firebase.json`.
 
 Do not run `npm run build` after every small change. Group edits first, use lighter checks during iteration, and run the production build only for final validation/deploy or when explicitly requested.
 

@@ -8,8 +8,9 @@
   },
   "scripts": {
     "build": "tsc -p tsconfig.json",
-    "test": "node --test \"lib/test/**/*.test.js\"",
-    "test:build": "tsc -p tsconfig.json && node --test \"lib/test/**/*.test.js\""
+    "test": "npm run test:compile && node --test lib-test/test/validation.test.js lib-test/test/validation-typescript.test.js",
+    "test:compile": "tsc -p tsconfig.test.json",
+    "test:build": "npm run build && npm test"
   },
   "dependencies": {
     "ffmpeg-static": "^5.3.0",

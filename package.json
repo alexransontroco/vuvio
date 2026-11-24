@@ -5,6 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "test": "vitest run",
+    "test:watch": "vitest",
     "dev:relay": "npm --prefix relay start",
     "dev:replay": "sh -c 'npm run dev:relay & relay_pid=$!; npm run dev -- --host 0.0.0.0 --port 5173; kill $relay_pid'",
     "build": "vite build",
@@ -48,6 +50,9 @@
   },
   "devDependencies": {
     "@capacitor/cli": "^7.6.9",
-    "typescript": "^5.9.3"
+    "@testing-library/react": "^16.3.3",
+    "jsdom": "^29.1.1",
+    "typescript": "^5.9.3",
+    "vitest": "^4.1.12"
   }
 }

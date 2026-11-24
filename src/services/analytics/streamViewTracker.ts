@@ -212,13 +212,22 @@ export class StreamViewTracker {
   }
 
   getMetrics(): ViewSessionMetrics {
-    return { ...this.metrics };
+    const metrics = { ...this.metrics };
+    if (this.startTime === null) return metrics;
+
+    const now = this.endTime ?? Date.now();
+    metrics.watchDurationSeconds = Math.floor((now - this.startTime) / 1000);
+    const activeDelta = this.isPlaying && this.isVisible && this.isPageVisible && this.lastActiveTime !== null
+      ? Math.max(0, Math.min(now - this.lastActiveTime, 60000))
+      : 0;
+    metrics.activeWatchDurationSeconds = Math.floor((this.accumulatedActiveTime + activeDelta) / 1000);
+    return metrics;
   }
 
   private startActiveTimeTracking(): void {
     this.updateInterval = window.setInterval(() => {
-      this.checkMilestones();
       this.flushActiveTime();
+      this.checkMilestones();
     }, 1000);
   }
 

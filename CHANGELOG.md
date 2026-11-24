@@ -6,6 +6,34 @@ Historique des sessions de travail, du plus récent au plus ancien.
 
 ---
 
+## 2026-11-24 — Réconciliation dev, tests automatisés et Node Catalina
+
+Branche locale `dev` synchronisée en fast-forward sur `origin/dev` dans le worktree dédié `/private/tmp/vuvio-dev-synced`. Les deux pointes étaient `7fa9665` après synchronisation. Les worktrees des autres branches, les stashes et les fichiers non suivis du checkout principal ont été préservés.
+
+**Tests frontend**
+- Ajout de Vitest, jsdom et Testing Library, du fichier `vitest.config.js` et des scripts `npm test` / `npm run test:watch`.
+- Les cinq fichiers de tests frontend existants passent : **51/51 tests**.
+- Correction de la mesure active dans `StreamViewTracker` : les secondes actives sont maintenant visibles dans les métriques courantes et les seuils 3/10/30 secondes sont évalués après accumulation du tick.
+- Réparation des tests hérités : mock AnalyticsClient hoisté au niveau module, attente de flush corrigée, singleton de session réinitialisé par test, test AnalyticsPage en URL de production et contrôle de ses cinq lectures Firestore. Aucun test ni assertion n’a été supprimé.
+
+**Tests Functions**
+- Ajout d’un `tsconfig.test.json` qui compile les deux suites existantes et leurs imports TypeScript vers `lib-test/` ; les deux fichiers portent maintenant des noms de sortie distincts.
+- Scripts `test:compile`, `test` et `test:build` alignés sur les fichiers générés. Les deux suites passent : **10/10 assertions** ; le script `test:build` (typecheck complet + tests) passe également.
+- `functions/package.json` et `firebase.json` conservent Node 22 pour le runtime Functions ; `.nvmrc` fixe Node 20.20.2 pour le développement local et les validations Catalina. NPM signale des avertissements `EBADENGINE` lors de l’installation Functions sous Node 20, car plusieurs dépendances Functions demandent Node 22 ; ils n’empêchent pas le typecheck ni les tests sous Node 20.
+
+**Environnement Claude Code / Codex**
+- Ajout de `.nvmrc` (`20.20.2`) et des commandes `nvm use`, `npm ci`, `npm test`, `npm run build`, `npm --prefix functions ci`, `npm --prefix functions test` et `npm --prefix functions run test:build` à `AGENTS.md`.
+
+**Validation**
+- `npm test` avec Node 20.20.2 : 5 fichiers, 51 tests passés.
+- `npm --prefix functions run test:build` avec Node 20.20.2 : build TypeScript et 10 tests passés.
+- `npm run build` avec Node 20.20.2 : réussi. Avertissements restants : références d’images résolues à l’exécution, imports Firebase à la fois dynamiques et statiques, gros bundles (globe 2.1 MB, entrée 1.4 MB, cartes 1.05 MB).
+- Les tests React affichent un avertissement de clé manquante dans une liste de `AnalyticsPage`; il ne fait pas échouer les assertions et reste à corriger séparément.
+
+**Fichiers principaux** : `.nvmrc`, `AGENTS.md`, `package.json`, `package-lock.json`, `vitest.config.js`, `functions/package.json`, `functions/tsconfig.test.json`, les tests Analytics existants et `src/services/analytics/streamViewTracker.ts`.
+
+---
+
 ## 2026-11-24 — Audit application — corrections et état Git
 
 Commit `51d5dc71119dff90ca576ed263a7e290c21ecd59` (`fix(app): repair audited navigation, sharing and feedback controls`), poussé sur `origin/dev` après build de production réussi.
