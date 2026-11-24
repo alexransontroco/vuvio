@@ -58,6 +58,48 @@ Implémentation de la fonctionnalité Pause / Resume live en deux étapes : audi
 
 ---
 
+## 2026-11-23 — Pause / Resume Live — Étape C (corrections sûres)
+
+Corrections robustesse issues de l'audit POC : signal path relay, Firestore transitions, modèle segment, tests automatisés.
+
+**Relay signal path (`webrtcService.js`)**
+- `relayPaused` flag module-level capturé par la closure `draw()` dans `createFixedResolutionStream` → black frames immédiats dès le prochain tick canvas (~66 ms à 15 fps).
+- Audio géré séparément via `localStream.getAudioTracks().forEach(t => t.enabled = false)` (l'audio est attaché directement, pas via canvas).
+- `pauseRelayTracks()` / `resumeRelayTracks()` exportés. Nettoyage dans `relayCanvasCleanup` + stop functions.
+
+**Firestore transitions (`WatchPage.jsx` — `CreatorLiveSession`)**
+- `isTransitioning` state : bloque tout double-clic pause/reprise pendant qu'une op est en flight.
+- `pauseLive()` : ordre privacy-first (tracks muets **avant** Firestore) ; si Firestore échoue, les tracks sont réactivés (rollback).
+- `resumeLive()` : Firestore mis à jour **avant** de réactiver les tracks ; si Firestore échoue, le stream reste muet.
+- Routing `ingestModeRef.current` : WHIP → `pauseWhipTracks/resumeWhipTracks`, relay → `pauseRelayTracks/resumeRelayTracks`.
+
+**Modèle de segments**
+- `pauseSegmentsRef` : tableau `[{ startedAt, resumedAt, durationMs, expectedMinutes }]`.
+- `endLive()` ferme le dernier segment ouvert si le live se termine pendant une pause.
+- Segments sérialisés en ISO strings dans Firestore (`pauseSegments`) pour post-processing futur via Cloudflare Clips.
+- `broadcastDurationSeconds`, `totalPausedSeconds`, `pauseCount` calculés à la fin et écrits dans les stats.
+
+**Tests — 22/22 passent**
+- `src/services/__tests__/pauseLive.test.js` — Node native test runner (pas de browser APIs).
+- Couvre : `computePauseStats`, `closePauseSegment`, `canPause/canResume/canTransition`, mocks WHIP/relay, cycle complet pause→reprise.
+- Exécution : `node --test src/services/__tests__/pauseLive.test.js`
+
+**Limites restantes avant production**
+1. Vérification empirique sur appareil réel (iOS Safari, Android Chrome) non effectuée.
+2. Comportement enregistrement Cloudflare (`track.enabled=false` = 1 segment ou 2 ?) non vérifié en session live réelle.
+3. Relay Hetzner : comportement côté serveur quand `relayPaused=true` non mesuré en live.
+4. `pauseSegments` Firestore pas encore consommé par un pipeline post-processing.
+
+**Fichiers modifiés**
+- `src/services/webrtcService.js`
+- `src/routes/WatchPage.jsx`
+- `src/styles/components/live-pause.css`
+
+**Fichiers créés**
+- `src/services/__tests__/pauseLive.test.js`
+
+---
+
 ## 2026-11-23 — Deploy functions:api (OG attribution) + alignement secrets
 
 Déploiement de la fonction `api` seule après le hosting rollup. Le CLI bloquait sur un prompt interactif pour `METERED_API_KEY` (secret jamais provisionné).

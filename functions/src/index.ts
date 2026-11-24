@@ -1,7 +1,7 @@
 import { onRequest } from 'firebase-functions/v2/https';
 import { onSchedule } from 'firebase-functions/v2/scheduler';
 import { sendError, ApiError } from './shared/errors.js';
-import { cloudflareAccountId, cloudflareApiToken, cloudflareCustomerCode, cloudflareWebhookSecret, openaiApiKey, icecatUsername, icecatPassword, ebayClientId, ebayClientSecret } from './config/env.js';
+import { cloudflareAccountId, cloudflareApiToken, cloudflareCustomerCode, cloudflareWebhookSecret, openaiApiKey, icecatUsername, icecatPassword, ebayClientId, ebayClientSecret, googleSheetsCredentials } from './config/env.js';
 import { createStream } from './streams/createStream.js';
 import { createScheduledStream } from './streams/createScheduledStream.js';
 import { startStream } from './streams/startStream.js';
@@ -42,6 +42,7 @@ import { updateAllTrustScores } from './users/updateTrustScore.js';
 import { fanOutCreatorLive } from './notifications/fanOutCreatorLive.js';
 import { notifyNewFollower } from './notifications/notifyNewFollower.js';
 import { deleteOwnAccount } from './users/deleteOwnAccount.js';
+import { syncFinancialDataHandler, getFinancialDataHandler } from './admin/syncFinancialDataHandler.js';
 
 function pathParts(path = '') {
   return path.replace(/^\/api\/?/, '/').split('/').filter(Boolean);
@@ -59,7 +60,7 @@ export const api = onRequest({
   memory: '2GiB',
   // Secrets alignés sur ce qui est bindé au `api` déployé (9 secrets).
   // Metered/Amazon-PA/Awin sont déclarés dans env.ts mais pas provisionnés : les handlers (turnCredentialsHandler, affiliateRoutes) tombent sur un fallback "not configured" via sv() + undefined-guards.
-  secrets: [cloudflareAccountId, cloudflareApiToken, cloudflareWebhookSecret, cloudflareCustomerCode, openaiApiKey, icecatUsername, icecatPassword, ebayClientId, ebayClientSecret],
+  secrets: [cloudflareAccountId, cloudflareApiToken, cloudflareWebhookSecret, cloudflareCustomerCode, openaiApiKey, icecatUsername, icecatPassword, ebayClientId, ebayClientSecret, googleSheetsCredentials],
 }, async (req, res) => {
   sendCors(res);
   if (req.method === 'OPTIONS') {
@@ -105,6 +106,10 @@ export const api = onRequest({
     if (req.method === 'GET' && parts[0] === 'products' && parts.length === 2 && parts[1] !== 'search') return await getProductHandler(req, res, parts[1]);
     if (req.method === 'POST' && parts[0] === 'products' && parts[1] === 'import') return await importProductHandler(req, res);
     if (req.method === 'POST' && parts[0] === 'affiliate' && parts[1] === 'resolve') return await resolveAffiliateHandler(req, res);
+
+    // Admin financial routes
+    if (req.method === 'POST' && parts[0] === 'admin' && parts[1] === 'financial' && parts[2] === 'sync') return await syncFinancialDataHandler(req, res);
+    if (req.method === 'GET' && parts[0] === 'admin' && parts[1] === 'financial' && parts[2] === 'data') return await getFinancialDataHandler(req, res);
 
     // Highlight generation routes
     if (req.method === 'POST' && parts[0] === 'lives' && parts[2] === 'highlight') return await requestHighlight(req, res, parts[1]);

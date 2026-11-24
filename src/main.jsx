@@ -36,6 +36,7 @@ import './styles/pages/notifications.css';
 import './styles/pages/onboarding.css';
 import './styles/pages/internal-stream-admin.css';
 import './styles/pages/admin-docs.css';
+import './styles/pages/admin-business.css';
 import './styles/pages/agents.css';
 import './components/social/social.css';
 

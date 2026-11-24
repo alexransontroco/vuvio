@@ -373,7 +373,7 @@ export default function LiveRecapPage() {
         </div>
 
         {/* ── Replay section ────────────────────────────────────── */}
-        {replayUrl && <div className="live-recap-section" style={{ marginTop: 28 }}>
+        <div className="live-recap-section" style={{ marginTop: 28 }}>
           <div className="live-recap-section-heading live-recap--mobile-only">
             <h2>Replay</h2>
             <span className="live-recap-replay-expiry">Available for 24 hours</span>
@@ -388,7 +388,7 @@ export default function LiveRecapPage() {
             />
             <div className="live-recap-replay-inner">
               <ReplayPlayer
-                live={liveRecap}
+                live={liveData ?? liveRecap}
                 activeHighlight={activeHighlight}
                 playing={playing}
                 speed={speeds[speedIndex]}
@@ -397,13 +397,13 @@ export default function LiveRecapPage() {
                 onNudge={(amount) => seekToSeconds(activeHighlight.seconds + amount)}
                 onSpeed={() => setSpeedIndex((v) => (v + 1) % speeds.length)}
                 onFullscreen={() => setModal('player')}
-                src={replayUrl}
+                src={replayUrl ?? ''}
                 poster={liveData?.image}
               />
               <SynchronizedChat messages={chatMessages} activeTime={activeHighlight.timestamp} />
             </div>
           </div>
-        </div>}
+        </div>
 
         {/* ── Bottom section ────────────────────────────────────── */}
         <div className="live-recap-bottom-grid" style={{ marginTop: 20 }}>
