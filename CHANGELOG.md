@@ -6,6 +6,55 @@ Historique des sessions de travail, du plus récent au plus ancien.
 
 ---
 
+## 2026-11-24 — Audit application — corrections et état Git
+
+Commit `51d5dc71119dff90ca576ed263a7e290c21ecd59` (`fix(app): repair audited navigation, sharing and feedback controls`), poussé sur `origin/dev` après build de production réussi.
+
+**Corrections enregistrées**
+- Rappels des lives à venir : persistance locale cohérente entre Explorer et la page À venir, avec activation et désactivation réelles du rappel local.
+- Partage d’événements : lien avec identifiant d’événement qui ouvre directement sa fiche ; retour utilisateur pour partage, copie ou échec.
+- Partage des profils et des récapitulatifs : utilisation du partage natif ou copie du lien avec statut visible.
+- Récapitulatifs partagés : route `/share/live/:liveId/recap` redirigée vers la page récapitulative, avec normalisation des identifiants `created-*`.
+- Formulaire de problème : suppression du faux succès et de la fausse référence ; préparation d’un brouillon e-mail qui précise que le signalement n’est pas encore transmis.
+- Actions sans effet supprimées ou remplacées par un contact e-mail explicite ; liens secondaires de rappel inactifs supprimés.
+- Cartes lives et événements accessibles au clavier ; traductions françaises et anglaises de la liste des lives ; vignettes cassées remplacées par des ressources centralisées.
+- Préchargement automatique du globe retiré du démarrage global pour éviter son transfert sur toutes les pages.
+
+**Contrôles**
+- `npm run build` : réussi sur le worktree isolé basé sur `origin/dev`.
+- Tests ciblés du brouillon e-mail et de la persistance/désactivation des rappels : réussis.
+- Vérifications de syntaxe JSX, JSON i18n, `git diff --check` et ouverture Chrome de la fiche événement partagée : réussies.
+- Le canal Firebase Hosting Preview `audit-controls-20261124` répond en 200 pour les routes contrôlées et expire le 2026-12-01. Aucun déploiement production ou Functions n’a été lancé.
+
+**Limitations restantes**
+- Le rappel est une préférence locale ; aucun service serveur ne programme ni n’envoie une notification à l’heure du live.
+- Le formulaire prépare un e-mail : l’utilisateur doit l’ouvrir et l’envoyer. Aucun endpoint interne de réception/traitement de signalements n’est relié.
+- Les parcours authentifiés, diffusion réelle, lecture HLS et replay nécessitent encore un test de bout en bout sur Firebase/Cloudflare.
+- La suite Vitest du dépôt n’a pas été lancée : dépendances de test absentes dans l’environnement et aucun script `test` déclaré. Le build et les contrôles ciblés ci-dessus ont été lancés.
+- La compilation affiche des avertissements existants de gros chunks et de références d’assets. Le preview Hosting a averti que le rewrite `waitlist` ne trouvait pas d’endpoint Function valide ; les pages contrôlées restaient accessibles.
+
+**État Git et stratégie de réconciliation proposée (non exécutée)**
+- Au moment du contrôle, `origin/dev` était `cb6c87e`; `dev` contenait les sept commits listés ci-dessous qui n’étaient pas sur `origin/dev`. Le commit `51d5dc7` a été ajouté directement à `origin/dev`; `main` est restée sur `1c2582e`.
+- Préparer d’abord une sauvegarde/référence des deux pointes, puis intégrer la pointe `origin/dev` dans `dev` via merge (ou rebase contrôlé si l’équipe préfère une histoire linéaire), en résolvant les recouvrements et en relançant build/tests. Pousser `dev` uniquement après revue de la résolution. Ne pas réinitialiser ni forcer la branche.
+- L’analyse non destructive `git merge-tree` entre `dev` local et `51d5dc7` ne montre pas de marqueurs de conflit textuel, mais plusieurs chemins modifiés des deux côtés demandent une revue fonctionnelle : `src/App.jsx`, `src/components/ReportProblemForm.jsx`, `src/data/mapStreams.js`, `src/data/mockStreams.js`, `src/i18n/locales/en.json`, `src/i18n/locales/fr.json`, `src/routes/AllLivesPage.jsx`, `src/routes/AllUpcomingPage.jsx`, `src/routes/ConversationPage.jsx`, `src/routes/ExplorePage.jsx`, `src/routes/LiveSummaryPage.jsx`, `src/routes/ProfilePage.jsx`, `src/routes/WatchPage.jsx`, `src/services/reportProblemService.js`, `src/services/upcomingReminderService.js`, `src/styles/pages/live-summary.css`, `src/styles/pages/live.css` et `src/styles/pages/support.css`. Les collisions les plus sensibles sont `App.jsx` (route admin temps réel), `WatchPage.jsx` (pause/reprise), et les locales (libellés dashboard). Le journal `CHANGELOG.md` a aussi des ajouts sur les deux branches.
+
+**Sept commits de `dev` local absents de `origin/dev` au contrôle**
+1. `115bbb97c6e1fe57804b9857342c9d81b557cb6d` — `feat(admin): centralize admin email list + sync Firestore rules` — sécurité Firestore et liste des admins.
+2. `d2bfc4f3b6cef6b5b8ca84f441a5bbe641a2e975` — `feat(admin): financial dashboard scaffold + pause-resume fixes` — dashboard, fonctions Sheets et premiers changements pause/reprise. **Chevauchement** : `CHANGELOG.md`, `src/routes/WatchPage.jsx`.
+3. `d3574fa3a522cb53ea8806cc03ebd95979e83f8b` — `feat(settings): add Financial dashboard entry in admin group` — navigation Settings.
+4. `e0f01ace4024c431391c7600c69d8fd9d04173ac` — `chore: update Google Sheets setup doc + i18n locales` — documentation et traductions. **Chevauchement** : `src/i18n/locales/en.json`, `src/i18n/locales/fr.json`.
+5. `ea498fce6b90f89653ba25e03febc8228764d473` — `fix(admin): switch financial dashboard to ADC + centralize server-side admin list` — credentials ADC et liste admin serveur. Pas de chemin source en commun avec `51d5dc7`.
+6. `8cc1e6bf76820637866efba4fd9a5f2a84703ca2` — `feat(workshop): port Phase 4 Realtime SFU PoC + fix Firestore security` — POC SFU et règles Firestore. **Chevauchement** : `src/App.jsx` pour la route admin temps réel.
+7. `74de728480794dd98de2675924d2bbcd56c420b9` — `feat(admin): complete financial dashboard Phase 2` — dashboard financier et initialisation Functions. Pas de chemin source en commun avec `51d5dc7`.
+
+Les collisions de chemins ci-dessus sont des recouvrements, pas des conflits de merge confirmés ; le graphe actuel a une base commune `cb6c87e`. La stratégie de réconciliation reste à approuver et exécuter ultérieurement.
+
+**Compatibilité Node / macOS Catalina**
+- Sur macOS 10.15.8 Catalina, `/usr/local/bin/node` a échoué au chargement avec `dyld: Symbol not found` car le binaire était construit pour macOS 13.5.
+- Les contrôles ont fonctionné avec le Node 20.20.2 de NVM situé sous `~/.nvm/versions/node/`. Sur Catalina, utiliser un binaire Node explicitement compatible avec macOS 10.15 ou exécuter le build dans un environnement récent ; ne pas confondre cette panne de runtime avec un échec applicatif.
+
+---
+
 ## 2026-11-23 — Pause / Resume Live — Étapes A (audit) + B (démo UX)
 
 Implémentation de la fonctionnalité Pause / Resume live en deux étapes : audit technique complet + démo UX isolée derrière un feature flag.

@@ -1,10 +1,12 @@
-import { ImagePlus, Loader2, Send } from 'lucide-react';
+import { Send } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { submitProblemReport } from '../services/reportProblemService.js';
+import { useAuth } from '../context/AuthContext.jsx';
+import { prepareProblemReportEmail } from '../services/reportProblemService.js';
 
 export default function ReportProblemForm() {
   const { t } = useTranslation();
+  const { user } = useAuth();
 
   const problemTypes = useMemo(() => [
     t('reportProblem.form.types.connection'),
@@ -27,14 +29,13 @@ export default function ReportProblemForm() {
     description: '',
     steps: '',
     attachTechnicalInfo: true,
-    email: 'hello@vuvio.app',
-    screenshotName: '',
-  }), [problemTypes]);
+    email: user?.email ?? '',
+  }), [problemTypes, user?.email]);
 
   const [form, setForm] = useState(initialForm);
   const [status, setStatus] = useState('initial');
   const [error, setError] = useState('');
-  const [reference, setReference] = useState('');
+  const [emailUrl, setEmailUrl] = useState('');
 
   const canSubmit = useMemo(() => (
     form.subject.trim().length > 2 && form.description.trim().length > 8 && form.email.includes('@')
@@ -45,7 +46,7 @@ export default function ReportProblemForm() {
     if (status === 'error') setStatus('initial');
   };
 
-  const submit = async (event) => {
+  const submit = (event) => {
     event.preventDefault();
     if (!canSubmit) {
       setError(t('reportProblem.form.errors.invalid'));
@@ -53,31 +54,28 @@ export default function ReportProblemForm() {
       return;
     }
 
-    setStatus('sending');
     setError('');
 
     try {
-      const result = await submitProblemReport(form);
-      setReference(result.reference);
-      setStatus('success');
+      setEmailUrl(prepareProblemReportEmail(form));
+      setStatus('ready');
     } catch (submissionError) {
       setError(submissionError.message);
       setStatus('error');
     }
   };
 
-  if (status === 'success') {
+  if (status === 'ready') {
     return (
       <section className="report-success" aria-live="polite">
-        <h2>{t('reportProblem.form.success.title')}</h2>
-        <p>{t('reportProblem.form.success.body')}</p>
-        <strong>{t('reportProblem.form.success.reference', { reference })}</strong>
+        <h2>{t('reportProblem.form.emailReady.title')}</h2>
+        <p>{t('reportProblem.form.emailReady.body')}</p>
+        <a className="support-primary-button" href={emailUrl}>{t('reportProblem.form.emailReady.open')}</a>
+        <p>{t('reportProblem.form.emailReady.attachment')}</p>
         <button type="button" onClick={() => {
-          setForm(initialForm);
           setStatus('initial');
-          setReference('');
         }}>
-          {t('reportProblem.form.success.sendAnother')}
+          {t('reportProblem.form.emailReady.edit')}
         </button>
       </section>
     );
@@ -123,20 +121,6 @@ export default function ReportProblemForm() {
         />
       </label>
 
-      <div className="report-upload">
-        <label>
-          <input
-            type="file"
-            accept="image/*"
-            onChange={(event) => update('screenshotName', event.target.files?.[0]?.name ?? '')}
-          />
-          <ImagePlus size={18} strokeWidth={1.8} />
-          <span>{t('reportProblem.form.upload.addImage')}</span>
-        </label>
-        {form.screenshotName ? <strong>{form.screenshotName}</strong> : null}
-        <p>{t('reportProblem.form.upload.notice')}</p>
-      </div>
-
       <label className="report-checkbox">
         <input
           type="checkbox"
@@ -161,8 +145,8 @@ export default function ReportProblemForm() {
 
       {status === 'error' ? <p className="report-error" role="alert">{error}</p> : null}
 
-      <button type="submit" className="support-primary-button" disabled={status === 'sending'}>
-        {status === 'sending' ? <Loader2 size={17} strokeWidth={1.9} /> : <Send size={17} strokeWidth={1.9} />}
+      <button type="submit" className="support-primary-button">
+        <Send size={17} strokeWidth={1.9} />
         {t('reportProblem.form.submit')}
       </button>
     </form>

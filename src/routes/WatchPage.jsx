@@ -1,5 +1,5 @@
 import Hls from 'hls.js';
-import { Backpack, BatteryWarning, Bell, CalendarClock, Camera, Check, ChevronLeft, ChevronRight, ChevronUp, Clock, Eye, Flag, Flashlight, Lock, MapPin, MessageCircle, Mic, MicOff, Monitor, Pause, Play, RotateCcw, Search, Send, Settings, Share2, ShieldBan, Square, Star, Trash2, UnlockKeyhole, UserPlus, UserRound, UsersRound, Volume2, VolumeX, WifiOff, X } from 'lucide-react';
+import { Backpack, BatteryWarning, Bell, CalendarClock, Camera, Check, ChevronLeft, ChevronRight, ChevronUp, Clock, Eye, Flag, Flashlight, Lock, MapPin, MessageCircle, Mic, MicOff, Monitor, Pause, Play, RotateCcw, Search, Send, Settings, Share2, Square, Star, Trash2, UnlockKeyhole, UserPlus, UserRound, UsersRound, Volume2, VolumeX, WifiOff, X } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link, Navigate, useNavigate, useParams, useSearchParams } from 'react-router-dom';
@@ -1192,6 +1192,8 @@ function LiveLocationGlobe({ live, onOpen }) {
 
 function LiveUserSheet({ live, onClose, onViewProfile, onViewGear, onMessage }) {
   const { t } = useTranslation();
+  const liveUrl = `https://vuvio.app/watch?live=${encodeURIComponent(live.id)}`;
+  const reportUrl = `mailto:hello@vuvio.app?subject=${encodeURIComponent(`Report live ${live.id}`)}&body=${encodeURIComponent(`Live: ${liveUrl}\nReason: `)}`;
 
   return (
     <div className="live-user-sheet" role="dialog" aria-modal="true" aria-label={`Actions for ${live.streamer}`}>
@@ -1215,22 +1217,14 @@ function LiveUserSheet({ live, onClose, onViewProfile, onViewGear, onMessage }) 
           <Backpack size={18} strokeWidth={1.8} />
           Gear
         </button>
-        <button type="button" onClick={onClose}>
-          <UserPlus size={18} strokeWidth={1.8} />
-          {t('common.follow')}
-        </button>
         <button type="button" className="is-message" onClick={onMessage}>
           <MessageCircle size={18} strokeWidth={1.8} />
           {t('common.sendMessage')}
         </button>
-        <button type="button" className="is-danger" onClick={onClose}>
+        <a className="is-danger" href={reportUrl} onClick={onClose}>
           <Flag size={18} strokeWidth={1.8} />
-          {t('common.report')}
-        </button>
-        <button type="button" className="is-danger" onClick={onClose}>
-          <ShieldBan size={18} strokeWidth={1.8} />
-          {t('common.block')}
-        </button>
+          {t('live.reportByEmail')}
+        </a>
       </div>
     </div>
   );

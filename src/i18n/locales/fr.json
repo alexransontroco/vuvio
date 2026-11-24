@@ -103,6 +103,9 @@
     "favoriteRemove": "Retirer des favoris",
     "openComments": "Ouvrir les commentaires du live",
     "sharePov": "Partager ce POV",
+    "linkCopied": "Lien copié",
+    "shared": "Partagé",
+    "shareFailed": "Partage impossible",
     "controlledMix": "Mix contrôlé",
     "swipeHint": "Swipe vers le haut pour le suivant",
     "commentsFor": "Commentaires de {{title}}",
@@ -280,6 +283,39 @@
       "worldwide": "Monde entier"
     }
   },
+  "allLives": {
+    "aria": "Tous les lives",
+    "title": "Tous les lives",
+    "sortAndFilter": "Trier les lives",
+    "sortOptions": "Options de tri",
+    "filterByCategory": "Filtrer par catégorie",
+    "searchPlaceholder": "Rechercher un live",
+    "searchAria": "Rechercher des lives",
+    "clearSearch": "Effacer la recherche",
+    "perspectiveCount_one": "{{count}} perspective",
+    "perspectiveCount_other": "{{count}} perspectives",
+    "categories": {
+      "all": "Tous",
+      "cityTours": "Visites de villes",
+      "sport": "Sport",
+      "travel": "Voyages",
+      "nature": "Nature",
+      "water": "Eau",
+      "craft": "Artisanat",
+      "cuisine": "Cuisine",
+      "city": "Ville",
+      "sky": "Ciel"
+    },
+    "sort": {
+      "mostWatched": "Les plus regardés",
+      "recommended": "Sélection"
+    },
+    "empty": {
+      "title": "Aucun live trouvé",
+      "body": "Essayez une autre recherche ou catégorie.",
+      "reset": "Effacer les filtres"
+    }
+  },
   "globe": {
     "title": "Globe",
     "loading": "Chargement du globe",
@@ -291,6 +327,7 @@
   },
   "live": {
     "badge": "Live",
+    "reportByEmail": "Signaler par e-mail",
     "soundOn": "son POV",
     "next": "Live suivant",
     "sendStar": "Envoyer une étoile",
@@ -467,6 +504,7 @@
     "notFound": "Profil introuvable",
     "notFoundBody": "Ce créateur n’existe pas ou n’est plus disponible.",
     "linkCopied": "Lien du profil copié",
+    "shareError": "Impossible de partager ce profil",
     "notificationsEnabledToast": "Notifications activées",
     "notificationsDisabledToast": "Notifications désactivées",
     "equipmentTodoOwn": "Gestion de l’équipement bientôt disponible",
@@ -1156,23 +1194,20 @@
         "description": "Décris ce qui se passe, ce que tu attendais et ce qui s'est passé à la place…",
         "steps": "1. J'ouvre l'app\n2. Je tape sur « Démarrer »\n3. L'écran devient noir…"
       },
-      "upload": {
-        "addImage": "Joindre une capture d'écran",
-        "notice": "Formats acceptés : JPG, PNG, GIF — max 10 Mo"
-      },
       "tech": {
         "title": "Inclure les infos techniques",
         "body": "Système d'exploitation, version de l'app, type d'appareil — utile pour diagnostiquer."
       },
-      "submit": "Envoyer le signalement",
+      "submit": "Préparer l'e-mail",
       "errors": {
         "invalid": "Merci de remplir le sujet, la description et ton adresse e-mail."
       },
-      "success": {
-        "title": "Signalement envoyé !",
-        "body": "Merci, nous avons bien reçu ton message et nous reviendrons vers toi dans les meilleurs délais.",
-        "reference": "Référence : {{reference}}",
-        "sendAnother": "Envoyer un autre signalement"
+      "emailReady": {
+        "title": "Ton signalement est prêt",
+        "body": "Ouvre le brouillon et envoie-le depuis ton application mail. Vuvio ne l'a pas encore reçu.",
+        "open": "Ouvrir le brouillon",
+        "attachment": "Ajoute les captures d'écran dans ton application mail avant l'envoi.",
+        "edit": "Modifier le signalement"
       }
     }
   },
