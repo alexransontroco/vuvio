@@ -105,7 +105,8 @@ service cloud.firestore {
         'cloudflareVideoId', 'replayReadyAt', 'replayError',
         'replayCleanupPending', 'highlightStatus',
         'highlightUrl', 'highlightThumbnailUrl', 'highlightDurationSeconds',
-        'endReason', 'currentViewerCount'
+        'endReason', 'currentViewerCount',
+        'liveStatus', 'pauseStartedAt', 'pauseExpectedEndAt'
       ];
     }
 
