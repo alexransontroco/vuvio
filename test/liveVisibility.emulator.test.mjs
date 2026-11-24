@@ -35,12 +35,23 @@ async function read(id, uid) {
   });
 }
 
+function adminToken(email, emailVerified = true) {
+  return token('admin-user', { email, email_verified: emailVerified });
+}
+
+async function readCollection(collection, id, authToken) {
+  return fetch(`${root}/${collection}/${id}`, {
+    headers: authToken ? { Authorization: `Bearer ${authToken}` } : {},
+  });
+}
+
 before(async () => {
   if (skip) return;
   assert.match(host, /^(127\.0\.0\.1|localhost):\d+$/);
   assert.match(project, /^demo-/);
   const cleared = await fetch(`http://${host}/emulator/v1/projects/${project}/databases/(default)/documents`, { method: 'DELETE' });
   assert.equal(cleared.status, 200);
+  await seed('adminFinancialData', 'forecast-2027', { year: '2027', mrr: '50000', source: 'internal' });
   await seed('users', 'follower', { uid: 'follower', followedCreators: ['creator'] });
   for (const [id, visibility, privacy] of [
     ['security-public', 'public', 'Everyone'],
@@ -249,4 +260,53 @@ test('creator cannot add an unapproved field to a public live', { skip }, async 
     body: JSON.stringify({ fields: fields({ internalSecret: 'fake-secret' }) }),
   });
   assert.equal(response.status, 403);
+});
+
+// ── adminFinancialData access control ────────────────────────────────────────
+
+test('known admin email can read adminFinancialData', { skip }, async () => {
+  for (const email of [
+    'alexandre.ranson@gmail.com',
+    'doug.benchetrit@gmail.com',
+    'cecilia.ranson@outlook.com',
+    'christophe.ranson@gmail.com',
+  ]) {
+    const response = await readCollection('adminFinancialData', 'forecast-2027', adminToken(email));
+    assert.equal(response.status, 200, `admin ${email} should be able to read financial data`);
+  }
+});
+
+test('vuvio.app domain admin can read adminFinancialData', { skip }, async () => {
+  const response = await readCollection('adminFinancialData', 'forecast-2027', adminToken('team@vuvio.app'));
+  assert.equal(response.status, 200);
+});
+
+test('regular authenticated user cannot read adminFinancialData', { skip }, async () => {
+  const response = await readCollection('adminFinancialData', 'forecast-2027', token('regular-user'));
+  assert.equal(response.status, 403);
+});
+
+test('anonymous visitor cannot read adminFinancialData', { skip }, async () => {
+  const response = await readCollection('adminFinancialData', 'forecast-2027', null);
+  assert.equal(response.status, 403);
+});
+
+test('unverified admin email cannot read adminFinancialData', { skip }, async () => {
+  const response = await readCollection('adminFinancialData', 'forecast-2027', adminToken('alexandre.ranson@gmail.com', false));
+  assert.equal(response.status, 403);
+});
+
+test('admin cannot write to adminFinancialData (server-only via admin SDK)', { skip }, async () => {
+  const response = await fetch(`${root}/adminFinancialData/forecast-2028`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${adminToken('alexandre.ranson@gmail.com')}` },
+    body: JSON.stringify({ fields: fields({ year: '2028', mrr: '99999' }) }),
+  });
+  assert.equal(response.status, 403);
+});
+
+test('admin with custom claim can read adminFinancialData', { skip }, async () => {
+  const claimToken = token('custom-claim-admin', { admin: true });
+  const response = await readCollection('adminFinancialData', 'forecast-2027', claimToken);
+  assert.equal(response.status, 200);
 });

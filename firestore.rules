@@ -319,6 +319,9 @@ service cloud.firestore {
         (request.auth.token.get('email_verified', false) == true
           && request.auth.token.get('email', '') is string
           && (request.auth.token.email == 'alexandre.ranson@gmail.com' ||
+            request.auth.token.email == 'doug.benchetrit@gmail.com' ||
+            request.auth.token.email == 'cecilia.ranson@outlook.com' ||
+            request.auth.token.email == 'christophe.ranson@gmail.com' ||
             request.auth.token.email.matches('.*@vuvio\\.app')))
       );
     }
@@ -349,6 +352,12 @@ service cloud.firestore {
     }
 
     match /visitorActivity/{docId} {
+      allow read: if isAdmin();
+      allow write: if false;
+    }
+
+    // ── Financial dashboard (admin SDK writes, admin read) ────────────
+    match /adminFinancialData/{docId} {
       allow read: if isAdmin();
       allow write: if false;
     }
