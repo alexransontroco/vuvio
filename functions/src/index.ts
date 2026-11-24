@@ -41,8 +41,11 @@ import { cancelScheduledStream } from './streams/cancelScheduledStream.js';
 import { updateAllTrustScores } from './users/updateTrustScore.js';
 import { fanOutCreatorLive } from './notifications/fanOutCreatorLive.js';
 import { notifyNewFollower } from './notifications/notifyNewFollower.js';
+import { notifyNewMessage } from './notifications/notifyNewMessage.js';
 import { deleteOwnAccount } from './users/deleteOwnAccount.js';
 import { syncFinancialDataHandler, getFinancialDataHandler } from './admin/syncFinancialDataHandler.js';
+import { getReplayDownload } from './streams/getReplayDownload.js';
+import { deleteReplay } from './streams/deleteReplay.js';
 
 function pathParts(path = '') {
   return path.replace(/^\/api\/?/, '/').split('/').filter(Boolean);
@@ -86,6 +89,8 @@ export const api = onRequest({
     if (req.method === 'GET' && parts[0] === 'streams' && parts[1] === 'scheduled') return await listScheduledStreams(req, res);
     if (req.method === 'GET' && parts[0] === 'globe' && parts[1] === 'streams') return await listGlobeStreams(req, res);
     if (req.method === 'GET' && parts[0] === 'streams' && parts[2] === 'replay-status') return await getReplayStatus(req, res, parts[1]);
+    if (req.method === 'POST' && parts[0] === 'streams' && parts[2] === 'replay' && parts[3] === 'download') return await getReplayDownload(req, res, parts[1]);
+    if (req.method === 'POST' && parts[0] === 'streams' && parts[2] === 'replay' && parts[3] === 'delete') return await deleteReplay(req, res, parts[1]);
     if (req.method === 'GET' && parts[0] === 'streams' && parts[1]) return await getStream(req, res, parts[1]);
     if (req.method === 'DELETE' && parts[0] === 'users' && parts[1] === 'me') return await deleteOwnAccount(req, res);
     if (req.method === 'POST' && parts[0] === 'streams' && parts[2] === 'start') return await startStream(req, res, parts[1]);
@@ -197,5 +202,4 @@ export const updateTrustScoresScheduled = onSchedule({
   }
 });
 
-import { notifyNewMessage } from './notifications/notifyNewMessage.js';
 export { fanOutCreatorLive, notifyNewFollower, notifyNewMessage };
