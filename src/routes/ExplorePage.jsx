@@ -42,7 +42,8 @@ import { subscribeToCreatedLives } from '../services/createdLiveService.js';
 import { getCountdownState, makeCountdownLabels } from '../utils/countdown.js';
 import { analyticsService } from '../services/analytics/analyticsService.ts';
 import { useNotifications } from '../hooks/useNotifications.js';
-import { createNotification, getRemindedStreamIds } from '../services/notificationService.js';
+import { getUpcomingReminders, removeUpcomingReminder, saveUpcomingReminder } from '../services/upcomingReminderService.js';
+import { shareVuvioContent } from '../platform/sharing.js';
 import NotifPopover from '../components/NotifPopover.jsx';
 
 const chipCategories = {
@@ -122,7 +123,12 @@ function LiveNowCard({ stream, onOpen }) {
   const location = [stream.city, stream.country].filter(Boolean).join(', ');
 
   return (
-    <article className="ep-live-card" onClick={() => onOpen(stream.id)} onMouseEnter={() => prefetchManifest(stream.hlsManifestUrl)} role="button" tabIndex={0}>
+    <article className="ep-live-card" onClick={() => onOpen(stream.id)} onKeyDown={(event) => {
+      if (event.key === 'Enter' || event.key === ' ') {
+        event.preventDefault();
+        onOpen(stream.id);
+      }
+    }} onMouseEnter={() => prefetchManifest(stream.hlsManifestUrl)} role="button" tabIndex={0}>
       <div className="ep-live-card__media">
         <img
           src={stream.image ?? fallbackImage}
@@ -166,7 +172,12 @@ function NearbyCard({ stream, onOpen }) {
   const location = [stream.city, stream.country].filter(Boolean).join(', ') || stream.place || '';
 
   return (
-    <article className="ep-nearby-card" onClick={() => onOpen(stream.id)} onMouseEnter={() => prefetchManifest(stream.hlsManifestUrl)} role="button" tabIndex={0}>
+    <article className="ep-nearby-card" onClick={() => onOpen(stream.id)} onKeyDown={(event) => {
+      if (event.key === 'Enter' || event.key === ' ') {
+        event.preventDefault();
+        onOpen(stream.id);
+      }
+    }} onMouseEnter={() => prefetchManifest(stream.hlsManifestUrl)} role="button" tabIndex={0}>
       <div className="ep-nearby-card__media">
         <img
           src={stream.image ?? fallbackImage}
@@ -222,6 +233,13 @@ function UpcomingCard({ item, onOpen, onRemind, isReminded = false }) {
     <article
       className="ep-upcoming-card"
       onClick={() => onOpen(item)}
+      onKeyDown={(event) => {
+        if (event.target !== event.currentTarget) return;
+        if (event.key === 'Enter' || event.key === ' ') {
+          event.preventDefault();
+          onOpen(item);
+        }
+      }}
       role="button"
       tabIndex={0}
       style={{ cursor: 'pointer' }}
@@ -262,9 +280,7 @@ function UpcomingCard({ item, onOpen, onRemind, isReminded = false }) {
           className={hasReminder ? 'ep-upcoming-card__notify is-set' : 'ep-upcoming-card__notify'}
           onClick={(e) => {
             e.stopPropagation();
-            const next = !hasReminder;
-            setHasReminder(next);
-            if (next) onRemind?.(item);
+            onRemind?.(item);
           }}
           aria-label={hasReminder ? t('explore.reminderSet') : t('explore.setReminder')}
         >
@@ -279,6 +295,8 @@ function UpcomingDetailSheet({ item, onClose, onWatch, onRemind, isReminded = fa
   const { t } = useTranslation();
   const cLabels = makeCountdownLabels(t);
   const [hasReminder, setHasReminder] = useState(isReminded);
+  const [shareStatus, setShareStatus] = useState('');
+  useEffect(() => { setHasReminder(isReminded); }, [isReminded]);
   const [now, setNow] = useState(() => new Date());
 
   useEffect(() => {
@@ -347,18 +365,23 @@ function UpcomingDetailSheet({ item, onClose, onWatch, onRemind, isReminded = fa
               if (isLive) {
                 onWatch(item.id);
               } else {
-                const next = !hasReminder;
-                setHasReminder(next);
-                if (next) onRemind?.(item);
+                onRemind?.(item);
               }
             }}
           >
             {isLive ? <Play size={15} fill="currentColor" strokeWidth={1.8} /> : <Bell size={15} strokeWidth={1.9} />}
             {isLive ? t('common.watch') : hasReminder ? t('explore.reminderOn') : t('common.notifyMe')}
           </button>
-          <button type="button" onClick={() => navigator.share?.({ title: item.title, text: item.description })}>
+          <button type="button" onClick={async () => {
+            const result = await shareVuvioContent({
+              title: item.title,
+              text: item.description,
+              url: `/explore/upcoming?live=${encodeURIComponent(item.id)}`,
+            });
+            if (!result.cancelled) setShareStatus(result.success ? (result.fallback === 'copied' ? t('explore.linkCopied') : t('explore.shared')) : t('explore.shareFailed'));
+          }}>
             <Share2 size={15} strokeWidth={1.9} />
-            {t('common.share')}
+            {shareStatus || t('common.share')}
           </button>
         </div>
       </section>
@@ -767,7 +790,7 @@ export default function ExplorePage() {
   const [optimisticUnfollows, setOptimisticUnfollows] = useState(() => new Set());
   const [firestoreLives, setFirestoreLives] = useState([]);
   const [openUpcoming, setOpenUpcoming] = useState(null);
-  const [remindedIds, setRemindedIds] = useState(() => new Set());
+  const [remindedIds, setRemindedIds] = useState(() => new Set(Object.keys(getUpcomingReminders())));
   const searchInputRef = useRef(null);
   const chipsRef = useRef(null);
   const liveRowRef = useRef(null);
@@ -816,22 +839,23 @@ export default function ExplorePage() {
     navigate(`/profile/${creatorId}`);
   }, [navigate]);
 
-  useEffect(() => {
-    if (!user?.uid) return;
-    getRemindedStreamIds(user.uid).then(setRemindedIds).catch(() => {});
-  }, [user?.uid]);
-
   const handleRemind = useCallback((item) => {
-    setRemindedIds((prev) => new Set([...prev, item.id]));
-    if (!user?.uid) return;
-    createNotification(user.uid, {
-      type: 'remind_me',
-      title: item.title,
-      body: [item.day === 'TODAY' ? t('explore.dateToday', { time: item.time }) : t('explore.dateTomorrow', { time: item.time }), item.locationLabel].filter(Boolean).join(' · '),
-      streamId: item.id,
-      scheduledAt: item.startsAt ?? null,
-    }).catch(() => {});
-  }, [user?.uid, t]);
+    const next = !getUpcomingReminders()[item.id];
+    if (next) saveUpcomingReminder(item).catch(() => {
+      setRemindedIds((current) => {
+        const updated = new Set(current);
+        updated.delete(item.id);
+        return updated;
+      });
+    });
+    else removeUpcomingReminder(item.id);
+    setRemindedIds((current) => {
+      const updated = new Set(current);
+      if (next) updated.add(item.id);
+      else updated.delete(item.id);
+      return updated;
+    });
+  }, []);
 
   const filteredStreams = useMemo(() => {
     return streams

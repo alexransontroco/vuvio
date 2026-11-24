@@ -428,10 +428,10 @@
 
 .report-success button {
   min-height: 44px;
-  border: 0;
+  border: 0.5px solid var(--support-border);
   border-radius: 14px;
-  background: rgba(139, 92, 246, 0.9);
-  color: #fff;
+  background: rgba(255, 255, 255, 0.045);
+  color: rgba(247, 249, 252, 0.84);
   font-size: 13px;
   font-weight: 620;
 }

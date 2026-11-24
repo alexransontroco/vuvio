@@ -1,10 +1,10 @@
 import { Bell, BellOff, CalendarClock, ChevronLeft, MapPin, Search, X } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { upcomingStreams } from '../data/mockStreams.js';
 import { getCountdownState, makeCountdownLabels } from '../utils/countdown.js';
-import { getUpcomingReminders, saveUpcomingReminder } from '../services/upcomingReminderService.js';
+import { getUpcomingReminders, removeUpcomingReminder, saveUpcomingReminder } from '../services/upcomingReminderService.js';
 
 const fallbackImage = '/assets/icons/icon-512.png';
 
@@ -34,6 +34,13 @@ function UpcomingCard({ item, onOpen, onRemind, reminded }) {
     <article
       className="ep-upcoming-card"
       onClick={() => onOpen(item)}
+      onKeyDown={(event) => {
+        if (event.target !== event.currentTarget) return;
+        if (event.key === 'Enter' || event.key === ' ') {
+          event.preventDefault();
+          onOpen(item);
+        }
+      }}
       role="button"
       tabIndex={0}
       style={{ cursor: 'pointer' }}
@@ -157,11 +164,12 @@ function DetailSheet({ item, onClose, onRemind, reminded }) {
 
 export default function AllUpcomingPage() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { t } = useTranslation();
   const searchRef = useRef(null);
   const [search, setSearch] = useState('');
-  const [openItem, setOpenItem] = useState(null);
-  const [remindedIds, setRemindedIds] = useState(() => new Set(getUpcomingReminders()));
+  const [openItem, setOpenItem] = useState(() => upcomingStreams.find((item) => item.id === searchParams.get('live')) ?? null);
+  const [remindedIds, setRemindedIds] = useState(() => new Set(Object.keys(getUpcomingReminders())));
 
   const filtered = useMemo(() => {
     return upcomingStreams.filter((s) => matchesSearch(s, search));
@@ -171,7 +179,17 @@ export default function AllUpcomingPage() {
 
   const handleRemind = (item) => {
     const next = !remindedIds.has(item.id);
-    if (next) saveUpcomingReminder(item);
+    if (next) {
+      saveUpcomingReminder(item).catch(() => {
+        setRemindedIds((current) => {
+          const updated = new Set(current);
+          updated.delete(item.id);
+          return updated;
+        });
+      });
+    } else {
+      removeUpcomingReminder(item.id);
+    }
     setRemindedIds((prev) => {
       const s = new Set(prev);
       if (next) s.add(item.id); else s.delete(item.id);

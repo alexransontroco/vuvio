@@ -103,6 +103,9 @@
     "favoriteRemove": "Remove from favorites",
     "openComments": "Open live comments",
     "sharePov": "Share this POV",
+    "linkCopied": "Link copied",
+    "shared": "Shared",
+    "shareFailed": "Could not share",
     "controlledMix": "Controlled mix",
     "swipeHint": "Swipe up for the next POV",
     "commentsFor": "Comments for {{title}}",
@@ -280,6 +283,39 @@
       "worldwide": "Worldwide"
     }
   },
+  "allLives": {
+    "aria": "All live streams",
+    "title": "All live streams",
+    "sortAndFilter": "Sort live streams",
+    "sortOptions": "Sort options",
+    "filterByCategory": "Filter by category",
+    "searchPlaceholder": "Search live streams",
+    "searchAria": "Search live streams",
+    "clearSearch": "Clear search",
+    "perspectiveCount_one": "{{count}} perspective",
+    "perspectiveCount_other": "{{count}} perspectives",
+    "categories": {
+      "all": "All",
+      "cityTours": "City Tours",
+      "sport": "Sport",
+      "travel": "Travel",
+      "nature": "Nature",
+      "water": "Water",
+      "craft": "Craft",
+      "cuisine": "Cuisine",
+      "city": "City",
+      "sky": "Sky"
+    },
+    "sort": {
+      "mostWatched": "Most watched",
+      "recommended": "Featured"
+    },
+    "empty": {
+      "title": "No live streams found",
+      "body": "Try another search or category.",
+      "reset": "Clear filters"
+    }
+  },
   "globe": {
     "title": "Globe",
     "loading": "Loading globe",
@@ -291,6 +327,7 @@
   },
   "live": {
     "badge": "Live",
+    "reportByEmail": "Report by email",
     "soundOn": "POV sound",
     "next": "Next live",
     "sendStar": "Send a star",
@@ -341,6 +378,7 @@
     "notFound": "Profile not found",
     "notFoundBody": "This creator does not exist or is no longer available.",
     "linkCopied": "Profile link copied",
+    "shareError": "Could not share this profile",
     "notificationsEnabledToast": "Notifications enabled",
     "notificationsDisabledToast": "Notifications disabled",
     "equipmentTodoOwn": "Equipment management coming soon",
@@ -1156,23 +1194,20 @@
         "description": "Describe what happened, what you expected, and what actually occurred…",
         "steps": "1. I open the app\n2. I tap \"Start\"\n3. The screen goes black…"
       },
-      "upload": {
-        "addImage": "Attach a screenshot",
-        "notice": "Accepted formats: JPG, PNG, GIF — max 10 MB"
-      },
       "tech": {
         "title": "Include technical info",
         "body": "OS, app version, device type — helpful for diagnosis."
       },
-      "submit": "Send report",
+      "submit": "Prepare email",
       "errors": {
         "invalid": "Please fill in the subject, description and your email address."
       },
-      "success": {
-        "title": "Report sent!",
-        "body": "Thank you — we have received your message and will get back to you as soon as possible.",
-        "reference": "Reference: {{reference}}",
-        "sendAnother": "Send another report"
+      "emailReady": {
+        "title": "Your report is ready",
+        "body": "Open the draft and send it from your email app. Vuvio has not received it yet.",
+        "open": "Open email draft",
+        "attachment": "Add any screenshots in your email app before sending.",
+        "edit": "Edit report"
       }
     }
   },

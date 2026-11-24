@@ -61,11 +61,6 @@ function LiveContextCard({ live, onDismiss }) {
           >
             {live.actionLabel}
           </button>
-          {live.secondaryActionLabel ? (
-            <button type="button" className="conv-context-card__action">
-              {live.secondaryActionLabel}
-            </button>
-          ) : null}
         </div>
       </div>
     </div>

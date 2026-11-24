@@ -9,7 +9,8 @@ function readReminderMap() {
   if (!win) return {};
 
   try {
-    return JSON.parse(win.localStorage.getItem(STORAGE_KEY) ?? '{}');
+    const reminders = JSON.parse(win.localStorage.getItem(STORAGE_KEY) ?? '{}');
+    return reminders && typeof reminders === 'object' && !Array.isArray(reminders) ? reminders : {};
   } catch {
     return {};
   }
@@ -25,26 +26,30 @@ export function getUpcomingReminders() {
   return readReminderMap();
 }
 
+export function removeUpcomingReminder(liveId) {
+  const reminders = readReminderMap();
+  delete reminders[liveId];
+  writeReminderMap(reminders);
+}
+
 export function hasUpcomingReminder(liveId) {
   return Boolean(readReminderMap()[liveId]);
 }
 
 export function saveUpcomingReminder(live) {
   return new Promise((resolve, reject) => {
-    setTimeout(() => {
-      try {
-        const reminders = readReminderMap();
-        reminders[live.id] = {
-          liveId: live.id,
-          startsAt: live.startsAt,
-          createdAt: new Date().toISOString(),
-          status: 'active',
-        };
-        writeReminderMap(reminders);
-        resolve(reminders[live.id]);
-      } catch (error) {
-        reject(error);
-      }
-    }, 260);
+    try {
+      const reminders = readReminderMap();
+      reminders[live.id] = {
+        liveId: live.id,
+        startsAt: live.startsAt,
+        createdAt: new Date().toISOString(),
+        status: 'active',
+      };
+      writeReminderMap(reminders);
+      setTimeout(() => resolve(reminders[live.id]), 260);
+    } catch (error) {
+      reject(error);
+    }
   });
 }

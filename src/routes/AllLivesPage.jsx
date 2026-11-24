@@ -6,6 +6,18 @@ import LiveBadge from '../components/LiveBadge.jsx';
 import { categories, streams } from '../data/mockStreams.js';
 
 const fallbackImage = '/assets/icons/icon-512.png';
+const categoryTranslationKeys = {
+  All: 'all',
+  'City Tours': 'cityTours',
+  Sport: 'sport',
+  Travel: 'travel',
+  Nature: 'nature',
+  Water: 'water',
+  Craft: 'craft',
+  Cuisine: 'cuisine',
+  City: 'city',
+  Sky: 'sky',
+};
 
 function viewerCount(value) {
   return Number.parseInt(String(value ?? '').replace(/\D/g, ''), 10) || 0;
@@ -31,7 +43,12 @@ function LiveCard({ stream, onOpen }) {
   const location = [stream.city, stream.country].filter(Boolean).join(', ');
 
   return (
-    <article className="alp-card" onClick={() => onOpen(stream.id)} role="button" tabIndex={0}>
+    <article className="alp-card" onClick={() => onOpen(stream.id)} onKeyDown={(event) => {
+      if (event.key === 'Enter' || event.key === ' ') {
+        event.preventDefault();
+        onOpen(stream.id);
+      }
+    }} role="button" tabIndex={0}>
       <div className="alp-card__media">
         <img
           src={stream.image ?? fallbackImage}
@@ -65,7 +82,7 @@ export default function AllLivesPage() {
   const { t } = useTranslation();
   const sortOptions = [
     { id: 'viewers', label: t('allLives.sort.mostWatched') },
-    { id: 'recent', label: t('allLives.sort.mostRecent') },
+    { id: 'recommended', label: t('allLives.sort.recommended') },
   ];
   const [search, setSearch] = useState('');
   const [activeCategory, setActiveCategory] = useState('All');
@@ -149,7 +166,7 @@ export default function AllLivesPage() {
               className={activeCategory === cat ? 'alp-cat-chip is-active' : 'alp-cat-chip'}
               onClick={() => setActiveCategory(cat)}
             >
-              {cat}
+              {t(`allLives.categories.${categoryTranslationKeys[cat]}`)}
             </button>
           ))}
         </div>

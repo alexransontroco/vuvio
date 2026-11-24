@@ -4,6 +4,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { doc, getDoc, collection, query, where, orderBy, limit, getDocs } from 'firebase/firestore';
 import { db } from '../firebase.js';
 import { useAuth } from '../context/AuthContext.jsx';
+import { shareVuvioContent } from '../platform/sharing.js';
 import HighlightGenerator from '../components/live-summary/HighlightGenerator.jsx';
 import LiveSummaryHero from '../components/live-summary/LiveSummaryHero.jsx';
 import LiveSummaryStats from '../components/live-summary/LiveSummaryStats.jsx';
@@ -17,7 +18,22 @@ export default function LiveSummaryPage() {
   const [comments, setComments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [shareStatus, setShareStatus] = useState('');
   const contentRef = useRef(null);
+  const shareStatusTimer = useRef(null);
+
+  useEffect(() => () => clearTimeout(shareStatusTimer.current), []);
+
+  const handleShare = async () => {
+    const result = await shareVuvioContent({
+      title: liveData?.title || 'Vuvio Live Recap',
+      url: `/live/${encodeURIComponent(liveId)}/recap`,
+    });
+    if (result.cancelled) return;
+    setShareStatus(result.success ? (result.fallback === 'copied' ? 'Link copied' : 'Shared') : 'Could not share link');
+    clearTimeout(shareStatusTimer.current);
+    shareStatusTimer.current = setTimeout(() => setShareStatus(''), 3000);
+  };
 
   useEffect(() => {
     if (!liveId || !user) {
@@ -111,9 +127,10 @@ export default function LiveSummaryPage() {
           <ArrowLeft size={20} strokeWidth={1.9} />
         </button>
         <h1>Your Live</h1>
-        <button type="button" className="live-summary-share-btn" aria-label="Share">
+        <button type="button" className="live-summary-share-btn" aria-label="Share" onClick={handleShare}>
           <Share2 size={18} strokeWidth={1.9} />
         </button>
+        {shareStatus ? <span className="live-summary-share-status" role="status">{shareStatus}</span> : null}
       </header>
 
       <main className="live-summary-content" ref={contentRef}>

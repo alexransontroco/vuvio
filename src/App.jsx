@@ -15,6 +15,13 @@ function ShareLiveRedirect() {
   return <Navigate to={`/watch?live=${encodeURIComponent(liveId)}&mode=view${location.search ? `&${location.search.slice(1)}` : ''}`} replace />;
 }
 
+function ShareRecapRedirect() {
+  const { liveId } = useParams();
+  const location = useLocation();
+  const resolvedLiveId = /^\d+$/.test(liveId) ? `created-${liveId}` : liveId;
+  return <Navigate to={`/live/${encodeURIComponent(resolvedLiveId)}/recap${location.search}`} replace />;
+}
+
 function PublicLiveRoute() {
   const { liveId } = useParams();
   const { user, authLoading } = useAuth();
@@ -114,11 +121,9 @@ function AdminRoute({ children }) {
   return children;
 }
 
-// Preload primary route chunks after app boots
 if (typeof window !== 'undefined') {
   window.addEventListener('load', () => {
     import('./routes/WatchPage.jsx');
-    import('./routes/GlobeTest2Page.jsx');
   }, { once: true });
 }
 
@@ -213,6 +218,7 @@ export default function App() {
         <Route path="/home" element={<Navigate to="/watch" replace />} />
         <Route path="/watch/:liveId" element={<ShareLiveRedirect />} />
         <Route path="/share/live/:liveId" element={<ShareLiveRedirect />} />
+        <Route path="/share/live/:liveId/recap" element={<ShareRecapRedirect />} />
         <Route path="/live/:liveId" element={<PublicLiveRoute />} />
         <Route path="/discover" element={<Navigate to="/watch" replace />} />
         <Route path="/discover/:categorySlug" element={<Lazy component={DiscoverCategoryPage} />} />

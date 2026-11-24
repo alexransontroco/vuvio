@@ -9,7 +9,6 @@ import {
   Eye,
   Globe2,
   MessageCircle,
-  MoreHorizontal,
   Play,
   Settings,
   Share2,
@@ -78,6 +77,7 @@ import NotifPopover from '../components/NotifPopover.jsx';
 import { useNotifications } from '../hooks/useNotifications.js';
 import SEO, { SITE_URL } from '../components/SEO.jsx';
 import { profileDescription, profileUrl } from '../utils/seoData.js';
+import { shareVuvioContent } from '../platform/sharing.js';
 
 function formatCompact(value = 0) {
   if (value >= 1000) {
@@ -491,10 +491,7 @@ function FavoritesTab({ lives, onOpenLive }) {
         <RecentLiveCard
           key={`favorite-${live.id}`}
           live={live}
-          isOwnProfile={false}
-          menuOpen={false}
           onOpen={() => onOpenLive(live)}
-          onMenu={() => {}}
         />
       ))}
     </section>
@@ -505,7 +502,7 @@ function ProfilePageHeader() {
   return null;
 }
 
-function RecentLiveCard({ live, isOwnProfile, menuOpen, onOpen, onMenu }) {
+function RecentLiveCard({ live, onOpen }) {
   const { t } = useTranslation();
   return (
     <article className="recent-live-card">
@@ -529,30 +526,11 @@ function RecentLiveCard({ live, isOwnProfile, menuOpen, onOpen, onMenu }) {
         </span>
         <span className="recent-live-card__duration">{live.duration}</span>
       </button>
-      <button type="button" className="recent-live-card__menu" onClick={onMenu} aria-label={t('profile.optionsFor', { title: live.title })}>
-        <MoreHorizontal size={18} strokeWidth={1.8} />
-      </button>
-      {menuOpen ? (
-        <div className="recent-live-card__popover" role="menu">
-          {isOwnProfile ? (
-            <>
-              <button type="button" role="menuitem">{t('profile.editDetails')}</button>
-              <button type="button" role="menuitem">{t('profile.hideFromProfile')}</button>
-              <button type="button" role="menuitem">{t('common.delete')}</button>
-            </>
-          ) : (
-            <>
-              <button type="button" role="menuitem">{t('common.share')}</button>
-              <button type="button" role="menuitem">{t('common.report')}</button>
-            </>
-          )}
-        </div>
-      ) : null}
     </article>
   );
 }
 
-function RecentLivesTab({ lives, isOwnProfile, openMenuId, onOpenLive, onMenu }) {
+function RecentLivesTab({ lives, isOwnProfile, onOpenLive }) {
   const { t } = useTranslation();
   if (!lives?.length) {
     return (
@@ -569,10 +547,7 @@ function RecentLivesTab({ lives, isOwnProfile, openMenuId, onOpenLive, onMenu })
         <RecentLiveCard
           key={live.id}
           live={live}
-          isOwnProfile={isOwnProfile}
-          menuOpen={openMenuId === live.id}
           onOpen={() => onOpenLive(live)}
-          onMenu={() => onMenu(live.id)}
         />
       ))}
     </section>
@@ -822,7 +797,6 @@ export default function ProfilePage() {
   const [notificationsEnabled, setNotificationsEnabled] = useState(false);
   const [activeTab, setActiveTab] = useState(searchParams.get('tab') === 'equipment' ? 'equipment' : 'lives');
   const [notifiedIds, setNotifiedIds] = useState({});
-  const [openMenuId, setOpenMenuId] = useState(null);
   const [toast, setToast] = useState('');
   const [equipmentLibrary, setEquipmentLibrary] = useState(() => getEquipmentLibrary());
   const [profileEquipmentEnriched, setProfileEquipmentEnriched] = useState([]);
@@ -1066,7 +1040,14 @@ export default function ProfilePage() {
   const liveEquipment = profile.currentLive
     ? getEquipmentSelection(profileEquipment, liveEquipmentIds)
     : [];
-  const shareProfile = () => showToast(t('profile.linkCopied'));
+  const shareProfile = async () => {
+    const result = await shareVuvioContent({
+      title: profile.displayName,
+      url: profileUrl(profile),
+    });
+    if (result.fallback === 'copied') showToast(t('profile.linkCopied'));
+    else if (!result.success && !result.cancelled) showToast(t('profile.shareError'));
+  };
   const manageLive = (live = null) => { setEditingLive(live); setShowScheduleSheet(true); };
   const canonical = profileUrl(profile);
   const description = profileDescription(profile);
@@ -1180,7 +1161,6 @@ export default function ProfilePage() {
 
         <ProfileTabs activeTab={activeTab} onChange={(tab) => {
           setActiveTab(tab);
-          setOpenMenuId(null);
         }} />
 
         <div className="profile-tab-panel">
@@ -1188,9 +1168,7 @@ export default function ProfilePage() {
             <RecentLivesTab
               lives={profile.recentLives}
               isOwnProfile={isOwnProfile}
-              openMenuId={openMenuId}
               onOpenLive={(live) => navigate(`/watch?live=${encodeURIComponent(live.id)}`)}
-              onMenu={(id) => setOpenMenuId((current) => (current === id ? null : id))}
             />
           ) : null}
           {activeTab === 'about' ? (
