@@ -7,6 +7,7 @@ import { toPng } from 'html-to-image';
 import { db } from '../firebase.js';
 import { endLive } from '../services/createdLiveService.js';
 import { getOrCreateConversation } from '../services/messagingService.js';
+import { deleteReplay, requestReplayDownload } from '../services/streamApi.ts';
 import { useAuth } from '../context/AuthContext.jsx';
 import SEO, { SITE_URL } from '../components/SEO.jsx';
 
@@ -123,15 +124,7 @@ function AudienceChart({ peak, duration, comments }) {
 }
 
 function pickHighlights(comments, duration) {
-  if (!comments || comments.length === 0 || duration <= 0) {
-    const labels = ['Opening', 'Mid-stream', 'Finale'];
-    const times = [Math.floor(duration * 0.15), Math.floor(duration * 0.5), Math.floor(duration * 0.85)];
-    return labels.map((label, i) => ({
-      id: `hl-${i}`,
-      label,
-      time: formatTime(times[i]),
-    }));
-  }
+  if (!comments || comments.length === 0 || duration <= 0) return [];
   // Bucket comments into windows, pick top 3 most active windows as highlights
   const buckets = 12;
   const bucketCounts = new Array(buckets).fill(0);
@@ -356,10 +349,12 @@ export default function LiveRecapPageSimple() {
   const [replayPollInfo, setReplayPollInfo] = useState(null);
   const [coverDataUrl, setCoverDataUrl] = useState(null);
   const [activeTab, setActiveTab] = useState('overview');
+  const [downloadingReplay, setDownloadingReplay] = useState(false);
   const liveDataRef = useRef(null);
   const cardRef = useRef(null);
   const pollCountRef = useRef(0);
   const emptyPollStreakRef = useRef(0);
+  const downloadPollRef = useRef(null);
 
   useEffect(() => {
     const url = liveData?.coverImageUrl ?? liveData?.thumbnailUrl ?? liveData?.image;
@@ -558,11 +553,57 @@ export default function LiveRecapPageSimple() {
     setCardModal(null);
   };
 
+  const handleDownloadReplay = async () => {
+    const liveId = location.pathname.split('/')[2];
+    if (!liveId || downloadingReplay) return;
+    setDownloadingReplay(true);
+    try {
+      const result = await requestReplayDownload(liveId);
+      if (result.url) {
+        const a = document.createElement('a');
+        a.href = result.url;
+        a.download = `replay-${liveData?.title || liveId}.mp4`;
+        a.target = '_blank';
+        a.click();
+        setDownloadingReplay(false);
+        return;
+      }
+      // Poll until url is ready
+      const poll = async () => {
+        try {
+          const r = await requestReplayDownload(liveId);
+          if (r.url) {
+            clearInterval(downloadPollRef.current);
+            downloadPollRef.current = null;
+            const a = document.createElement('a');
+            a.href = r.url;
+            a.download = `replay-${liveData?.title || liveId}.mp4`;
+            a.target = '_blank';
+            a.click();
+            setDownloadingReplay(false);
+          }
+        } catch {
+          clearInterval(downloadPollRef.current);
+          downloadPollRef.current = null;
+          setDownloadingReplay(false);
+        }
+      };
+      downloadPollRef.current = setInterval(poll, 3000);
+    } catch (err) {
+      console.error('[LiveRecapSimple] Download failed:', err);
+      setDownloadingReplay(false);
+    }
+  };
+
   const handleFinish = async () => {
     const liveId = location.pathname.split('/')[2];
     if (!liveId) return;
     setFinishing(true);
     try {
+      // Delete Cloudflare recording + clean Firestore before navigating away
+      if (liveData?.replayUrl || liveData?.cloudflareVideoId || liveData?.recordingUid) {
+        try { await deleteReplay(liveId); } catch (e) { console.warn('[LiveRecapSimple] deleteReplay failed (non-fatal):', e); }
+      }
       await endLive(liveId);
       const meta = document.querySelector('meta[name="viewport"]');
       if (meta) {
@@ -688,7 +729,7 @@ export default function LiveRecapPageSimple() {
       ? STAT_DEFS.filter((s) => ['duration', 'peak', 'total'].includes(s.key))
       : STAT_DEFS.filter((s) => ['messages', 'stars', 'questions'].includes(s.key));
 
-  const showHighlights = activeTab === 'overview';
+  const showHighlights = activeTab === 'overview' && !!liveData?.replayUrl && highlights.length > 0;
   const showChart = activeTab === 'overview' || activeTab === 'audience';
   const showInsight = activeTab === 'overview' || activeTab === 'audience';
   const showMessages = (activeTab === 'overview' || activeTab === 'engagement') && comments.length > 0;
@@ -1002,8 +1043,18 @@ export default function LiveRecapPageSimple() {
           </button>
           <button type="button" style={S.btnOutline} className="lrs-btn-outline" onClick={handleSave} disabled={finishing}>
             <Download size={15} />
-            Save
+            Save card
           </button>
+          {liveData?.replayUrl && (
+            <button type="button" style={S.btnOutline} className="lrs-btn-outline" onClick={handleDownloadReplay} disabled={finishing || downloadingReplay}>
+              {downloadingReplay ? (
+                <Loader size={15} style={{ animation: 'lrs-spin 1s linear infinite' }} />
+              ) : (
+                <Download size={15} />
+              )}
+              {downloadingReplay ? 'Preparing…' : 'Download MP4'}
+            </button>
+          )}
           <button type="button" style={S.btnPrimary} className="lrs-btn-primary" onClick={handleFinish} disabled={finishing}>
             {finishing ? (
               <Loader size={15} style={{ animation: 'lrs-spin 1s linear infinite' }} />

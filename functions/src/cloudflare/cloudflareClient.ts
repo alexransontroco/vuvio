@@ -34,6 +34,7 @@ export interface CloudflareClient {
   listLiveInputs(): Promise<CloudflareLiveInput[]>;
   listVideosByLiveInput(liveInputId: string): Promise<CloudflareVideo[]>;
   ensureRecordingEnabled(liveInputId: string): Promise<boolean>;
+  deleteVideo(videoUid: string): Promise<void>;
   // Live Outputs (simulcasting to external RTMP destinations)
   createLiveOutput(liveInputId: string, url: string, streamKey: string): Promise<CloudflareLiveOutput>;
   deleteLiveOutput(liveInputId: string, outputId: string): Promise<void>;
@@ -287,6 +288,25 @@ export function createCloudflareClient(): CloudflareClient {
         url: typeof item.url === 'string' ? item.url : '',
         enabled: item.enabled !== false,
       }));
+    },
+
+    async deleteVideo(videoUid) {
+      const ctrl = new AbortController();
+      const t = setTimeout(() => ctrl.abort(), 20000);
+      try {
+        const response = await fetch(`https://api.cloudflare.com/client/v4/accounts/${env.accountId}/stream/${encodeURIComponent(videoUid)}`, {
+          method: 'DELETE',
+          signal: ctrl.signal,
+          headers: { Authorization: `Bearer ${env.apiToken}` },
+        });
+        if (!response.ok && response.status !== 404) {
+          console.error('[cloudflare] deleteVideo failed', { status: response.status, videoUid });
+          throw new ApiError('server_error', `Cloudflare deleteVideo failed (HTTP ${response.status})`);
+        }
+        console.log(`[cloudflare] deleteVideo uid=${videoUid} status=${response.status}`);
+      } finally {
+        clearTimeout(t);
+      }
     },
 
     async ensureRecordingEnabled(liveInputId) {
