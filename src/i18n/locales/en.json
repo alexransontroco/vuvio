@@ -1249,6 +1249,51 @@
     "back": "Back",
     "stepXofY": "Step {{step}} of {{total}}",
     "stepLabel": "Step {{n}}",
+    "step1": {
+      "title": "Create your Vuvio profile",
+      "sub": "A few quick steps to personalise your experience.",
+      "uploadAria": "Add a profile photo",
+      "previewAlt": "Preview of your profile photo",
+      "changePhoto": "Change photo",
+      "addPhoto": "Add a photo",
+      "displayName": "Display name",
+      "namePlaceholder": "Your name"
+    },
+    "step2": {
+      "title": "Your interests",
+      "sub": "Pick what you love to explore on Vuvio."
+    },
+    "step3": {
+      "title": "Your activities",
+      "subFiltered": "Choose activities that match your interests.",
+      "subAny": "Pick what you practise, follow or want to share.",
+      "empty": "No activities available for this selection."
+    },
+    "step4": {
+      "title": "Build your equipment list",
+      "subFiltered": "Add the gear you use for your activities.",
+      "subAny": "Add the gear you use for your activities.",
+      "addCustom": "Add custom equipment",
+      "brand": "Brand",
+      "model": "Model",
+      "add": "Add"
+    },
+    "step5": {
+      "title": "Tell us about yourself",
+      "sub": "A short bio to introduce yourself to the community.",
+      "bioLabel": "Bio",
+      "bioPlaceholder": "Introduce yourself…"
+    },
+    "step6": {
+      "welcomeName": "Welcome to Vuvio, {{name}}!",
+      "welcome": "Welcome to Vuvio!",
+      "body": "Your profile is ready. Discover live experiences."
+    },
+    "cta": {
+      "continue": "Continue",
+      "continueWithCount": "Continue ({{count}})",
+      "explore": "Discover Vuvio"
+    },
     "ctaStart": "Get started",
     "ctaContinue": "Continue",
     "ctaContinueWithCount": "Continue ({{count}})",
