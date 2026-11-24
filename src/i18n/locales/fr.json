@@ -1249,6 +1249,51 @@
     "back": "Retour",
     "stepXofY": "Étape {{step}} sur {{total}}",
     "stepLabel": "Étape {{n}}",
+    "step1": {
+      "title": "Crée ton profil Vuvio",
+      "sub": "Quelques étapes pour personnaliser ton expérience.",
+      "uploadAria": "Ajouter une photo de profil",
+      "previewAlt": "Aperçu de ta photo de profil",
+      "changePhoto": "Changer la photo",
+      "addPhoto": "Ajouter une photo",
+      "displayName": "Nom affiché",
+      "namePlaceholder": "Ton prénom"
+    },
+    "step2": {
+      "title": "Tes centres d'intérêt",
+      "sub": "Choisis ce que tu aimes explorer sur Vuvio."
+    },
+    "step3": {
+      "title": "Tes activités",
+      "subFiltered": "Choisis les activités qui te correspondent parmi tes centres d'intérêt.",
+      "subAny": "Sélectionne ce que tu pratiques, suis ou veux partager.",
+      "empty": "Aucune activité disponible pour cette sélection."
+    },
+    "step4": {
+      "title": "Construis ton équipement",
+      "subFiltered": "Ajoute le matériel que tu utilises pour tes activités.",
+      "subAny": "Ajoute le matériel que tu utilises pour tes activités.",
+      "addCustom": "Ajouter un équipement personnalisé",
+      "brand": "Marque",
+      "model": "Modèle",
+      "add": "Ajouter"
+    },
+    "step5": {
+      "title": "Parle de toi",
+      "sub": "Une courte bio pour que les autres te connaissent.",
+      "bioLabel": "Bio",
+      "bioPlaceholder": "Présente-toi…"
+    },
+    "step6": {
+      "welcomeName": "Bienvenue sur Vuvio, {{name}} !",
+      "welcome": "Bienvenue sur Vuvio !",
+      "body": "Ton profil est prêt. Découvre les expériences en direct."
+    },
+    "cta": {
+      "continue": "Continuer",
+      "continueWithCount": "Continuer ({{count}})",
+      "explore": "Découvrir Vuvio"
+    },
     "ctaStart": "Commencer",
     "ctaContinue": "Continuer",
     "ctaContinueWithCount": "Continuer ({{count}})",

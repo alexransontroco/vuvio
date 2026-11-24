@@ -1,5 +1,5 @@
 import Hls from 'hls.js';
-import { Expand, Gauge, Loader, Pause, Play, RotateCcw, RotateCw, Star } from 'lucide-react';
+import { Expand, Gauge, Loader2, Pause, Play, RotateCcw, RotateCw, Star } from 'lucide-react';
 import { useEffect, useRef } from 'react';
 import BrandMark from '../BrandMark.jsx';
 
@@ -42,10 +42,14 @@ function ProcessingState({ live }) {
   return (
     <section className="replay-player" aria-label="Replay player" style={{ position: 'relative', background: '#000', overflow: 'hidden' }}>
       {thumb ? (
-        <img src={thumb} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block', opacity: 0.55 }} />
+        <img src={thumb} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block', opacity: 0.3 }} />
       ) : (
         <div style={{ width: '100%', height: '100%', background: '#0a0a0f' }} />
       )}
+      <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 12, color: 'rgba(255,255,255,0.7)' }}>
+        <Loader2 size={32} style={{ animation: 'spin 1s linear infinite' }} />
+        <span style={{ fontSize: 14, fontWeight: 500 }}>Replay processing…</span>
+      </div>
     </section>
   );
 }

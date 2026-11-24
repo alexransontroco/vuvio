@@ -20,7 +20,7 @@ import { mapStreams } from '../data/mapStreams.js';
 import { streams, upcomingStreams } from '../data/mockStreams.js';
 import { getCreatedLives, getCreatedLiveStream, registerCreatedLiveStream, subscribeToCreatedLives, publishLivePing, updateCreatedLive, waitForCreatedLiveSaved } from '../services/createdLiveService.js';
 import { getLiveDestinations, clearLiveDestinations, createCloudflareOutput, deleteCloudflareOutput } from '../services/streamDestinationsService.js';
-import { startBroadcast, stopBroadcast, watchBroadcast, closePeer, getLocalStream, getRemoteStream, startRtmpRelayBroadcast, stopRtmpRelayBroadcast, stopRtmpRelayBroadcastSync, startWhipConnection, startWhepViewer, stopWhepViewer, pauseWhipTracks, resumeWhipTracks } from '../services/webrtcService.js';
+import { startBroadcast, stopBroadcast, watchBroadcast, closePeer, getLocalStream, getRemoteStream, startRtmpRelayBroadcast, stopRtmpRelayBroadcast, stopRtmpRelayBroadcastSync, startWhipConnection, startWhepViewer, stopWhepViewer, pauseWhipTracks, resumeWhipTracks, pauseRelayTracks, resumeRelayTracks } from '../services/webrtcService.js';
 import PauseLiveSheet from '../components/live/PauseLiveSheet.jsx';
 import '../styles/components/live-pause.css';
 import { collection, doc, onSnapshot, query, where, getDocs, getDoc, addDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
@@ -1363,11 +1363,16 @@ function CreatorLiveSession({ live, onEndingChange }) {
   const seenQIdsRef = useRef(new Set());
   // ── Pause / Resume state (feature-flagged) ────────────────────────────
   const [pauseSheetOpen, setPauseSheetOpen] = useState(false);
-  const [liveStatus, setLiveStatus] = useState('live'); // 'live' | 'paused'
+  // 'live' | 'paused' — distinct from Firestore `status` ('live' | 'ended')
+  const [liveStatus, setLiveStatus] = useState('live');
+  // isTransitioning: true during pause or resume in-flight (prevents double-clicks)
+  const [isTransitioning, setIsTransitioning] = useState(false);
   const [pauseStartedAt, setPauseStartedAt] = useState(null);
   const [pauseExpectedMinutes, setPauseExpectedMinutes] = useState(null);
   const [pauseCount, setPauseCount] = useState(0);
   const [totalPausedMs, setTotalPausedMs] = useState(0);
+  // pauseSegmentsRef: [{startedAt, resumedAt, durationMs, expectedMinutes}] — for replay post-processing
+  const pauseSegmentsRef = useRef([]);
   const hideTimer = useRef(null);
   const longPressTimer = useRef(null);
   const lastCenterTapRef = useRef({ time: 0, x: 0, y: 0 });
@@ -1959,34 +1964,58 @@ function CreatorLiveSession({ live, onEndingChange }) {
   };
 
   const pauseLive = async (expectedMinutes) => {
+    if (isTransitioning || liveStatus !== 'live') return;
     setPauseSheetOpen(false);
-    pauseWhipTracks();
+    setIsTransitioning(true);
+
+    // 1. Mute ingest tracks first (privacy: no private media reaches Cloudflare)
+    const isRelay = ingestModeRef.current === 'rtmps-relay';
+    const muted = isRelay ? pauseRelayTracks() : pauseWhipTracks();
+    if (!muted) {
+      // No active ingest connection — cannot pause safely
+      console.warn('[pauseLive] No ingest connection to pause (mode=%s)', ingestModeRef.current);
+      setIsTransitioning(false);
+      return;
+    }
+
+    // 2. Update Firestore — if this fails, roll back track muting
     const now = new Date();
-    setPauseStartedAt(now);
-    setPauseExpectedMinutes(expectedMinutes);
-    setPauseCount((c) => c + 1);
-    setLiveStatus('paused');
     try {
       await updateDoc(doc(db, 'activeLives', live.id), {
         liveStatus: 'paused',
         pauseStartedAt: serverTimestamp(),
         pauseExpectedEndAt: expectedMinutes
-          ? new Date(Date.now() + expectedMinutes * 60 * 1000)
+          ? new Date(now.getTime() + expectedMinutes * 60 * 1000)
           : null,
         updatedAt: serverTimestamp(),
       });
     } catch (err) {
-      console.warn('[pauseLive] Firestore update failed:', err.message);
+      console.error('[pauseLive] Firestore update failed — rolling back track mute:', err.message);
+      if (isRelay) resumeRelayTracks(); else resumeWhipTracks();
+      setIsTransitioning(false);
+      setToast('Pause échouée — vérifiez votre connexion');
+      setTimeout(() => setToast(null), 2500);
+      return;
     }
+
+    // 3. Record segment start (for future replay post-processing)
+    pauseSegmentsRef.current = [
+      ...pauseSegmentsRef.current,
+      { startedAt: now, resumedAt: null, durationMs: null, expectedMinutes: expectedMinutes ?? null },
+    ];
+
+    setPauseStartedAt(now);
+    setPauseExpectedMinutes(expectedMinutes);
+    setPauseCount((c) => c + 1);
+    setLiveStatus('paused');
+    setIsTransitioning(false);
   };
 
   const resumeLive = async () => {
-    const pausedMs = pauseStartedAt ? Date.now() - pauseStartedAt.getTime() : 0;
-    setTotalPausedMs((t) => t + pausedMs);
-    setPauseStartedAt(null);
-    setPauseExpectedMinutes(null);
-    resumeWhipTracks();
-    setLiveStatus('live');
+    if (isTransitioning || liveStatus !== 'paused') return;
+    setIsTransitioning(true);
+
+    // 1. Update Firestore first — if this fails, stay paused (no media leaked)
     try {
       await updateDoc(doc(db, 'activeLives', live.id), {
         liveStatus: 'live',
@@ -1995,13 +2024,56 @@ function CreatorLiveSession({ live, onEndingChange }) {
         updatedAt: serverTimestamp(),
       });
     } catch (err) {
-      console.warn('[resumeLive] Firestore update failed:', err.message);
+      console.error('[resumeLive] Firestore update failed — staying paused:', err.message);
+      setIsTransitioning(false);
+      setToast('Reprise impossible — vérifiez votre connexion');
+      setTimeout(() => setToast(null), 2500);
+      return;
     }
+
+    // 2. Resume ingest tracks (Firestore confirmed, safe to transmit again)
+    const isRelay = ingestModeRef.current === 'rtmps-relay';
+    if (isRelay) resumeRelayTracks(); else resumeWhipTracks();
+
+    // 3. Close segment and accumulate paused time
+    const now = new Date();
+    const pausedMs = pauseStartedAt ? now.getTime() - pauseStartedAt.getTime() : 0;
+    setTotalPausedMs((t) => t + pausedMs);
+
+    const segs = pauseSegmentsRef.current;
+    if (segs.length > 0) {
+      const last = segs[segs.length - 1];
+      pauseSegmentsRef.current = [
+        ...segs.slice(0, -1),
+        { ...last, resumedAt: now, durationMs: pausedMs },
+      ];
+    }
+
+    setPauseStartedAt(null);
+    setPauseExpectedMinutes(null);
+    setLiveStatus('live');
+    setIsTransitioning(false);
   };
 
   const endLive = async () => {
+    if (isTransitioning) return;
     if (liveStatus === 'paused') {
-      resumeWhipTracks();
+      // Close any open pause segment before ending
+      const now = new Date();
+      const pausedMs = pauseStartedAt ? now.getTime() - pauseStartedAt.getTime() : 0;
+      const segs = pauseSegmentsRef.current;
+      if (segs.length > 0) {
+        const last = segs[segs.length - 1];
+        if (!last.resumedAt) {
+          pauseSegmentsRef.current = [
+            ...segs.slice(0, -1),
+            { ...last, resumedAt: now, durationMs: pausedMs },
+          ];
+        }
+      }
+      setTotalPausedMs((t) => t + pausedMs);
+      const isRelay = ingestModeRef.current === 'rtmps-relay';
+      if (isRelay) resumeRelayTracks(); else resumeWhipTracks();
       setLiveStatus('live');
     }
     setConfirmEnd(false);
@@ -2083,15 +2155,24 @@ function CreatorLiveSession({ live, onEndingChange }) {
         console.log('[endLive] Using state counts - comments:', commentsCount, 'stars:', stars);
       }
 
-      const finalPausedMs = totalPausedMs + (pauseStartedAt ? Date.now() - pauseStartedAt.getTime() : 0);
+      const finalPausedMs = totalPausedMs;
+      const broadcastSecs = Math.max(0, elapsed - Math.round(finalPausedMs / 1000));
+      // Serialise pause segments (Dates → ISO strings for Firestore)
+      const serialisedSegments = pauseSegmentsRef.current.map((seg) => ({
+        startedAt: seg.startedAt?.toISOString?.() ?? null,
+        resumedAt: seg.resumedAt?.toISOString?.() ?? null,
+        durationMs: seg.durationMs ?? null,
+        expectedMinutes: seg.expectedMinutes ?? null,
+      }));
       const stats = {
         status: 'ended',
         liveStatus: 'ended',
         endedAt: serverTimestamp(),
         durationSeconds: elapsed,
-        broadcastDurationSeconds: Math.max(0, elapsed - Math.round(finalPausedMs / 1000)),
+        broadcastDurationSeconds: broadcastSecs,
         totalPausedSeconds: Math.round(finalPausedMs / 1000),
         pauseCount,
+        pauseSegments: serialisedSegments,
         totalUniqueViewers: viewerCount,
         peakViewerCount: peakViewers,
         commentCount: commentCount,
@@ -2316,8 +2397,13 @@ function CreatorLiveSession({ live, onEndingChange }) {
         <button type="button" className={flashOn ? 'is-active' : ''} onClick={() => { setFlashOn((value) => !value); revealControls(); }}><Flashlight size={19} strokeWidth={1.8} /><span>Flash</span></button>
         <button type="button" onClick={() => setLocked(true)}><Lock size={19} strokeWidth={1.8} /><span>Screen Lock</span></button>
         {PAUSE_RESUME_ENABLED ? (
-          <button type="button" onClick={(e) => { e.stopPropagation(); setPauseSheetOpen(true); revealControls(); }}>
-            <Pause size={19} strokeWidth={1.8} /><span>Pause</span>
+          <button
+            type="button"
+            disabled={isTransitioning}
+            onClick={(e) => { e.stopPropagation(); setPauseSheetOpen(true); revealControls(); }}
+          >
+            <Pause size={19} strokeWidth={1.8} />
+            <span>{isTransitioning ? 'En cours…' : 'Pause'}</span>
           </button>
         ) : null}
         <button type="button" onClick={revealControls}><Settings size={19} strokeWidth={1.8} /><span>Settings</span></button>
@@ -2371,8 +2457,8 @@ function CreatorLiveSession({ live, onEndingChange }) {
           pauseStartedAt={pauseStartedAt}
           pauseExpectedMinutes={pauseExpectedMinutes}
           viewerCount={viewerCount}
+          isTransitioning={isTransitioning}
           onResume={resumeLive}
-          onChangeDuration={() => { /* future: allow editing duration */ }}
           onEndLive={() => setConfirmEnd(true)}
         />
       ) : null}
@@ -2380,7 +2466,7 @@ function CreatorLiveSession({ live, onEndingChange }) {
   );
 }
 
-function CreatorPauseView({ pauseStartedAt, pauseExpectedMinutes, viewerCount, onResume, onEndLive }) {
+function CreatorPauseView({ pauseStartedAt, pauseExpectedMinutes, viewerCount, isTransitioning, onResume, onEndLive }) {
   const [elapsed, setElapsed] = useState(0);
 
   useEffect(() => {
@@ -2423,12 +2509,16 @@ function CreatorPauseView({ pauseStartedAt, pauseExpectedMinutes, viewerCount, o
         </span>
       </div>
       <div className="creator-pause-actions">
-        <button type="button" className="creator-pause-btn-resume" onClick={onResume}>
-          <Play size={18} fill="currentColor" strokeWidth={0} />
-          Reprendre le live
+        <button type="button" className="creator-pause-btn-resume" onClick={onResume} disabled={isTransitioning}>
+          {isTransitioning ? (
+            <span className="creator-pause-spinner" aria-hidden="true" />
+          ) : (
+            <Play size={18} fill="currentColor" strokeWidth={0} />
+          )}
+          {isTransitioning ? 'Reprise en cours…' : 'Reprendre le live'}
         </button>
         <div className="creator-pause-secondary">
-          <button type="button" className="creator-pause-btn-secondary creator-pause-btn-end" onClick={onEndLive}>
+          <button type="button" className="creator-pause-btn-secondary creator-pause-btn-end" onClick={onEndLive} disabled={isTransitioning}>
             Terminer
           </button>
         </div>

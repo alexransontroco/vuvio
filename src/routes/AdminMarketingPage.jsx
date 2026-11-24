@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { Navigate, useNavigate } from 'react-router-dom';
 import { db } from '../firebase.js';
 import { useAuth } from '../context/AuthContext.jsx';
+import { isAdminEmail } from '../constants/adminEmails.js';
 
 const TIER_LABEL = { trusted: 'Top créateur', standard: 'Actif', new: 'Nouveau', 'at-risk': 'À surveiller', suspended: 'Suspendu' };
 const TIER_COLOR = { trusted: '#89f0a8', standard: '#35e3dc', new: '#94a3b8', 'at-risk': '#ffd166', suspended: '#fca5a5' };
@@ -120,7 +121,7 @@ export default function AdminMarketingPage() {
   const { user, authLoading } = useAuth();
   const navigate = useNavigate();
   const isLocalDev = import.meta.env.DEV || ['localhost', '127.0.0.1'].includes(window.location.hostname);
-  const isAdmin = isLocalDev || user?.email?.endsWith('@vuvio.app') || user?.email === 'alexandre.ranson@gmail.com' || user?.email === 'doug.benchetrit@gmail.com' || user?.email === 'cecilia.ranson@outlook.com' || user?.email === 'christophe.ranson@gmail.com';
+  const isAdmin = isLocalDev || isAdminEmail(user?.email);
 
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState({ totalUsers: 0, liveNow: 0, totalViews: 0, totalLives: 0 });

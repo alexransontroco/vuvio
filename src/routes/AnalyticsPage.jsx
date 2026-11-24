@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { collection, query, orderBy, limit, getDocs, getDoc, doc, getCountFromServer, where } from 'firebase/firestore';
 import { db } from '../firebase.js';
 import { useAuth } from '../context/AuthContext.jsx';
+import { isAdminEmail } from '../constants/adminEmails.js';
 import '../styles/pages/analytics.css';
 
 function useCountUp(target, duration = 700) {
@@ -435,7 +436,7 @@ export default function AnalyticsPage() {
       navigate('/login', { replace: true });
       return;
     }
-    const isAdmin = isLocalDev || user?.email?.endsWith('@vuvio.app') || user?.email === 'alexandre.ranson@gmail.com' || user?.email === 'doug.benchetrit@gmail.com' || user?.email === 'cecilia.ranson@outlook.com' || user?.email === 'christophe.ranson@gmail.com';
+    const isAdmin = isLocalDev || isAdminEmail(user?.email);
     if (!isAdmin) {
       navigate('/watch', { replace: true });
       return;

@@ -117,6 +117,7 @@ async function getRtcConfig() {
 }
 
 let relayCanvasCleanup = null;
+let relayPaused = false; // pause flag read by the canvas draw loop
 
 async function createFixedResolutionStream(sourceStream, width = 1280, height = 720, fps = 15) {
   const canvas = document.createElement('canvas');
@@ -143,6 +144,13 @@ async function createFixedResolutionStream(sourceStream, width = 1280, height = 
   let animFrameId;
   let framePulse = false;
   function draw() {
+    if (relayPaused) {
+      // Pause: draw opaque black so Cloudflare records silence/black (no private media)
+      ctx.fillStyle = '#000000';
+      ctx.fillRect(0, 0, width, height);
+      canvasStream?.getVideoTracks?.()[0]?.requestFrame?.();
+      return;
+    }
     if (videoEl.readyState >= 2 && videoEl.videoWidth > 0) {
       const vw = videoEl.videoWidth, vh = videoEl.videoHeight;
       const videoAR = vw / vh, canvasAR = width / height;
@@ -176,6 +184,7 @@ async function createFixedResolutionStream(sourceStream, width = 1280, height = 
 
   relayCanvasCleanup = () => {
     clearInterval(animFrameId);
+    relayPaused = false;
     videoEl.pause();
     videoEl.srcObject = null;
     relayCanvasCleanup = null;
@@ -839,9 +848,33 @@ export async function startRtmpRelayBroadcast(liveId, userId, existingStream = n
   }
 }
 
+// Pause relay: draw black on canvas + mute audio on localStream.
+// Signal path: canvas draw() reads relayPaused → black frames to relayPeerConnection → relay → RTMPS → Cloudflare.
+// Audio path: localStream audio track is added directly to canvasStream; disabling it silences the relay.
+export function pauseRelayTracks() {
+  if (!relayPeerConnection) return false;
+  relayPaused = true;
+  if (localStream) {
+    localStream.getAudioTracks().forEach((t) => { t.enabled = false; });
+  }
+  console.log('[RELAY] tracks paused (canvas=black, audio=muted)');
+  return true;
+}
+
+export function resumeRelayTracks() {
+  if (!relayPeerConnection) return false;
+  relayPaused = false;
+  if (localStream) {
+    localStream.getAudioTracks().forEach((t) => { t.enabled = true; });
+  }
+  console.log('[RELAY] tracks resumed (canvas=live, audio=active)');
+  return true;
+}
+
 export async function stopRtmpRelayBroadcast(liveId) {
   try {
     console.log('[relay] stopping relay broadcast');
+    relayPaused = false;
     relayCanvasCleanup?.();
     if (localStream) { localStream.getTracks().forEach(t => t.stop()); localStream = null; }
     await stopRtmpRelayConnection();
@@ -855,6 +888,7 @@ export async function stopRtmpRelayBroadcast(liveId) {
 
 export function stopRtmpRelayBroadcastSync() {
   try {
+    relayPaused = false;
     if (localStream) { localStream.getTracks().forEach(t => t.stop()); localStream = null; }
     if (relayPeerConnection) { relayPeerConnection.close(); relayPeerConnection = null; }
     if (relayBaseUrl && relaySessionId) {
