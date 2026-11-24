@@ -1,6 +1,7 @@
 import {
   Bell,
   BookOpen,
+  BriefcaseBusiness,
   ChevronLeft,
   ChevronRight,
   Database,
@@ -77,6 +78,7 @@ const buildGroups = (t, userEmail, languageLabel, isAdmin) => [
     title: 'Admin',
     items: [
       { label: 'Admin console', value: 'Internal tools, docs & analytics', icon: ShieldCheck, to: '/admin' },
+      { label: 'Financial dashboard', value: 'Forecast 2027–2029', icon: BriefcaseBusiness, to: '/admin/business' },
     ],
   }] : []),
   {
