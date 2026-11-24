@@ -5,7 +5,6 @@ export const cloudflareApiToken = defineSecret('CLOUDFLARE_API_TOKEN');
 export const cloudflareWebhookSecret = defineSecret('CLOUDFLARE_WEBHOOK_SECRET');
 export const cloudflareCustomerCode = defineSecret('CLOUDFLARE_CUSTOMER_CODE');
 export const openaiApiKey = defineSecret('OPENAI_API_KEY');
-export const googleSheetsCredentials = defineSecret('GOOGLE_SHEETS_CREDENTIALS');
 
 // Metered / Amazon-PA / Awin : secrets non provisionnés en prod.
 // Les getters correspondants lisent uniquement process.env et renvoient '' si absent.

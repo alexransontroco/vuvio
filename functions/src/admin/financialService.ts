@@ -10,12 +10,11 @@ const SHEET_RANGES = {
   cashflow: "'Trésorerie'!A1:J100",
 };
 
-export async function fetchFinancialData(credentialsJson: string) {
+// Uses Application Default Credentials — the Cloud Function's service account
+// must have been granted read access to the spreadsheet.
+export async function fetchFinancialData() {
   try {
-    const credentials = JSON.parse(credentialsJson);
-
     const auth = new google.auth.GoogleAuth({
-      credentials,
       scopes: ['https://www.googleapis.com/auth/spreadsheets.readonly'],
     });
 
@@ -29,7 +28,7 @@ export async function fetchFinancialData(credentialsJson: string) {
       throw new Error('No data returned from Google Sheets');
     }
 
-    const data = {
+    return {
       dashboard: response.data.valueRanges[0]?.values || [],
       hypotheses: response.data.valueRanges[1]?.values || [],
       forecast: response.data.valueRanges[2]?.values || [],
@@ -38,8 +37,6 @@ export async function fetchFinancialData(credentialsJson: string) {
       last_sync: new Date().toISOString(),
       sync_status: 'success' as const,
     };
-
-    return data;
   } catch (error) {
     console.error('Error fetching financial data:', error);
     throw new Error(
