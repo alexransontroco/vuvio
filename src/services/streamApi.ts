@@ -157,3 +157,17 @@ export function finishStream(streamId: string, reason = 'creator_finished') {
     body: { reason },
   });
 }
+
+export function requestReplayDownload(streamId: string) {
+  return apiRequest<{ success: boolean; status: string; url: string; pctComplete: number | null; videoUid: string }>(
+    `/streams/${encodeURIComponent(streamId)}/replay/download`,
+    { method: 'POST', body: {} },
+  );
+}
+
+export function deleteReplay(streamId: string) {
+  return apiRequest<{ success: boolean; status: 'deleted' | 'deferred' | 'not_found' | 'nothing_to_delete' }>(
+    `/streams/${encodeURIComponent(streamId)}/replay/delete`,
+    { method: 'POST', body: {} },
+  );
+}

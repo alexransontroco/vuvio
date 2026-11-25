@@ -416,6 +416,11 @@ export default function LiveRecapPageSimple() {
           if (data.replayUrl) {
             liveDataRef.current = { ...liveDataRef.current, replayUrl: data.replayUrl, recordingStatus: 'ready' };
             setLiveData(prev => prev ? { ...prev, replayUrl: data.replayUrl, recordingStatus: 'ready' } : prev);
+          } else if (data.recordingStatus === 'deleted' || data.recordingStatus === 'revoked') {
+            replayStateRef.current = 'no_footage';
+            setReplayState('no_footage');
+            liveDataRef.current = { ...liveDataRef.current, replayUrl: '', recordingStatus: data.recordingStatus };
+            setLiveData(prev => prev ? { ...prev, replayUrl: '', recordingStatus: data.recordingStatus } : prev);
           } else if (data.recordingStatus === 'processing_failed') {
             replayStateRef.current = 'no_footage';
             setReplayState('no_footage');
