@@ -841,11 +841,11 @@ export default function ProfilePage() {
 
         // Load active live from activeLives collection
         try {
-          const livesQ = query(collection(db, 'activeLives'), where('creatorUid', '==', uid));
+          const livesQ = query(collection(db, 'activeLives'), where('creatorUid', '==', uid), where('publicSafe', '==', true));
           const livesSnap = await getDocs(livesQ);
           const activeLives = livesSnap.docs
             .map(doc => doc.data())
-            .filter(live => live.status === 'live')
+            .filter(live => live.creatorUid === uid && live.status === 'live')
             .sort((a, b) => {
               const aTime = new Date(a.createdAt || 0).getTime();
               const bTime = new Date(b.createdAt || 0).getTime();

@@ -1,4 +1,4 @@
-import type { Response } from 'express';;
+import type { Response } from 'express';
 import { ApiError } from '../shared/errors.js';
 import { streamRef } from '../streams/streamHelpers.js';
 import { publicGearForIds } from './gearHelpers.js';
@@ -8,6 +8,7 @@ export async function getStreamGear(_req: unknown, res: Response, streamId: stri
   const snap = await streamRef(streamId).get();
   if (!snap.exists) throw new ApiError('not_found', 'Stream not found');
   const stream = snap.data() as StreamDocument;
+  if (stream.visibility !== 'public') throw new ApiError('not_found', 'Stream not found');
   const gear = await publicGearForIds(stream.gearIds ?? []);
   res.json({ gear });
 }

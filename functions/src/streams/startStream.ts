@@ -17,6 +17,7 @@ export async function startStream(req: Request, res: Response, streamId: string)
     if (!snap.exists) throw new ApiError('not_found', 'Stream not found');
     const stream = snap.data() as StreamDocument;
     if (stream.creatorId !== user.uid) throw new ApiError('forbidden', 'Only the creator can start this stream');
+    if (stream.visibility !== 'public') throw new ApiError('forbidden', 'Only public lives can be started');
     const conflict = assertStatus(stream.status, ['preparing', 'connecting'], 'Start');
     if (conflict) throw new ApiError('conflict', conflict);
 

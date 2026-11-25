@@ -1,5 +1,5 @@
 import Hls from 'hls.js';
-import { Backpack, BatteryWarning, Bell, CalendarClock, Camera, Check, ChevronLeft, ChevronRight, ChevronUp, Clock, Eye, Flag, Flashlight, Lock, MapPin, MessageCircle, Mic, MicOff, Monitor, Pause, Play, RotateCcw, Search, Send, Settings, Share2, Square, Star, Trash2, UnlockKeyhole, UserPlus, UserRound, UsersRound, Volume2, VolumeX, WifiOff, X } from 'lucide-react';
+import { Backpack, BatteryWarning, Bell, Bookmark, CalendarClock, Camera, Check, ChevronLeft, ChevronRight, ChevronUp, Clock, Eye, Flag, Flashlight, Lock, MapPin, MessageCircle, Mic, MicOff, Monitor, Pause, Play, RotateCcw, Search, Send, Settings, Share2, ShieldBan, Square, Star, Trash2, UnlockKeyhole, UserPlus, UserRound, UsersRound, Volume2, VolumeX, WifiOff, X } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link, Navigate, useNavigate, useParams, useSearchParams } from 'react-router-dom';
@@ -18,7 +18,7 @@ import { LivePresenceOverlay } from '../components/social/LivePresenceOverlay.js
 import { lives } from '../data/lives.js';
 import { mapStreams } from '../data/mapStreams.js';
 import { streams, upcomingStreams } from '../data/mockStreams.js';
-import { getCreatedLives, getCreatedLiveStream, registerCreatedLiveStream, subscribeToCreatedLives, publishLivePing, updateCreatedLive } from '../services/createdLiveService.js';
+import { getCreatedLives, getCreatedLiveStream, registerCreatedLiveStream, subscribeToCreatedLives, publishLivePing, updateCreatedLive, waitForCreatedLiveSaved } from '../services/createdLiveService.js';
 import { getLiveDestinations, clearLiveDestinations, createCloudflareOutput, deleteCloudflareOutput } from '../services/streamDestinationsService.js';
 import { startBroadcast, stopBroadcast, watchBroadcast, closePeer, getLocalStream, getRemoteStream, startRtmpRelayBroadcast, stopRtmpRelayBroadcast, stopRtmpRelayBroadcastSync, startWhipConnection, startWhepViewer, stopWhepViewer, pauseWhipTracks, resumeWhipTracks, pauseRelayTracks, resumeRelayTracks } from '../services/webrtcService.js';
 import PauseLiveSheet from '../components/live/PauseLiveSheet.jsx';
@@ -315,7 +315,8 @@ function upcomingStatus(item, now) {
   if (item?.status === 'ended') return 'ended';
   const countdown = getCountdownState(item?.startsAt, now);
   if (countdown.phase === 'invalid') return 'invalid';
-  if (countdown.isLive || item?.status === 'live') return 'live';
+  if (item?.status === 'live') return 'live';
+  if (countdown.isLive) return 'scheduled';
   if (countdown.isStartingSoon) return 'starting-soon';
   return 'scheduled';
 }
@@ -643,7 +644,7 @@ function UpcomingHomeCard({ item, now, reminderSet, reminderSaving, reminderErro
   const interested = typeof item.interestedCount === 'number'
     ? formatCompactCount(item.interestedCount + (reminderSet ? 1 : 0), i18n.language)
     : '';
-  const buttonLabel = isLiveNow ? t('common.watch') : reminderSaving ? 'Saving…' : reminderError ? 'Try again' : reminderSet ? 'Reminder on' : 'Notify me';
+  const buttonLabel = isLiveNow ? t('common.watch') : reminderSaving ? 'Saving…' : reminderError ? 'Try again' : reminderSet ? 'Saved on this device' : 'Save on this device';
   const badgeLabel = isLiveNow ? 'Live now' : status === 'starting-soon' ? 'Starting soon' : 'Upcoming';
 
   return (
@@ -678,8 +679,8 @@ function UpcomingHomeCard({ item, now, reminderSet, reminderSaving, reminderErro
           <CalendarClock size={13} strokeWidth={1.9} />
           {formatLocalSchedule(item.startsAt, i18n.language, cLabels)}
         </p>
-        <div className="home-countdown" aria-label={countdown.ariaLabel}>
-          <span>{countdown.label}</span>
+        <div className="home-countdown" aria-label={countdown.isLive && !isLiveNow ? 'Awaiting creator' : countdown.ariaLabel}>
+          <span>{countdown.isLive && !isLiveNow ? 'Awaiting creator' : countdown.label}</span>
           {countdown.value ? <strong>{countdown.value}</strong> : null}
         </div>
         <div className="home-upcoming-card__creator">
@@ -703,9 +704,9 @@ function UpcomingHomeCard({ item, now, reminderSet, reminderSaving, reminderErro
             }
             onNotify(item);
           }}
-          aria-label={reminderSet ? `Reminder on for ${item.title}` : `Notify me for ${item.title}`}
+          aria-label={reminderSet ? `Saved on this device: ${item.title}` : `Save on this device: ${item.title}`}
         >
-          {isLiveNow ? <Play size={14} fill="currentColor" strokeWidth={1.8} /> : <Bell size={14} strokeWidth={1.9} />}
+          {isLiveNow ? <Play size={14} fill="currentColor" strokeWidth={1.8} /> : <Bookmark size={14} strokeWidth={1.9} />}
           {buttonLabel}
         </button>
       </div>
@@ -747,8 +748,8 @@ function UpcomingDetailSheet({ item, now, reminderSet, reminderSaving, onNotify,
           <p><Clock size={15} strokeWidth={1.9} /> {upcomingPovLabel(item, t)}</p>
           {interested ? <p><UsersRound size={15} strokeWidth={1.9} /> {interested} interested</p> : null}
         </div>
-        <div className="home-countdown home-countdown--sheet" aria-label={countdown.ariaLabel}>
-          <span>{countdown.label}</span>
+        <div className="home-countdown home-countdown--sheet" aria-label={countdown.isLive && status !== 'live' ? 'Awaiting creator' : countdown.ariaLabel}>
+          <span>{countdown.isLive && status !== 'live' ? 'Awaiting creator' : countdown.label}</span>
           {countdown.value ? <strong>{countdown.value}</strong> : null}
         </div>
         <p className="home-upcoming-sheet__description">{item.description ?? 'Details will be available before the live starts.'}</p>
@@ -763,8 +764,8 @@ function UpcomingDetailSheet({ item, now, reminderSet, reminderSaving, onNotify,
             disabled={reminderSaving}
             onClick={() => (status === 'live' ? onWatch(item.id) : onNotify(item))}
           >
-            {status === 'live' ? <Play size={15} fill="currentColor" strokeWidth={1.8} /> : <Bell size={15} strokeWidth={1.9} />}
-            {status === 'live' ? t('common.watch') : reminderSaving ? 'Saving…' : reminderSet ? 'Reminder on' : 'Notify me'}
+            {status === 'live' ? <Play size={15} fill="currentColor" strokeWidth={1.8} /> : <Bookmark size={15} strokeWidth={1.9} />}
+            {status === 'live' ? t('common.watch') : reminderSaving ? 'Saving…' : reminderSet ? 'Saved on this device' : 'Save on this device'}
           </button>
           <button type="button" onClick={() => navigator.share?.({ title: item.title, text: item.description })}>
             <Share2 size={15} strokeWidth={1.9} />
@@ -1569,6 +1570,7 @@ function CreatorLiveSession({ live, onEndingChange }) {
       let capturedWhepUrl = live.whepUrl || null;
       try {
         // ── Step 1: Create Cloudflare live input ──
+        if (!(await waitForCreatedLiveSaved(live.id))) throw new Error('Live could not be saved');
         // Always call the backend — never reuse webRTCUrl/streamKey cached in Firestore,
         // as those credentials may point to a deleted live input.
         try {
@@ -2563,6 +2565,7 @@ function LiveViewer({ liveId, creatorMode = false }) {
   const [searchParams] = useSearchParams();
   const debugViewer = searchParams.get('debug') === 'viewer';
   const [createdLives, setCreatedLives] = useState([]);
+  const [requestedLiveState, setRequestedLiveState] = useState({ id: liveId, status: 'loading' });
   const [lives, setLives] = useState([]);
   const [remoteStream, setRemoteStream] = useState(null);
   const [watchStatus, setWatchStatus] = useState('');
@@ -2603,16 +2606,41 @@ function LiveViewer({ liveId, creatorMode = false }) {
   // Fast path: fetch liveId doc directly so liveReady flips before the collection query returns
   useEffect(() => {
     if (!liveId) return;
+    let cancelled = false;
+    setRequestedLiveState({ id: liveId, status: 'loading' });
     getDoc(doc(db, 'activeLives', liveId)).then((snap) => {
-      if (!snap.exists()) return;
+      if (cancelled) return;
+      if (!snap.exists()) {
+        setRequestedLiveState({ id: liveId, status: 'missing' });
+        return;
+      }
       const data = snap.data();
-      if (data?.status !== 'live') return;
+      if (['ended', 'completed', 'cancelled'].includes(data?.status)) {
+        setEndedLiveSnap({ ...data, id: snap.id });
+        setBroadcastEnded(true);
+        setRequestedLiveState({ id: liveId, status: 'ended' });
+        return;
+      }
+      if (data?.visibility === 'private' || data?.visibility === 'followers' || data?.privacy === 'Private' || data?.privacy === 'Followers') {
+        if (data.creatorUid !== user?.uid) {
+          setRequestedLiveState({ id: liveId, status: 'restricted' });
+          return;
+        }
+      }
+      if (data?.status !== 'live') {
+        setRequestedLiveState({ id: liveId, status: 'not-started' });
+        return;
+      }
+      setRequestedLiveState({ id: liveId, status: 'ready' });
       setCreatedLives((prev) => {
         if (prev.some((l) => l.id === liveId)) return prev;
         return [{ ...data, id: snap.id }, ...prev];
       });
-    }).catch(() => {});
-  }, [liveId]); // eslint-disable-line react-hooks/exhaustive-deps
+    }).catch(() => {
+      if (!cancelled) setRequestedLiveState({ id: liveId, status: 'error' });
+    });
+    return () => { cancelled = true; };
+  }, [liveId, user?.uid]);
   // Stable shuffle — computed once per session so Firestore updates don't reshuffle the feed
   const [shuffledDemoIds] = useState(() => shuffleArray(demoVideoLiveIds));
   const liveFeed = useMemo(() => {
@@ -2731,7 +2759,9 @@ function LiveViewer({ liveId, creatorMode = false }) {
   // until that live is loaded into the feed — avoids briefly showing a random mock live.
   // Once the requested live is present in the feed, stop gating so swiping to the next lives
   // still renders their UI (streamer, buttons, etc.).
-  const liveReady = !liveId || liveFeed.some((item) => item.id === liveId);
+  const requestedStatus = requestedLiveState.id === liveId ? requestedLiveState.status : 'loading';
+  const requestedItem = liveId ? liveFeed.find((item) => item.id === liveId) : null;
+  const liveReady = !liveId || (Boolean(requestedItem) && requestedStatus !== 'restricted' && requestedStatus !== 'not-started' && (!requestedItem.creatorUid || requestedStatus === 'ready'));
 
   // Track the real live being watched so we can detect when it ends
   const watchingLiveRef = useRef(null);
@@ -3871,8 +3901,6 @@ function LiveViewer({ liveId, creatorMode = false }) {
     const text = chatDraft.trim();
     const targetLiveId = activeLiveId || liveId;
     if (!text || !targetLiveId || !user?.uid) return;
-    const sentAt = Date.now();
-
     chatInputRef.current?.blur();
     pointerStart.current = null;
     setIsDragging(false);
@@ -3894,15 +3922,6 @@ function LiveViewer({ liveId, creatorMode = false }) {
 
     try {
       const commentsRef = collection(db, `activeLives/${targetLiveId}/comments`);
-      const latestComment = {
-        id: `${targetLiveId}-${sentAt}`,
-        text,
-        userId: user.uid,
-        userDisplayName: user.displayName || 'Anonymous',
-        userPhotoURL: user.photoURL || null,
-        avatar: '👤',
-        timestamp: new Date().toISOString(),
-      };
       const liveStartMs = live.liveStartedAt?.toMillis?.() ?? (live.liveStartedAt?.seconds != null ? live.liveStartedAt.seconds * 1000 : null);
       const liveElapsedSeconds = liveStartMs ? Math.max(0, Math.round((Date.now() - liveStartMs) / 1000)) : null;
       await addDoc(commentsRef, {
@@ -3912,11 +3931,6 @@ function LiveViewer({ liveId, creatorMode = false }) {
         userPhotoURL: user.photoURL || null,
         timestamp: serverTimestamp(),
         ...(liveElapsedSeconds != null ? { liveElapsedSeconds } : {}),
-      });
-      await updateDoc(doc(db, 'activeLives', targetLiveId), {
-        latestComment,
-        latestCommentAt: serverTimestamp(),
-        updatedAt: serverTimestamp(),
       });
     } catch (err) {
       console.error('[LiveViewer] Failed to save comment:', err);
@@ -4003,6 +4017,20 @@ function LiveViewer({ liveId, creatorMode = false }) {
 
   if (creatorMode && live?.createdLocally) {
     return <CreatorLiveSession live={live} />;
+  }
+
+  if (liveId && !liveReady && !broadcastEnded) {
+    const unavailable = ['missing', 'restricted', 'not-started', 'error'].includes(requestedStatus);
+    return (
+      <section className="screen live-feed" aria-label="Vuvio live">
+        <div className="live-ended-screen">
+          <p className="live-ended-screen__headline">
+            {unavailable ? requestedStatus === 'not-started' ? 'This live has not started yet' : 'This live is unavailable' : 'Loading live…'}
+          </p>
+          {unavailable && <button type="button" className="live-ended-screen__btn live-ended-screen__btn--primary" onClick={() => navigate('/watch', { replace: true })}>Back to Watch</button>}
+        </div>
+      </section>
+    );
   }
 
   const seoTitle = live?.id

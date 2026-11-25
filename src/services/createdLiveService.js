@@ -4,6 +4,7 @@ import { db } from '../firebase.js';
 const STORAGE_KEY = 'vuvio:createdLives';
 const CREATED_LIVE_EVENT = 'vuvio:created-live';
 const activeLiveStreams = new Map();
+const pendingLiveSaves = new Map();
 const LOCAL_LIVE_GRACE_MS = 2 * 60 * 1000;
 const RETIRED_LIVE_IDS = new Set([
   'created-1785259033066',
@@ -63,17 +64,23 @@ async function saveLiveToFirestore(live) {
     }
 
     const liveRef = doc(collection(db, 'activeLives'), live.id);
+    const { streamKey, webRTCUrl, ...publicLive } = live;
     const data = cleanUndefinedFields({
-      ...live,
+      ...publicLive,
       id: live.id,
+      visibility: 'public',
+      privacy: 'Everyone',
+      publicSafe: true,
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
     });
 
     await setDoc(liveRef, data);
     console.log('[createdLiveService] Live saved to Firestore:', live.id);
+    return true;
   } catch (err) {
     console.error('[createdLiveService] Failed to save live:', err.message, err.code);
+    return false;
   }
 }
 
@@ -91,9 +98,9 @@ async function removeLiveFromFirestore(liveId) {
 
 async function getFirestoreLives() {
   try {
-    const q = query(collection(db, 'activeLives'), where('status', '==', 'live'));
+    const q = query(collection(db, 'activeLives'), where('publicSafe', '==', true), where('status', '==', 'live'));
     const snapshot = await getDocs(q);
-    return snapshot.docs.map(docSnap => docSnap.data());
+    return snapshot.docs.map(docSnap => docSnap.data()).filter((live) => live.status === 'live');
   } catch (err) {
     if (err.code !== 'permission-denied') {
       console.error('[Firestore] Failed to fetch lives:', err.message);
@@ -174,6 +181,7 @@ export async function getCreatedLives() {
 }
 
 export function createLocalLive(draft, creatorUid = null, userCoordinates = null) {
+  if (draft.privacy && draft.privacy !== 'Everyone') throw new Error('Only public lives are available');
   const locationLabel = draft.location?.trim() || [draft.geoCity, draft.geoCountry].filter(Boolean).join(', ') || null;
   const live = {
     id: draft.id || `created-${Date.now()}`,
@@ -206,8 +214,6 @@ export function createLocalLive(draft, creatorUid = null, userCoordinates = null
     hlsManifestUrl: draft.hlsManifestUrl || null,
     whepUrl: draft.whepUrl || null,
     playbackUrl: draft.playbackUrl || null,
-    webRTCUrl: draft.webRTCUrl || null,
-    streamKey: draft.streamKey || null,
     chat: [
       { who: 'Vuvio', text: 'Live started' },
       { who: 'Alex', text: draft.description.trim() },
@@ -221,9 +227,18 @@ export function createLocalLive(draft, creatorUid = null, userCoordinates = null
 
   const nextLives = [live, ...readStoredLives()].slice(0, 12);
   writeStoredLives(nextLives);
-  saveLiveToFirestore(live);
+  const save = saveLiveToFirestore(live);
+  pendingLiveSaves.set(live.id, save);
   safeWindow()?.dispatchEvent(new CustomEvent(CREATED_LIVE_EVENT, { detail: live }));
   return live;
+}
+
+export async function waitForCreatedLiveSaved(liveId) {
+  const save = pendingLiveSaves.get(liveId);
+  if (!save) return true;
+  const saved = await save;
+  pendingLiveSaves.delete(liveId);
+  return saved;
 }
 
 export function updateCreatedLive(liveId, patch) {
@@ -259,9 +274,9 @@ export function subscribeToCreatedLives(callback) {
 
   let unsubscribeFirestore = () => {};
   try {
-    const q = query(collection(db, 'activeLives'), where('status', '==', 'live'));
+    const q = query(collection(db, 'activeLives'), where('publicSafe', '==', true), where('status', '==', 'live'));
     unsubscribeFirestore = onSnapshot(q, (snapshot) => {
-      firestoreLives = snapshot.docs.map(docSnap => docSnap.data());
+      firestoreLives = snapshot.docs.map(docSnap => docSnap.data()).filter((live) => live.status === 'live');
       emit();
     }, (err) => {
       if (err.code !== 'permission-denied') {

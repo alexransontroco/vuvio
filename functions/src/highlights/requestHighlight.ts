@@ -26,10 +26,10 @@ export async function requestHighlight(req: Request, res: Response, liveId: stri
     throw new ApiError('not_found', 'Live not found');
   }
 
-  const stream = streamSnap.data() as StreamDocument;
+  const stream = streamSnap.data() as StreamDocument & { creatorUid?: string };
 
   // Check authorization
-  if (stream.creatorId !== user.uid) {
+  if ((stream.creatorId ?? stream.creatorUid) !== user.uid) {
     throw new ApiError('forbidden', 'Only the creator can generate highlights');
   }
 
