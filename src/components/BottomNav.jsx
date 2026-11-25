@@ -413,9 +413,11 @@ function StartLiveFlow({
                   key={opt}
                   type="button"
                   className={draft.privacy === opt ? 'is-active' : ''}
+                  disabled={opt !== 'Everyone'}
+                  title={opt !== 'Everyone' ? 'Temporarily unavailable' : undefined}
                   onClick={() => { onUpdateDraft('privacy', opt); setPrivacyOpen(false); }}
                 >
-                  {opt}
+                  {opt}{opt !== 'Everyone' ? ' · Soon' : ''}
                 </button>
               ))}
             </div>
@@ -533,17 +535,20 @@ function ScheduledLiveList({ items, loading, startingId, onStart }) {
   return (
     <div className="scheduled-live-list">
       <span className="scheduled-live-list__label">Scheduled</span>
-      {items.slice(0, 3).map((item) => (
-        <div key={item.id} className="scheduled-live-item">
-          <div>
-            <strong>{item.title || 'Scheduled live'}</strong>
-            <small>{formatScheduledStart(item.scheduledStartAt)}</small>
+      {items.slice(0, 3).map((item) => {
+        const available = item.visibility === 'public';
+        return (
+          <div key={item.id} className="scheduled-live-item">
+            <div>
+              <strong>{item.title || 'Scheduled live'}</strong>
+              <small>{formatScheduledStart(item.scheduledStartAt)}</small>
+            </div>
+            <button type="button" disabled={!available || startingId === item.id} onClick={() => onStart(item)}>
+              {!available ? 'Unavailable for now' : startingId === item.id ? 'Starting…' : 'Start now'}
+            </button>
           </div>
-          <button type="button" disabled={startingId === item.id} onClick={() => onStart(item)}>
-            {startingId === item.id ? 'Starting…' : 'Start now'}
-          </button>
-        </div>
-      ))}
+        );
+      })}
     </div>
   );
 }
@@ -649,9 +654,11 @@ function ScheduleLiveFlow({ draft, onUpdateDraft, onSchedule, status, error }) {
             key={opt}
             type="button"
             className={`schedule-live-privacy${draft.privacy === opt ? ' is-active' : ''}`}
+            disabled={opt !== 'Everyone'}
+            title={opt !== 'Everyone' ? 'Temporarily unavailable' : undefined}
             onClick={() => onUpdateDraft('privacy', opt)}
           >
-            {opt}
+            {opt}{opt !== 'Everyone' ? ' · Soon' : ''}
           </button>
         ))}
       </div>

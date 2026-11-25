@@ -97,7 +97,7 @@ export default function MapPage() {
       }
     }).catch(() => setCreatedLives([]));
 
-    const q = query(collection(db, 'activeLives'), where('status', '==', 'live'));
+    const q = query(collection(db, 'activeLives'), where('publicSafe', '==', true), where('status', '==', 'live'));
     const unsubscribe = onSnapshot(q, (snapshot) => {
       getCreatedLives().then((created) => {
         setCreatedLives(created);

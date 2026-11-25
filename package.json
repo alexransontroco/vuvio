@@ -12,7 +12,8 @@
     "cap:sync": "cap sync",
     "ios": "cap open ios",
     "android": "cap open android",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "test:rules": "firebase emulators:exec --only firestore --project demo-vuvio-security 'FIRESTORE_EMULATOR_HOST=localhost:8080 GCLOUD_PROJECT=demo-vuvio-security node --test test/liveVisibility.emulator.test.mjs'"
   },
   "dependencies": {
     "@capacitor/android": "^7.6.9",

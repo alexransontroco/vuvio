@@ -2,8 +2,19 @@ import type { Request } from 'firebase-functions/v2/https';
 import type { Response } from 'express';
 import { getCloudflareEnv } from '../config/env.js';
 import { createLiveInput, listLiveInputs, createCloudflareClient } from './cloudflareClient.js';
+import { authenticateUser } from '../middleware/authenticateUser.js';
+import { ApiError } from '../shared/errors.js';
+import { isDiagnosticAdminToken } from '../shared/validation.js';
+
+async function requireDiagnosticAdmin(req: Request) {
+  const user = await authenticateUser(req);
+  if (!isDiagnosticAdminToken(user.token)) {
+    throw new ApiError('forbidden', 'Admin access required');
+  }
+}
 
 export async function getCloudflareConfig(req: Request, res: Response) {
+  await requireDiagnosticAdmin(req);
   const env = getCloudflareEnv();
 
   res.json({
@@ -17,6 +28,7 @@ export async function getCloudflareConfig(req: Request, res: Response) {
 }
 
 export async function getCloudflareInputs(req: Request, res: Response) {
+  await requireDiagnosticAdmin(req);
   try {
     const rawInputs = await listLiveInputs();
 
@@ -59,6 +71,7 @@ export async function getCloudflareInputs(req: Request, res: Response) {
 }
 
 export async function getRawVideos(req: Request, res: Response) {
+  await requireDiagnosticAdmin(req);
   const liveInputId = typeof req.query.id === 'string' ? req.query.id : '';
   if (!liveInputId) { res.status(400).json({ error: 'Missing ?id=' }); return; }
   const { accountId, apiToken } = getCloudflareEnv();
@@ -70,6 +83,7 @@ export async function getRawVideos(req: Request, res: Response) {
 }
 
 export async function getRawLiveInput(req: Request, res: Response) {
+  await requireDiagnosticAdmin(req);
   const liveInputId = typeof req.query.id === 'string' ? req.query.id : '';
   if (!liveInputId) { res.status(400).json({ error: 'Missing ?id=' }); return; }
   const { accountId, apiToken } = getCloudflareEnv();
@@ -81,6 +95,7 @@ export async function getRawLiveInput(req: Request, res: Response) {
 }
 
 export async function postCreateTestInput(req: Request, res: Response) {
+  await requireDiagnosticAdmin(req);
   try {
     const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5);
     const testName = `vuvio-test-${timestamp}`;

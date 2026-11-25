@@ -1,6 +1,22 @@
 {
   "indexes": [
     {
+      "collectionGroup": "activeLives",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "publicSafe", "order": "ASCENDING" },
+        { "fieldPath": "status", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "activeLives",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "creatorUid", "order": "ASCENDING" },
+        { "fieldPath": "publicSafe", "order": "ASCENDING" }
+      ]
+    },
+    {
       "collectionGroup": "streams",
       "queryScope": "COLLECTION",
       "fields": [

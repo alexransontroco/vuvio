@@ -58,7 +58,7 @@ function toScheduledItem(raw: Record<string, unknown>): ScheduledStreamItem | nu
     creatorName: 'Vuvio creator',
     creatorId: String(raw.creatorId ?? ''),
     locationLabel,
-    image: '/icons/icon-512.png',
+    image: '/assets/icons/icon-512.png',
     category: String(raw.category ?? ''),
     environment: String(raw.environment ?? ''),
     interestedCount: 0,
