@@ -8,5 +8,5 @@
     "declaration": false,
     "sourceMap": false
   },
-  "include": ["test/**/*.ts", "test/**/*.js"]
+  "include": ["src/**/*.ts", "test/**/*.ts", "test/**/*.js"]
 }

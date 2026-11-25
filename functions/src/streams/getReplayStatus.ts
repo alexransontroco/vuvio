@@ -34,6 +34,13 @@ export async function getReplayStatus(req: Request, res: Response, streamId: str
 
   const live = liveSnap.data() ?? {};
   requirePublicActiveLive(live);
+
+  // Short-circuit if already deleted/revoked
+  if (live.recordingStatus === 'deleted' || live.recordingStatus === 'revoked') {
+    res.json({ success: true, cloudflareUid: '', liveInputUid: '', recordingStatus: live.recordingStatus, state: live.recordingStatus, pctComplete: null, readyToStream: false, replayUrl: '' });
+    return;
+  }
+
   // Fall back to liveInputId (set by WatchPage frontend) if cloudflareLiveInputId is missing
   const liveInputUid = (typeof live.cloudflareLiveInputId === 'string' && live.cloudflareLiveInputId)
     ? live.cloudflareLiveInputId
