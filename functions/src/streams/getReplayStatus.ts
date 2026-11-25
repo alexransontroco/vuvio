@@ -1,11 +1,11 @@
 import { FieldValue } from 'firebase-admin/firestore';
 import type { Request } from 'firebase-functions/v2/https';
 import type { Response } from 'express';
+import { authenticateUser } from '../middleware/authenticateUser.js';
 import { ApiError } from '../shared/errors.js';
 import { db } from '../shared/firestore.js';
 import { getCloudflareEnv } from '../config/env.js';
 import { createCloudflareClient, type CloudflareVideo } from '../cloudflare/cloudflareClient.js';
-import { requirePublicActiveLive } from '../shared/validation.js';
 
 function videoState(video: CloudflareVideo) {
   return video.status?.state ?? (video.readyToStream ? 'ready' : 'processing');
@@ -27,13 +27,29 @@ function isWithinSession(video: CloudflareVideo, startedAtMs: number, endedAtMs:
 }
 
 export async function getReplayStatus(req: Request, res: Response, streamId: string) {
+  let requesterUid: string | null = null;
+  try {
+    requesterUid = (await authenticateUser(req)).uid;
+  } catch {
+    requesterUid = null;
+  }
+
   const liveRef = db.collection('activeLives').doc(streamId);
   const liveSnap = await liveRef.get();
   const queryUid = typeof req.query.uid === 'string' ? req.query.uid : '';
-  if (!liveSnap.exists) throw new ApiError('not_found', 'Live not found');
+  if (!liveSnap.exists && !queryUid) throw new ApiError('not_found', 'Live not found');
 
   const live = liveSnap.data() ?? {};
-  requirePublicActiveLive(live);
+  if (requesterUid && live.creatorUid && live.creatorUid !== requesterUid) {
+    throw new ApiError('forbidden', 'Only the creator can check replay status');
+  }
+
+  // Short-circuit if already deleted/revoked
+  if (live.recordingStatus === 'deleted' || live.recordingStatus === 'revoked') {
+    res.json({ success: true, cloudflareUid: '', liveInputUid: '', recordingStatus: live.recordingStatus, state: live.recordingStatus, pctComplete: null, readyToStream: false, replayUrl: '' });
+    return;
+  }
+
   // Fall back to liveInputId (set by WatchPage frontend) if cloudflareLiveInputId is missing
   const liveInputUid = (typeof live.cloudflareLiveInputId === 'string' && live.cloudflareLiveInputId)
     ? live.cloudflareLiveInputId

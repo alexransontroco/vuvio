@@ -49,6 +49,7 @@
   },
   "devDependencies": {
     "@capacitor/cli": "^7.6.9",
+    "jsdom": "^31.0.1",
     "typescript": "^5.9.3"
   }
 }

@@ -45,7 +45,7 @@ import { notifyNewMessage } from './notifications/notifyNewMessage.js';
 import { deleteOwnAccount } from './users/deleteOwnAccount.js';
 import { syncFinancialDataHandler, getFinancialDataHandler } from './admin/syncFinancialDataHandler.js';
 import { getReplayDownload } from './streams/getReplayDownload.js';
-import { deleteReplay } from './streams/deleteReplay.js';
+import { deleteReplay, retryPendingReplayDeletions } from './streams/deleteReplay.js';
 
 function pathParts(path = '') {
   return path.replace(/^\/api\/?/, '/').split('/').filter(Boolean);
@@ -199,6 +199,17 @@ export const updateTrustScoresScheduled = onSchedule({
     await updateAllTrustScores();
   } catch (error) {
     console.error('[trust] scheduled recalculation failed:', error);
+  }
+});
+
+export const retryPendingReplayDeletionsScheduled = onSchedule({
+  region: 'europe-west1',
+  schedule: 'every 1 hours',
+}, async () => {
+  try {
+    await retryPendingReplayDeletions();
+  } catch (error) {
+    console.error('[replay-retry] scheduled retry failed:', error);
   }
 });
 
